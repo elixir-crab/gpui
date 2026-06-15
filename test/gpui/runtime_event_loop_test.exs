@@ -66,6 +66,34 @@ defmodule GPUI.Runtime.EventLoopTest do
     GenServer.stop(pid)
   end
 
+  test "remote TCP backend reconnects and replays windows" do
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
+
+    {:ok, pid} =
+      GPUI.Runtime.start_link(
+        app: CounterApp,
+        backend: :remote_tcp,
+        host: "127.0.0.1",
+        port: port,
+        session_id: "reconnect-test-session"
+      )
+
+    [window] = GPUI.Runtime.windows(pid)
+    GenServer.stop(server)
+    {:ok, _server} = GPUI.Remote.DisplayServer.start_link(port: port, display_backend: :data)
+
+    assert {:ok, %{}} = GPUI.Runtime.emit_test_event(pid, %{window_id: window.id, event: "inc"})
+
+    handled = GPUI.Runtime.drain_events(pid)
+    assert %{type: :click, window_id: 1, event: "inc"} in handled
+
+    [updated] = GPUI.Runtime.windows(pid)
+    assert {_module, %{count: 1}} = updated.root
+
+    GenServer.stop(pid)
+  end
+
   test "remote TCP backend uses display server for event/update flow" do
     {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
