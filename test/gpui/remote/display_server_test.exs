@@ -4,12 +4,31 @@ defmodule GPUI.Remote.DisplayServerTest do
   alias GPUI.Remote.DisplayProtocol
   alias GPUI.Remote.Transport.SafeRPC.TCP, as: SafeRPCTCP
 
+  test "starts under an OTP supervisor" do
+    {:ok, supervisor} =
+      Supervisor.start_link(
+        [
+          {GPUI.Remote.DisplayServer,
+           port: 0, display_backend: :data, name: __MODULE__.SupervisedDisplay}
+        ],
+        strategy: :one_for_one
+      )
+
+    assert {:ok, port} = GPUI.Remote.DisplayServer.port(__MODULE__.SupervisedDisplay)
+    assert is_integer(port)
+
+    Supervisor.stop(supervisor)
+  end
+
   test "accepts multiple RemoteTCP clients" do
     {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
 
     {:ok, conn1} = start_client(port)
     {:ok, conn2} = start_client(port)
+
+    assert %{connection_supervisor: connection_supervisor} = :sys.get_state(server)
+    assert is_pid(connection_supervisor)
 
     assert {:ok, %{capabilities: capabilities1}} = SafeRPC.call(conn1, :hello, %{role: :test})
     assert {:ok, %{capabilities: capabilities2}} = SafeRPC.call(conn2, :hello, %{role: :test})

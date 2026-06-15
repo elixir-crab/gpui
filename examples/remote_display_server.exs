@@ -19,14 +19,16 @@ display_backend =
 
 ssl = ExampleRemoteOpts.ssl_server_opts()
 
-{:ok, _server} =
-  GPUI.Remote.DisplayServer.start_link(
-    port: port,
-    ssl: ssl,
-    display_backend: display_backend,
-    display_backend_opts: [backend: display_backend]
-  )
+children = [
+  {GPUI.Remote.DisplayServer,
+   port: port,
+   ssl: ssl,
+   display_backend: display_backend,
+   display_backend_opts: [backend: display_backend]}
+]
+
+{:ok, _supervisor} = Supervisor.start_link(children, strategy: :one_for_one)
 
 scheme = if ssl == false, do: "tcp", else: "ssl"
-IO.puts("GPUI remote display server listening on #{scheme}://127.0.0.1:#{port} with display_backend=#{inspect(display_backend)}")
+IO.puts("GPUI remote display server running under an OTP supervisor on #{scheme}://127.0.0.1:#{port} with display_backend=#{inspect(display_backend)}")
 Process.sleep(:infinity)

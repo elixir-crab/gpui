@@ -16,9 +16,17 @@ defmodule GPUI.Remote.DisplayServer do
 
   @display_capability DisplayProtocol.capability()
 
+  @spec child_spec(keyword()) :: Supervisor.child_spec()
+  def child_spec(opts) do
+    %{
+      id: Keyword.get(opts, :name, __MODULE__),
+      start: {__MODULE__, :start_link, [opts]}
+    }
+  end
+
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts \\ []) do
-    GenServer.start_link(__MODULE__, opts)
+    GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
   end
 
   @spec port(GenServer.server()) :: {:ok, :inet.port_number()} | {:error, term()}
@@ -32,9 +40,11 @@ defmodule GPUI.Remote.DisplayServer do
     listen_opts = [port: Keyword.get(opts, :port, 0), ssl: Keyword.get(opts, :ssl, false)]
 
     with {:ok, backend_state} <- display_backend.init(display_backend_opts),
-         {:ok, listener} <- SafeRPCTCP.listen(listen_opts) do
+         {:ok, listener} <- SafeRPCTCP.listen(listen_opts),
+         {:ok, connection_supervisor} <- DynamicSupervisor.start_link(strategy: :one_for_one) do
       state = %{
         listener: listener,
+        connection_supervisor: connection_supervisor,
         connections: %{},
         display_backend: display_backend,
         display_backend_state: backend_state,
@@ -60,13 +70,23 @@ defmodule GPUI.Remote.DisplayServer do
   def handle_info({:gpui_remote_accepted, socket}, state) do
     start_acceptor(state.listener)
 
-    {:ok, pid} =
-      Connection.start_link(
-        owner: self(),
-        transport: SafeRPCTCP,
-        socket: socket,
-        recv_timeout: 5_000
-      )
+    child_spec = %{
+      id: {Connection, System.unique_integer([:positive])},
+      start:
+        {Connection, :start_link,
+         [
+           [
+             owner: self(),
+             transport: SafeRPCTCP,
+             socket: socket,
+             recv_timeout: 5_000
+           ]
+         ]},
+      restart: :temporary
+    }
+
+    {:ok, pid} = DynamicSupervisor.start_child(state.connection_supervisor, child_spec)
+    Process.monitor(pid)
 
     {:noreply, put_in(state.connections[pid], socket)}
   end
@@ -82,6 +102,7 @@ defmodule GPUI.Remote.DisplayServer do
   @impl GenServer
   def terminate(_reason, state) do
     SafeRPCTCP.close(state.listener)
+    Supervisor.stop(state.connection_supervisor)
   end
 
   defp dispatch(%{cap: cap}, state) when cap not in [nil, @display_capability] do
