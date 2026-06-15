@@ -44,7 +44,7 @@ defmodule GPUIEventLoopTest do
            |> Map.fetch!(:children) == ["Count: ", 0]
 
     {:ok, :ok} =
-      GPUI.Native.emit_test_event(:sys.get_state(pid).native, %{
+      GPUI.Runtime.emit_test_event(pid, %{
         window_id: window.id,
         event: "inc"
       })
@@ -59,7 +59,7 @@ defmodule GPUIEventLoopTest do
     assert get_in(payload, [:root, :tree, :children, Access.at(0), :children]) == ["Count: ", 1]
     assert get_in(payload, [:root, :tree, :children, Access.at(1), :attrs, :"phx-click"]) == "inc"
 
-    assert %{op: :native_event, payload: %{type: :window_updated, window_id: 1}} in GPUI.Runtime.host_messages(
+    assert %{op: :backend_event, payload: %{type: :window_updated, window_id: 1}} in GPUI.Runtime.host_messages(
              pid
            )
 
@@ -71,7 +71,7 @@ defmodule GPUIEventLoopTest do
     [window] = GPUI.Runtime.windows(pid)
 
     {:ok, :ok} =
-      GPUI.Native.emit_test_event(:sys.get_state(pid).native, %{
+      GPUI.Runtime.emit_test_event(pid, %{
         window_id: window.id,
         event: "inc"
       })
@@ -82,7 +82,7 @@ defmodule GPUIEventLoopTest do
     end)
 
     assert_eventually(fn ->
-      assert %{op: :native_event, payload: %{type: :click, event: "inc", window_id: 1}} in GPUI.Runtime.host_messages(
+      assert %{op: :backend_event, payload: %{type: :click, event: "inc", window_id: 1}} in GPUI.Runtime.host_messages(
                pid
              )
     end)

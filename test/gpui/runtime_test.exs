@@ -87,7 +87,7 @@ defmodule GPUIRuntimeTest do
              GPUI.Runtime.windows(pid)
 
     assert_receive_host_message(pid, %{
-      op: :native_event,
+      op: :backend_event,
       payload: "window_open_requested:GPUI + Elixir"
     })
 

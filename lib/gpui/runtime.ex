@@ -1,6 +1,10 @@
 defmodule GPUI.Runtime do
   @moduledoc """
-  OTP owner for a GPUI backend.
+  OTP owner for a GPUI application runtime.
+
+  The runtime owns application state and rendered window specs. Concrete IO is
+  delegated to a `GPUI.Backend` implementation, which creates the seam for
+  local native windows today and remote transports later.
   """
 
   use GenServer
@@ -11,8 +15,8 @@ defmodule GPUI.Runtime do
           app: module(),
           app_state: term(),
           windows: [WindowSpec.t()],
-          host: port() | nil,
-          native: term() | nil,
+          backend: module(),
+          backend_state: GPUI.Backend.state(),
           host_messages: [map()],
           poll_interval: pos_integer() | nil
         }
@@ -27,22 +31,25 @@ defmodule GPUI.Runtime do
   def init(opts) do
     app = Keyword.fetch!(opts, :app)
     args = Keyword.get(opts, :args, [])
+    backend = opts |> Keyword.get(:backend, :data) |> GPUI.Backend.module_for()
 
-    host = start_host(opts)
-    native = start_native(opts)
+    with {:ok, backend_state} <- backend.init(opts) do
+      case app.mount(args) do
+        {:ok, app_state} ->
+          state = initial_state(app, app_state, [], backend, backend_state, poll_interval(opts))
+          schedule_backend_poll(state)
+          {:ok, state}
 
-    case app.mount(args) do
-      {:ok, app_state} ->
-        state = initial_state(app, app_state, [], host, native, poll_interval(opts))
-        schedule_native_poll(state)
-        {:ok, state}
+        {:ok, app_state, windows} when is_list(windows) ->
+          windows = assign_window_ids(windows)
 
-      {:ok, app_state, windows} when is_list(windows) ->
-        windows = assign_window_ids(windows)
-        Enum.each(windows, &sync_window(host, native, &1))
-        state = initial_state(app, app_state, windows, host, native, poll_interval(opts))
-        schedule_native_poll(state)
-        {:ok, state}
+          state =
+            initial_state(app, app_state, windows, backend, backend_state, poll_interval(opts))
+
+          Enum.each(windows, &sync_window(state, &1))
+          schedule_backend_poll(state)
+          {:ok, state}
+      end
     end
   end
 
@@ -50,13 +57,17 @@ defmodule GPUI.Runtime do
   @spec windows(GenServer.server()) :: [WindowSpec.t()]
   def windows(server), do: GenServer.call(server, :windows)
 
-  @doc "Returns replies/events received from the Rust host/native runtime."
+  @doc "Returns replies/events received from the backend."
   @spec host_messages(GenServer.server()) :: [map()]
   def host_messages(server), do: GenServer.call(server, :host_messages)
 
-  @doc "Drains native events, applies view callbacks, and syncs updated views."
+  @doc "Drains backend events, applies view callbacks, and syncs updated views."
   @spec drain_events(GenServer.server()) :: [map()]
   def drain_events(server), do: GenServer.call(server, :drain_events)
+
+  @doc "Injects a backend test event when supported by the active backend."
+  @spec emit_test_event(GenServer.server(), map()) :: {:ok, term()} | {:error, term()}
+  def emit_test_event(server, event), do: GenServer.call(server, {:emit_test_event, event})
 
   @impl GenServer
   def handle_call(:windows, _from, state) do
@@ -64,62 +75,56 @@ defmodule GPUI.Runtime do
   end
 
   @impl GenServer
-  def handle_call(:host_messages, _from, %{native: nil} = state) do
-    {:reply, Enum.reverse(state.host_messages), state}
-  end
+  def handle_call(:host_messages, _from, state) do
+    {:ok, events} = state.backend.drain_events(state.backend_state)
 
-  def handle_call(:host_messages, _from, %{native: native} = state) do
-    {:ok, events} = GPUI.Native.drain_events(native)
-    native_messages = Enum.map(events, &%{op: :native_event, payload: normalize_native_event(&1)})
-    {:reply, Enum.reverse(state.host_messages) ++ native_messages, state}
+    backend_messages =
+      Enum.map(events, &%{op: :backend_event, payload: normalize_backend_event(&1)})
+
+    {:reply, Enum.reverse(state.host_messages) ++ backend_messages, state}
   end
 
   @impl GenServer
-  def handle_call(:drain_events, _from, %{native: nil} = state) do
-    {:reply, [], state}
-  end
-
-  def handle_call(:drain_events, _from, %{native: native} = state) do
-    {handled, state} = drain_native_events(native, state)
+  def handle_call(:drain_events, _from, state) do
+    {handled, state} = drain_backend_events(state)
     {:reply, handled, state}
   end
 
   @impl GenServer
-  def handle_info(:poll_native_events, %{native: native} = state) when not is_nil(native) do
-    {handled, state} = drain_native_events(native, state)
-
-    state =
-      handled
-      |> Enum.map(&%{op: :native_event, payload: &1})
-      |> prepend_host_messages(state)
-
-    schedule_native_poll(state)
-    {:noreply, state}
-  end
-
-  def handle_info(:poll_native_events, state) do
-    schedule_native_poll(state)
-    {:noreply, state}
-  end
-
-  def handle_info({host, {:data, payload}}, %{host: host} = state) do
-    message = GPUI.Protocol.decode(payload)
-    {:noreply, %{state | host_messages: [message | state.host_messages]}}
+  def handle_call({:emit_test_event, event}, _from, state) do
+    {:reply, state.backend.emit_test_event(state.backend_state, event), state}
   end
 
   @impl GenServer
-  def handle_info({host, {:exit_status, status}}, %{host: host} = state) do
-    message = %{op: :host_exit, status: status}
-    {:noreply, %{state | host: nil, host_messages: [message | state.host_messages]}}
+  def handle_info(:poll_backend_events, state) do
+    {handled, state} = drain_backend_events(state)
+
+    state =
+      handled
+      |> Enum.map(&%{op: :backend_event, payload: &1})
+      |> prepend_host_messages(state)
+
+    schedule_backend_poll(state)
+    {:noreply, state}
   end
 
-  defp initial_state(app, app_state, windows, host, native, poll_interval) do
+  def handle_info(message, state) do
+    case state.backend.handle_info(state.backend_state, message) do
+      {:ok, event} ->
+        {:noreply, %{state | host_messages: [event | state.host_messages]}}
+
+      :unhandled ->
+        {:noreply, state}
+    end
+  end
+
+  defp initial_state(app, app_state, windows, backend, backend_state, poll_interval) do
     %{
       app: app,
       app_state: app_state,
       windows: windows,
-      host: host,
-      native: native,
+      backend: backend,
+      backend_state: backend_state,
       host_messages: [],
       poll_interval: poll_interval
     }
@@ -132,11 +137,10 @@ defmodule GPUI.Runtime do
     end
   end
 
-  defp schedule_native_poll(%{native: nil}), do: :ok
-  defp schedule_native_poll(%{poll_interval: nil}), do: :ok
+  defp schedule_backend_poll(%{poll_interval: nil}), do: :ok
 
-  defp schedule_native_poll(%{poll_interval: interval}) do
-    Process.send_after(self(), :poll_native_events, interval)
+  defp schedule_backend_poll(%{poll_interval: interval}) do
+    Process.send_after(self(), :poll_backend_events, interval)
     :ok
   end
 
@@ -146,40 +150,17 @@ defmodule GPUI.Runtime do
     |> Enum.map(fn {%WindowSpec{} = window, id} -> %{window | id: id} end)
   end
 
-  defp start_host(opts) do
-    case Keyword.get(opts, :backend, :data) do
-      :host -> GPUI.Host.start_link(opts)
-      _backend -> nil
-    end
+  defp sync_window(state, %WindowSpec{} = window) do
+    :ok = state.backend.open_window(state.backend_state, window_payload(window))
   end
 
-  defp start_native(opts) do
-    case Keyword.get(opts, :backend, :data) do
-      :native ->
-        {:ok, runtime} = GPUI.Native.start_runtime()
-        runtime
-
-      _backend ->
-        nil
-    end
-  end
-
-  defp sync_window(nil, nil, %WindowSpec{}), do: :ok
-
-  defp sync_window(host, nil, %WindowSpec{} = window) when is_port(host) do
-    GPUI.Host.command(host, GPUI.Protocol.command(:open_window, window_payload(window)))
-  end
-
-  defp sync_window(nil, native, %WindowSpec{} = window) do
-    {:ok, _title} = GPUI.Native.open_window(native, window_payload(window))
-    :ok
-  end
-
-  defp update_window(nil, %WindowSpec{}), do: :ok
-
-  defp update_window(native, %WindowSpec{} = window) do
-    {:ok, _} = GPUI.Native.update_window(native, window.id, window_payload(window).root.tree)
-    :ok
+  defp update_window(state, %WindowSpec{} = window) do
+    :ok =
+      state.backend.update_window(
+        state.backend_state,
+        window.id,
+        window_payload(window).root.tree
+      )
   end
 
   @doc false
@@ -215,43 +196,43 @@ defmodule GPUI.Runtime do
     end
   end
 
-  defp normalize_native_event(event) when is_list(event), do: Map.new(event)
-  defp normalize_native_event(event), do: event
+  defp normalize_backend_event(event) when is_list(event), do: Map.new(event)
+  defp normalize_backend_event(event), do: event
 
-  defp drain_native_events(native, state) do
-    {:ok, events} = GPUI.Native.drain_events(native)
+  defp drain_backend_events(state) do
+    {:ok, events} = state.backend.drain_events(state.backend_state)
 
     events
-    |> Enum.map(&normalize_native_event/1)
-    |> Enum.map_reduce(state, &handle_native_event/2)
+    |> Enum.map(&normalize_backend_event/1)
+    |> Enum.map_reduce(state, &handle_backend_event/2)
   end
 
-  defp handle_native_event(
-         %{type: :click, window_id: window_id, event: event} = native_event,
+  defp handle_backend_event(
+         %{type: :click, window_id: window_id, event: event} = backend_event,
          state
        ) do
     case Enum.find(state.windows, &(&1.id == window_id)) do
       %WindowSpec{root: {module, assigns}} = window ->
         assigns = Map.new(assigns)
 
-        case module.handle_event(event, native_event, assigns) do
+        case module.handle_event(event, backend_event, assigns) do
           {:noreply, new_assigns} ->
             updated_window = %{window | root: {module, new_assigns}}
-            update_window(state.native, updated_window)
-            {native_event, %{state | windows: replace_window(state.windows, updated_window)}}
+            update_window(state, updated_window)
+            {backend_event, %{state | windows: replace_window(state.windows, updated_window)}}
 
           {:reply, _reply, new_assigns} ->
             updated_window = %{window | root: {module, new_assigns}}
-            update_window(state.native, updated_window)
-            {native_event, %{state | windows: replace_window(state.windows, updated_window)}}
+            update_window(state, updated_window)
+            {backend_event, %{state | windows: replace_window(state.windows, updated_window)}}
         end
 
       nil ->
-        {native_event, state}
+        {backend_event, state}
     end
   end
 
-  defp handle_native_event(event, state), do: {event, state}
+  defp handle_backend_event(event, state), do: {event, state}
 
   defp prepend_host_messages([], state), do: state
 
