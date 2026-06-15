@@ -576,74 +576,15 @@ fn render_generated_input_primitive(
     runtime: ResourceArc<RuntimeResource>,
     window_id: u64,
 ) -> gpui::AnyElement {
-    use gpui::{div, InteractiveElement, IntoElement, ParentElement, StatefulInteractiveElement};
+    use gpui::{div, ParentElement};
 
     let label = if value.is_empty() {
         placeholder.unwrap_or_else(|| "".to_string())
     } else {
         value.clone()
     };
-    let mut element = div()
-        .id(format!("gpui-elixir-input-{window_id}-{}", change.clone().unwrap_or_default()))
-        .child(label);
-
-    if let Some(event) = change {
-        let runtime_for_change = runtime.clone();
-        let value_for_change = value.clone();
-        element = element.on_click(move |_event, _window, _cx| {
-            let _ = push_event(
-                &runtime_for_change,
-                NativeEvent::Input {
-                    kind: "change".to_string(),
-                    window_id,
-                    event: event.clone(),
-                    value: Some(value_for_change.clone()),
-                },
-            );
-        });
-    }
-
-    if let Some(event) = keydown {
-        let runtime_for_keydown = runtime.clone();
-        element = element.on_key_down(move |key_event, _window, _cx| {
-            let value = key_event
-                .keystroke
-                .key_char
-                .clone()
-                .or_else(|| Some(key_event.keystroke.key.clone()));
-            let _ = push_event(
-                &runtime_for_keydown,
-                NativeEvent::Input {
-                    kind: "keydown".to_string(),
-                    window_id,
-                    event: event.clone(),
-                    value,
-                },
-            );
-        });
-    }
-
-    if let Some(event) = keyup {
-        let runtime_for_keyup = runtime.clone();
-        element = element.on_key_up(move |key_event, _window, _cx| {
-            let value = key_event
-                .keystroke
-                .key_char
-                .clone()
-                .or_else(|| Some(key_event.keystroke.key.clone()));
-            let _ = push_event(
-                &runtime_for_keyup,
-                NativeEvent::Input {
-                    kind: "keyup".to_string(),
-                    window_id,
-                    event: event.clone(),
-                    value,
-                },
-            );
-        });
-    }
-
-    element.into_any_element()
+    let element = div().child(label);
+    apply_generated_input_events(element, value, change, keydown, keyup, runtime, window_id)
 }
 
 #[cfg(feature = "real-gpui")]
@@ -654,7 +595,7 @@ fn render_generated_container_primitive(
     runtime: ResourceArc<RuntimeResource>,
     window_id: u64,
 ) -> gpui::AnyElement {
-    use gpui::{div, InteractiveElement, IntoElement, ParentElement, StatefulInteractiveElement};
+    use gpui::{div, ParentElement};
 
     let mut element = apply_generated_render_styles(div(), style);
 
@@ -662,22 +603,7 @@ fn render_generated_container_primitive(
         element = element.child(child.render(runtime.clone(), window_id));
     }
 
-    if let Some(event) = click {
-        let runtime_for_click = runtime.clone();
-        let element_id = format!("gpui-elixir-click-{window_id}-{event}");
-
-        element
-            .id(element_id)
-            .on_click(move |_event, _window, _cx| {
-                let _ = push_event(
-                    &runtime_for_click,
-                    NativeEvent::Click { window_id, event: event.clone() },
-                );
-            })
-            .into_any_element()
-    } else {
-        element.into_any_element()
-    }
+    apply_generated_click_event(element, click, runtime, window_id)
 }
 
 #[cfg(feature = "real-gpui")]

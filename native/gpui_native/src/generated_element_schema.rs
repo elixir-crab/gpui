@@ -326,15 +326,152 @@ pub(crate) fn apply_generated_render_styles(element: gpui::Div, style: StyleAttr
 }
 
 #[cfg(feature = "real-gpui")]
+pub(crate) fn apply_generated_click_event(
+    element: gpui::Div,
+    event: Option<String>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+) -> gpui::AnyElement {
+    use gpui::{InteractiveElement, IntoElement, StatefulInteractiveElement};
+
+    if let Some(event) = event {
+        let runtime_for_click = runtime.clone();
+        let element_id = format!("gpui-elixir-click-{window_id}-{event}");
+
+        element.id(element_id).on_click(move |_event, _window, _cx| {
+            let _ = push_event(
+                &runtime_for_click,
+                NativeEvent::Click { window_id, event: event.clone() },
+            );
+        }).into_any_element()
+    } else {
+        element.into_any_element()
+    }
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn apply_generated_input_events(
+    element: gpui::Div,
+    value: String,
+    change: Option<String>,
+    keydown: Option<String>,
+    keyup: Option<String>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+) -> gpui::AnyElement {
+    use gpui::{InteractiveElement, IntoElement, StatefulInteractiveElement};
+
+    let mut element = element.id(format!(
+        "gpui-elixir-input-{window_id}-{}",
+        change.clone().unwrap_or_default()
+    ));
+
+    if let Some(event) = change {
+        let runtime_for_change = runtime.clone();
+        let value_for_change = value.clone();
+        element = element.on_click(move |_event, _window, _cx| {
+            let _ = push_event(
+                &runtime_for_change,
+                NativeEvent::Input {
+                    kind: "change".to_string(),
+                    window_id,
+                    event: event.clone(),
+                    value: Some(value_for_change.clone()),
+                },
+            );
+        });
+    }
+
+    if let Some(event) = keydown {
+        let runtime_for_keydown = runtime.clone();
+        element = element.on_key_down(move |key_event, _window, _cx| {
+            let value = key_event
+                .keystroke
+                .key_char
+                .clone()
+                .or_else(|| Some(key_event.keystroke.key.clone()));
+            let _ = push_event(
+                &runtime_for_keydown,
+                NativeEvent::Input {
+                    kind: "keydown".to_string(),
+                    window_id,
+                    event: event.clone(),
+                    value,
+                },
+            );
+        });
+    }
+
+    if let Some(event) = keyup {
+        let runtime_for_keyup = runtime.clone();
+        element = element.on_key_up(move |key_event, _window, _cx| {
+            let value = key_event
+                .keystroke
+                .key_char
+                .clone()
+                .or_else(|| Some(key_event.keystroke.key.clone()));
+            let _ = push_event(
+                &runtime_for_keyup,
+                NativeEvent::Input {
+                    kind: "keyup".to_string(),
+                    window_id,
+                    event: event.clone(),
+                    value,
+                },
+            );
+        });
+    }
+
+    element.into_any_element()
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn render_generated_text_component(text: String) -> gpui::AnyElement {
+    render_generated_text_primitive(text)
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn render_generated_image_component(raster: RasterData) -> gpui::AnyElement {
+    render_generated_image_primitive(raster)
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn render_generated_input_component(
+    style: StyleAttrs,
+    value: String,
+    placeholder: Option<String>,
+    change: Option<String>,
+    keydown: Option<String>,
+    keyup: Option<String>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+) -> gpui::AnyElement {
+    render_generated_input_primitive(style, value, placeholder, change, keydown, keyup, runtime, window_id)
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn render_generated_container_component(
+    style: StyleAttrs,
+    children: Vec<ElementNode>,
+    click: Option<String>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+) -> gpui::AnyElement {
+    render_generated_container_primitive(style, children, click, runtime, window_id)
+}
+
+
+#[cfg(feature = "real-gpui")]
 pub(crate) fn render_generated_element_node(node: ElementNode, runtime: ResourceArc<RuntimeResource>, window_id: u64) -> gpui::AnyElement {
     match node {
-        ElementNode::Text(text) => render_generated_text_primitive(text),
-        ElementNode::Image(raster) => render_generated_image_primitive(raster),
+        ElementNode::Text(text) => render_generated_text_component(text),
+        ElementNode::Image(raster) => render_generated_image_component(raster),
         ElementNode::Input { style, value, placeholder, change, keydown, keyup } => {
-            render_generated_input_primitive(style, value, placeholder, change, keydown, keyup, runtime, window_id)
+            render_generated_input_component(style, value, placeholder, change, keydown, keyup, runtime, window_id)
         }
         ElementNode::Div { style, children, click } => {
-            render_generated_container_primitive(style, children, click, runtime, window_id)
+            render_generated_container_component(style, children, click, runtime, window_id)
         }
     }
 
