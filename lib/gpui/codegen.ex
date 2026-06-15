@@ -23,7 +23,7 @@ defmodule GPUI.Codegen do
 
     #{generated_component_specs(components)}
 
-    #{generated_style_struct(style_specs)}
+    #{generated_style_module(style_specs)}
 
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub enum GeneratedElementTag {
@@ -70,23 +70,11 @@ defmodule GPUI.Codegen do
         }
     }
 
-    #{generated_decoded_resource_structs(resource_specs)}
+    #{generated_resource_module(resource_specs)}
 
-    #{generated_decode_resource_functions(resource_specs)}
+    #{generated_event_module(components)}
 
-    #{generated_decoded_component_structs(components)}
-
-    #{generated_decode_component_functions(components)}
-
-    #{generated_apply_style_function(style_specs)}
-
-    #{generated_apply_render_style_function(style_specs)}
-
-    #{generated_event_applicators(components)}
-
-    #{generated_primitive_render_contracts(components)}
-
-    #{generated_render_dispatch()}
+    #{generated_component_module(components)}
     """
   end
 
@@ -151,13 +139,89 @@ defmodule GPUI.Codegen do
     end)
   end
 
+  defp generated_style_module(style_specs) do
+    """
+    #[cfg(feature = "real-gpui")]
+    pub(crate) mod generated_styles {
+        use super::*;
+
+    #{indent_generated(generated_style_struct(style_specs))}
+
+    #{indent_generated(generated_apply_style_function(style_specs))}
+
+    #{indent_generated(generated_apply_render_style_function(style_specs))}
+    }
+
+    #[cfg(feature = "real-gpui")]
+    pub(crate) use generated_styles::{apply_generated_render_styles, apply_generated_style_attr, StyleAttrs};
+    """
+  end
+
+  defp generated_resource_module(resource_specs) do
+    """
+    #[cfg(feature = "real-gpui")]
+    pub(crate) mod generated_resources {
+        use super::*;
+
+    #{indent_generated(generated_decoded_resource_structs(resource_specs))}
+
+    #{indent_generated(generated_decode_resource_functions(resource_specs))}
+    }
+
+    #[cfg(feature = "real-gpui")]
+    pub(crate) use generated_resources::{decode_generated_raster_resource, GeneratedRaster};
+    """
+  end
+
+  defp generated_event_module(components) do
+    """
+    #[cfg(feature = "real-gpui")]
+    pub(crate) mod generated_events {
+        use super::*;
+
+    #{indent_generated(generated_event_applicators(components))}
+    }
+
+    #[cfg(feature = "real-gpui")]
+    pub(crate) use generated_events::{apply_generated_click_event, apply_generated_input_events};
+    """
+  end
+
+  defp generated_component_module(components) do
+    """
+    #[cfg(feature = "real-gpui")]
+    pub(crate) mod generated_components {
+        use super::*;
+
+    #{indent_generated(generated_decoded_component_structs(components))}
+
+    #{indent_generated(generated_decode_component_functions(components))}
+
+    #{indent_generated(generated_primitive_render_contracts(components))}
+
+    #{indent_generated(generated_render_dispatch())}
+    }
+
+    #[cfg(feature = "real-gpui")]
+    pub(crate) use generated_components::{decode_generated_button, decode_generated_div, decode_generated_img, decode_generated_input, decode_generated_text, render_generated_element_node};
+    """
+  end
+
+  defp indent_generated(code) do
+    code
+    |> String.trim_trailing()
+    |> String.split("\n")
+    |> Enum.map_join("\n", &["    ", &1])
+  end
+
   defp generated_style_struct(style_specs) do
     Rust.struct(:StyleAttrs,
+      vis: :crate,
       derive: [:Clone, :Debug, :Default],
       attrs: [~s|cfg(feature = "real-gpui")|],
       fields:
         Enum.map(style_specs, fn spec ->
-          Rust.field(spec.field, rust_style_type(spec.type))
+          Rust.field(spec.field, rust_style_type(spec.type), vis: :crate)
         end)
     )
     |> Rust.to_fragment()
@@ -452,6 +516,8 @@ defmodule GPUI.Codegen do
             "gpui-elixir-input-{window_id}-{}",
             change.clone().unwrap_or_default()
         ));
+        let local_value = std::sync::Arc::new(std::sync::Mutex::new(value.clone()));
+        let change_for_keys = change.clone();
 
         if let Some(event) = change {
             let runtime_for_change = runtime.clone();
@@ -471,19 +537,37 @@ defmodule GPUI.Codegen do
 
         if let Some(event) = keydown {
             let runtime_for_keydown = runtime.clone();
+            let runtime_for_change = runtime.clone();
+            let local_value_for_keydown = local_value.clone();
+            let change_for_keydown = change_for_keys.clone();
             element = element.on_key_down(move |key_event, _window, _cx| {
-                let value = key_event
+                let key_value = key_event
                     .keystroke
                     .key_char
                     .clone()
                     .or_else(|| Some(key_event.keystroke.key.clone()));
+
+                if let Some(updated_value) = mutate_generated_input_value(&local_value_for_keydown, &key_event.keystroke) {
+                    if let Some(change_event) = change_for_keydown.as_ref() {
+                        let _ = push_event(
+                            &runtime_for_change,
+                            NativeEvent::Input {
+                                kind: "change".to_string(),
+                                window_id,
+                                event: change_event.clone(),
+                                value: Some(updated_value),
+                            },
+                        );
+                    }
+                }
+
                 let _ = push_event(
                     &runtime_for_keydown,
                     NativeEvent::Input {
                         kind: "keydown".to_string(),
                         window_id,
                         event: event.clone(),
-                        value,
+                        value: key_value,
                     },
                 );
             });
@@ -510,6 +594,30 @@ defmodule GPUI.Codegen do
         }
 
         element.into_any_element()
+    }
+
+    #[cfg(feature = "real-gpui")]
+    pub(crate) fn mutate_generated_input_value(
+        value: &std::sync::Arc<std::sync::Mutex<String>>,
+        keystroke: &gpui::Keystroke,
+    ) -> Option<String> {
+        let mut value = value.lock().ok()?;
+
+        match keystroke.key.as_str() {
+            "backspace" | "Backspace" => {
+                value.pop()?;
+                Some(value.clone())
+            }
+            "delete" | "Delete" => Some(value.clone()),
+            _ => {
+                let key_char = keystroke.key_char.as_deref()?;
+                if key_char.chars().any(|character| character.is_control()) {
+                    return None;
+                }
+                value.push_str(key_char);
+                Some(value.clone())
+            }
+        }
     }
     """
   end

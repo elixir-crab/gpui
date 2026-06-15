@@ -15,24 +15,128 @@ pub enum GeneratedComponentKind {
 }
 
 
-#[derive(Clone, Debug, Default)]
 #[cfg(feature = "real-gpui")]
-struct StyleAttrs {
-display_flex: bool,
-flex_direction: Option<String>,
-align_items: Option<String>,
-justify_content: Option<String>,
-background: Option<u32>,
-color: Option<u32>,
-font_size: Option<f32>,
-gap: Option<f32>,
-padding: Option<f32>,
-margin: Option<f32>,
-width: Option<f32>,
-height: Option<f32>,
-border_radius: Option<f32>,
-border_width: Option<f32>,
+pub(crate) mod generated_styles {
+    use super::*;
+
+    #[derive(Clone, Debug, Default)]
+    #[cfg(feature = "real-gpui")]
+    pub(crate) struct StyleAttrs {
+    pub(crate) display_flex: bool,
+    pub(crate) flex_direction: Option<String>,
+    pub(crate) align_items: Option<String>,
+    pub(crate) justify_content: Option<String>,
+    pub(crate) background: Option<u32>,
+    pub(crate) color: Option<u32>,
+    pub(crate) font_size: Option<f32>,
+    pub(crate) gap: Option<f32>,
+    pub(crate) padding: Option<f32>,
+    pub(crate) margin: Option<f32>,
+    pub(crate) width: Option<f32>,
+    pub(crate) height: Option<f32>,
+    pub(crate) border_radius: Option<f32>,
+    pub(crate) border_width: Option<f32>,
+    }
+
+    #[cfg(feature = "real-gpui")]
+    pub(crate) fn apply_generated_style_attr(attrs: &mut StyleAttrs, key: &str, value: Term) {
+        match key {
+                "display" => attrs.display_flex = atom_eq(value, "flex"),
+                "flex_direction" => attrs.flex_direction = atom_string(value),
+                "align_items" => attrs.align_items = atom_string(value),
+                "justify_content" => attrs.justify_content = atom_string(value),
+                "background" => attrs.background = rgb_value(value),
+                "color" => attrs.color = rgb_value(value),
+                "font_size" => attrs.font_size = px_value(value),
+                "gap" => attrs.gap = px_value(value),
+                "padding" => attrs.padding = px_value(value),
+                "margin" => attrs.margin = px_value(value),
+                "width" => attrs.width = px_value(value),
+                "height" => attrs.height = px_value(value),
+                "border_radius" => attrs.border_radius = radius_value(value),
+                "border_width" => attrs.border_width = px_value(value),
+            _ => {}
+        }
+    
+    }
+
+    #[cfg(feature = "real-gpui")]
+    pub(crate) fn apply_generated_render_styles(element: gpui::Div, style: StyleAttrs) -> gpui::Div {
+        use gpui::{px, rgb, Styled};
+    
+        let mut element = element;
+        if style.display_flex {
+            element = element.flex();
+        }
+    
+        match style.flex_direction.as_deref() {
+                Some("column") => element = element.flex_col(),
+                Some("row") => element = element.flex_row(),
+            _ => {}
+        }
+    
+        match style.align_items.as_deref() {
+                Some("center") => element = element.items_center(),
+                Some("start") => element = element.items_start(),
+                Some("end") => element = element.items_end(),
+            _ => {}
+        }
+    
+        match style.justify_content.as_deref() {
+                Some("center") => element = element.justify_center(),
+                Some("start") => element = element.justify_start(),
+                Some("end") => element = element.justify_end(),
+            _ => {}
+        }
+    
+        if let Some(value) = style.background {
+            element = element.bg(rgb(value));
+        }
+    
+        if let Some(value) = style.color {
+            element = element.text_color(rgb(value));
+        }
+    
+        if let Some(value) = style.font_size {
+            element = element.text_size(px(value));
+        }
+    
+        if let Some(value) = style.gap {
+            element = element.gap(px(value));
+        }
+    
+        if let Some(value) = style.padding {
+            element = element.p(px(value));
+        }
+    
+        if let Some(value) = style.margin {
+            element = element.m(px(value));
+        }
+    
+        if let Some(value) = style.width {
+            element = element.w(px(value));
+        }
+    
+        if let Some(value) = style.height {
+            element = element.h(px(value));
+        }
+    
+        if let Some(value) = style.border_radius {
+            element = element.rounded(px(value));
+        }
+    
+        if let Some(value) = style.border_width {
+            element = element.border(px(value));
+        }
+    
+        element
+    
+    }
 }
+
+#[cfg(feature = "real-gpui")]
+pub(crate) use generated_styles::{apply_generated_render_styles, apply_generated_style_attr, StyleAttrs};
+
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GeneratedElementTag {
@@ -91,388 +195,362 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
     }
 }
 
-#[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
-#[allow(dead_code)]
-pub(crate) struct GeneratedRaster {
-pub(crate) width: u32,
-pub(crate) height: u32,
-pub(crate) format: String,
-pub(crate) stride: Option<u32>,
-pub(crate) data: Vec<u8>,
-}
+pub(crate) mod generated_resources {
+    use super::*;
 
-#[derive(Clone, Debug)]
-#[cfg(feature = "real-gpui")]
-#[allow(dead_code)]
-pub(crate) struct GeneratedResourceRef {
-pub(crate) id: String,
-pub(crate) type_: String,
-}
-
-#[cfg(feature = "real-gpui")]
-#[allow(dead_code)]
-pub(crate) fn decode_generated_raster_resource(term: Term) -> NifResult<GeneratedRaster> {
-    let env = term.get_env();
-    Ok(GeneratedRaster {
-        width: term.map_get(Atom::from_bytes(env, b"width")?)?.decode::<u32>()?,
-        height: term.map_get(Atom::from_bytes(env, b"height")?)?.decode::<u32>()?,
-        format: term
-            .map_get(Atom::from_bytes(env, b"format")?)?
-            .atom_to_string()
-            .unwrap_or_else(|_| "rgba8".to_string()),
-        stride: optional_u32(term.map_get(Atom::from_bytes(env, b"stride")?).ok()),
-        data: term
-            .map_get(Atom::from_bytes(env, b"data")?)?
-            .decode::<rustler::Binary>()?
-            .as_slice()
-            .to_vec(),
-    })
-
-}
-
-#[cfg(feature = "real-gpui")]
-#[allow(dead_code)]
-pub(crate) fn decode_generated_resource_ref_resource(term: Term) -> NifResult<GeneratedResourceRef> {
-    let env = term.get_env();
-    Ok(GeneratedResourceRef {
-        id: term.map_get(Atom::from_bytes(env, b"id")?)?.decode::<String>()?,
-        type_: term.map_get(Atom::from_bytes(env, b"type")?)?.atom_to_string().unwrap_or_default(),
-    })
-
-}
-
-#[derive(Clone, Debug)]
-#[cfg(feature = "real-gpui")]
-pub(crate) struct GeneratedDiv {
-pub(crate) style: StyleAttrs,
-pub(crate) children: Vec<ElementNode>,
-pub(crate) click: Option<String>,
-}
-
-#[derive(Clone, Debug)]
-#[cfg(feature = "real-gpui")]
-pub(crate) struct GeneratedButton {
-pub(crate) style: StyleAttrs,
-pub(crate) children: Vec<ElementNode>,
-pub(crate) click: Option<String>,
-}
-
-#[derive(Clone, Debug)]
-#[cfg(feature = "real-gpui")]
-pub(crate) struct GeneratedInput {
-pub(crate) style: StyleAttrs,
-pub(crate) value: String,
-pub(crate) placeholder: Option<String>,
-pub(crate) change: Option<String>,
-pub(crate) keydown: Option<String>,
-pub(crate) keyup: Option<String>,
-}
-
-#[derive(Clone, Debug)]
-#[cfg(feature = "real-gpui")]
-pub(crate) struct GeneratedImg {
-pub(crate) raster: RasterData,
-}
-
-#[derive(Clone, Debug)]
-#[cfg(feature = "real-gpui")]
-pub(crate) struct GeneratedText {
-pub(crate) text: String,
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_div(term: Term) -> NifResult<GeneratedDiv> {
-      Ok(GeneratedDiv {
-          style: decode_style(term).unwrap_or_default(),
-          children: decode_children(term).unwrap_or_default(),
-          click: generated_string_attr(term, "phx-click"),
-      })
-
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_button(term: Term) -> NifResult<GeneratedButton> {
-      Ok(GeneratedButton {
-          style: decode_style(term).unwrap_or_default(),
-          children: decode_children(term).unwrap_or_default(),
-          click: generated_string_attr(term, "phx-click"),
-      })
-
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_input(term: Term) -> NifResult<GeneratedInput> {
-      Ok(GeneratedInput {
-          style: decode_style(term).unwrap_or_default(),
-          value: generated_string_attr(term, "value").unwrap_or_default(),
-          placeholder: generated_string_attr(term, "placeholder"),
-          change: generated_string_attr(term, "phx-change"),
-          keydown: generated_string_attr(term, "phx-keydown"),
-          keyup: generated_string_attr(term, "phx-keyup"),
-      })
-
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_img(term: Term) -> NifResult<GeneratedImg> {
-      Ok(GeneratedImg {
-          raster: decode_raster(term)?,
-      })
-
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_text(term: Term) -> NifResult<GeneratedText> {
-      Ok(GeneratedText {
-          text: decode_text_children(term).unwrap_or_default(),
-      })
-
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn apply_generated_style_attr(attrs: &mut StyleAttrs, key: &str, value: Term) {
-    match key {
-            "display" => attrs.display_flex = atom_eq(value, "flex"),
-            "flex_direction" => attrs.flex_direction = atom_string(value),
-            "align_items" => attrs.align_items = atom_string(value),
-            "justify_content" => attrs.justify_content = atom_string(value),
-            "background" => attrs.background = rgb_value(value),
-            "color" => attrs.color = rgb_value(value),
-            "font_size" => attrs.font_size = px_value(value),
-            "gap" => attrs.gap = px_value(value),
-            "padding" => attrs.padding = px_value(value),
-            "margin" => attrs.margin = px_value(value),
-            "width" => attrs.width = px_value(value),
-            "height" => attrs.height = px_value(value),
-            "border_radius" => attrs.border_radius = radius_value(value),
-            "border_width" => attrs.border_width = px_value(value),
-        _ => {}
+    #[derive(Clone, Debug)]
+    #[cfg(feature = "real-gpui")]
+    #[allow(dead_code)]
+    pub(crate) struct GeneratedRaster {
+    pub(crate) width: u32,
+    pub(crate) height: u32,
+    pub(crate) format: String,
+    pub(crate) stride: Option<u32>,
+    pub(crate) data: Vec<u8>,
+    }
+    
+    #[derive(Clone, Debug)]
+    #[cfg(feature = "real-gpui")]
+    #[allow(dead_code)]
+    pub(crate) struct GeneratedResourceRef {
+    pub(crate) id: String,
+    pub(crate) type_: String,
     }
 
+    #[cfg(feature = "real-gpui")]
+    #[allow(dead_code)]
+    pub(crate) fn decode_generated_raster_resource(term: Term) -> NifResult<GeneratedRaster> {
+        let env = term.get_env();
+        Ok(GeneratedRaster {
+            width: term.map_get(Atom::from_bytes(env, b"width")?)?.decode::<u32>()?,
+            height: term.map_get(Atom::from_bytes(env, b"height")?)?.decode::<u32>()?,
+            format: term
+                .map_get(Atom::from_bytes(env, b"format")?)?
+                .atom_to_string()
+                .unwrap_or_else(|_| "rgba8".to_string()),
+            stride: optional_u32(term.map_get(Atom::from_bytes(env, b"stride")?).ok()),
+            data: term
+                .map_get(Atom::from_bytes(env, b"data")?)?
+                .decode::<rustler::Binary>()?
+                .as_slice()
+                .to_vec(),
+        })
+    
+    }
+    
+    #[cfg(feature = "real-gpui")]
+    #[allow(dead_code)]
+    pub(crate) fn decode_generated_resource_ref_resource(term: Term) -> NifResult<GeneratedResourceRef> {
+        let env = term.get_env();
+        Ok(GeneratedResourceRef {
+            id: term.map_get(Atom::from_bytes(env, b"id")?)?.decode::<String>()?,
+            type_: term.map_get(Atom::from_bytes(env, b"type")?)?.atom_to_string().unwrap_or_default(),
+        })
+    
+    }
 }
 
 #[cfg(feature = "real-gpui")]
-pub(crate) fn apply_generated_render_styles(element: gpui::Div, style: StyleAttrs) -> gpui::Div {
-    use gpui::{px, rgb, Styled};
+pub(crate) use generated_resources::{decode_generated_raster_resource, GeneratedRaster};
 
-    let mut element = element;
-    if style.display_flex {
-        element = element.flex();
-    }
-
-    match style.flex_direction.as_deref() {
-            Some("column") => element = element.flex_col(),
-            Some("row") => element = element.flex_row(),
-        _ => {}
-    }
-
-    match style.align_items.as_deref() {
-            Some("center") => element = element.items_center(),
-            Some("start") => element = element.items_start(),
-            Some("end") => element = element.items_end(),
-        _ => {}
-    }
-
-    match style.justify_content.as_deref() {
-            Some("center") => element = element.justify_center(),
-            Some("start") => element = element.justify_start(),
-            Some("end") => element = element.justify_end(),
-        _ => {}
-    }
-
-    if let Some(value) = style.background {
-        element = element.bg(rgb(value));
-    }
-
-    if let Some(value) = style.color {
-        element = element.text_color(rgb(value));
-    }
-
-    if let Some(value) = style.font_size {
-        element = element.text_size(px(value));
-    }
-
-    if let Some(value) = style.gap {
-        element = element.gap(px(value));
-    }
-
-    if let Some(value) = style.padding {
-        element = element.p(px(value));
-    }
-
-    if let Some(value) = style.margin {
-        element = element.m(px(value));
-    }
-
-    if let Some(value) = style.width {
-        element = element.w(px(value));
-    }
-
-    if let Some(value) = style.height {
-        element = element.h(px(value));
-    }
-
-    if let Some(value) = style.border_radius {
-        element = element.rounded(px(value));
-    }
-
-    if let Some(value) = style.border_width {
-        element = element.border(px(value));
-    }
-
-    element
-
-}
 
 #[cfg(feature = "real-gpui")]
-pub(crate) fn apply_generated_click_event(
-    element: gpui::Div,
-    event: Option<String>,
-    runtime: ResourceArc<RuntimeResource>,
-    window_id: u64,
-) -> gpui::AnyElement {
-    use gpui::{InteractiveElement, IntoElement, StatefulInteractiveElement};
+pub(crate) mod generated_events {
+    use super::*;
 
-    if let Some(event) = event {
-        let runtime_for_click = runtime.clone();
-        let element_id = format!("gpui-elixir-click-{window_id}-{event}");
-
-        element.id(element_id).on_click(move |_event, _window, _cx| {
-            let _ = push_event(
-                &runtime_for_click,
-                NativeEvent::Click { window_id, event: event.clone() },
-            );
-        }).into_any_element()
-    } else {
+    #[cfg(feature = "real-gpui")]
+    pub(crate) fn apply_generated_click_event(
+        element: gpui::Div,
+        event: Option<String>,
+        runtime: ResourceArc<RuntimeResource>,
+        window_id: u64,
+    ) -> gpui::AnyElement {
+        use gpui::{InteractiveElement, IntoElement, StatefulInteractiveElement};
+    
+        if let Some(event) = event {
+            let runtime_for_click = runtime.clone();
+            let element_id = format!("gpui-elixir-click-{window_id}-{event}");
+    
+            element.id(element_id).on_click(move |_event, _window, _cx| {
+                let _ = push_event(
+                    &runtime_for_click,
+                    NativeEvent::Click { window_id, event: event.clone() },
+                );
+            }).into_any_element()
+        } else {
+            element.into_any_element()
+        }
+    }
+    
+    #[cfg(feature = "real-gpui")]
+    pub(crate) fn apply_generated_input_events(
+        element: gpui::Div,
+        value: String,
+        change: Option<String>,
+        keydown: Option<String>,
+        keyup: Option<String>,
+        runtime: ResourceArc<RuntimeResource>,
+        window_id: u64,
+    ) -> gpui::AnyElement {
+        use gpui::{InteractiveElement, IntoElement, StatefulInteractiveElement};
+    
+        let mut element = element.id(format!(
+            "gpui-elixir-input-{window_id}-{}",
+            change.clone().unwrap_or_default()
+        ));
+        let local_value = std::sync::Arc::new(std::sync::Mutex::new(value.clone()));
+        let change_for_keys = change.clone();
+    
+        if let Some(event) = change {
+            let runtime_for_change = runtime.clone();
+            let value_for_change = value.clone();
+            element = element.on_click(move |_event, _window, _cx| {
+                let _ = push_event(
+                    &runtime_for_change,
+                    NativeEvent::Input {
+                        kind: "change".to_string(),
+                        window_id,
+                        event: event.clone(),
+                        value: Some(value_for_change.clone()),
+                    },
+                );
+            });
+        }
+    
+        if let Some(event) = keydown {
+            let runtime_for_keydown = runtime.clone();
+            let runtime_for_change = runtime.clone();
+            let local_value_for_keydown = local_value.clone();
+            let change_for_keydown = change_for_keys.clone();
+            element = element.on_key_down(move |key_event, _window, _cx| {
+                let key_value = key_event
+                    .keystroke
+                    .key_char
+                    .clone()
+                    .or_else(|| Some(key_event.keystroke.key.clone()));
+    
+                if let Some(updated_value) = mutate_generated_input_value(&local_value_for_keydown, &key_event.keystroke) {
+                    if let Some(change_event) = change_for_keydown.as_ref() {
+                        let _ = push_event(
+                            &runtime_for_change,
+                            NativeEvent::Input {
+                                kind: "change".to_string(),
+                                window_id,
+                                event: change_event.clone(),
+                                value: Some(updated_value),
+                            },
+                        );
+                    }
+                }
+    
+                let _ = push_event(
+                    &runtime_for_keydown,
+                    NativeEvent::Input {
+                        kind: "keydown".to_string(),
+                        window_id,
+                        event: event.clone(),
+                        value: key_value,
+                    },
+                );
+            });
+        }
+    
+        if let Some(event) = keyup {
+            let runtime_for_keyup = runtime.clone();
+            element = element.on_key_up(move |key_event, _window, _cx| {
+                let value = key_event
+                    .keystroke
+                    .key_char
+                    .clone()
+                    .or_else(|| Some(key_event.keystroke.key.clone()));
+                let _ = push_event(
+                    &runtime_for_keyup,
+                    NativeEvent::Input {
+                        kind: "keyup".to_string(),
+                        window_id,
+                        event: event.clone(),
+                        value,
+                    },
+                );
+            });
+        }
+    
         element.into_any_element()
     }
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn apply_generated_input_events(
-    element: gpui::Div,
-    value: String,
-    change: Option<String>,
-    keydown: Option<String>,
-    keyup: Option<String>,
-    runtime: ResourceArc<RuntimeResource>,
-    window_id: u64,
-) -> gpui::AnyElement {
-    use gpui::{InteractiveElement, IntoElement, StatefulInteractiveElement};
-
-    let mut element = element.id(format!(
-        "gpui-elixir-input-{window_id}-{}",
-        change.clone().unwrap_or_default()
-    ));
-
-    if let Some(event) = change {
-        let runtime_for_change = runtime.clone();
-        let value_for_change = value.clone();
-        element = element.on_click(move |_event, _window, _cx| {
-            let _ = push_event(
-                &runtime_for_change,
-                NativeEvent::Input {
-                    kind: "change".to_string(),
-                    window_id,
-                    event: event.clone(),
-                    value: Some(value_for_change.clone()),
-                },
-            );
-        });
-    }
-
-    if let Some(event) = keydown {
-        let runtime_for_keydown = runtime.clone();
-        element = element.on_key_down(move |key_event, _window, _cx| {
-            let value = key_event
-                .keystroke
-                .key_char
-                .clone()
-                .or_else(|| Some(key_event.keystroke.key.clone()));
-            let _ = push_event(
-                &runtime_for_keydown,
-                NativeEvent::Input {
-                    kind: "keydown".to_string(),
-                    window_id,
-                    event: event.clone(),
-                    value,
-                },
-            );
-        });
-    }
-
-    if let Some(event) = keyup {
-        let runtime_for_keyup = runtime.clone();
-        element = element.on_key_up(move |key_event, _window, _cx| {
-            let value = key_event
-                .keystroke
-                .key_char
-                .clone()
-                .or_else(|| Some(key_event.keystroke.key.clone()));
-            let _ = push_event(
-                &runtime_for_keyup,
-                NativeEvent::Input {
-                    kind: "keyup".to_string(),
-                    window_id,
-                    event: event.clone(),
-                    value,
-                },
-            );
-        });
-    }
-
-    element.into_any_element()
-}
-
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn render_generated_text_component(text: String) -> gpui::AnyElement {
-    render_generated_text_primitive(text)
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn render_generated_image_component(raster: RasterData) -> gpui::AnyElement {
-    render_generated_image_primitive(raster)
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn render_generated_input_component(
-    style: StyleAttrs,
-    value: String,
-    placeholder: Option<String>,
-    change: Option<String>,
-    keydown: Option<String>,
-    keyup: Option<String>,
-    runtime: ResourceArc<RuntimeResource>,
-    window_id: u64,
-) -> gpui::AnyElement {
-    render_generated_input_primitive(style, value, placeholder, change, keydown, keyup, runtime, window_id)
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn render_generated_container_component(
-    style: StyleAttrs,
-    children: Vec<ElementNode>,
-    click: Option<String>,
-    runtime: ResourceArc<RuntimeResource>,
-    window_id: u64,
-) -> gpui::AnyElement {
-    render_generated_container_primitive(style, children, click, runtime, window_id)
-}
-
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn render_generated_element_node(node: ElementNode, runtime: ResourceArc<RuntimeResource>, window_id: u64) -> gpui::AnyElement {
-    match node {
-        ElementNode::Text(text) => render_generated_text_component(text),
-        ElementNode::Image(raster) => render_generated_image_component(raster),
-        ElementNode::Input { style, value, placeholder, change, keydown, keyup } => {
-            render_generated_input_component(style, value, placeholder, change, keydown, keyup, runtime, window_id)
-        }
-        ElementNode::Div { style, children, click } => {
-            render_generated_container_component(style, children, click, runtime, window_id)
+    
+    #[cfg(feature = "real-gpui")]
+    pub(crate) fn mutate_generated_input_value(
+        value: &std::sync::Arc<std::sync::Mutex<String>>,
+        keystroke: &gpui::Keystroke,
+    ) -> Option<String> {
+        let mut value = value.lock().ok()?;
+    
+        match keystroke.key.as_str() {
+            "backspace" | "Backspace" => {
+                value.pop()?;
+                Some(value.clone())
+            }
+            "delete" | "Delete" => Some(value.clone()),
+            _ => {
+                let key_char = keystroke.key_char.as_deref()?;
+                if key_char.chars().any(|character| character.is_control()) {
+                    return None;
+                }
+                value.push_str(key_char);
+                Some(value.clone())
+            }
         }
     }
-
 }
+
+#[cfg(feature = "real-gpui")]
+pub(crate) use generated_events::{apply_generated_click_event, apply_generated_input_events};
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) mod generated_components {
+    use super::*;
+
+    #[derive(Clone, Debug)]
+    #[cfg(feature = "real-gpui")]
+    pub(crate) struct GeneratedDiv {
+    pub(crate) style: StyleAttrs,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) click: Option<String>,
+    }
+    
+    #[derive(Clone, Debug)]
+    #[cfg(feature = "real-gpui")]
+    pub(crate) struct GeneratedButton {
+    pub(crate) style: StyleAttrs,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) click: Option<String>,
+    }
+    
+    #[derive(Clone, Debug)]
+    #[cfg(feature = "real-gpui")]
+    pub(crate) struct GeneratedInput {
+    pub(crate) style: StyleAttrs,
+    pub(crate) value: String,
+    pub(crate) placeholder: Option<String>,
+    pub(crate) change: Option<String>,
+    pub(crate) keydown: Option<String>,
+    pub(crate) keyup: Option<String>,
+    }
+    
+    #[derive(Clone, Debug)]
+    #[cfg(feature = "real-gpui")]
+    pub(crate) struct GeneratedImg {
+    pub(crate) raster: RasterData,
+    }
+    
+    #[derive(Clone, Debug)]
+    #[cfg(feature = "real-gpui")]
+    pub(crate) struct GeneratedText {
+    pub(crate) text: String,
+    }
+
+    #[cfg(feature = "real-gpui")]
+    pub(crate) fn decode_generated_div(term: Term) -> NifResult<GeneratedDiv> {
+          Ok(GeneratedDiv {
+              style: decode_style(term).unwrap_or_default(),
+              children: decode_children(term).unwrap_or_default(),
+              click: generated_string_attr(term, "phx-click"),
+          })
+    
+    }
+    
+    #[cfg(feature = "real-gpui")]
+    pub(crate) fn decode_generated_button(term: Term) -> NifResult<GeneratedButton> {
+          Ok(GeneratedButton {
+              style: decode_style(term).unwrap_or_default(),
+              children: decode_children(term).unwrap_or_default(),
+              click: generated_string_attr(term, "phx-click"),
+          })
+    
+    }
+    
+    #[cfg(feature = "real-gpui")]
+    pub(crate) fn decode_generated_input(term: Term) -> NifResult<GeneratedInput> {
+          Ok(GeneratedInput {
+              style: decode_style(term).unwrap_or_default(),
+              value: generated_string_attr(term, "value").unwrap_or_default(),
+              placeholder: generated_string_attr(term, "placeholder"),
+              change: generated_string_attr(term, "phx-change"),
+              keydown: generated_string_attr(term, "phx-keydown"),
+              keyup: generated_string_attr(term, "phx-keyup"),
+          })
+    
+    }
+    
+    #[cfg(feature = "real-gpui")]
+    pub(crate) fn decode_generated_img(term: Term) -> NifResult<GeneratedImg> {
+          Ok(GeneratedImg {
+              raster: decode_raster(term)?,
+          })
+    
+    }
+    
+    #[cfg(feature = "real-gpui")]
+    pub(crate) fn decode_generated_text(term: Term) -> NifResult<GeneratedText> {
+          Ok(GeneratedText {
+              text: decode_text_children(term).unwrap_or_default(),
+          })
+    
+    }
+
+    #[cfg(feature = "real-gpui")]
+    pub(crate) fn render_generated_text_component(text: String) -> gpui::AnyElement {
+        render_generated_text_primitive(text)
+    }
+    
+    #[cfg(feature = "real-gpui")]
+    pub(crate) fn render_generated_image_component(raster: RasterData) -> gpui::AnyElement {
+        render_generated_image_primitive(raster)
+    }
+    
+    #[cfg(feature = "real-gpui")]
+    pub(crate) fn render_generated_input_component(
+        style: StyleAttrs,
+        value: String,
+        placeholder: Option<String>,
+        change: Option<String>,
+        keydown: Option<String>,
+        keyup: Option<String>,
+        runtime: ResourceArc<RuntimeResource>,
+        window_id: u64,
+    ) -> gpui::AnyElement {
+        render_generated_input_primitive(style, value, placeholder, change, keydown, keyup, runtime, window_id)
+    }
+    
+    #[cfg(feature = "real-gpui")]
+    pub(crate) fn render_generated_container_component(
+        style: StyleAttrs,
+        children: Vec<ElementNode>,
+        click: Option<String>,
+        runtime: ResourceArc<RuntimeResource>,
+        window_id: u64,
+    ) -> gpui::AnyElement {
+        render_generated_container_primitive(style, children, click, runtime, window_id)
+    }
+
+    #[cfg(feature = "real-gpui")]
+    pub(crate) fn render_generated_element_node(node: ElementNode, runtime: ResourceArc<RuntimeResource>, window_id: u64) -> gpui::AnyElement {
+        match node {
+            ElementNode::Text(text) => render_generated_text_component(text),
+            ElementNode::Image(raster) => render_generated_image_component(raster),
+            ElementNode::Input { style, value, placeholder, change, keydown, keyup } => {
+                render_generated_input_component(style, value, placeholder, change, keydown, keyup, runtime, window_id)
+            }
+            ElementNode::Div { style, children, click } => {
+                render_generated_container_component(style, children, click, runtime, window_id)
+            }
+        }
+    
+    }
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) use generated_components::{decode_generated_button, decode_generated_div, decode_generated_img, decode_generated_input, decode_generated_text, render_generated_element_node};
+
