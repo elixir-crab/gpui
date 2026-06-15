@@ -469,6 +469,126 @@ impl From<GeneratedRaster> for RasterData {
 }
 
 #[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+struct NativeTextInput {
+    id: String,
+    runtime: ResourceArc<RuntimeResource>,
+    selected_range: std::ops::Range<usize>,
+    marked_range: Option<std::ops::Range<usize>>,
+}
+
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+impl NativeTextInput {
+    fn value(&self) -> String {
+        self.runtime
+            .input_values
+            .lock()
+            .ok()
+            .and_then(|values| values.get(&self.id).cloned())
+            .unwrap_or_default()
+    }
+
+    fn replace_value(&mut self, range: std::ops::Range<usize>, text: &str) {
+        if let Ok(mut values) = self.runtime.input_values.lock() {
+            let value = values.entry(self.id.clone()).or_default();
+            let start = range.start.min(value.len());
+            let end = range.end.min(value.len());
+            value.replace_range(start..end, text);
+            self.selected_range = start + text.len()..start + text.len();
+        }
+    }
+}
+
+#[cfg(feature = "real-gpui")]
+impl gpui::EntityInputHandler for NativeTextInput {
+    fn text_for_range(
+        &mut self,
+        range: std::ops::Range<usize>,
+        adjusted_range: &mut Option<std::ops::Range<usize>>,
+        _window: &mut gpui::Window,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Option<String> {
+        let value = self.value();
+        let start = range.start.min(value.len());
+        let end = range.end.min(value.len());
+        adjusted_range.replace(start..end);
+        Some(value[start..end].to_string())
+    }
+
+    fn selected_text_range(
+        &mut self,
+        _ignore_disabled_input: bool,
+        _window: &mut gpui::Window,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Option<gpui::UTF16Selection> {
+        Some(gpui::UTF16Selection { range: self.selected_range.clone(), reversed: false })
+    }
+
+    fn marked_text_range(
+        &self,
+        _window: &mut gpui::Window,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Option<std::ops::Range<usize>> {
+        self.marked_range.clone()
+    }
+
+    fn unmark_text(&mut self, _window: &mut gpui::Window, _cx: &mut gpui::Context<Self>) {
+        self.marked_range = None;
+    }
+
+    fn replace_text_in_range(
+        &mut self,
+        range: Option<std::ops::Range<usize>>,
+        text: &str,
+        _window: &mut gpui::Window,
+        cx: &mut gpui::Context<Self>,
+    ) {
+        let range = range.or_else(|| self.marked_range.clone()).unwrap_or_else(|| self.selected_range.clone());
+        self.replace_value(range, text);
+        self.marked_range = None;
+        cx.notify();
+    }
+
+    fn replace_and_mark_text_in_range(
+        &mut self,
+        range: Option<std::ops::Range<usize>>,
+        new_text: &str,
+        new_selected_range: Option<std::ops::Range<usize>>,
+        _window: &mut gpui::Window,
+        cx: &mut gpui::Context<Self>,
+    ) {
+        let range = range.or_else(|| self.marked_range.clone()).unwrap_or_else(|| self.selected_range.clone());
+        let start = range.start;
+        self.replace_value(range, new_text);
+        self.marked_range = if new_text.is_empty() { None } else { Some(start..start + new_text.len()) };
+        if let Some(selection) = new_selected_range {
+            self.selected_range = start + selection.start..start + selection.end;
+        }
+        cx.notify();
+    }
+
+    fn bounds_for_range(
+        &mut self,
+        _range_utf16: std::ops::Range<usize>,
+        element_bounds: gpui::Bounds<gpui::Pixels>,
+        _window: &mut gpui::Window,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Option<gpui::Bounds<gpui::Pixels>> {
+        Some(element_bounds)
+    }
+
+    fn character_index_for_point(
+        &mut self,
+        _point: gpui::Point<gpui::Pixels>,
+        _window: &mut gpui::Window,
+        _cx: &mut gpui::Context<Self>,
+    ) -> Option<usize> {
+        Some(self.selected_range.end)
+    }
+}
+
+#[cfg(feature = "real-gpui")]
 impl RasterData {
     fn validate(&self) -> NifResult<()> {
         if self.width == 0 || self.height == 0 {

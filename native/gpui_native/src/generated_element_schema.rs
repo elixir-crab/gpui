@@ -235,32 +235,35 @@ pub(crate) mod generated_resources {
     #[cfg(feature = "real-gpui")]
     #[allow(dead_code)]
     pub(crate) fn decode_generated_raster_resource(term: Term) -> NifResult<GeneratedRaster> {
-        let env = term.get_env();
-        Ok(GeneratedRaster {
-            width: term.map_get(Atom::from_bytes(env, b"width")?)?.decode::<u32>()?,
-            height: term.map_get(Atom::from_bytes(env, b"height")?)?.decode::<u32>()?,
-            format: term
-                .map_get(Atom::from_bytes(env, b"format")?)?
-                .atom_to_string()
-                .unwrap_or_else(|_| "rgba8".to_string()),
-            stride: optional_u32(term.map_get(Atom::from_bytes(env, b"stride")?).ok()),
-            data: term
-                .map_get(Atom::from_bytes(env, b"data")?)?
-                .decode::<rustler::Binary>()?
-                .as_slice()
-                .to_vec(),
-        })
+    let env = term.get_env();
+    Ok(GeneratedRaster {
+        width: term.map_get(Atom::from_bytes(env, b"width")?)?.decode::<u32>()?,
+        height: term.map_get(Atom::from_bytes(env, b"height")?)?.decode::<u32>()?,
+        format: term
+            .map_get(Atom::from_bytes(env, b"format")?)?
+            .atom_to_string()
+            .unwrap_or_else(|_| "rgba8".to_string()),
+        stride: optional_u32(term.map_get(Atom::from_bytes(env, b"stride")?).ok()),
+        data: term
+            .map_get(Atom::from_bytes(env, b"data")?)?
+            .decode::<rustler::Binary>()?
+            .as_slice()
+            .to_vec(),
+    })
     
     }
     
     #[cfg(feature = "real-gpui")]
     #[allow(dead_code)]
     pub(crate) fn decode_generated_resource_ref_resource(term: Term) -> NifResult<GeneratedResourceRef> {
-        let env = term.get_env();
-        Ok(GeneratedResourceRef {
-            id: term.map_get(Atom::from_bytes(env, b"id")?)?.decode::<String>()?,
-            type_: term.map_get(Atom::from_bytes(env, b"type")?)?.atom_to_string().unwrap_or_default(),
-        })
+    let env = term.get_env();
+    Ok(GeneratedResourceRef {
+        id: term.map_get(Atom::from_bytes(env, b"id")?)?.decode::<String>()?,
+        type_: term
+            .map_get(Atom::from_bytes(env, b"type")?)?
+            .atom_to_string()
+            .unwrap_or_default(),
+    })
     
     }
 }
@@ -545,98 +548,98 @@ pub(crate) mod generated_components {
 
     #[cfg(feature = "real-gpui")]
     pub(crate) fn decode_generated_div(term: Term) -> NifResult<GeneratedDiv> {
-          Ok(GeneratedDiv {
-              style: decode_style(term).unwrap_or_default(),
-              children: decode_children(term).unwrap_or_default(),
-              click: generated_string_attr(term, "phx-click"),
-          })
+    Ok(GeneratedDiv {
+        style: decode_style(term).unwrap_or_default(),
+        children: decode_children(term).unwrap_or_default(),
+        click: generated_string_attr(term, "phx-click"),
+    })
     
     }
     
     #[cfg(feature = "real-gpui")]
     pub(crate) fn decode_generated_button(term: Term) -> NifResult<GeneratedButton> {
-          Ok(GeneratedButton {
-              style: decode_style(term).unwrap_or_default(),
-              children: decode_children(term).unwrap_or_default(),
-              click: generated_string_attr(term, "phx-click"),
-          })
+    Ok(GeneratedButton {
+        style: decode_style(term).unwrap_or_default(),
+        children: decode_children(term).unwrap_or_default(),
+        click: generated_string_attr(term, "phx-click"),
+    })
     
     }
     
     #[cfg(feature = "real-gpui")]
     pub(crate) fn decode_generated_span(term: Term) -> NifResult<GeneratedSpan> {
-          Ok(GeneratedSpan {
-              style: decode_style(term).unwrap_or_default(),
-              children: decode_children(term).unwrap_or_default(),
-              click: generated_string_attr(term, "phx-click"),
-          })
+    Ok(GeneratedSpan {
+        style: decode_style(term).unwrap_or_default(),
+        children: decode_children(term).unwrap_or_default(),
+        click: generated_string_attr(term, "phx-click"),
+    })
     
     }
     
     #[cfg(feature = "real-gpui")]
     pub(crate) fn decode_generated_scroll(term: Term) -> NifResult<GeneratedScroll> {
-          Ok(GeneratedScroll {
-              style: decode_style(term).unwrap_or_default(),
-              children: decode_children(term).unwrap_or_default(),
-              click: generated_string_attr(term, "phx-click"),
-          })
+    Ok(GeneratedScroll {
+        style: decode_style(term).unwrap_or_default(),
+        children: decode_children(term).unwrap_or_default(),
+        click: generated_string_attr(term, "phx-click"),
+    })
     
     }
     
     #[cfg(feature = "real-gpui")]
     pub(crate) fn decode_generated_list(term: Term) -> NifResult<GeneratedList> {
-          Ok(GeneratedList {
-              style: decode_style(term).unwrap_or_default(),
-              children: decode_children(term).unwrap_or_default(),
-              click: generated_string_attr(term, "phx-click"),
-          })
+    Ok(GeneratedList {
+        style: decode_style(term).unwrap_or_default(),
+        children: decode_children(term).unwrap_or_default(),
+        click: generated_string_attr(term, "phx-click"),
+    })
     
     }
     
     #[cfg(feature = "real-gpui")]
     pub(crate) fn decode_generated_item(term: Term) -> NifResult<GeneratedItem> {
-          Ok(GeneratedItem {
-              style: decode_style(term).unwrap_or_default(),
-              children: decode_children(term).unwrap_or_default(),
-              click: generated_string_attr(term, "phx-click"),
-          })
+    Ok(GeneratedItem {
+        style: decode_style(term).unwrap_or_default(),
+        children: decode_children(term).unwrap_or_default(),
+        click: generated_string_attr(term, "phx-click"),
+    })
     
     }
     
     #[cfg(feature = "real-gpui")]
     pub(crate) fn decode_generated_icon(term: Term) -> NifResult<GeneratedIcon> {
-          Ok(GeneratedIcon {
-              text: decode_text_children(term).unwrap_or_default(),
-          })
+    Ok(GeneratedIcon {
+        text: decode_text_children(term).unwrap_or_default(),
+    })
     
     }
     
     #[cfg(feature = "real-gpui")]
     pub(crate) fn decode_generated_input(term: Term) -> NifResult<GeneratedInput> {
-          Ok(GeneratedInput {
-              style: decode_style(term).unwrap_or_default(),
-              value: generated_string_attr(term, "value").unwrap_or_default(),
-              placeholder: generated_string_attr(term, "placeholder"),
-              change: generated_string_attr(term, "phx-change"),
-              keydown: generated_string_attr(term, "phx-keydown"),
-              keyup: generated_string_attr(term, "phx-keyup"),
-          })
+    Ok(GeneratedInput {
+        style: decode_style(term).unwrap_or_default(),
+        value: generated_string_attr(term, "value").unwrap_or_default(),
+        placeholder: generated_string_attr(term, "placeholder"),
+        change: generated_string_attr(term, "phx-change"),
+        keydown: generated_string_attr(term, "phx-keydown"),
+        keyup: generated_string_attr(term, "phx-keyup"),
+    })
     
     }
     
     #[cfg(feature = "real-gpui")]
     pub(crate) fn decode_generated_img(term: Term) -> NifResult<GeneratedImg> {
-          Ok(GeneratedImg {
-              raster: decode_raster(term)?,
-          })
+    Ok(GeneratedImg {
+        raster: decode_raster(term)?,
+    })
     
     }
     
     #[cfg(feature = "real-gpui")]
     pub(crate) fn decode_generated_text(term: Term) -> NifResult<GeneratedText> {
-          Ok(GeneratedText {
-              text: decode_text_children(term).unwrap_or_default(),
-          })
+    Ok(GeneratedText {
+        text: decode_text_children(term).unwrap_or_default(),
+    })
     
     }
 

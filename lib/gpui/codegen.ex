@@ -259,33 +259,11 @@ defmodule GPUI.Codegen do
   end
 
   defp generated_decode_resource_body(%{name: :raster}, struct_name) do
-    """
-        let env = term.get_env();
-        Ok(#{struct_name} {
-            width: term.map_get(Atom::from_bytes(env, b\"width\")?)?.decode::<u32>()?,
-            height: term.map_get(Atom::from_bytes(env, b\"height\")?)?.decode::<u32>()?,
-            format: term
-                .map_get(Atom::from_bytes(env, b\"format\")?)?
-                .atom_to_string()
-                .unwrap_or_else(|_| \"rgba8\".to_string()),
-            stride: optional_u32(term.map_get(Atom::from_bytes(env, b\"stride\")?).ok()),
-            data: term
-                .map_get(Atom::from_bytes(env, b\"data\")?)?
-                .decode::<rustler::Binary>()?
-                .as_slice()
-                .to_vec(),
-        })
-    """
+    rust_template!("decode_resource_raster.rs", %{"__STRUCT_NAME__" => struct_name})
   end
 
   defp generated_decode_resource_body(%{name: :resource_ref}, struct_name) do
-    """
-        let env = term.get_env();
-        Ok(#{struct_name} {
-            id: term.map_get(Atom::from_bytes(env, b\"id\")?)?.decode::<String>()?,
-            type_: term.map_get(Atom::from_bytes(env, b\"type\")?)?.atom_to_string().unwrap_or_default(),
-        })
-    """
+    rust_template!("decode_resource_ref.rs", %{"__STRUCT_NAME__" => struct_name})
   end
 
   defp rust_field_name(:type), do: :type_
@@ -361,44 +339,27 @@ defmodule GPUI.Codegen do
   end
 
   defp generated_decode_body(%{kind: :container, events: events}, struct_name) do
-    click_attr = Keyword.get(events, :click, :"phx-click")
-
-    """
-          Ok(#{struct_name} {
-              style: decode_style(term).unwrap_or_default(),
-              children: decode_children(term).unwrap_or_default(),
-              click: generated_string_attr(term, \"#{click_attr}\"),
-          })
-    """
+    rust_template!("decode_component_container.rs", %{
+      "__STRUCT_NAME__" => struct_name,
+      "__CLICK_ATTR__" => to_string(Keyword.get(events, :click, :"phx-click"))
+    })
   end
 
   defp generated_decode_body(%{kind: :input, events: events}, struct_name) do
-    """
-          Ok(#{struct_name} {
-              style: decode_style(term).unwrap_or_default(),
-              value: generated_string_attr(term, \"value\").unwrap_or_default(),
-              placeholder: generated_string_attr(term, \"placeholder\"),
-              change: generated_string_attr(term, \"#{Keyword.fetch!(events, :change)}\"),
-              keydown: generated_string_attr(term, \"#{Keyword.fetch!(events, :keydown)}\"),
-              keyup: generated_string_attr(term, \"#{Keyword.fetch!(events, :keyup)}\"),
-          })
-    """
+    rust_template!("decode_component_input.rs", %{
+      "__STRUCT_NAME__" => struct_name,
+      "__CHANGE_ATTR__" => to_string(Keyword.fetch!(events, :change)),
+      "__KEYDOWN_ATTR__" => to_string(Keyword.fetch!(events, :keydown)),
+      "__KEYUP_ATTR__" => to_string(Keyword.fetch!(events, :keyup))
+    })
   end
 
   defp generated_decode_body(%{kind: :image}, struct_name) do
-    """
-          Ok(#{struct_name} {
-              raster: decode_raster(term)?,
-          })
-    """
+    rust_template!("decode_component_image.rs", %{"__STRUCT_NAME__" => struct_name})
   end
 
   defp generated_decode_body(%{kind: :text}, struct_name) do
-    """
-          Ok(#{struct_name} {
-              text: decode_text_children(term).unwrap_or_default(),
-          })
-    """
+    rust_template!("decode_component_text.rs", %{"__STRUCT_NAME__" => struct_name})
   end
 
   defp generated_decode_element_dispatch(components) do
