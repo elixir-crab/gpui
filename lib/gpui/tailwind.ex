@@ -24,9 +24,16 @@ defmodule GPUI.Tailwind do
     "white" => {:rgb, 0xFFFFFF},
     "neutral-700" => {:rgb, 0x404040},
     "neutral-800" => {:rgb, 0x262626},
+    "slate-700" => {:rgb, 0x334155},
+    "slate-800" => {:rgb, 0x1E293B},
+    "slate-900" => {:rgb, 0x0F172A},
     "red-500" => {:rgb, 0xEF4444},
+    "red-600" => {:rgb, 0xDC2626},
     "green-500" => {:rgb, 0x22C55E},
+    "green-600" => {:rgb, 0x16A34A},
     "blue-500" => {:rgb, 0x3B82F6},
+    "blue-600" => {:rgb, 0x2563EB},
+    "blue-700" => {:rgb, 0x1D4ED8},
     "yellow-500" => {:rgb, 0xEAB308}
   }
 
