@@ -81,6 +81,17 @@ defmodule GPUI.Remote.AppServerTest do
     assert {:error, :handshake_required} = SafeRPC.call(client, :mount, %{})
   end
 
+  test "tracks hello per connection" do
+    {:ok, server} = GPUI.Remote.AppServer.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.AppServer.port(server)
+    {:ok, client_a} = raw_client(port)
+    {:ok, client_b} = raw_client(port)
+
+    assert {:ok, _hello} = SafeRPC.call(client_a, :hello, AppProtocol.hello().payload)
+    assert {:ok, %{windows: [%{id: 1}]}} = SafeRPC.call(client_a, :mount, %{})
+    assert {:error, :handshake_required} = SafeRPC.call(client_b, :mount, %{})
+  end
+
   test "garbage collects expired app sessions" do
     {:ok, server} =
       GPUI.Remote.AppServer.start_link(

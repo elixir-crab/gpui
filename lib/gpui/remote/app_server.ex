@@ -10,6 +10,7 @@ defmodule GPUI.Remote.AppServer do
   use GenServer
 
   alias GPUI.Remote.AppProtocol
+  alias GPUI.Remote.ConnectionOwner
   alias GPUI.Remote.Transport.SafeRPC.TCP, as: SafeRPCTCP
   alias GPUI.Remote.Transport.TCP
   alias SafeRPC.Server.Connection
@@ -48,7 +49,7 @@ defmodule GPUI.Remote.AppServer do
         connection_supervisor: connection_supervisor,
         connections: %{},
         sessions: %{},
-        negotiated: false,
+        negotiated_connections: MapSet.new(),
         session_ttl: session_ttl,
         session_gc_interval: session_gc_interval
       }
@@ -62,8 +63,13 @@ defmodule GPUI.Remote.AppServer do
   @impl GenServer
   def handle_call(:port, _from, state), do: {:reply, TCP.port(state.listener), state}
 
+  def handle_call({:dispatch, connection_id, request}, _from, state) do
+    {reply, state} = dispatch(request, connection_id, state)
+    {:reply, reply, state}
+  end
+
   def handle_call({:dispatch, request}, _from, state) do
-    {reply, state} = dispatch(request, state)
+    {reply, state} = dispatch(request, :legacy, state)
     {:reply, reply, state}
   end
 
@@ -71,24 +77,45 @@ defmodule GPUI.Remote.AppServer do
   def handle_info({:gpui_remote_accepted, socket}, state) do
     start_acceptor(state.listener)
 
+    connection_id = System.unique_integer([:positive])
+
+    {:ok, owner} =
+      ConnectionOwner.start_link(server: self(), connection_id: connection_id)
+
     child_spec = %{
-      id: {Connection, System.unique_integer([:positive])},
+      id: {Connection, connection_id},
       start:
         {Connection, :start_link,
-         [[owner: self(), transport: SafeRPCTCP, socket: socket, recv_timeout: 5_000]]},
+         [[owner: owner, transport: SafeRPCTCP, socket: socket, recv_timeout: 5_000]]},
       restart: :temporary
     }
 
     {:ok, pid} = DynamicSupervisor.start_child(state.connection_supervisor, child_spec)
     Process.monitor(pid)
-    {:noreply, put_in(state.connections[pid], socket)}
+    {:noreply, put_in(state.connections[pid], %{socket: socket, owner: owner, id: connection_id})}
   end
 
   def handle_info({:gpui_remote_accept_error, reason}, state),
     do: {:stop, {:accept_failed, reason}, state}
 
-  def handle_info({:DOWN, _ref, :process, pid, _reason}, state),
-    do: {:noreply, update_in(state.connections, &Map.delete(&1, pid))}
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
+    {connection, connections} = Map.pop(state.connections, pid)
+
+    if connection && Process.alive?(connection.owner) do
+      GenServer.stop(connection.owner)
+    end
+
+    state = %{state | connections: connections}
+
+    state =
+      if connection do
+        update_in(state.negotiated_connections, &MapSet.delete(&1, connection.id))
+      else
+        state
+      end
+
+    {:noreply, state}
+  end
 
   def handle_info(:gc_sessions, state) do
     state = gc_sessions(state)
@@ -112,16 +139,16 @@ defmodule GPUI.Remote.AppServer do
     :exit, _reason -> :ok
   end
 
-  defp dispatch(%{cap: cap}, state) when cap not in [nil, @app_capability],
+  defp dispatch(%{cap: cap}, _connection_id, state) when cap not in [nil, @app_capability],
     do: {{:error, :unauthorized}, state}
 
-  defp dispatch(%{kind: :call, op: :hello, payload: payload}, state) do
-    dispatch_call(:hello, payload, state)
+  defp dispatch(%{kind: :call, op: :hello, payload: payload}, connection_id, state) do
+    dispatch_call(:hello, payload, connection_id, state)
   end
 
-  defp dispatch(%{kind: :call, op: op, payload: payload}, state) do
+  defp dispatch(%{kind: :call, op: op, payload: payload}, connection_id, state) do
     cond do
-      not state.negotiated ->
+      not connection_negotiated?(state, connection_id) ->
         {{:error, :handshake_required}, state}
 
       AppProtocol.known_op?(op) ->
@@ -132,11 +159,11 @@ defmodule GPUI.Remote.AppServer do
     end
   end
 
-  defp dispatch(_request, state), do: {{:error, :unsupported_request}, state}
+  defp dispatch(_request, _connection_id, state), do: {{:error, :unsupported_request}, state}
 
-  defp dispatch_call(:hello, payload, state) do
+  defp dispatch_call(:hello, payload, connection_id, state) do
     case AppProtocol.negotiate(payload) do
-      {:ok, reply} -> {{:ok, reply}, %{state | negotiated: true}}
+      {:ok, reply} -> {{:ok, reply}, mark_connection_negotiated(state, connection_id)}
       {:error, reason} -> {{:error, reason}, state}
     end
   end
@@ -217,6 +244,14 @@ defmodule GPUI.Remote.AppServer do
     do: touch_session(state, session_id)
 
   defp touch_session_from_payload(state, _payload), do: state
+
+  defp connection_negotiated?(state, connection_id) do
+    MapSet.member?(state.negotiated_connections, connection_id)
+  end
+
+  defp mark_connection_negotiated(state, connection_id) do
+    update_in(state.negotiated_connections, &MapSet.put(&1, connection_id))
+  end
 
   defp touch_session(state, session_id) do
     update_in(state.sessions, fn sessions ->

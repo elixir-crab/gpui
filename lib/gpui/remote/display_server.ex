@@ -9,6 +9,7 @@ defmodule GPUI.Remote.DisplayServer do
 
   use GenServer
 
+  alias GPUI.Remote.ConnectionOwner
   alias GPUI.Remote.DisplayProtocol
   alias GPUI.Remote.Transport.SafeRPC.TCP, as: SafeRPCTCP
   alias GPUI.Remote.Transport.TCP
@@ -56,6 +57,7 @@ defmodule GPUI.Remote.DisplayServer do
         listener: listener,
         connection_supervisor: connection_supervisor,
         connections: %{},
+        negotiated_connections: MapSet.new(),
         display_backend: display_backend,
         display_backend_state: backend_state,
         sessions: %{},
@@ -75,8 +77,13 @@ defmodule GPUI.Remote.DisplayServer do
     {:reply, TCP.port(state.listener), state}
   end
 
+  def handle_call({:dispatch, connection_id, request}, _from, state) do
+    {reply, state} = dispatch(request, connection_id, state)
+    {:reply, reply, state}
+  end
+
   def handle_call({:dispatch, request}, _from, state) do
-    {reply, state} = dispatch(request, state)
+    {reply, state} = dispatch(request, :legacy, state)
     {:reply, reply, state}
   end
 
@@ -84,13 +91,18 @@ defmodule GPUI.Remote.DisplayServer do
   def handle_info({:gpui_remote_accepted, socket}, state) do
     start_acceptor(state.listener)
 
+    connection_id = System.unique_integer([:positive])
+
+    {:ok, owner} =
+      ConnectionOwner.start_link(server: self(), connection_id: connection_id)
+
     child_spec = %{
-      id: {Connection, System.unique_integer([:positive])},
+      id: {Connection, connection_id},
       start:
         {Connection, :start_link,
          [
            [
-             owner: self(),
+             owner: owner,
              transport: SafeRPCTCP,
              socket: socket,
              recv_timeout: 5_000
@@ -102,7 +114,7 @@ defmodule GPUI.Remote.DisplayServer do
     {:ok, pid} = DynamicSupervisor.start_child(state.connection_supervisor, child_spec)
     Process.monitor(pid)
 
-    {:noreply, put_in(state.connections[pid], socket)}
+    {:noreply, put_in(state.connections[pid], %{socket: socket, owner: owner, id: connection_id})}
   end
 
   def handle_info({:gpui_remote_accept_error, reason}, state) do
@@ -110,7 +122,22 @@ defmodule GPUI.Remote.DisplayServer do
   end
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
-    {:noreply, update_in(state.connections, &Map.delete(&1, pid))}
+    {connection, connections} = Map.pop(state.connections, pid)
+
+    if connection && Process.alive?(connection.owner) do
+      GenServer.stop(connection.owner)
+    end
+
+    state = %{state | connections: connections}
+
+    state =
+      if connection do
+        update_in(state.negotiated_connections, &MapSet.delete(&1, connection.id))
+      else
+        state
+      end
+
+    {:noreply, state}
   end
 
   def handle_info(:gc_sessions, state) do
@@ -125,22 +152,22 @@ defmodule GPUI.Remote.DisplayServer do
     Supervisor.stop(state.connection_supervisor)
   end
 
-  defp dispatch(%{cap: cap}, state) when cap not in [nil, @display_capability] do
+  defp dispatch(%{cap: cap}, _connection_id, state) when cap not in [nil, @display_capability] do
     {{:error, :unauthorized}, state}
   end
 
-  defp dispatch(%{kind: :call, op: :hello, payload: payload} = request, state) do
+  defp dispatch(%{kind: :call, op: :hello, payload: payload} = request, connection_id, state) do
     session_id = session_id(request)
     state = touch_session(state, session_id)
-    dispatch_call(:hello, payload, session_id, state)
+    dispatch_call(:hello, payload, session_id, connection_id, state)
   end
 
-  defp dispatch(%{kind: :call, op: op, payload: payload} = request, state) do
+  defp dispatch(%{kind: :call, op: op, payload: payload} = request, connection_id, state) do
     session_id = session_id(request)
     state = touch_session(state, session_id)
 
     cond do
-      not session_negotiated?(state, session_id) ->
+      not connection_negotiated?(state, connection_id) ->
         {{:error, :handshake_required}, state}
 
       DisplayProtocol.known_op?(op) ->
@@ -151,11 +178,11 @@ defmodule GPUI.Remote.DisplayServer do
     end
   end
 
-  defp dispatch(%{kind: :cast, op: :event, payload: event} = request, state) do
+  defp dispatch(%{kind: :cast, op: :event, payload: event} = request, connection_id, state) do
     session_id = session_id(request)
     state = touch_session(state, session_id)
 
-    if session_negotiated?(state, session_id) do
+    if connection_negotiated?(state, connection_id) do
       case push_event(state, session_id, event) do
         {:ok, state} -> {{:ok, :noreply}, state}
         {:error, reason} -> {{:error, reason}, state}
@@ -165,11 +192,11 @@ defmodule GPUI.Remote.DisplayServer do
     end
   end
 
-  defp dispatch(_request, state), do: {{:error, :unsupported_request}, state}
+  defp dispatch(_request, _connection_id, state), do: {{:error, :unsupported_request}, state}
 
-  defp dispatch_call(:hello, payload, session_id, state) do
+  defp dispatch_call(:hello, payload, session_id, connection_id, state) do
     case DisplayProtocol.negotiate(payload) do
-      {:ok, reply} -> {{:ok, reply}, mark_session_negotiated(state, session_id)}
+      {:ok, reply} -> {{:ok, reply}, mark_connection_negotiated(state, connection_id, session_id)}
       {:error, reason} -> {{:error, reason}, state}
     end
   end
@@ -267,21 +294,15 @@ defmodule GPUI.Remote.DisplayServer do
     end)
   end
 
-  defp session_negotiated?(state, session_id) do
-    session_negotiated_for?(state, session_id) or session_negotiated_for?(state, :default)
+  defp connection_negotiated?(state, connection_id) do
+    MapSet.member?(state.negotiated_connections, connection_id)
   end
 
-  defp session_negotiated_for?(state, session_id) do
-    state.sessions
-    |> Map.get(session_id, empty_session())
-    |> Map.get(:negotiated, false)
-  end
-
-  defp mark_session_negotiated(state, session_id) do
-    update_in(state.sessions, fn sessions ->
-      Map.update(sessions, session_id, %{empty_session() | negotiated: true}, fn session ->
-        %{session | negotiated: true}
-      end)
+  defp mark_connection_negotiated(state, connection_id, session_id) do
+    state
+    |> update_in([:negotiated_connections], &MapSet.put(&1, connection_id))
+    |> update_in([:sessions], fn sessions ->
+      Map.update(sessions, session_id, empty_session(), fn session -> session end)
     end)
   end
 

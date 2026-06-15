@@ -307,6 +307,17 @@ defmodule GPUI.Remote.DisplayServerTest do
     assert {:error, :handshake_required} = SafeRPC.call(client, :ping, %{})
   end
 
+  test "tracks hello per connection" do
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
+    {:ok, client_a} = raw_client(port)
+    {:ok, client_b} = raw_client(port)
+
+    assert {:ok, _hello} = SafeRPC.call(client_a, :hello, DisplayProtocol.hello().payload)
+    assert {:ok, %{pong: true}} = SafeRPC.call(client_a, :ping, %{})
+    assert {:error, :handshake_required} = SafeRPC.call(client_b, :ping, %{})
+  end
+
   test "rejects unsupported operations after hello" do
     {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
