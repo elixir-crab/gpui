@@ -65,4 +65,57 @@ defmodule GPUIEventLoopTest do
 
     GenServer.stop(pid)
   end
+
+  test "native events can be polled automatically" do
+    {:ok, pid} = GPUI.Runtime.start_link(app: CounterApp, backend: :native, poll_interval: 10)
+    [window] = GPUI.Runtime.windows(pid)
+
+    {:ok, :ok} =
+      GPUI.Native.emit_test_event(:sys.get_state(pid).native, %{
+        window_id: window.id,
+        event: "inc"
+      })
+
+    assert_eventually(fn ->
+      [updated] = GPUI.Runtime.windows(pid)
+      assert {_module, %{count: 1}} = updated.root
+    end)
+
+    assert_eventually(fn ->
+      assert %{op: :native_event, payload: %{type: :click, event: "inc", window_id: 1}} in GPUI.Runtime.host_messages(
+               pid
+             )
+    end)
+
+    GenServer.stop(pid)
+  end
+
+  defp assert_eventually(fun) do
+    deadline = System.monotonic_time(:millisecond) + 1_000
+    assert_eventually(fun, deadline, nil)
+  end
+
+  defp assert_eventually(fun, deadline, last_error) do
+    try do
+      fun.()
+    rescue
+      error in [ExUnit.AssertionError] ->
+        if System.monotonic_time(:millisecond) > deadline do
+          reraise(error, __STACKTRACE__)
+        else
+          Process.sleep(10)
+          assert_eventually(fun, deadline, error)
+        end
+    else
+      result -> result
+    catch
+      kind, reason ->
+        if System.monotonic_time(:millisecond) > deadline do
+          :erlang.raise(kind, reason, __STACKTRACE__)
+        else
+          Process.sleep(10)
+          assert_eventually(fun, deadline, last_error)
+        end
+    end
+  end
 end

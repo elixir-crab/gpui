@@ -13,7 +13,8 @@ defmodule GPUI.Runtime do
           windows: [WindowSpec.t()],
           host: port() | nil,
           native: term() | nil,
-          host_messages: [map()]
+          host_messages: [map()],
+          poll_interval: pos_integer() | nil
         }
 
   @spec start_link(keyword()) :: GenServer.on_start()
@@ -32,12 +33,16 @@ defmodule GPUI.Runtime do
 
     case app.mount(args) do
       {:ok, app_state} ->
-        {:ok, initial_state(app, app_state, [], host, native)}
+        state = initial_state(app, app_state, [], host, native, poll_interval(opts))
+        schedule_native_poll(state)
+        {:ok, state}
 
       {:ok, app_state, windows} when is_list(windows) ->
         windows = assign_window_ids(windows)
         Enum.each(windows, &sync_window(host, native, &1))
-        {:ok, initial_state(app, app_state, windows, host, native)}
+        state = initial_state(app, app_state, windows, host, native, poll_interval(opts))
+        schedule_native_poll(state)
+        {:ok, state}
     end
   end
 
@@ -75,17 +80,28 @@ defmodule GPUI.Runtime do
   end
 
   def handle_call(:drain_events, _from, %{native: native} = state) do
-    {:ok, events} = GPUI.Native.drain_events(native)
-
-    {handled, state} =
-      events
-      |> Enum.map(&normalize_native_event/1)
-      |> Enum.map_reduce(state, &handle_native_event/2)
-
+    {handled, state} = drain_native_events(native, state)
     {:reply, handled, state}
   end
 
   @impl GenServer
+  def handle_info(:poll_native_events, %{native: native} = state) when not is_nil(native) do
+    {handled, state} = drain_native_events(native, state)
+
+    state =
+      handled
+      |> Enum.map(&%{op: :native_event, payload: &1})
+      |> prepend_host_messages(state)
+
+    schedule_native_poll(state)
+    {:noreply, state}
+  end
+
+  def handle_info(:poll_native_events, state) do
+    schedule_native_poll(state)
+    {:noreply, state}
+  end
+
   def handle_info({host, {:data, payload}}, %{host: host} = state) do
     message = GPUI.Protocol.decode(payload)
     {:noreply, %{state | host_messages: [message | state.host_messages]}}
@@ -97,15 +113,31 @@ defmodule GPUI.Runtime do
     {:noreply, %{state | host: nil, host_messages: [message | state.host_messages]}}
   end
 
-  defp initial_state(app, app_state, windows, host, native) do
+  defp initial_state(app, app_state, windows, host, native, poll_interval) do
     %{
       app: app,
       app_state: app_state,
       windows: windows,
       host: host,
       native: native,
-      host_messages: []
+      host_messages: [],
+      poll_interval: poll_interval
     }
+  end
+
+  defp poll_interval(opts) do
+    case Keyword.get(opts, :poll_interval) do
+      interval when is_integer(interval) and interval > 0 -> interval
+      _interval -> nil
+    end
+  end
+
+  defp schedule_native_poll(%{native: nil}), do: :ok
+  defp schedule_native_poll(%{poll_interval: nil}), do: :ok
+
+  defp schedule_native_poll(%{poll_interval: interval}) do
+    Process.send_after(self(), :poll_native_events, interval)
+    :ok
   end
 
   defp assign_window_ids(windows) do
@@ -186,6 +218,14 @@ defmodule GPUI.Runtime do
   defp normalize_native_event(event) when is_list(event), do: Map.new(event)
   defp normalize_native_event(event), do: event
 
+  defp drain_native_events(native, state) do
+    {:ok, events} = GPUI.Native.drain_events(native)
+
+    events
+    |> Enum.map(&normalize_native_event/1)
+    |> Enum.map_reduce(state, &handle_native_event/2)
+  end
+
   defp handle_native_event(
          %{type: :click, window_id: window_id, event: event} = native_event,
          state
@@ -212,6 +252,12 @@ defmodule GPUI.Runtime do
   end
 
   defp handle_native_event(event, state), do: {event, state}
+
+  defp prepend_host_messages([], state), do: state
+
+  defp prepend_host_messages(messages, state) do
+    %{state | host_messages: Enum.reverse(messages) ++ state.host_messages}
+  end
 
   defp replace_window(windows, updated_window) do
     Enum.map(windows, fn

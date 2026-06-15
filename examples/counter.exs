@@ -31,12 +31,7 @@ defmodule CounterApp do
   end
 end
 
-{:ok, pid} = GPUI.Runtime.start_link(app: CounterApp, backend: :native)
+{:ok, _pid} = GPUI.Runtime.start_link(app: CounterApp, backend: :native, poll_interval: 16)
 
 IO.puts("Counter running. Click + in the GPUI window. Press Ctrl+C twice to exit.")
-
-Stream.repeatedly(fn ->
-  Process.sleep(16)
-  GPUI.Runtime.drain_events(pid)
-end)
-|> Stream.run()
+Process.sleep(:infinity)
