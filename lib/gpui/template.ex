@@ -123,7 +123,34 @@ defmodule GPUI.Template do
     |> Enum.map(fn {name, value, _meta} ->
       {String.to_atom(to_string(name)), compile_attr_value(value)}
     end)
+    |> normalize_class_attr()
   end
+
+  defp normalize_class_attr(attrs) do
+    case Keyword.fetch(attrs, :class) do
+      {:ok, class} when is_binary(class) ->
+        %{style: style, unknown: unknown} = GPUI.Tailwind.normalize(class)
+
+        attrs
+        |> Keyword.delete(:class)
+        |> put_style_attr(style)
+        |> put_unknown_class_attr(unknown)
+
+      _other ->
+        attrs
+    end
+  end
+
+  defp put_style_attr(attrs, []), do: attrs
+
+  defp put_style_attr(attrs, style) do
+    Keyword.update(attrs, :style, style, &Keyword.merge(&1, style))
+  end
+
+  defp put_unknown_class_attr(attrs, []), do: attrs
+
+  defp put_unknown_class_attr(attrs, unknown),
+    do: Keyword.put(attrs, :class, Enum.join(unknown, " "))
 
   defp compile_attr_value({:string, value, _meta}), do: value
 

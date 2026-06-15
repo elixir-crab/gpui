@@ -22,7 +22,7 @@ defmodule GPUITemplateTest do
   test "builds element trees from HEEx-style templates" do
     assert %GPUI.Element{
              type: :div,
-             attrs: [class: "flex flex-col items-center"],
+             attrs: [style: [display: :flex, flex_direction: :column, align_items: :center]],
              children: [%GPUI.Element{type: :text, children: ["Hello"]}]
            } =
              ~GPUI"""
@@ -30,6 +30,16 @@ defmodule GPUITemplateTest do
                <text>Hello</text>
              </div>
              """
+  end
+
+  test "preserves unknown classes after style normalization" do
+    assert %GPUI.Element{attrs: attrs} =
+             ~GPUI"""
+             <div class="flex unknown-class" />
+             """
+
+    assert attrs[:style] == [display: :flex]
+    assert attrs[:class] == "unknown-class"
   end
 
   test "supports body interpolation" do
