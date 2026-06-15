@@ -22,7 +22,7 @@ defmodule GPUI.MixProject do
 
   def cli do
     [
-      preferred_envs: [ci: :test]
+      preferred_envs: [ci: :test, test_unit: :test, test_integration: :test, test_all: :test]
     ]
   end
 
@@ -47,12 +47,16 @@ defmodule GPUI.MixProject do
 
   defp aliases() do
     [
+      test_unit: ["test test/gpui test/gpui_test.exs"],
+      test_integration: ["test test/integration"],
+      test_all: ["test"],
       ci: [
         "format",
         "rustq.gen --check",
         "compile --warnings-as-errors",
         "format --check-formatted",
-        "test",
+        "test_unit",
+        "test_integration",
         "credo --strict",
         "dialyzer",
         "ex_dna --max-clones 0",

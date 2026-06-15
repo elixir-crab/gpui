@@ -29,8 +29,15 @@ end
 
 ```sh
 mix deps.get
+mix test_unit
+mix test_integration
 mix ci
 ```
+
+Tests are split by intent:
+
+- `test/gpui/**` contains unit-focused tests.
+- `test/integration/**` contains runtime, transport, and remote-flow integration tests.
 
 ## Examples
 
