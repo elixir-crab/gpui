@@ -27,11 +27,7 @@ defmodule GPUI.Codegen do
 
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub enum GeneratedElementTag {
-        Div,
-        Button,
-        Input,
-        Img,
-        Text,
+    #{rust_enum_variants(elements)}
         Unknown,
     }
 
@@ -44,8 +40,7 @@ defmodule GPUI.Codegen do
 
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub enum GeneratedResourceType {
-        Raster,
-        ResourceRef,
+    #{rust_enum_variants(resources)}
         Unknown,
     }
 
@@ -169,7 +164,7 @@ defmodule GPUI.Codegen do
     }
 
     #[cfg(feature = "real-gpui")]
-    pub(crate) use generated_resources::{decode_generated_raster_resource, GeneratedRaster};
+    pub(crate) use generated_resources::{decode_generated_raster_resource, decode_generated_resource_ref_resource, GeneratedRaster};
     """
   end
 
@@ -197,13 +192,15 @@ defmodule GPUI.Codegen do
 
     #{indent_generated(generated_decode_component_functions(components))}
 
+    #{indent_generated(generated_decode_element_dispatch(components))}
+
     #{indent_generated(generated_primitive_render_contracts(components))}
 
     #{indent_generated(generated_render_dispatch())}
     }
 
     #[cfg(feature = "real-gpui")]
-    pub(crate) use generated_components::{decode_generated_button, decode_generated_div, decode_generated_img, decode_generated_input, decode_generated_text, render_generated_element_node};
+    pub(crate) use generated_components::{decode_generated_element_node, render_generated_element_node};
     """
   end
 
@@ -346,7 +343,7 @@ defmodule GPUI.Codegen do
   end
 
   defp generated_struct_fields(%{kind: :image}) do
-    [Rust.field(:raster, "RasterData", vis: :crate)]
+    [Rust.field(:raster, "ImageData", vis: :crate)]
   end
 
   defp generated_struct_fields(%{kind: :text}) do
@@ -409,6 +406,65 @@ defmodule GPUI.Codegen do
           Ok(#{struct_name} {
               text: decode_text_children(term).unwrap_or_default(),
           })
+    """
+  end
+
+  defp generated_decode_element_dispatch(components) do
+    Rust.fn_(:decode_generated_element_node,
+      vis: :crate,
+      attrs: [~s|cfg(feature = "real-gpui")|],
+      args: [{:tag, "GeneratedElementTag"}, {:term, "Term"}],
+      returns: "NifResult<ElementNode>",
+      body: """
+          match tag {
+      #{rust_decode_element_arms(components)}
+              GeneratedElementTag::Unknown => Ok(ElementNode::Text(String::new())),
+          }
+      """
+    )
+    |> Rust.to_fragment()
+  end
+
+  defp rust_decode_element_arms(components) do
+    Enum.map_join(components, "\n", fn component ->
+      variant = rust_variant(component.tag)
+      decoder = "decode_generated_#{component.tag}"
+      rust_decode_element_arm(component.kind, variant, decoder)
+    end)
+  end
+
+  defp rust_decode_element_arm(:container, variant, decoder) do
+    """
+            GeneratedElementTag::#{variant} => #{decoder}(term).map(|node| ElementNode::Div {
+                style: node.style,
+                children: node.children,
+                click: node.click,
+            }),
+    """
+  end
+
+  defp rust_decode_element_arm(:input, variant, decoder) do
+    """
+            GeneratedElementTag::#{variant} => #{decoder}(term).map(|node| ElementNode::Input {
+                style: node.style,
+                value: node.value,
+                placeholder: node.placeholder,
+                change: node.change,
+                keydown: node.keydown,
+                keyup: node.keyup,
+            }),
+    """
+  end
+
+  defp rust_decode_element_arm(:image, variant, decoder) do
+    """
+            GeneratedElementTag::#{variant} => #{decoder}(term).map(|node| ElementNode::Image(node.raster)),
+    """
+  end
+
+  defp rust_decode_element_arm(:text, variant, decoder) do
+    """
+            GeneratedElementTag::#{variant} => #{decoder}(term).map(|node| ElementNode::Text(node.text)),
     """
   end
 
@@ -630,8 +686,11 @@ defmodule GPUI.Codegen do
     }
 
     #[cfg(feature = "real-gpui")]
-    pub(crate) fn render_generated_image_component(raster: RasterData) -> gpui::AnyElement {
-        render_generated_image_primitive(raster)
+    pub(crate) fn render_generated_image_component(
+        raster: ImageData,
+        runtime: ResourceArc<RuntimeResource>,
+    ) -> gpui::AnyElement {
+        render_generated_image_primitive(raster, runtime)
     }
 
     #[cfg(feature = "real-gpui")]
@@ -674,7 +733,7 @@ defmodule GPUI.Codegen do
       body: """
           match node {
               ElementNode::Text(text) => render_generated_text_component(text),
-              ElementNode::Image(raster) => render_generated_image_component(raster),
+              ElementNode::Image(raster) => render_generated_image_component(raster, runtime),
               ElementNode::Input { style, value, placeholder, change, keydown, keyup } => {
                   render_generated_input_component(style, value, placeholder, change, keydown, keyup, runtime, window_id)
               }
@@ -746,6 +805,10 @@ defmodule GPUI.Codegen do
     |> Enum.map_join("\n", fn component ->
       ~s|            GeneratedElementTag::#{rust_variant(component.tag)} => GeneratedComponentKind::#{rust_variant(component.kind)},|
     end)
+  end
+
+  defp rust_enum_variants(values) do
+    Enum.map_join(values, "\n", fn value -> "    #{rust_variant(value)}," end)
   end
 
   defp rust_match_arms(values, enum_name) do

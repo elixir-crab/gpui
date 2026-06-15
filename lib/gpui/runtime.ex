@@ -215,6 +215,10 @@ defmodule GPUI.Runtime do
     }
   end
 
+  defp window_payload(%{backend: GPUI.Backend.Native}, %WindowSpec{} = window) do
+    window_payload(window)
+  end
+
   defp window_payload(state, %WindowSpec{} = window) do
     window
     |> window_payload()

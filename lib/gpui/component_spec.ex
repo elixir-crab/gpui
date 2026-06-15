@@ -16,6 +16,11 @@ defmodule GPUI.ComponentSpec do
       kind: :container,
       events: [click: :"phx-click"]
     },
+    %Component{tag: :span, kind: :container, events: [click: :"phx-click"]},
+    %Component{tag: :scroll, kind: :container, events: [click: :"phx-click"]},
+    %Component{tag: :list, kind: :container, events: [click: :"phx-click"]},
+    %Component{tag: :item, kind: :container, events: [click: :"phx-click"]},
+    %Component{tag: :icon, kind: :text},
     %Component{
       tag: :input,
       kind: :input,

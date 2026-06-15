@@ -36,6 +36,17 @@ rust "native/gpui_native/src/generated_nifs.rs" do
       lifetime: :a,
       schedule: :dirty_cpu
     ],
+    put_resource: [
+      args: [env: "Env<'a>", runtime: "ResourceArc<RuntimeResource>", resource_id: "String", resource: "Term<'a>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a,
+      schedule: :dirty_cpu
+    ],
+    drop_resource: [
+      args: [env: "Env<'a>", runtime: "ResourceArc<RuntimeResource>", resource_id: "String"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
     drain_events: [
       args: [env: "Env<'a>", runtime: "ResourceArc<RuntimeResource>"],
       returns: "NifResult<Term<'a>>",

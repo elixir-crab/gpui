@@ -21,6 +21,23 @@ fn update_window<'a>(
 ) -> NifResult<Term<'a>> {
     update_window_impl(env, runtime, window_id, tree)
 }
+#[rustler::nif(schedule = "DirtyCpu")]
+fn put_resource<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    resource_id: String,
+    resource: Term<'a>,
+) -> NifResult<Term<'a>> {
+    put_resource_impl(env, runtime, resource_id, resource)
+}
+#[rustler::nif]
+fn drop_resource<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    resource_id: String,
+) -> NifResult<Term<'a>> {
+    drop_resource_impl(env, runtime, resource_id)
+}
 #[rustler::nif]
 fn drain_events<'a>(
     env: Env<'a>,

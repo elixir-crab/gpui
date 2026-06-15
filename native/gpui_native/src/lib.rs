@@ -23,6 +23,8 @@ pub struct RuntimeResource {
     events: Mutex<Vec<NativeEvent>>,
     #[cfg(feature = "real-gpui")]
     windows: Mutex<HashMap<u64, SharedWindow>>,
+    #[cfg(feature = "real-gpui")]
+    resources: Mutex<HashMap<String, RasterData>>,
 }
 
 #[derive(Clone, Debug)]
@@ -41,6 +43,8 @@ fn start_runtime_impl<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
         events: Mutex::new(Vec::new()),
         #[cfg(feature = "real-gpui")]
         windows: Mutex::new(HashMap::new()),
+        #[cfg(feature = "real-gpui")]
+        resources: Mutex::new(HashMap::new()),
     });
 
     Ok((atoms::ok(), runtime).encode(env))
@@ -139,6 +143,56 @@ fn update_window_impl<'a>(
     } else {
         Ok((atoms::error(), "unknown_window").encode(env))
     }
+}
+
+#[cfg(not(feature = "real-gpui"))]
+fn put_resource_impl<'a>(
+    env: Env<'a>,
+    _runtime: ResourceArc<RuntimeResource>,
+    resource_id: String,
+    _resource: Term<'a>,
+) -> NifResult<Term<'a>> {
+    Ok((atoms::ok(), resource_id).encode(env))
+}
+
+#[cfg(feature = "real-gpui")]
+fn put_resource_impl<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    resource_id: String,
+    resource: Term<'a>,
+) -> NifResult<Term<'a>> {
+    let raster = RasterData::from(decode_generated_raster_resource(resource)?);
+    raster.validate()?;
+    runtime
+        .resources
+        .lock()
+        .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))?
+        .insert(resource_id.clone(), raster);
+    Ok((atoms::ok(), resource_id).encode(env))
+}
+
+#[cfg(not(feature = "real-gpui"))]
+fn drop_resource_impl<'a>(
+    env: Env<'a>,
+    _runtime: ResourceArc<RuntimeResource>,
+    resource_id: String,
+) -> NifResult<Term<'a>> {
+    Ok((atoms::ok(), resource_id).encode(env))
+}
+
+#[cfg(feature = "real-gpui")]
+fn drop_resource_impl<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    resource_id: String,
+) -> NifResult<Term<'a>> {
+    runtime
+        .resources
+        .lock()
+        .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))?
+        .remove(&resource_id);
+    Ok((atoms::ok(), resource_id).encode(env))
 }
 
 fn emit_test_event_impl<'a>(
@@ -259,29 +313,7 @@ fn decode_element_node(term: Term) -> NifResult<ElementNode> {
     let type_term = term.map_get(Atom::from_bytes(env, b"type")?)?;
     let node_type = type_term.atom_to_string()?;
 
-    match decode_generated_element_tag(node_type.as_str()) {
-        GeneratedElementTag::Div => decode_generated_div(term).map(|node| ElementNode::Div {
-            style: node.style,
-            children: node.children,
-            click: node.click,
-        }),
-        GeneratedElementTag::Button => decode_generated_button(term).map(|node| ElementNode::Div {
-            style: node.style,
-            children: node.children,
-            click: node.click,
-        }),
-        GeneratedElementTag::Input => decode_generated_input(term).map(|node| ElementNode::Input {
-            style: node.style,
-            value: node.value,
-            placeholder: node.placeholder,
-            change: node.change,
-            keydown: node.keydown,
-            keyup: node.keyup,
-        }),
-        GeneratedElementTag::Img => decode_generated_img(term).map(|node| ElementNode::Image(node.raster)),
-        GeneratedElementTag::Text => decode_generated_text(term).map(|node| ElementNode::Text(node.text)),
-        GeneratedElementTag::Unknown => Ok(ElementNode::Text(String::new())),
-    }
+    decode_generated_element_node(decode_generated_element_tag(node_type.as_str()), term)
 }
 
 #[cfg(feature = "real-gpui")]
@@ -325,14 +357,21 @@ fn generated_string_attr(term: Term, attr: &str) -> Option<String> {
 }
 
 #[cfg(feature = "real-gpui")]
-fn decode_raster(term: Term) -> NifResult<RasterData> {
+fn decode_raster(term: Term) -> NifResult<ImageData> {
     let env = term.get_env();
     let attrs = term.map_get(Atom::from_bytes(env, b"attrs")?)?;
     let raster = attrs.map_get(Atom::from_bytes(env, b"raster")?)?;
-    let raster = RasterData::from(decode_generated_raster_resource(raster)?);
 
+    if let Ok(type_term) = raster.map_get(Atom::from_bytes(env, b"__type__")?) {
+        if type_term.atom_to_string().is_ok_and(|value| value == "resource_ref") {
+            let resource_ref = decode_generated_resource_ref_resource(raster)?;
+            return Ok(ImageData::Ref(resource_ref.id));
+        }
+    }
+
+    let raster = RasterData::from(decode_generated_raster_resource(raster)?);
     raster.validate()?;
-    Ok(raster)
+    Ok(ImageData::Raster(raster))
 }
 
 #[cfg(feature = "real-gpui")]
@@ -393,6 +432,13 @@ fn radius_value(term: Term) -> Option<f32> {
     }
 
     px_value(term)
+}
+
+#[cfg(feature = "real-gpui")]
+#[derive(Clone, Debug)]
+enum ImageData {
+    Raster(RasterData),
+    Ref(String),
 }
 
 #[cfg(feature = "real-gpui")]
@@ -526,7 +572,7 @@ enum ElementNode {
         keydown: Option<String>,
         keyup: Option<String>,
     },
-    Image(RasterData),
+    Image(ImageData),
     Text(String),
 }
 
@@ -561,8 +607,20 @@ fn render_generated_text_primitive(text: String) -> gpui::AnyElement {
 }
 
 #[cfg(feature = "real-gpui")]
-fn render_generated_image_primitive(raster: RasterData) -> gpui::AnyElement {
-    raster.render()
+fn render_generated_image_primitive(
+    raster: ImageData,
+    runtime: ResourceArc<RuntimeResource>,
+) -> gpui::AnyElement {
+    match raster {
+        ImageData::Raster(raster) => raster.render(),
+        ImageData::Ref(resource_id) => runtime
+            .resources
+            .lock()
+            .ok()
+            .and_then(|resources| resources.get(&resource_id).cloned())
+            .unwrap_or_default()
+            .render(),
+    }
 }
 
 #[cfg(feature = "real-gpui")]
