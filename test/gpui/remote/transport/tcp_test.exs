@@ -1,41 +1,45 @@
 defmodule GPUI.Remote.Transport.TCPTest do
   use ExUnit.Case, async: false
 
-  alias GPUI.Protocol.Envelope
-  alias GPUI.Remote.Transport
+  alias GPUI.Remote.Transport.SafeRPC.TCP, as: SafeRPCTCP
   alias GPUI.Remote.Transport.TCP
+  alias SafeRPC.Protocol
 
-  test "sends and receives length-prefixed ETF envelopes over TCP" do
-    {:ok, listener} = TCP.listen(port: 0)
+  test "sends and receives SafeRPC frames over TCP" do
+    {:ok, listener} = SafeRPCTCP.listen(port: 0)
     {:ok, port} = TCP.port(listener)
 
     server =
       Task.async(fn ->
-        {:ok, conn} = TCP.accept(listener, 1_000)
-        {:ok, request} = Transport.recv(conn, 1_000)
-        :ok = Transport.send(conn, Envelope.ok(request.id, %{echo: request.payload}))
-        Transport.close(conn)
+        {:ok, conn} = SafeRPCTCP.accept(listener, 1_000)
+        {:ok, request_payload} = SafeRPCTCP.recv(conn, 1_000)
+        {:ok, request} = Protocol.decode_request(request_payload)
+
+        :ok =
+          SafeRPCTCP.send(conn, Protocol.encode_reply(request.id, {:ok, request.payload}), 1_000)
+
+        SafeRPCTCP.close(conn)
         request
       end)
 
-    {:ok, client} = TCP.connect(host: "127.0.0.1", port: port)
-    request = Envelope.request(:ping, %{message: "hello"}, id: 7)
+    {:ok, client} = SafeRPCTCP.connect(host: "127.0.0.1", port: port)
+    request_payload = Protocol.encode_call(make_ref(), :gpui_display, :ping, %{message: "hello"})
+    {:ok, request} = Protocol.decode_request(request_payload)
 
-    assert :ok = Transport.send(client, request)
-
-    assert {:ok, %{kind: :response, id: 7, status: :ok, payload: %{echo: %{message: "hello"}}}} =
-             Transport.recv(client)
+    assert :ok = SafeRPCTCP.send(client, request_payload, 1_000)
+    assert {:ok, response_payload} = SafeRPCTCP.recv(client, 1_000)
+    assert {:ok, {:ok, %{message: "hello"}}} = Protocol.decode_reply(response_payload, request.id)
 
     assert ^request = Task.await(server)
-    Transport.close(client)
-    TCP.close(listener)
+    SafeRPCTCP.close(client)
+    SafeRPCTCP.close(listener)
   end
 
-  test "sends and receives length-prefixed ETF envelopes over SSL", context do
+  test "sends and receives SafeRPC frames over SSL", context do
     certs = GPUITest.SSLCerts.generate!(context)
 
     {:ok, listener} =
-      TCP.listen(
+      SafeRPCTCP.listen(
         port: 0,
         ssl: [
           certfile: certs.server_cert,
@@ -48,15 +52,19 @@ defmodule GPUI.Remote.Transport.TCPTest do
 
     server =
       Task.async(fn ->
-        {:ok, conn} = TCP.accept(listener, 2_000)
-        {:ok, request} = Transport.recv(conn, 2_000)
-        :ok = Transport.send(conn, Envelope.ok(request.id, %{secure_echo: request.payload}))
-        Transport.close(conn)
+        {:ok, conn} = SafeRPCTCP.accept(listener, 2_000)
+        {:ok, request_payload} = SafeRPCTCP.recv(conn, 2_000)
+        {:ok, request} = Protocol.decode_request(request_payload)
+
+        :ok =
+          SafeRPCTCP.send(conn, Protocol.encode_reply(request.id, {:ok, request.payload}), 2_000)
+
+        SafeRPCTCP.close(conn)
         request
       end)
 
     {:ok, client} =
-      TCP.connect(
+      SafeRPCTCP.connect(
         host: "localhost",
         port: port,
         ssl: [
@@ -67,21 +75,19 @@ defmodule GPUI.Remote.Transport.TCPTest do
         ]
       )
 
-    request = Envelope.request(:ping, %{message: "secure hello"}, id: 8)
+    request_payload =
+      Protocol.encode_call(make_ref(), :gpui_display, :ping, %{message: "secure hello"})
 
-    assert :ok = Transport.send(client, request)
+    {:ok, request} = Protocol.decode_request(request_payload)
 
-    assert {:ok,
-            %{
-              kind: :response,
-              id: 8,
-              status: :ok,
-              payload: %{secure_echo: %{message: "secure hello"}}
-            }} =
-             Transport.recv(client)
+    assert :ok = SafeRPCTCP.send(client, request_payload, 2_000)
+    assert {:ok, response_payload} = SafeRPCTCP.recv(client, 2_000)
+
+    assert {:ok, {:ok, %{message: "secure hello"}}} =
+             Protocol.decode_reply(response_payload, request.id)
 
     assert ^request = Task.await(server)
-    Transport.close(client)
-    TCP.close(listener)
+    SafeRPCTCP.close(client)
+    SafeRPCTCP.close(listener)
   end
 end

@@ -2,18 +2,16 @@ defmodule GPUI.Remote.DisplayServer do
   @moduledoc """
   Remote display endpoint for GPUI runtime protocol messages.
 
-  The server accepts a framed TCP/SSL connection, receives
-  `GPUI.Protocol.Envelope` messages, and dispatches display operations to a
-  local `GPUI.Backend` implementation. This is the first real remote-display
-  shape: an application runtime can send rendered window trees over a transport
-  to a display process.
+  The server accepts TCP/SSL connections and delegates per-client SafeRPC
+  request decoding, worker management, replies, and safe ETF handling to
+  `SafeRPC.Server.Connection`. GPUI owns only the display operations.
   """
 
   use GenServer
 
-  alias GPUI.Protocol.Envelope
-  alias GPUI.Remote.Transport
+  alias GPUI.Remote.Transport.SafeRPC.TCP, as: SafeRPCTCP
   alias GPUI.Remote.Transport.TCP
+  alias SafeRPC.Server.Connection
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts \\ []) do
@@ -28,9 +26,10 @@ defmodule GPUI.Remote.DisplayServer do
     display_backend = opts |> Keyword.get(:display_backend, :data) |> GPUI.Backend.module_for()
     display_backend_opts = Keyword.get(opts, :display_backend_opts, [])
 
+    listen_opts = [port: Keyword.get(opts, :port, 0), ssl: Keyword.get(opts, :ssl, false)]
+
     with {:ok, backend_state} <- display_backend.init(display_backend_opts),
-         {:ok, listener} <-
-           TCP.listen(port: Keyword.get(opts, :port, 0), ssl: Keyword.get(opts, :ssl, false)) do
+         {:ok, listener} <- SafeRPCTCP.listen(listen_opts) do
       state = %{
         listener: listener,
         connections: %{},
@@ -49,78 +48,83 @@ defmodule GPUI.Remote.DisplayServer do
     {:reply, TCP.port(state.listener), state}
   end
 
-  def handle_call({:dispatch, envelope}, _from, state) do
-    dispatch_envelope(envelope, state)
+  def handle_call({:dispatch, request}, _from, state) do
+    {reply, state} = dispatch(request, state)
+    {:reply, reply, state}
   end
 
   @impl GenServer
-  def handle_info({:gpui_remote_accepted, conn}, state) do
+  def handle_info({:gpui_remote_accepted, socket}, state) do
     start_acceptor(state.listener)
-    receiver = start_receiver(self(), conn)
-    {:noreply, put_in(state.connections[receiver], conn)}
+
+    {:ok, pid} =
+      Connection.start_link(
+        owner: self(),
+        transport: SafeRPCTCP,
+        socket: socket,
+        recv_timeout: 5_000
+      )
+
+    {:noreply, put_in(state.connections[pid], socket)}
   end
 
   def handle_info({:gpui_remote_accept_error, reason}, state) do
     {:stop, {:accept_failed, reason}, state}
   end
 
-  def handle_info({:gpui_remote_recv_closed, receiver}, state) do
-    {:noreply, update_in(state.connections, &Map.delete(&1, receiver))}
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
+    {:noreply, update_in(state.connections, &Map.delete(&1, pid))}
   end
 
-  def handle_info({:gpui_remote_recv_error, receiver, _reason}, state) do
-    {:noreply, update_in(state.connections, &Map.delete(&1, receiver))}
+  @impl GenServer
+  def terminate(_reason, state) do
+    SafeRPCTCP.close(state.listener)
   end
 
-  defp dispatch_envelope(%{kind: :request, id: id, op: op, payload: payload}, state) do
-    case dispatch_request(op, payload, state) do
-      {:ok, payload, state} ->
-        {:reply, {:reply, Envelope.ok(id, payload, op: op)}, state}
-
-      {:error, reason, state} ->
-        {:reply, {:reply, Envelope.error(id, reason, %{}, op: op)}, state}
-    end
+  defp dispatch(%{cap: cap}, state) when cap not in [nil, :gpui_display] do
+    {{:error, :unauthorized}, state}
   end
 
-  defp dispatch_envelope(%{kind: :event, op: :event, payload: event}, state) do
-    {:reply, :noreply, push_event(state, event)}
+  defp dispatch(%{kind: :call, op: op, payload: payload}, state),
+    do: dispatch_call(op, payload, state)
+
+  defp dispatch(%{kind: :cast, op: :event, payload: event}, state) do
+    {{:ok, :noreply}, push_event(state, event)}
   end
 
-  defp dispatch_envelope(%{id: id}, state) do
-    {:reply, {:reply, Envelope.error(id, :unsupported_envelope)}, state}
+  defp dispatch(_request, state), do: {{:error, :unsupported_request}, state}
+
+  defp dispatch_call(:hello, _payload, state) do
+    {{:ok, %{version: 1, capabilities: [:runtime_v1, :display_server, :safe_rpc]}}, state}
   end
 
-  defp dispatch_request(:hello, _payload, state) do
-    {:ok, %{version: 1, capabilities: [:runtime_v1, :display_server]}, state}
-  end
-
-  defp dispatch_request(:open_window, window_payload, state) do
+  defp dispatch_call(:open_window, window_payload, state) do
     case state.display_backend.open_window(state.display_backend_state, window_payload) do
-      :ok -> {:ok, %{}, state}
-      {:error, reason} -> {:error, reason, state}
+      :ok -> {{:ok, %{}}, state}
+      {:error, reason} -> {{:error, reason}, state}
     end
   end
 
-  defp dispatch_request(:update_window, %{window_id: window_id, tree: tree}, state) do
+  defp dispatch_call(:update_window, %{window_id: window_id, tree: tree}, state) do
     case state.display_backend.update_window(state.display_backend_state, window_id, tree) do
       :ok ->
         state = push_event(state, %{type: :window_updated, window_id: window_id})
-        {:ok, %{}, state}
+        {{:ok, %{}}, state}
 
       {:error, reason} ->
-        {:error, reason, state}
+        {{:error, reason}, state}
     end
   end
 
-  defp dispatch_request(:drain_events, _payload, state) do
-    {:ok, %{events: Enum.reverse(state.events)}, %{state | events: []}}
+  defp dispatch_call(:drain_events, _payload, state) do
+    {{:ok, %{events: Enum.reverse(state.events)}}, %{state | events: []}}
   end
 
-  defp dispatch_request(:event, event, state) do
-    {:ok, %{}, push_event(state, event)}
+  defp dispatch_call(:event, event, state) do
+    {{:ok, %{}}, push_event(state, event)}
   end
 
-  defp dispatch_request(op, _payload, state), do: {:error, {:unsupported_op, op}, state}
+  defp dispatch_call(op, _payload, state), do: {{:error, {:unsupported_op, op}}, state}
 
   defp push_event(state, event), do: update_in(state.events, &[event | &1])
 
@@ -128,45 +132,14 @@ defmodule GPUI.Remote.DisplayServer do
     owner = self()
 
     Task.start(fn ->
-      case TCP.accept(listener) do
-        {:ok, conn} ->
-          :ok = TCP.controlling_process(conn, owner)
-          send(owner, {:gpui_remote_accepted, conn})
+      case SafeRPCTCP.accept(listener, :infinity) do
+        {:ok, socket} ->
+          :ok = TCP.controlling_process(socket, owner)
+          send(owner, {:gpui_remote_accepted, socket})
 
         {:error, reason} ->
           send(owner, {:gpui_remote_accept_error, reason})
       end
     end)
-  end
-
-  defp start_receiver(server, conn) do
-    {:ok, receiver} =
-      Task.start(fn ->
-        receive do
-          :start_receiving -> receive_loop(server, conn)
-        end
-      end)
-
-    :ok = TCP.controlling_process(conn, receiver)
-    send(receiver, :start_receiving)
-    receiver
-  end
-
-  defp receive_loop(server, conn) do
-    case Transport.recv(conn, :infinity) do
-      {:ok, envelope} ->
-        case GenServer.call(server, {:dispatch, envelope}, :infinity) do
-          {:reply, response} -> :ok = Transport.send(conn, response)
-          :noreply -> :ok
-        end
-
-        receive_loop(server, conn)
-
-      {:error, :closed} ->
-        send(server, {:gpui_remote_recv_closed, self()})
-
-      {:error, reason} ->
-        send(server, {:gpui_remote_recv_error, self(), reason})
-    end
   end
 end
