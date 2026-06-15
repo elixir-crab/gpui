@@ -130,6 +130,11 @@ defmodule GPUI.Remote.ClientConnection do
     {:stop, {:recv_failed, reason}, fail_pending(state, reason)}
   end
 
+  @impl GenServer
+  def terminate(_reason, state) do
+    Transport.close(state.conn)
+  end
+
   defp reply_to_pending(id, envelope, state) do
     case Map.pop(state.pending, id) do
       {{from, timer}, pending} ->

@@ -33,7 +33,7 @@ defmodule GPUI.Remote.DisplayServer do
            TCP.listen(port: Keyword.get(opts, :port, 0), ssl: Keyword.get(opts, :ssl, false)) do
       state = %{
         listener: listener,
-        conn: nil,
+        connections: %{},
         display_backend: display_backend,
         display_backend_state: backend_state,
         events: []
@@ -55,20 +55,21 @@ defmodule GPUI.Remote.DisplayServer do
 
   @impl GenServer
   def handle_info({:gpui_remote_accepted, conn}, state) do
-    start_receiver(self(), conn)
-    {:noreply, %{state | conn: conn}}
+    start_acceptor(state.listener)
+    receiver = start_receiver(self(), conn)
+    {:noreply, put_in(state.connections[receiver], conn)}
   end
 
   def handle_info({:gpui_remote_accept_error, reason}, state) do
     {:stop, {:accept_failed, reason}, state}
   end
 
-  def handle_info({:gpui_remote_recv_closed, _conn}, state) do
-    {:noreply, %{state | conn: nil}}
+  def handle_info({:gpui_remote_recv_closed, receiver}, state) do
+    {:noreply, update_in(state.connections, &Map.delete(&1, receiver))}
   end
 
-  def handle_info({:gpui_remote_recv_error, _conn, reason}, state) do
-    {:stop, {:recv_failed, reason}, state}
+  def handle_info({:gpui_remote_recv_error, receiver, _reason}, state) do
+    {:noreply, update_in(state.connections, &Map.delete(&1, receiver))}
   end
 
   defp dispatch_envelope(%{kind: :request, id: id, op: op, payload: payload}, state) do
@@ -148,7 +149,7 @@ defmodule GPUI.Remote.DisplayServer do
 
     :ok = TCP.controlling_process(conn, receiver)
     send(receiver, :start_receiving)
-    :ok
+    receiver
   end
 
   defp receive_loop(server, conn) do
@@ -162,10 +163,10 @@ defmodule GPUI.Remote.DisplayServer do
         receive_loop(server, conn)
 
       {:error, :closed} ->
-        send(server, {:gpui_remote_recv_closed, conn})
+        send(server, {:gpui_remote_recv_closed, self()})
 
       {:error, reason} ->
-        send(server, {:gpui_remote_recv_error, conn, reason})
+        send(server, {:gpui_remote_recv_error, self(), reason})
     end
   end
 end
