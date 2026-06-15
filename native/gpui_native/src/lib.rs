@@ -11,7 +11,14 @@ include!("generated_atoms.rs");
 include!("generated_nifs.rs");
 
 pub struct RuntimeResource {
-    events: Mutex<Vec<String>>,
+    events: Mutex<Vec<NativeEvent>>,
+}
+
+#[derive(Clone, Debug)]
+enum NativeEvent {
+    Text(String),
+    Click { window_id: u64, event: String },
+    WindowUpdated { window_id: u64 },
 }
 
 #[rustler::resource_impl]
@@ -32,7 +39,7 @@ fn open_window_impl<'a>(
     window: Term<'a>,
 ) -> NifResult<Term<'a>> {
     let title = window_title(env, window)?;
-    push_event(&runtime, format!("window_open_requested:{title}"))?;
+    push_text_event(&runtime, format!("window_open_requested:{title}"))?;
     Ok((atoms::ok(), title).encode(env))
 }
 
@@ -46,13 +53,13 @@ fn open_window_impl<'a>(
     let tree = window_tree(window).unwrap_or_else(ElementNode::default_root);
 
     if GPUI_STARTED.swap(true, Ordering::SeqCst) {
-        push_event(&runtime, "window_open_rejected:already_started".to_string())?;
+        push_text_event(&runtime, "window_open_rejected:already_started".to_string())?;
         return Ok((atoms::error(), "gpui_already_started").encode(env));
     }
 
     let event_title = title.clone();
     std::thread::spawn(move || run_gpui_window(title, tree));
-    push_event(&runtime, format!("window_open_requested:{event_title}"))?;
+    push_text_event(&runtime, format!("window_open_requested:{event_title}"))?;
 
     Ok((atoms::ok(), event_title).encode(env))
 }
@@ -63,7 +70,36 @@ fn drain_events_impl<'a>(env: Env<'a>, runtime: ResourceArc<RuntimeResource>) ->
         .lock()
         .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))?;
     let drained = std::mem::take(&mut *events);
-    Ok((atoms::ok(), drained).encode(env))
+    let encoded = drained
+        .into_iter()
+        .map(|event| encode_native_event(env, event))
+        .collect::<NifResult<Vec<Term>>>()?;
+    Ok((atoms::ok(), encoded).encode(env))
+}
+
+fn update_window_impl<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+    _tree: Term<'a>,
+) -> NifResult<Term<'a>> {
+    push_event(&runtime, NativeEvent::WindowUpdated { window_id })?;
+    Ok((atoms::ok(), window_id).encode(env))
+}
+
+fn emit_test_event_impl<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    event: Term<'a>,
+) -> NifResult<Term<'a>> {
+    let window_id = event
+        .map_get(Atom::from_bytes(env, b"window_id")?)?
+        .decode::<u64>()?;
+    let event_name = event
+        .map_get(Atom::from_bytes(env, b"event")?)?
+        .decode::<String>()?;
+    push_event(&runtime, NativeEvent::Click { window_id, event: event_name })?;
+    Ok((atoms::ok(), atoms::ok()).encode(env))
 }
 
 fn validate_tree_impl<'a>(env: Env<'a>, tree: Term<'a>) -> NifResult<Term<'a>> {
@@ -84,7 +120,11 @@ fn window_title(env: Env, window: Term) -> NifResult<String> {
         .unwrap_or_else(|| "GPUI + Elixir".to_string()))
 }
 
-fn push_event(runtime: &ResourceArc<RuntimeResource>, event: String) -> NifResult<()> {
+fn push_text_event(runtime: &ResourceArc<RuntimeResource>, event: String) -> NifResult<()> {
+    push_event(runtime, NativeEvent::Text(event))
+}
+
+fn push_event(runtime: &ResourceArc<RuntimeResource>, event: NativeEvent) -> NifResult<()> {
     runtime
         .events
         .lock()
@@ -92,6 +132,23 @@ fn push_event(runtime: &ResourceArc<RuntimeResource>, event: String) -> NifResul
         .push(event);
 
     Ok(())
+}
+
+fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifResult<Term<'a>> {
+    match event {
+        NativeEvent::Text(text) => Ok(text.encode(env)),
+        NativeEvent::Click { window_id, event } => Ok(vec![
+            (Atom::from_bytes(env, b"type")?, atoms::click().to_term(env)),
+            (Atom::from_bytes(env, b"window_id")?, window_id.encode(env)),
+            (Atom::from_bytes(env, b"event")?, event.encode(env)),
+        ]
+        .encode(env)),
+        NativeEvent::WindowUpdated { window_id } => Ok(vec![
+            (Atom::from_bytes(env, b"type")?, atoms::window_updated().to_term(env)),
+            (Atom::from_bytes(env, b"window_id")?, window_id.encode(env)),
+        ]
+        .encode(env)),
+    }
 }
 
 #[cfg(feature = "real-gpui")]

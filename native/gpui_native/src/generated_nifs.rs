@@ -12,12 +12,29 @@ fn open_window<'a>(
 ) -> NifResult<Term<'a>> {
     open_window_impl(env, runtime, window)
 }
+#[rustler::nif(schedule = "DirtyCpu")]
+fn update_window<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+    tree: Term<'a>,
+) -> NifResult<Term<'a>> {
+    update_window_impl(env, runtime, window_id, tree)
+}
 #[rustler::nif]
 fn drain_events<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,
 ) -> NifResult<Term<'a>> {
     drain_events_impl(env, runtime)
+}
+#[rustler::nif]
+fn emit_test_event<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    event: Term<'a>,
+) -> NifResult<Term<'a>> {
+    emit_test_event_impl(env, runtime, event)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
 fn validate_tree<'a>(env: Env<'a>, tree: Term<'a>) -> NifResult<Term<'a>> {

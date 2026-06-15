@@ -2,6 +2,6 @@
 
 mod atoms {
     rustler::atoms! {
-        ok, error, invalid_tree,
+        ok, error, invalid_tree, click, window_updated,
     }
 }

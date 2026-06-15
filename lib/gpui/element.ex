@@ -33,6 +33,7 @@ defmodule GPUI.Element do
   end
 
   def to_payload(text) when is_binary(text), do: text
+  def to_payload(value) when is_integer(value) or is_float(value) or is_atom(value), do: value
 
   defp attrs_to_payload(attrs) do
     attrs

@@ -6,7 +6,7 @@ require_file "lib/gpui/command_spec.ex"
 require_file "lib/gpui/codegen.ex"
 
 rust "native/gpui_native/src/generated_atoms.rs" do
-  Rustler.atoms([:ok, :error, :invalid_tree])
+  Rustler.atoms([:ok, :error, :invalid_tree, :click, :window_updated])
 end
 
 rust "native/gpui_native/src/generated_nifs.rs" do
@@ -22,8 +22,19 @@ rust "native/gpui_native/src/generated_nifs.rs" do
       lifetime: :a,
       schedule: :dirty_cpu
     ],
+    update_window: [
+      args: [env: "Env<'a>", runtime: "ResourceArc<RuntimeResource>", window_id: :u64, tree: "Term<'a>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a,
+      schedule: :dirty_cpu
+    ],
     drain_events: [
       args: [env: "Env<'a>", runtime: "ResourceArc<RuntimeResource>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    emit_test_event: [
+      args: [env: "Env<'a>", runtime: "ResourceArc<RuntimeResource>", event: "Term<'a>"],
       returns: "NifResult<Term<'a>>",
       lifetime: :a
     ],
