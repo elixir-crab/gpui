@@ -8,9 +8,16 @@ defmodule GPUI.Remote.DisplayProtocol do
   """
 
   @capability :gpui_display
-  @ops [:hello, :resume_session, :open_window, :update_window, :drain_events, :event]
+  @ops [:hello, :ping, :resume_session, :open_window, :update_window, :drain_events, :event]
 
-  @type op :: :hello | :resume_session | :open_window | :update_window | :drain_events | :event
+  @type op ::
+          :hello
+          | :ping
+          | :resume_session
+          | :open_window
+          | :update_window
+          | :drain_events
+          | :event
   @type message :: %{op: op(), payload: map()}
 
   @spec capability() :: :gpui_display
@@ -26,6 +33,9 @@ defmodule GPUI.Remote.DisplayProtocol do
   def hello(payload \\ %{role: :runtime, capabilities: [:runtime_v1]}) when is_map(payload) do
     message(:hello, payload)
   end
+
+  @spec ping() :: message()
+  def ping, do: message(:ping, %{})
 
   @spec resume_session(term()) :: message()
   def resume_session(session_id) do

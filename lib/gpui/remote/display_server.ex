@@ -127,6 +127,10 @@ defmodule GPUI.Remote.DisplayServer do
     {{:ok, %{version: 1, capabilities: [:runtime_v1, :display_server, :safe_rpc]}}, state}
   end
 
+  defp dispatch_call(:ping, _payload, _session_id, state) do
+    {{:ok, %{pong: true}}, state}
+  end
+
   defp dispatch_call(:resume_session, %{session_id: session_id}, _request_session_id, state) do
     state = ensure_session(state, session_id)
     session = Map.fetch!(state.sessions, session_id)

@@ -53,6 +53,14 @@ defmodule GPUI.Remote.DisplayServerTest do
     assert :display_server in capabilities
   end
 
+  test "responds to ping for heartbeat checks" do
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
+    {:ok, client} = start_client(port)
+
+    assert {:ok, %{pong: true}} = SafeRPC.call(client, :ping, %{})
+  end
+
   test "rejects updates for windows not opened by the session" do
     {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
