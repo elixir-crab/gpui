@@ -9,9 +9,12 @@ defmodule GPUI.Remote.DisplayServer do
 
   use GenServer
 
+  alias GPUI.Remote.DisplayProtocol
   alias GPUI.Remote.Transport.SafeRPC.TCP, as: SafeRPCTCP
   alias GPUI.Remote.Transport.TCP
   alias SafeRPC.Server.Connection
+
+  @display_capability DisplayProtocol.capability()
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts \\ []) do
@@ -81,12 +84,17 @@ defmodule GPUI.Remote.DisplayServer do
     SafeRPCTCP.close(state.listener)
   end
 
-  defp dispatch(%{cap: cap}, state) when cap not in [nil, :gpui_display] do
+  defp dispatch(%{cap: cap}, state) when cap not in [nil, @display_capability] do
     {{:error, :unauthorized}, state}
   end
 
-  defp dispatch(%{kind: :call, op: op, payload: payload}, state),
-    do: dispatch_call(op, payload, state)
+  defp dispatch(%{kind: :call, op: op, payload: payload}, state) do
+    if DisplayProtocol.known_op?(op) do
+      dispatch_call(op, payload, state)
+    else
+      {{:error, {:unsupported_op, op}}, state}
+    end
+  end
 
   defp dispatch(%{kind: :cast, op: :event, payload: event}, state) do
     {{:ok, :noreply}, push_event(state, event)}
@@ -123,8 +131,6 @@ defmodule GPUI.Remote.DisplayServer do
   defp dispatch_call(:event, event, state) do
     {{:ok, %{}}, push_event(state, event)}
   end
-
-  defp dispatch_call(op, _payload, state), do: {{:error, {:unsupported_op, op}}, state}
 
   defp push_event(state, event), do: update_in(state.events, &[event | &1])
 

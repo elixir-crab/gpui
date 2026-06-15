@@ -8,6 +8,7 @@ defmodule GPUI.Backend.RemoteTCP do
 
   @behaviour GPUI.Backend
 
+  alias GPUI.Remote.DisplayProtocol
   alias GPUI.Remote.Transport.SafeRPC.TCP, as: SafeRPCTCP
 
   @impl GPUI.Backend
@@ -15,37 +16,40 @@ defmodule GPUI.Backend.RemoteTCP do
     opts =
       opts
       |> Keyword.put(:transport, SafeRPCTCP)
-      |> Keyword.put_new(:cap, :gpui_display)
+      |> Keyword.put_new(:cap, DisplayProtocol.capability())
 
     with {:ok, client} <- SafeRPC.Client.start_link(opts),
-         {:ok, _hello} <-
-           SafeRPC.call(client, :hello, %{role: :runtime, capabilities: [:runtime_v1]}) do
+         %{op: op, payload: payload} = DisplayProtocol.hello(),
+         {:ok, _hello} <- SafeRPC.call(client, op, payload) do
       {:ok, %{client: client}}
     end
   end
 
   @impl GPUI.Backend
   def open_window(%{client: client}, window_payload) do
-    with {:ok, _payload} <- SafeRPC.call(client, :open_window, window_payload), do: :ok
+    %{op: op, payload: payload} = DisplayProtocol.open_window(window_payload)
+    with {:ok, _payload} <- SafeRPC.call(client, op, payload), do: :ok
   end
 
   @impl GPUI.Backend
   def update_window(%{client: client}, window_id, tree) do
-    with {:ok, _payload} <-
-           SafeRPC.call(client, :update_window, %{window_id: window_id, tree: tree}),
-         do: :ok
+    %{op: op, payload: payload} = DisplayProtocol.update_window(window_id, tree)
+    with {:ok, _payload} <- SafeRPC.call(client, op, payload), do: :ok
   end
 
   @impl GPUI.Backend
   def drain_events(%{client: client}) do
-    with {:ok, %{events: events}} <- SafeRPC.call(client, :drain_events, %{}) do
+    %{op: op, payload: payload} = DisplayProtocol.drain_events()
+
+    with {:ok, %{events: events}} <- SafeRPC.call(client, op, payload) do
       {:ok, events}
     end
   end
 
   @impl GPUI.Backend
   def emit_test_event(%{client: client}, event) do
-    SafeRPC.call(client, :event, normalize_test_event(event))
+    %{op: op, payload: payload} = event |> normalize_test_event() |> DisplayProtocol.event()
+    SafeRPC.call(client, op, payload)
   end
 
   @impl GPUI.Backend

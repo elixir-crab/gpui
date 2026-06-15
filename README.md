@@ -8,9 +8,10 @@ The package name is `gpui`, with public modules under `GPUI`.
 
 - Elixir views render serializable `%GPUI.Element{}` trees.
 - OTP owns lifecycle through `GPUI.Runtime`.
-- Rust/Rustler provides native validation and future headless utilities.
-- A Rust GPUI host process will own the platform event loop.
-- RustQ will generate protocol code from `GPUI.CommandSpec` as the surface grows.
+- Rust/Rustler provides the primary native GPUI backend.
+- Remote display experiments use `SafeRPC` for safe ETF RPC, request IDs, timeouts, and capability checks.
+- GPUI owns the display operation contract in `GPUI.Remote.DisplayProtocol`.
+- RustQ generates native/host glue from project specs as the surface grows.
 
 ## Installation
 
@@ -51,7 +52,7 @@ Run a headless remote smoke check over SSH/CI:
 ZED_HEADLESS=1 PATH="$HOME/.cargo/bin:$PATH" mix run examples/remote_check.exs
 ```
 
-Run a RemoteTCP smoke check using the framed envelope transport:
+Run a RemoteTCP smoke check using SafeRPC over framed TCP:
 
 ```sh
 PATH="$HOME/.cargo/bin:$PATH" mix run examples/remote_tcp_check.exs

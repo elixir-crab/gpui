@@ -3,20 +3,16 @@ defmodule GPUI.Backend.RemoteLoopback.Server do
 
   use GenServer
 
-  alias GPUI.Protocol.Runtime, as: RuntimeProtocol
+  alias GPUI.Remote.DisplayProtocol
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts)
   end
 
-  @spec request(GenServer.server(), RuntimeProtocol.message()) :: term()
+  @spec request(GenServer.server(), DisplayProtocol.message()) :: term()
   def request(server, message) do
-    message =
-      message
-      |> RuntimeProtocol.encode()
-      |> RuntimeProtocol.decode()
-
+    message = message |> :erlang.term_to_binary() |> :erlang.binary_to_term([:safe])
     GenServer.call(server, {:runtime_message, message})
   end
 
