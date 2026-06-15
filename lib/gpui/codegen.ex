@@ -1,10 +1,13 @@
 defmodule GPUI.Codegen do
   @moduledoc false
 
+  alias RustQ.Rust
+
   @spec generated_native_element_schema() :: String.t()
   def generated_native_element_schema do
     components = GPUI.ComponentSpec.components()
     elements = GPUI.ComponentSpec.tags()
+    style_specs = GPUI.ComponentSpec.style_specs()
     styles = GPUI.ComponentSpec.styles()
     events = GPUI.ComponentSpec.events()
     resources = GPUI.ComponentSpec.resources()
@@ -63,6 +66,12 @@ defmodule GPUI.Codegen do
             GeneratedElementTag::Unknown => GeneratedComponentKind::Unknown,
         }
     }
+
+    #{generated_decoded_component_structs(components)}
+
+    #{generated_decode_component_functions(components)}
+
+    #{generated_apply_style_function(style_specs)}
     """
   end
 
@@ -126,6 +135,140 @@ defmodule GPUI.Codegen do
       """
     end)
   end
+
+  defp generated_decoded_component_structs(components) do
+    components
+    |> Enum.map_join("\n\n", fn component ->
+      component.tag
+      |> generated_struct_name()
+      |> Rust.struct(
+        vis: :crate,
+        derive: [:Clone, :Debug],
+        attrs: [~s|cfg(feature = "real-gpui")|],
+        fields: generated_struct_fields(component)
+      )
+      |> Rust.to_fragment()
+    end)
+  end
+
+  defp generated_struct_fields(%{kind: :container}) do
+    [
+      Rust.field(:style, "StyleAttrs", vis: :crate),
+      Rust.field(:children, "Vec<ElementNode>", vis: :crate),
+      Rust.field(:click, "Option<String>", vis: :crate)
+    ]
+  end
+
+  defp generated_struct_fields(%{kind: :input}) do
+    [
+      Rust.field(:style, "StyleAttrs", vis: :crate),
+      Rust.field(:value, "String", vis: :crate),
+      Rust.field(:placeholder, "Option<String>", vis: :crate),
+      Rust.field(:change, "Option<String>", vis: :crate),
+      Rust.field(:keydown, "Option<String>", vis: :crate),
+      Rust.field(:keyup, "Option<String>", vis: :crate)
+    ]
+  end
+
+  defp generated_struct_fields(%{kind: :image}) do
+    [Rust.field(:raster, "RasterData", vis: :crate)]
+  end
+
+  defp generated_struct_fields(%{kind: :text}) do
+    [Rust.field(:text, "String", vis: :crate)]
+  end
+
+  defp generated_decode_component_functions(components) do
+    components
+    |> Enum.map_join("\n\n", fn component ->
+      struct_name = generated_struct_name(component.tag)
+      function_name = "decode_generated_#{component.tag}"
+
+      function_name
+      |> Rust.fn_(
+        vis: :crate,
+        attrs: [~s|cfg(feature = "real-gpui")|],
+        args: [{:term, "Term"}],
+        returns: "NifResult<#{struct_name}>",
+        body: generated_decode_body(component, struct_name)
+      )
+      |> Rust.to_fragment()
+    end)
+  end
+
+  defp generated_decode_body(%{kind: :container, events: events}, struct_name) do
+    click_attr = Keyword.get(events, :click, :"phx-click")
+
+    """
+          Ok(#{struct_name} {
+              style: decode_style(term).unwrap_or_default(),
+              children: decode_children(term).unwrap_or_default(),
+              click: generated_string_attr(term, \"#{click_attr}\"),
+          })
+    """
+  end
+
+  defp generated_decode_body(%{kind: :input, events: events}, struct_name) do
+    """
+          Ok(#{struct_name} {
+              style: decode_style(term).unwrap_or_default(),
+              value: generated_string_attr(term, \"value\").unwrap_or_default(),
+              placeholder: generated_string_attr(term, \"placeholder\"),
+              change: generated_string_attr(term, \"#{Keyword.fetch!(events, :change)}\"),
+              keydown: generated_string_attr(term, \"#{Keyword.fetch!(events, :keydown)}\"),
+              keyup: generated_string_attr(term, \"#{Keyword.fetch!(events, :keyup)}\"),
+          })
+    """
+  end
+
+  defp generated_decode_body(%{kind: :image}, struct_name) do
+    """
+          Ok(#{struct_name} {
+              raster: decode_raster(term)?,
+          })
+    """
+  end
+
+  defp generated_decode_body(%{kind: :text}, struct_name) do
+    """
+          Ok(#{struct_name} {
+              text: decode_text_children(term).unwrap_or_default(),
+          })
+    """
+  end
+
+  defp generated_apply_style_function(style_specs) do
+    Rust.fn_(:apply_generated_style_attr,
+      vis: :crate,
+      attrs: [~s|cfg(feature = "real-gpui")|],
+      args: [{:attrs, "&mut StyleAttrs"}, {:key, "&str"}, {:value, "Term"}],
+      body: """
+          match key {
+      #{rust_style_apply_arms(style_specs)}
+              _ => {}
+          }
+      """
+    )
+    |> Rust.to_fragment()
+  end
+
+  defp rust_style_apply_arms(style_specs) do
+    Enum.map_join(style_specs, "\n", fn spec ->
+      assignment = rust_style_assignment(spec.field, spec.type)
+      ~s|            "#{spec.name}" => #{assignment},|
+    end)
+  end
+
+  defp rust_style_assignment(field, {:atom_eq, expected}) do
+    "attrs.#{field} = atom_eq(value, \"#{expected}\")"
+  end
+
+  defp rust_style_assignment(field, :atom_string), do: "attrs.#{field} = atom_string(value)"
+  defp rust_style_assignment(field, :rgb), do: "attrs.#{field} = rgb_value(value)"
+  defp rust_style_assignment(field, :px), do: "attrs.#{field} = px_value(value)"
+  defp rust_style_assignment(field, :radius), do: "attrs.#{field} = radius_value(value)"
+
+  defp generated_struct_name(tag), do: "Generated#{Macro.camelize(to_string(tag))}"
 
   defp generated_component_specs(components) do
     kinds = components |> Enum.map(& &1.kind) |> Enum.uniq()

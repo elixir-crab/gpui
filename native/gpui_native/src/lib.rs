@@ -260,21 +260,26 @@ fn decode_element_node(term: Term) -> NifResult<ElementNode> {
     let node_type = type_term.atom_to_string()?;
 
     match decode_generated_element_tag(node_type.as_str()) {
-        GeneratedElementTag::Div | GeneratedElementTag::Button => Ok(ElementNode::Div {
-            style: decode_style(term).unwrap_or_default(),
-            children: decode_children(term).unwrap_or_default(),
-            click: decode_click(term).ok().flatten(),
+        GeneratedElementTag::Div => decode_generated_div(term).map(|node| ElementNode::Div {
+            style: node.style,
+            children: node.children,
+            click: node.click,
         }),
-        GeneratedElementTag::Input => Ok(ElementNode::Input {
-            style: decode_style(term).unwrap_or_default(),
-            value: decode_string_attr(term, "value").unwrap_or_default(),
-            placeholder: decode_string_attr(term, "placeholder"),
-            change: decode_event_attr(term, "phx-change").or_else(|| decode_event_attr(term, "phx-click")),
-            keydown: decode_event_attr(term, "phx-keydown"),
-            keyup: decode_event_attr(term, "phx-keyup"),
+        GeneratedElementTag::Button => decode_generated_button(term).map(|node| ElementNode::Div {
+            style: node.style,
+            children: node.children,
+            click: node.click,
         }),
-        GeneratedElementTag::Img => decode_raster(term).map(ElementNode::Image),
-        GeneratedElementTag::Text => Ok(ElementNode::Text(decode_text_children(term).unwrap_or_default())),
+        GeneratedElementTag::Input => decode_generated_input(term).map(|node| ElementNode::Input {
+            style: node.style,
+            value: node.value,
+            placeholder: node.placeholder,
+            change: node.change,
+            keydown: node.keydown,
+            keyup: node.keyup,
+        }),
+        GeneratedElementTag::Img => decode_generated_img(term).map(|node| ElementNode::Image(node.raster)),
+        GeneratedElementTag::Text => decode_generated_text(term).map(|node| ElementNode::Text(node.text)),
         GeneratedElementTag::Unknown => Ok(ElementNode::Text(String::new())),
     }
 }
@@ -309,17 +314,7 @@ fn decode_text_children(term: Term) -> NifResult<String> {
 }
 
 #[cfg(feature = "real-gpui")]
-fn decode_click(term: Term) -> NifResult<Option<String>> {
-    Ok(decode_event_attr(term, "phx-click"))
-}
-
-#[cfg(feature = "real-gpui")]
-fn decode_event_attr(term: Term, attr: &str) -> Option<String> {
-    decode_string_attr(term, attr)
-}
-
-#[cfg(feature = "real-gpui")]
-fn decode_string_attr(term: Term, attr: &str) -> Option<String> {
+fn generated_string_attr(term: Term, attr: &str) -> Option<String> {
     let env = term.get_env();
     let attrs = term.map_get(Atom::from_bytes(env, b"attrs").ok()?).ok()?;
     attrs
@@ -361,23 +356,8 @@ fn decode_style(term: Term) -> NifResult<StyleAttrs> {
     let mut attrs = StyleAttrs::default();
 
     for (key, value) in entries {
-        match key.atom_to_string()?.as_str() {
-            "display" => attrs.display_flex = atom_eq(value, "flex"),
-            "flex_direction" => attrs.flex_direction = atom_string(value),
-            "align_items" => attrs.align_items = atom_string(value),
-            "justify_content" => attrs.justify_content = atom_string(value),
-            "background" => attrs.background = rgb_value(value),
-            "color" => attrs.color = rgb_value(value),
-            "font_size" => attrs.font_size = px_value(value),
-            "gap" => attrs.gap = px_value(value),
-            "padding" => attrs.padding = px_value(value),
-            "margin" => attrs.margin = px_value(value),
-            "width" => attrs.width = px_value(value),
-            "height" => attrs.height = px_value(value),
-            "border_radius" => attrs.border_radius = radius_value(value),
-            "border_width" => attrs.border_width = px_value(value),
-            _ => {}
-        }
+        let key = key.atom_to_string()?;
+        apply_generated_style_attr(&mut attrs, key.as_str(), value);
     }
 
     Ok(attrs)

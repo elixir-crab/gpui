@@ -71,3 +71,113 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::Unknown => GeneratedComponentKind::Unknown,
     }
 }
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct GeneratedDiv {
+pub(crate) style: StyleAttrs,
+pub(crate) children: Vec<ElementNode>,
+pub(crate) click: Option<String>,
+}
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct GeneratedButton {
+pub(crate) style: StyleAttrs,
+pub(crate) children: Vec<ElementNode>,
+pub(crate) click: Option<String>,
+}
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct GeneratedInput {
+pub(crate) style: StyleAttrs,
+pub(crate) value: String,
+pub(crate) placeholder: Option<String>,
+pub(crate) change: Option<String>,
+pub(crate) keydown: Option<String>,
+pub(crate) keyup: Option<String>,
+}
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct GeneratedImg {
+pub(crate) raster: RasterData,
+}
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct GeneratedText {
+pub(crate) text: String,
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_div(term: Term) -> NifResult<GeneratedDiv> {
+      Ok(GeneratedDiv {
+          style: decode_style(term).unwrap_or_default(),
+          children: decode_children(term).unwrap_or_default(),
+          click: generated_string_attr(term, "phx-click"),
+      })
+
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_button(term: Term) -> NifResult<GeneratedButton> {
+      Ok(GeneratedButton {
+          style: decode_style(term).unwrap_or_default(),
+          children: decode_children(term).unwrap_or_default(),
+          click: generated_string_attr(term, "phx-click"),
+      })
+
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_input(term: Term) -> NifResult<GeneratedInput> {
+      Ok(GeneratedInput {
+          style: decode_style(term).unwrap_or_default(),
+          value: generated_string_attr(term, "value").unwrap_or_default(),
+          placeholder: generated_string_attr(term, "placeholder"),
+          change: generated_string_attr(term, "phx-change"),
+          keydown: generated_string_attr(term, "phx-keydown"),
+          keyup: generated_string_attr(term, "phx-keyup"),
+      })
+
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_img(term: Term) -> NifResult<GeneratedImg> {
+      Ok(GeneratedImg {
+          raster: decode_raster(term)?,
+      })
+
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_text(term: Term) -> NifResult<GeneratedText> {
+      Ok(GeneratedText {
+          text: decode_text_children(term).unwrap_or_default(),
+      })
+
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn apply_generated_style_attr(attrs: &mut StyleAttrs, key: &str, value: Term) {
+    match key {
+            "display" => attrs.display_flex = atom_eq(value, "flex"),
+            "flex_direction" => attrs.flex_direction = atom_string(value),
+            "align_items" => attrs.align_items = atom_string(value),
+            "justify_content" => attrs.justify_content = atom_string(value),
+            "background" => attrs.background = rgb_value(value),
+            "color" => attrs.color = rgb_value(value),
+            "font_size" => attrs.font_size = px_value(value),
+            "gap" => attrs.gap = px_value(value),
+            "padding" => attrs.padding = px_value(value),
+            "margin" => attrs.margin = px_value(value),
+            "width" => attrs.width = px_value(value),
+            "height" => attrs.height = px_value(value),
+            "border_radius" => attrs.border_radius = radius_value(value),
+            "border_width" => attrs.border_width = px_value(value),
+        _ => {}
+    }
+
+}
