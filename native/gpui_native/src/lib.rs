@@ -2,7 +2,7 @@ use rustler::{Atom, Encoder, Env, NifResult, ResourceArc, Term};
 use std::sync::Mutex;
 
 #[cfg(feature = "real-gpui")]
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::{collections::HashMap, sync::atomic::{AtomicBool, Ordering}, sync::Arc};
 
 #[cfg(feature = "real-gpui")]
 static GPUI_STARTED: AtomicBool = AtomicBool::new(false);
@@ -12,6 +12,8 @@ include!("generated_nifs.rs");
 
 pub struct RuntimeResource {
     events: Mutex<Vec<NativeEvent>>,
+    #[cfg(feature = "real-gpui")]
+    windows: Mutex<HashMap<u64, SharedTree>>,
 }
 
 #[derive(Clone, Debug)]
@@ -27,6 +29,8 @@ impl rustler::Resource for RuntimeResource {}
 fn start_runtime_impl<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
     let runtime = ResourceArc::new(RuntimeResource {
         events: Mutex::new(Vec::new()),
+        #[cfg(feature = "real-gpui")]
+        windows: Mutex::new(HashMap::new()),
     });
 
     Ok((atoms::ok(), runtime).encode(env))
@@ -50,7 +54,15 @@ fn open_window_impl<'a>(
     window: Term<'a>,
 ) -> NifResult<Term<'a>> {
     let title = window_title(env, window)?;
+    let window_id = window_id(env, window).unwrap_or(1);
     let tree = window_tree(window).unwrap_or_else(ElementNode::default_root);
+    let shared_tree = Arc::new(Mutex::new(tree));
+
+    runtime
+        .windows
+        .lock()
+        .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))?
+        .insert(window_id, shared_tree.clone());
 
     if GPUI_STARTED.swap(true, Ordering::SeqCst) {
         push_text_event(&runtime, "window_open_rejected:already_started".to_string())?;
@@ -59,7 +71,7 @@ fn open_window_impl<'a>(
 
     let event_title = title.clone();
     let runtime_for_window = runtime.clone();
-    std::thread::spawn(move || run_gpui_window(title, tree, runtime_for_window));
+    std::thread::spawn(move || run_gpui_window(title, window_id, shared_tree, runtime_for_window));
     push_text_event(&runtime, format!("window_open_requested:{event_title}"))?;
 
     Ok((atoms::ok(), event_title).encode(env))
@@ -78,6 +90,7 @@ fn drain_events_impl<'a>(env: Env<'a>, runtime: ResourceArc<RuntimeResource>) ->
     Ok((atoms::ok(), encoded).encode(env))
 }
 
+#[cfg(not(feature = "real-gpui"))]
 fn update_window_impl<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,
@@ -86,6 +99,30 @@ fn update_window_impl<'a>(
 ) -> NifResult<Term<'a>> {
     push_event(&runtime, NativeEvent::WindowUpdated { window_id })?;
     Ok((atoms::ok(), window_id).encode(env))
+}
+
+#[cfg(feature = "real-gpui")]
+fn update_window_impl<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+    tree: Term<'a>,
+) -> NifResult<Term<'a>> {
+    let tree = decode_element_node(tree)?;
+    let windows = runtime
+        .windows
+        .lock()
+        .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))?;
+
+    if let Some(shared_tree) = windows.get(&window_id) {
+        *shared_tree
+            .lock()
+            .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))? = tree;
+        push_event(&runtime, NativeEvent::WindowUpdated { window_id })?;
+        Ok((atoms::ok(), window_id).encode(env))
+    } else {
+        Ok((atoms::error(), "unknown_window").encode(env))
+    }
 }
 
 fn emit_test_event_impl<'a>(
@@ -109,6 +146,14 @@ fn validate_tree_impl<'a>(env: Env<'a>, tree: Term<'a>) -> NifResult<Term<'a>> {
     } else {
         Ok((atoms::error(), atoms::invalid_tree()).encode(env))
     }
+}
+
+#[cfg(feature = "real-gpui")]
+fn window_id(env: Env, window: Term) -> Option<u64> {
+    window
+        .map_get(Atom::from_bytes(env, b"id").ok()?)
+        .ok()
+        .and_then(|term| term.decode::<u64>().ok())
 }
 
 fn window_title(env: Env, window: Term) -> NifResult<String> {
@@ -288,6 +333,9 @@ struct StyleAttrs {
 }
 
 #[cfg(feature = "real-gpui")]
+type SharedTree = Arc<Mutex<ElementNode>>;
+
+#[cfg(feature = "real-gpui")]
 #[derive(Clone, Debug)]
 enum ElementNode {
     Div { style: StyleAttrs, children: Vec<ElementNode>, click: Option<String> },
@@ -383,18 +431,28 @@ impl ElementNode {
 }
 
 #[cfg(feature = "real-gpui")]
-fn run_gpui_window(title: String, tree: ElementNode, runtime: ResourceArc<RuntimeResource>) {
+fn run_gpui_window(
+    title: String,
+    window_id: u64,
+    tree: SharedTree,
+    runtime: ResourceArc<RuntimeResource>,
+) {
     use gpui::{px, size, App, AppContext, Bounds, Context, Render, Window, WindowBounds, WindowOptions};
 
     struct ElixirRoot {
-        tree: ElementNode,
+        tree: SharedTree,
         runtime: ResourceArc<RuntimeResource>,
         window_id: u64,
     }
 
     impl Render for ElixirRoot {
         fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl gpui::IntoElement {
-            self.tree.clone().render(self.runtime.clone(), self.window_id)
+            let tree = self
+                .tree
+                .lock()
+                .map(|tree| tree.clone())
+                .unwrap_or_else(|_| ElementNode::default_root());
+            tree.render(self.runtime.clone(), self.window_id)
         }
     }
 
@@ -413,7 +471,7 @@ fn run_gpui_window(title: String, tree: ElementNode, runtime: ResourceArc<Runtim
                 cx.new(|_| ElixirRoot {
                     tree: tree_for_view.clone(),
                     runtime: runtime_for_view.clone(),
-                    window_id: 1,
+                    window_id,
                 })
             },
         );
