@@ -30,3 +30,45 @@ end
 mix deps.get
 mix ci
 ```
+
+## Examples
+
+Build the real GPUI native backend:
+
+```sh
+PATH="$HOME/.cargo/bin:$PATH" mix gpui.native.build --real-gpui
+```
+
+Run a local native counter:
+
+```sh
+PATH="$HOME/.cargo/bin:$PATH" mix run examples/counter.exs
+```
+
+Run a headless remote smoke check over SSH/CI:
+
+```sh
+ZED_HEADLESS=1 PATH="$HOME/.cargo/bin:$PATH" mix run examples/remote_check.exs
+```
+
+Run a RemoteTCP smoke check using the framed envelope transport:
+
+```sh
+PATH="$HOME/.cargo/bin:$PATH" mix run examples/remote_tcp_check.exs
+```
+
+Run the two-terminal RemoteTCP prototype:
+
+```sh
+# Terminal 1: display server, data/headless backend
+GPUI_REMOTE_DISPLAY_BACKEND=data GPUI_REMOTE_PORT=4040 mix run examples/remote_display_server.exs
+
+# Terminal 2: app runtime client
+GPUI_REMOTE_HOST=127.0.0.1 GPUI_REMOTE_PORT=4040 mix run examples/remote_tcp_counter.exs
+```
+
+For a native display server, use:
+
+```sh
+GPUI_REMOTE_DISPLAY_BACKEND=native PATH="$HOME/.cargo/bin:$PATH" mix run examples/remote_display_server.exs
+```
