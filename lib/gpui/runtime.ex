@@ -208,9 +208,10 @@ defmodule GPUI.Runtime do
   end
 
   defp handle_backend_event(
-         %{type: :click, window_id: window_id, event: event} = backend_event,
+         %{type: type, window_id: window_id, event: event} = backend_event,
          state
-       ) do
+       )
+       when type in [:click, :change, :keydown, :keyup] do
     case Enum.find(state.windows, &(&1.id == window_id)) do
       %WindowSpec{root: {module, assigns}} = window ->
         assigns = Map.new(assigns)

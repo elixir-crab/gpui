@@ -12,6 +12,8 @@ defmodule GPUI.Remote.DisplayProtocolTest do
              :resume_session,
              :open_window,
              :update_window,
+             :put_resource,
+             :drop_resource,
              :drain_events,
              :event
            ]
@@ -33,6 +35,11 @@ defmodule GPUI.Remote.DisplayProtocolTest do
 
     assert %{op: :update_window, payload: %{window_id: 1, tree: %{type: :div}}} =
              DisplayProtocol.update_window(1, %{type: :div})
+
+    assert %{op: :put_resource, payload: %{id: "logo", resource: %{type: :raster}}} =
+             DisplayProtocol.put_resource("logo", %{type: :raster})
+
+    assert %{op: :drop_resource, payload: %{id: "logo"}} = DisplayProtocol.drop_resource("logo")
 
     assert %{op: :event, payload: %{type: :click}} = DisplayProtocol.event(%{type: :click})
     assert %{op: :drain_events, payload: %{}} = DisplayProtocol.drain_events()

@@ -28,6 +28,7 @@ pub struct RuntimeResource {
 enum NativeEvent {
     Text(String),
     Click { window_id: u64, event: String },
+    Input { kind: String, window_id: u64, event: String, value: Option<String> },
     WindowUpdated { window_id: u64 },
 }
 
@@ -150,7 +151,21 @@ fn emit_test_event_impl<'a>(
     let event_name = event
         .map_get(Atom::from_bytes(env, b"event")?)?
         .decode::<String>()?;
-    push_event(&runtime, NativeEvent::Click { window_id, event: event_name })?;
+    let event_type = event
+        .map_get(Atom::from_bytes(env, b"type")?)
+        .ok()
+        .and_then(|term| term.atom_to_string().ok())
+        .unwrap_or_else(|| "click".to_string());
+    let value = event
+        .map_get(Atom::from_bytes(env, b"value")?)
+        .ok()
+        .and_then(|term| term.decode::<String>().ok());
+
+    if event_type == "click" {
+        push_event(&runtime, NativeEvent::Click { window_id, event: event_name })?;
+    } else {
+        push_event(&runtime, NativeEvent::Input { kind: event_type, window_id, event: event_name, value })?;
+    }
     Ok((atoms::ok(), atoms::ok()).encode(env))
 }
 
@@ -203,6 +218,20 @@ fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifResult<Term<'
             (Atom::from_bytes(env, b"event")?, event.encode(env)),
         ]
         .encode(env)),
+        NativeEvent::Input { kind, window_id, event, value } => {
+            let type_atom = Atom::from_bytes(env, kind.as_bytes())?;
+            let mut entries = vec![
+                (Atom::from_bytes(env, b"type")?, type_atom.to_term(env)),
+                (Atom::from_bytes(env, b"window_id")?, window_id.encode(env)),
+                (Atom::from_bytes(env, b"event")?, event.encode(env)),
+            ];
+
+            if let Some(value) = value {
+                entries.push((Atom::from_bytes(env, b"value")?, value.encode(env)));
+            }
+
+            Ok(entries.encode(env))
+        }
         NativeEvent::WindowUpdated { window_id } => Ok(vec![
             (Atom::from_bytes(env, b"type")?, atoms::window_updated().to_term(env)),
             (Atom::from_bytes(env, b"window_id")?, window_id.encode(env)),
@@ -230,7 +259,7 @@ fn decode_element_node(term: Term) -> NifResult<ElementNode> {
     let node_type = type_term.atom_to_string()?;
 
     match node_type.as_str() {
-        "div" | "button" => Ok(ElementNode::Div {
+        "div" | "button" | "input" => Ok(ElementNode::Div {
             style: decode_style(term).unwrap_or_default(),
             children: decode_children(term).unwrap_or_default(),
             click: decode_click(term).ok().flatten(),

@@ -99,6 +99,29 @@ defmodule GPUI.Remote.DisplayServerTest do
     assert Map.has_key?(state.sessions, "active-session")
   end
 
+  test "stores and drops resources per session" do
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
+    {:ok, client} = start_client(port)
+    session_id = "resource-session"
+
+    resource = %{type: :raster, width: 1, height: 1}
+
+    assert {:ok, %{}} =
+             SafeRPC.call(client, :put_resource, %{id: "logo", resource: resource},
+               meta: %{session_id: session_id}
+             )
+
+    state = :sys.get_state(server)
+    assert get_in(state.sessions, [session_id, :resources, "logo"]) == resource
+
+    assert {:ok, %{}} =
+             SafeRPC.call(client, :drop_resource, %{id: "logo"}, meta: %{session_id: session_id})
+
+    state = :sys.get_state(server)
+    refute Map.has_key?(get_in(state.sessions, [session_id, :resources]), "logo")
+  end
+
   test "responds to ping for heartbeat checks" do
     {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)

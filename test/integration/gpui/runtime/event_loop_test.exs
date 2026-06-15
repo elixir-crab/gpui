@@ -20,6 +20,38 @@ defmodule GPUI.Runtime.EventLoopTest do
     end
   end
 
+  defmodule InputView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(assigns) do
+      ~GPUI"""
+      <div>
+        <input value={assigns.name} phx-change="rename" />
+      </div>
+      """
+    end
+
+    @impl GPUI.View
+    def handle_event("rename", %{value: value}, assigns) do
+      {:noreply, %{assigns | name: value}}
+    end
+  end
+
+  defmodule InputApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(_args) do
+      {:ok, %{},
+       [
+         window "Input" do
+           root(InputView, name: "old")
+         end
+       ]}
+    end
+  end
+
   defmodule CounterApp do
     use GPUI.Application
 
@@ -62,6 +94,27 @@ defmodule GPUI.Runtime.EventLoopTest do
     assert %{op: :backend_event, payload: %{type: :window_updated, window_id: 1}} in GPUI.Runtime.host_messages(
              pid
            )
+
+    GenServer.stop(pid)
+  end
+
+  test "native change events update view assigns" do
+    {:ok, pid} = GPUI.Runtime.start_link(app: InputApp, backend: :native)
+    [window] = GPUI.Runtime.windows(pid)
+
+    assert {:ok, :ok} =
+             GPUI.Runtime.emit_test_event(pid, %{
+               type: :change,
+               window_id: window.id,
+               event: "rename",
+               value: "new"
+             })
+
+    handled = GPUI.Runtime.drain_events(pid)
+    assert %{type: :change, event: "rename", value: "new", window_id: 1} in handled
+
+    [updated] = GPUI.Runtime.windows(pid)
+    assert {_module, %{name: "new"}} = updated.root
 
     GenServer.stop(pid)
   end

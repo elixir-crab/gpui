@@ -8,7 +8,17 @@ defmodule GPUI.Remote.DisplayProtocol do
   """
 
   @capability :gpui_display
-  @ops [:hello, :ping, :resume_session, :open_window, :update_window, :drain_events, :event]
+  @ops [
+    :hello,
+    :ping,
+    :resume_session,
+    :open_window,
+    :update_window,
+    :put_resource,
+    :drop_resource,
+    :drain_events,
+    :event
+  ]
 
   @type op ::
           :hello
@@ -16,6 +26,8 @@ defmodule GPUI.Remote.DisplayProtocol do
           | :resume_session
           | :open_window
           | :update_window
+          | :put_resource
+          | :drop_resource
           | :drain_events
           | :event
   @type message :: %{op: op(), payload: map()}
@@ -51,6 +63,14 @@ defmodule GPUI.Remote.DisplayProtocol do
   def update_window(window_id, tree) when is_integer(window_id) and window_id > 0 do
     message(:update_window, %{window_id: window_id, tree: tree})
   end
+
+  @spec put_resource(term(), map()) :: message()
+  def put_resource(resource_id, resource) when is_map(resource) do
+    message(:put_resource, %{id: resource_id, resource: resource})
+  end
+
+  @spec drop_resource(term()) :: message()
+  def drop_resource(resource_id), do: message(:drop_resource, %{id: resource_id})
 
   @spec event(map()) :: message()
   def event(event) when is_map(event), do: message(:event, event)

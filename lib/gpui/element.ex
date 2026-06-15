@@ -42,6 +42,7 @@ defmodule GPUI.Element do
   end
 
   defp attr_value_to_payload(%GPUI.Raster{} = raster), do: GPUI.Raster.to_payload(raster)
+  defp attr_value_to_payload(%GPUI.ResourceRef{} = ref), do: GPUI.ResourceRef.to_payload(ref)
 
   defp attr_value_to_payload(value) when is_list(value) do
     Enum.map(value, fn

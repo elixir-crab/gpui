@@ -180,6 +180,14 @@ defmodule GPUI.Remote.DisplayServer do
     end
   end
 
+  defp dispatch_call(:put_resource, %{id: resource_id, resource: resource}, session_id, state) do
+    {{:ok, %{}}, put_session_resource(state, session_id, resource_id, resource)}
+  end
+
+  defp dispatch_call(:drop_resource, %{id: resource_id}, session_id, state) do
+    {{:ok, %{}}, drop_session_resource(state, session_id, resource_id)}
+  end
+
   defp dispatch_call(:drain_events, _payload, session_id, state) do
     events = session_events(state, session_id)
     {{:ok, %{events: Enum.reverse(events)}}, clear_session_events(state, session_id)}
@@ -264,6 +272,27 @@ defmodule GPUI.Remote.DisplayServer do
     end)
   end
 
+  defp put_session_resource(state, session_id, resource_id, resource) do
+    update_in(state.sessions, fn sessions ->
+      Map.update(
+        sessions,
+        session_id,
+        put_in(empty_session(), [:resources, resource_id], resource),
+        fn session ->
+          put_in(session, [:resources, resource_id], resource)
+        end
+      )
+    end)
+  end
+
+  defp drop_session_resource(state, session_id, resource_id) do
+    update_in(state.sessions, fn sessions ->
+      Map.update(sessions, session_id, empty_session(), fn session ->
+        update_in(session.resources, &Map.delete(&1, resource_id))
+      end)
+    end)
+  end
+
   defp put_session_window_tree(state, session_id, window_id, tree) do
     update_in(state.sessions, fn sessions ->
       Map.update(sessions, session_id, empty_session(), fn session ->
@@ -277,7 +306,7 @@ defmodule GPUI.Remote.DisplayServer do
     end)
   end
 
-  defp empty_session, do: %{events: [], windows: %{}, last_seen: monotonic_ms()}
+  defp empty_session, do: %{events: [], windows: %{}, resources: %{}, last_seen: monotonic_ms()}
 
   defp monotonic_ms, do: System.monotonic_time(:millisecond)
 
