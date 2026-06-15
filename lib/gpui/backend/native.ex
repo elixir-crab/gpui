@@ -6,7 +6,7 @@ defmodule GPUI.Backend.Native do
   @impl GPUI.Backend
   def init(_opts) do
     with {:ok, runtime} <- GPUI.Native.start_runtime() do
-      {:ok, %{runtime: runtime}}
+      {:ok, %{runtime: runtime, resources: :ets.new(__MODULE__.Resources, [:set, :private])}}
     end
   end
 
@@ -24,6 +24,18 @@ defmodule GPUI.Backend.Native do
       {:ok, _window_id} -> :ok
       error -> error
     end
+  end
+
+  @impl GPUI.Backend
+  def put_resource(%{resources: resources}, resource_id, resource) do
+    true = :ets.insert(resources, {resource_id, resource})
+    :ok
+  end
+
+  @impl GPUI.Backend
+  def drop_resource(%{resources: resources}, resource_id) do
+    true = :ets.delete(resources, resource_id)
+    :ok
   end
 
   @impl GPUI.Backend

@@ -16,6 +16,7 @@ use std::{
 static GPUI_STARTED: AtomicBool = AtomicBool::new(false);
 
 include!("generated_atoms.rs");
+include!("generated_element_schema.rs");
 include!("generated_nifs.rs");
 
 pub struct RuntimeResource {
@@ -259,10 +260,16 @@ fn decode_element_node(term: Term) -> NifResult<ElementNode> {
     let node_type = type_term.atom_to_string()?;
 
     match node_type.as_str() {
-        "div" | "button" | "input" => Ok(ElementNode::Div {
+        "div" | "button" => Ok(ElementNode::Div {
             style: decode_style(term).unwrap_or_default(),
             children: decode_children(term).unwrap_or_default(),
             click: decode_click(term).ok().flatten(),
+        }),
+        "input" => Ok(ElementNode::Input {
+            style: decode_style(term).unwrap_or_default(),
+            value: decode_string_attr(term, "value").unwrap_or_default(),
+            placeholder: decode_string_attr(term, "placeholder"),
+            change: decode_event_attr(term, "phx-change").or_else(|| decode_event_attr(term, "phx-click")),
         }),
         "img" => decode_raster(term).map(ElementNode::Image),
         "text" => Ok(ElementNode::Text(decode_text_children(term).unwrap_or_default())),
@@ -301,13 +308,23 @@ fn decode_text_children(term: Term) -> NifResult<String> {
 
 #[cfg(feature = "real-gpui")]
 fn decode_click(term: Term) -> NifResult<Option<String>> {
-    let env = term.get_env();
-    let attrs = term.map_get(Atom::from_bytes(env, b"attrs")?)?;
+    Ok(decode_event_attr(term, "phx-click"))
+}
 
-    match attrs.map_get(Atom::from_bytes(env, b"phx-click")?) {
-        Ok(value) => Ok(value.decode::<String>().ok()),
-        Err(_) => Ok(None),
-    }
+#[cfg(feature = "real-gpui")]
+fn decode_event_attr(term: Term, attr: &str) -> Option<String> {
+    decode_string_attr(term, attr)
+}
+
+#[cfg(feature = "real-gpui")]
+fn decode_string_attr(term: Term, attr: &str) -> Option<String> {
+    let env = term.get_env();
+    let attrs = term.map_get(Atom::from_bytes(env, b"attrs").ok()?).ok()?;
+    attrs
+        .map_get(Atom::from_bytes(env, attr.as_bytes()).ok()?)
+        .ok()?
+        .decode::<String>()
+        .ok()
 }
 
 #[cfg(feature = "real-gpui")]
@@ -537,6 +554,7 @@ type SharedWindow = Arc<WindowState>;
 #[derive(Clone, Debug)]
 enum ElementNode {
     Div { style: StyleAttrs, children: Vec<ElementNode>, click: Option<String> },
+    Input { style: StyleAttrs, value: String, placeholder: Option<String>, change: Option<String> },
     Image(RasterData),
     Text(String),
 }
@@ -567,6 +585,15 @@ impl ElementNode {
         match self {
             ElementNode::Text(text) => text.into_any_element(),
             ElementNode::Image(raster) => raster.render(),
+            ElementNode::Input { style, value, placeholder, change } => {
+                let label = if value.is_empty() {
+                    placeholder.unwrap_or_else(|| "".to_string())
+                } else {
+                    value
+                };
+                let child = ElementNode::Text(label);
+                ElementNode::Div { style, children: vec![child], click: change }.render(runtime, window_id)
+            }
             ElementNode::Div { style, children, click } => {
                 let mut element = div();
 

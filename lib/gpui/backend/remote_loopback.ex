@@ -36,6 +36,16 @@ defmodule GPUI.Backend.RemoteLoopback do
   end
 
   @impl GPUI.Backend
+  def put_resource(%{server: server}, resource_id, resource) do
+    :ok = Server.request(server, DisplayProtocol.put_resource(resource_id, resource))
+  end
+
+  @impl GPUI.Backend
+  def drop_resource(%{server: server}, resource_id) do
+    :ok = Server.request(server, DisplayProtocol.drop_resource(resource_id))
+  end
+
+  @impl GPUI.Backend
   def drain_events(%{server: server}) do
     Server.request(server, DisplayProtocol.drain_events())
   end

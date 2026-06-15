@@ -16,6 +16,12 @@ defmodule GPUI.Backend.RemoteTCP.Session do
   def update_window(session, window_id, tree),
     do: GenServer.call(session, {:update_window, window_id, tree})
 
+  def put_resource(session, resource_id, resource),
+    do: GenServer.call(session, {:put_resource, resource_id, resource})
+
+  def drop_resource(session, resource_id),
+    do: GenServer.call(session, {:drop_resource, resource_id})
+
   def drain_events(session), do: GenServer.call(session, :drain_events)
   def emit_test_event(session, event), do: GenServer.call(session, {:emit_test_event, event})
 
@@ -27,7 +33,8 @@ defmodule GPUI.Backend.RemoteTCP.Session do
       opts: opts,
       client: nil,
       session_id: session_id,
-      windows: %{}
+      windows: %{},
+      resources: %{}
     }
 
     case connect(state) do
@@ -58,6 +65,24 @@ defmodule GPUI.Backend.RemoteTCP.Session do
 
       {:error, reason, state} ->
         {:reply, {:error, reason}, state}
+    end
+  end
+
+  def handle_call({:put_resource, resource_id, resource}, _from, state) do
+    %{op: op, payload: payload} = DisplayProtocol.put_resource(resource_id, resource)
+
+    case call_with_reconnect(state, op, payload) do
+      {:ok, _reply, state} -> {:reply, :ok, put_resource_state(state, resource_id, resource)}
+      {:error, reason, state} -> {:reply, {:error, reason}, state}
+    end
+  end
+
+  def handle_call({:drop_resource, resource_id}, _from, state) do
+    %{op: op, payload: payload} = DisplayProtocol.drop_resource(resource_id)
+
+    case call_with_reconnect(state, op, payload) do
+      {:ok, _reply, state} -> {:reply, :ok, drop_resource_state(state, resource_id)}
+      {:error, reason, state} -> {:reply, {:error, reason}, state}
     end
   end
 
@@ -97,6 +122,7 @@ defmodule GPUI.Backend.RemoteTCP.Session do
          state = %{state | client: client},
          {:ok, state} <- hello(state),
          {:ok, state} <- resume_session(state),
+         {:ok, state} <- replay_resources(state),
          {:ok, state} <- replay_windows(state) do
       {:ok, state}
     end
@@ -118,6 +144,17 @@ defmodule GPUI.Backend.RemoteTCP.Session do
       {:ok, _session} -> {:ok, state}
       {:error, reason} -> {:error, reason}
     end
+  end
+
+  defp replay_resources(state) do
+    Enum.reduce_while(state.resources, {:ok, state}, fn {resource_id, resource}, {:ok, state} ->
+      %{op: op, payload: payload} = DisplayProtocol.put_resource(resource_id, resource)
+
+      case safe_call(state.client, state.session_id, op, payload) do
+        {:ok, _reply} -> {:cont, {:ok, state}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
   end
 
   defp replay_windows(state) do
@@ -192,6 +229,12 @@ defmodule GPUI.Backend.RemoteTCP.Session do
   end
 
   defp put_window(state, _window_payload), do: state
+
+  defp put_resource_state(state, resource_id, resource),
+    do: put_in(state.resources[resource_id], resource)
+
+  defp drop_resource_state(state, resource_id),
+    do: update_in(state.resources, &Map.delete(&1, resource_id))
 
   defp put_window_tree(state, window_id, tree) do
     update_in(state.windows, fn windows ->

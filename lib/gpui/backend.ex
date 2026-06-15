@@ -13,6 +13,8 @@ defmodule GPUI.Backend do
   @callback init(keyword()) :: {:ok, state()} | {:error, term()}
   @callback open_window(state(), map()) :: :ok | {:error, term()}
   @callback update_window(state(), pos_integer(), map() | nil) :: :ok | {:error, term()}
+  @callback put_resource(state(), term(), map()) :: :ok | {:error, term()}
+  @callback drop_resource(state(), term()) :: :ok | {:error, term()}
   @callback drain_events(state()) :: {:ok, [event()]} | {:error, term()}
   @callback emit_test_event(state(), map()) :: {:ok, term()} | {:error, term()}
   @callback handle_info(state(), term()) :: {:ok, event()} | :unhandled

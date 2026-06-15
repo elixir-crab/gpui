@@ -18,7 +18,7 @@ defmodule GPUI.Backend.RemoteLoopback.Server do
 
   @impl GenServer
   def init(_opts) do
-    {:ok, %{windows: %{}, events: []}}
+    {:ok, %{windows: %{}, resources: %{}, events: []}}
   end
 
   @impl GenServer
@@ -37,6 +37,18 @@ defmodule GPUI.Backend.RemoteLoopback.Server do
       |> push_event(%{type: :window_updated, window_id: window_id})
 
     {:reply, :ok, state}
+  end
+
+  def handle_call(
+        {:runtime_message, %{op: :put_resource, payload: %{id: id, resource: resource}}},
+        _from,
+        state
+      ) do
+    {:reply, :ok, put_in(state, [:resources, id], resource)}
+  end
+
+  def handle_call({:runtime_message, %{op: :drop_resource, payload: %{id: id}}}, _from, state) do
+    {:reply, :ok, update_in(state.resources, &Map.delete(&1, id))}
   end
 
   def handle_call({:runtime_message, %{op: :event, payload: event}}, _from, state) do

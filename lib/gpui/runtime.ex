@@ -65,6 +65,20 @@ defmodule GPUI.Runtime do
   @spec drain_events(GenServer.server()) :: [map()]
   def drain_events(server), do: GenServer.call(server, :drain_events)
 
+  @doc "Stores a display resource through the active backend."
+  @spec put_resource(GenServer.server(), term(), map()) :: :ok | {:error, term()}
+  def put_resource(server, resource_id, resource),
+    do: GenServer.call(server, {:put_resource, resource_id, resource})
+
+  @doc "Drops a display resource through the active backend."
+  @spec drop_resource(GenServer.server(), term()) :: :ok | {:error, term()}
+  def drop_resource(server, resource_id),
+    do: GenServer.call(server, {:drop_resource, resource_id})
+
+  @doc "Dispatches a normalized UI event directly into the runtime."
+  @spec dispatch_event(GenServer.server(), map()) :: {map(), [map()]}
+  def dispatch_event(server, event), do: GenServer.call(server, {:dispatch_event, event})
+
   @doc "Injects a backend test event when supported by the active backend."
   @spec emit_test_event(GenServer.server(), map()) :: {:ok, term()} | {:error, term()}
   def emit_test_event(server, event), do: GenServer.call(server, {:emit_test_event, event})
@@ -82,6 +96,23 @@ defmodule GPUI.Runtime do
       Enum.map(events, &%{op: :backend_event, payload: normalize_backend_event(&1)})
 
     {:reply, Enum.reverse(state.host_messages) ++ backend_messages, state}
+  end
+
+  @impl GenServer
+  def handle_call({:put_resource, resource_id, resource}, _from, state) do
+    {:reply, state.backend.put_resource(state.backend_state, resource_id, resource), state}
+  end
+
+  @impl GenServer
+  def handle_call({:drop_resource, resource_id}, _from, state) do
+    {:reply, state.backend.drop_resource(state.backend_state, resource_id), state}
+  end
+
+  @impl GenServer
+  def handle_call({:dispatch_event, event}, _from, state) do
+    event = normalize_backend_event(event)
+    {handled, state} = handle_backend_event(event, state)
+    {:reply, {handled, window_payloads(state.windows)}, state}
   end
 
   @impl GenServer
@@ -153,6 +184,8 @@ defmodule GPUI.Runtime do
   defp sync_window(state, %WindowSpec{} = window) do
     :ok = state.backend.open_window(state.backend_state, window_payload(window))
   end
+
+  defp window_payloads(windows), do: Enum.map(windows, &window_payload/1)
 
   defp update_window(state, %WindowSpec{} = window) do
     :ok =

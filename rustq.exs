@@ -9,6 +9,10 @@ rust "native/gpui_native/src/generated_atoms.rs" do
   Rustler.atoms([:ok, :error, :invalid_tree, :click, :window_updated])
 end
 
+generate "native-element-schema", "native/gpui_native/src/generated_element_schema.rs" do
+  content GPUI.Codegen.generated_native_element_schema()
+end
+
 rust "native/gpui_native/src/generated_nifs.rs" do
   Rustler.nif_exports(
     start_runtime: [

@@ -27,6 +27,14 @@ defmodule GPUI.Backend.RemoteTCP do
     do: Session.update_window(session, window_id, tree)
 
   @impl GPUI.Backend
+  def put_resource(%{session: session}, resource_id, resource),
+    do: Session.put_resource(session, resource_id, resource)
+
+  @impl GPUI.Backend
+  def drop_resource(%{session: session}, resource_id),
+    do: Session.drop_resource(session, resource_id)
+
+  @impl GPUI.Backend
   def drain_events(%{session: session}), do: Session.drain_events(session)
 
   @impl GPUI.Backend

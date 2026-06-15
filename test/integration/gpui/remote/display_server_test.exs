@@ -99,6 +99,24 @@ defmodule GPUI.Remote.DisplayServerTest do
     assert Map.has_key?(state.sessions, "active-session")
   end
 
+  test "RemoteTCP backend stores resources on the display server" do
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
+
+    {:ok, backend} =
+      GPUI.Backend.RemoteTCP.init(host: "127.0.0.1", port: port, session_id: "backend-resource")
+
+    assert :ok = GPUI.Backend.RemoteTCP.put_resource(backend, "logo", %{type: :raster})
+
+    state = :sys.get_state(server)
+    assert get_in(state.sessions, ["backend-resource", :resources, "logo"]) == %{type: :raster}
+
+    assert :ok = GPUI.Backend.RemoteTCP.drop_resource(backend, "logo")
+
+    state = :sys.get_state(server)
+    refute Map.has_key?(get_in(state.sessions, ["backend-resource", :resources]), "logo")
+  end
+
   test "stores and drops resources per session" do
     {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)

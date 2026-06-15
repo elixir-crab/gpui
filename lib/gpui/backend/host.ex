@@ -23,6 +23,12 @@ defmodule GPUI.Backend.Host do
   end
 
   @impl GPUI.Backend
+  def put_resource(_state, _resource_id, _resource), do: :ok
+
+  @impl GPUI.Backend
+  def drop_resource(_state, _resource_id), do: :ok
+
+  @impl GPUI.Backend
   def drain_events(_state), do: {:ok, []}
 
   @impl GPUI.Backend
