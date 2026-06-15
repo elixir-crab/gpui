@@ -7,13 +7,12 @@ pub const GPUI_RESOURCE_TYPES: &[&str] = &["raster", "resource_ref"];
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GeneratedComponentKind {
-    Container,
-    Text,
-    Input,
-    Image,
-    Unknown,
+Container,
+Text,
+Input,
+Image,
+Unknown,
 }
-
 
 #[cfg(feature = "real-gpui")]
 pub(crate) mod generated_styles {
@@ -140,72 +139,72 @@ pub(crate) use generated_styles::{apply_generated_render_styles, apply_generated
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GeneratedElementTag {
-    Div,
-    Button,
-    Span,
-    Scroll,
-    List,
-    Item,
-    Icon,
-    Input,
-    Img,
-    Text,
-    Unknown,
+Div,
+Button,
+Span,
+Scroll,
+List,
+Item,
+Icon,
+Input,
+Img,
+Text,
+Unknown,
 }
 
 pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
     match tag {
-        "div" => GeneratedElementTag::Div,
-        "button" => GeneratedElementTag::Button,
-        "span" => GeneratedElementTag::Span,
-        "scroll" => GeneratedElementTag::Scroll,
-        "list" => GeneratedElementTag::List,
-        "item" => GeneratedElementTag::Item,
-        "icon" => GeneratedElementTag::Icon,
-        "input" => GeneratedElementTag::Input,
-        "img" => GeneratedElementTag::Img,
-        "text" => GeneratedElementTag::Text,
+"div" => GeneratedElementTag::Div,
+"button" => GeneratedElementTag::Button,
+"span" => GeneratedElementTag::Span,
+"scroll" => GeneratedElementTag::Scroll,
+"list" => GeneratedElementTag::List,
+"item" => GeneratedElementTag::Item,
+"icon" => GeneratedElementTag::Icon,
+"input" => GeneratedElementTag::Input,
+"img" => GeneratedElementTag::Img,
+"text" => GeneratedElementTag::Text,
         _ => GeneratedElementTag::Unknown,
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GeneratedResourceType {
-    Raster,
-    ResourceRef,
-    Unknown,
+Raster,
+ResourceRef,
+Unknown,
 }
 
 pub fn decode_generated_resource_type(resource_type: &str) -> GeneratedResourceType {
     match resource_type {
-        "raster" => GeneratedResourceType::Raster,
-        "resource_ref" => GeneratedResourceType::ResourceRef,
+"raster" => GeneratedResourceType::Raster,
+"resource_ref" => GeneratedResourceType::ResourceRef,
         _ => GeneratedResourceType::Unknown,
     }
 }
 
 pub fn generated_event_attr_to_type(attr: &str) -> Option<&'static str> {
     match attr {
-            "phx-click" => Some("click"),
-            "phx-change" => Some("change"),
-            "phx-keydown" => Some("keydown"),
-            "phx-keyup" => Some("keyup"),
+"phx-click" => Some("click"),
+"phx-change" => Some("change"),
+"phx-keydown" => Some("keydown"),
+"phx-keyup" => Some("keyup"),
         _ => None,
     }
 }
 
 pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentKind {
     match tag {
-            GeneratedElementTag::Div => GeneratedComponentKind::Container,
-            GeneratedElementTag::Button => GeneratedComponentKind::Container,
-            GeneratedElementTag::Span => GeneratedComponentKind::Container,
-            GeneratedElementTag::Scroll => GeneratedComponentKind::Container,
-            GeneratedElementTag::List => GeneratedComponentKind::Container,
-            GeneratedElementTag::Item => GeneratedComponentKind::Container,
-            GeneratedElementTag::Icon => GeneratedComponentKind::Text,
-            GeneratedElementTag::Input => GeneratedComponentKind::Input,
-            GeneratedElementTag::Img => GeneratedComponentKind::Image,
-            GeneratedElementTag::Text => GeneratedComponentKind::Text,
+GeneratedElementTag::Div => GeneratedComponentKind::Container,
+GeneratedElementTag::Button => GeneratedComponentKind::Container,
+GeneratedElementTag::Span => GeneratedComponentKind::Container,
+GeneratedElementTag::Scroll => GeneratedComponentKind::Container,
+GeneratedElementTag::List => GeneratedComponentKind::Container,
+GeneratedElementTag::Item => GeneratedComponentKind::Container,
+GeneratedElementTag::Icon => GeneratedComponentKind::Text,
+GeneratedElementTag::Input => GeneratedComponentKind::Input,
+GeneratedElementTag::Img => GeneratedComponentKind::Image,
+GeneratedElementTag::Text => GeneratedComponentKind::Text,
         GeneratedElementTag::Unknown => GeneratedComponentKind::Unknown,
     }
 }

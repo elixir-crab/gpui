@@ -25,11 +25,7 @@ defmodule GPUI.Codegen do
 
     #{generated_style_module(style_specs)}
 
-    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    pub enum GeneratedElementTag {
-    #{rust_enum_variants(elements)}
-        Unknown,
-    }
+    #{generated_enum_decl(:GeneratedElementTag, elements ++ [:Unknown])}
 
     pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         match tag {
@@ -38,11 +34,7 @@ defmodule GPUI.Codegen do
         }
     }
 
-    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    pub enum GeneratedResourceType {
-    #{rust_enum_variants(resources)}
-        Unknown,
-    }
+    #{generated_enum_decl(:GeneratedResourceType, resources ++ [:Unknown])}
 
     pub fn decode_generated_resource_type(resource_type: &str) -> GeneratedResourceType {
         match resource_type {
@@ -781,14 +773,7 @@ defmodule GPUI.Codegen do
 
   defp generated_component_specs(components) do
     kinds = components |> Enum.map(& &1.kind) |> Enum.uniq()
-
-    """
-    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    pub enum GeneratedComponentKind {
-    #{Enum.map_join(kinds, "\n", &"    #{rust_variant(&1)},")}
-        Unknown,
-    }
-    """
+    generated_enum_decl(:GeneratedComponentKind, kinds ++ [:Unknown])
   end
 
   defp rust_event_match_arms(components) do
@@ -796,26 +781,40 @@ defmodule GPUI.Codegen do
     |> Enum.flat_map(& &1.events)
     |> Enum.uniq_by(fn {_event_type, attr} -> attr end)
     |> Enum.map_join("\n", fn {event_type, attr} ->
-      ~s|            "#{attr}" => Some("#{event_type}"),|
+      rust_arm(~s|"#{attr}"|, ~s|Some("#{event_type}")|)
     end)
   end
 
   defp rust_component_kind_arms(components) do
     components
     |> Enum.map_join("\n", fn component ->
-      ~s|            GeneratedElementTag::#{rust_variant(component.tag)} => GeneratedComponentKind::#{rust_variant(component.kind)},|
+      rust_arm(
+        "GeneratedElementTag::#{rust_variant(component.tag)}",
+        "GeneratedComponentKind::#{rust_variant(component.kind)}"
+      )
     end)
   end
 
-  defp rust_enum_variants(values) do
-    Enum.map_join(values, "\n", fn value -> "    #{rust_variant(value)}," end)
+  defp generated_enum_decl(name, variants) do
+    Rust.enum(name,
+      derive: [:Clone, :Copy, :Debug, :Eq, :PartialEq],
+      variants: Enum.map(variants, &rust_variant/1),
+      vis: :pub
+    )
+    |> Rust.to_fragment()
   end
 
   defp rust_match_arms(values, enum_name) do
     values
     |> Enum.map_join("\n", fn value ->
-      ~s|        "#{value}" => #{enum_name}::#{rust_variant(value)},|
+      rust_arm(~s|"#{value}"|, "#{enum_name}::#{rust_variant(value)}")
     end)
+  end
+
+  defp rust_arm(pattern, body) do
+    pattern
+    |> Rust.arm(body)
+    |> Rust.to_fragment()
   end
 
   defp rust_variant(value), do: value |> Atom.to_string() |> Macro.camelize()
