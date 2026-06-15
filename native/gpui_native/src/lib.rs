@@ -2,13 +2,14 @@ use rustler::{Atom, Encoder, Env, NifResult, ResourceArc, Term};
 use std::sync::Mutex;
 
 #[cfg(feature = "real-gpui")]
+use futures::{channel::mpsc, StreamExt};
+#[cfg(feature = "real-gpui")]
 use std::{
     collections::HashMap,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
-    time::Duration,
 };
 
 #[cfg(feature = "real-gpui")]
@@ -65,6 +66,7 @@ fn open_window_impl<'a>(
     let tree = window_tree(window).unwrap_or_else(ElementNode::default_root);
     let shared_window = Arc::new(WindowState {
         tree: Mutex::new(tree),
+        refresh_tx: Mutex::new(None),
         refresh_requested: AtomicBool::new(false),
     });
 
@@ -129,7 +131,7 @@ fn update_window_impl<'a>(
             .tree
             .lock()
             .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))? = tree;
-        shared_window.refresh_requested.store(true, Ordering::SeqCst);
+        shared_window.request_refresh();
         push_event(&runtime, NativeEvent::WindowUpdated { window_id })?;
         Ok((atoms::ok(), window_id).encode(env))
     } else {
@@ -404,7 +406,31 @@ impl RasterData {
 #[cfg(feature = "real-gpui")]
 struct WindowState {
     tree: Mutex<ElementNode>,
+    refresh_tx: Mutex<Option<mpsc::UnboundedSender<()>>>,
     refresh_requested: AtomicBool,
+}
+
+#[cfg(feature = "real-gpui")]
+impl WindowState {
+    fn install_refresh_sender(&self, refresh_tx: mpsc::UnboundedSender<()>) {
+        if let Ok(mut slot) = self.refresh_tx.lock() {
+            *slot = Some(refresh_tx.clone());
+        }
+
+        if self.refresh_requested.swap(false, Ordering::SeqCst) {
+            let _ = refresh_tx.unbounded_send(());
+        }
+    }
+
+    fn request_refresh(&self) {
+        self.refresh_requested.store(true, Ordering::SeqCst);
+
+        if let Ok(slot) = self.refresh_tx.lock() {
+            if let Some(refresh_tx) = slot.as_ref() {
+                let _ = refresh_tx.unbounded_send(());
+            }
+        }
+    }
 }
 
 #[cfg(feature = "real-gpui")]
@@ -547,24 +573,19 @@ fn run_gpui_window(
             |window, cx| {
                 window.set_window_title(&title);
                 cx.new(|cx| {
-                    let window_state_for_refresh = window_state_for_view.clone();
-                    cx.spawn(async move |root, cx| {
-                        loop {
-                            cx.background_executor().timer(Duration::from_millis(16)).await;
+                    let (refresh_tx, mut refresh_rx) = mpsc::unbounded();
+                    window_state_for_view.install_refresh_sender(refresh_tx);
 
-                            if window_state_for_refresh
-                                .refresh_requested
-                                .swap(false, Ordering::SeqCst)
+                    cx.spawn(async move |root, cx| {
+                        while refresh_rx.next().await.is_some() {
+                            if root
+                                .update_in(cx, |_root, window, cx| {
+                                    cx.notify();
+                                    window.refresh();
+                                })
+                                .is_err()
                             {
-                                if root
-                                    .update_in(cx, |_root, window, cx| {
-                                        cx.notify();
-                                        window.refresh();
-                                    })
-                                    .is_err()
-                                {
-                                    break;
-                                }
+                                break;
                             }
                         }
                     })
