@@ -7,6 +7,7 @@
 #   mix run examples/remote_tcp_counter.exs
 
 Code.require_file("support/counter_app.exs", __DIR__)
+Code.require_file("support/remote_opts.exs", __DIR__)
 
 host = System.get_env("GPUI_REMOTE_HOST", "127.0.0.1")
 port = System.get_env("GPUI_REMOTE_PORT", "4040") |> String.to_integer()
@@ -16,6 +17,7 @@ children = [
    backend: :remote_tcp,
    host: host,
    port: port,
+   ssl: ExampleRemoteOpts.ssl_client_opts(),
    poll_interval: 16}
 ]
 

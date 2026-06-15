@@ -30,4 +30,58 @@ defmodule GPUIRemoteTransportTCPTest do
     Transport.close(client)
     TCP.close(listener)
   end
+
+  test "sends and receives length-prefixed ETF envelopes over SSL", context do
+    certs = GPUITest.SSLCerts.generate!(context)
+
+    {:ok, listener} =
+      TCP.listen(
+        port: 0,
+        ssl: [
+          certfile: certs.server_cert,
+          keyfile: certs.server_key,
+          versions: [:"tlsv1.2", :"tlsv1.3"]
+        ]
+      )
+
+    {:ok, port} = TCP.port(listener)
+
+    server =
+      Task.async(fn ->
+        {:ok, conn} = TCP.accept(listener, 2_000)
+        {:ok, request} = Transport.recv(conn, 2_000)
+        :ok = Transport.send(conn, Envelope.ok(request.id, %{secure_echo: request.payload}))
+        Transport.close(conn)
+        request
+      end)
+
+    {:ok, client} =
+      TCP.connect(
+        host: "localhost",
+        port: port,
+        ssl: [
+          verify: :verify_peer,
+          cacertfile: certs.ca_cert,
+          server_name_indication: ~c"localhost",
+          versions: [:"tlsv1.2", :"tlsv1.3"]
+        ]
+      )
+
+    request = Envelope.request(:ping, %{message: "secure hello"}, id: 8)
+
+    assert :ok = Transport.send(client, request)
+
+    assert {:ok,
+            %{
+              kind: :response,
+              id: 8,
+              status: :ok,
+              payload: %{secure_echo: %{message: "secure hello"}}
+            }} =
+             Transport.recv(client)
+
+    assert ^request = Task.await(server)
+    Transport.close(client)
+    TCP.close(listener)
+  end
 end

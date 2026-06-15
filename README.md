@@ -72,3 +72,24 @@ For a native display server, use:
 ```sh
 GPUI_REMOTE_DISPLAY_BACKEND=native PATH="$HOME/.cargo/bin:$PATH" mix run examples/remote_display_server.exs
 ```
+
+RemoteTCP can also run over TLS/SSL. The server expects a certificate and key:
+
+```sh
+GPUI_REMOTE_SSL=1 \
+GPUI_REMOTE_SSL_CERTFILE=/path/to/server.pem \
+GPUI_REMOTE_SSL_KEYFILE=/path/to/server.key \
+GPUI_REMOTE_PORT=4040 \
+mix run examples/remote_display_server.exs
+```
+
+The client expects the CA certificate and optional SNI name:
+
+```sh
+GPUI_REMOTE_SSL=1 \
+GPUI_REMOTE_SSL_CACERTFILE=/path/to/ca.pem \
+GPUI_REMOTE_SSL_SERVER_NAME=localhost \
+GPUI_REMOTE_HOST=localhost \
+GPUI_REMOTE_PORT=4040 \
+mix run examples/remote_tcp_counter.exs
+```
