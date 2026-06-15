@@ -58,7 +58,8 @@ fn open_window_impl<'a>(
     }
 
     let event_title = title.clone();
-    std::thread::spawn(move || run_gpui_window(title, tree));
+    let runtime_for_window = runtime.clone();
+    std::thread::spawn(move || run_gpui_window(title, tree, runtime_for_window));
     push_text_event(&runtime, format!("window_open_requested:{event_title}"))?;
 
     Ok((atoms::ok(), event_title).encode(env))
@@ -170,9 +171,10 @@ fn decode_element_node(term: Term) -> NifResult<ElementNode> {
     let node_type = type_term.atom_to_string()?;
 
     match node_type.as_str() {
-        "div" => Ok(ElementNode::Div {
+        "div" | "button" => Ok(ElementNode::Div {
             style: decode_style(term).unwrap_or_default(),
             children: decode_children(term).unwrap_or_default(),
+            click: decode_click(term).ok().flatten(),
         }),
         "text" => Ok(ElementNode::Text(decode_text_children(term).unwrap_or_default())),
         _ => Ok(ElementNode::Text(String::new())),
@@ -206,6 +208,17 @@ fn decode_text_children(term: Term) -> NifResult<String> {
     }
 
     Ok(text)
+}
+
+#[cfg(feature = "real-gpui")]
+fn decode_click(term: Term) -> NifResult<Option<String>> {
+    let env = term.get_env();
+    let attrs = term.map_get(Atom::from_bytes(env, b"attrs")?)?;
+
+    match attrs.map_get(Atom::from_bytes(env, b"phx-click")?) {
+        Ok(value) => Ok(value.decode::<String>().ok()),
+        Err(_) => Ok(None),
+    }
 }
 
 #[cfg(feature = "real-gpui")]
@@ -277,7 +290,7 @@ struct StyleAttrs {
 #[cfg(feature = "real-gpui")]
 #[derive(Clone, Debug)]
 enum ElementNode {
-    Div { style: StyleAttrs, children: Vec<ElementNode> },
+    Div { style: StyleAttrs, children: Vec<ElementNode>, click: Option<String> },
     Text(String),
 }
 
@@ -295,16 +308,17 @@ impl ElementNode {
                 font_size: Some(20.0),
             },
             children: vec![Self::Text("Hello from Elixir/OTP".to_string())],
+            click: None,
         }
     }
 
-    fn render(self) -> gpui::AnyElement {
+    fn render(self, runtime: ResourceArc<RuntimeResource>, window_id: u64) -> gpui::AnyElement {
         use gpui::prelude::*;
-        use gpui::{div, px, rgb, IntoElement, ParentElement};
+        use gpui::{div, px, rgb, InteractiveElement, IntoElement, ParentElement, StatefulInteractiveElement};
 
         match self {
             ElementNode::Text(text) => text.into_any_element(),
-            ElementNode::Div { style, children } => {
+            ElementNode::Div { style, children, click } => {
                 let mut element = div();
 
                 if style.display_flex {
@@ -344,32 +358,50 @@ impl ElementNode {
                 }
 
                 for child in children {
-                    element = element.child(child.render());
+                    element = element.child(child.render(runtime.clone(), window_id));
                 }
 
-                element.into_any_element()
+                if let Some(event) = click {
+                    let runtime_for_click = runtime.clone();
+                    let element_id = format!("gpui-elixir-click-{window_id}-{event}");
+
+                    element
+                        .id(element_id)
+                        .on_click(move |_event, _window, _cx| {
+                            let _ = push_event(
+                                &runtime_for_click,
+                                NativeEvent::Click { window_id, event: event.clone() },
+                            );
+                        })
+                        .into_any_element()
+                } else {
+                    element.into_any_element()
+                }
             }
         }
     }
 }
 
 #[cfg(feature = "real-gpui")]
-fn run_gpui_window(title: String, tree: ElementNode) {
+fn run_gpui_window(title: String, tree: ElementNode, runtime: ResourceArc<RuntimeResource>) {
     use gpui::{px, size, App, AppContext, Bounds, Context, Render, Window, WindowBounds, WindowOptions};
 
     struct ElixirRoot {
         tree: ElementNode,
+        runtime: ResourceArc<RuntimeResource>,
+        window_id: u64,
     }
 
     impl Render for ElixirRoot {
         fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl gpui::IntoElement {
-            self.tree.clone().render()
+            self.tree.clone().render(self.runtime.clone(), self.window_id)
         }
     }
 
     gpui_platform::application().run(move |cx: &mut App| {
         let bounds = Bounds::centered(None, size(px(500.0), px(500.0)), cx);
         let tree_for_view = tree.clone();
+        let runtime_for_view = runtime.clone();
 
         let _ = cx.open_window(
             WindowOptions {
@@ -378,7 +410,11 @@ fn run_gpui_window(title: String, tree: ElementNode) {
             },
             |window, cx| {
                 window.set_window_title(&title);
-                cx.new(|_| ElixirRoot { tree: tree_for_view.clone() })
+                cx.new(|_| ElixirRoot {
+                    tree: tree_for_view.clone(),
+                    runtime: runtime_for_view.clone(),
+                    window_id: 1,
+                })
             },
         );
 

@@ -57,6 +57,7 @@ defmodule GPUIEventLoopTest do
 
     payload = GPUI.Runtime.window_payload(updated)
     assert get_in(payload, [:root, :tree, :children, Access.at(0), :children]) == ["Count: ", 1]
+    assert get_in(payload, [:root, :tree, :children, Access.at(1), :attrs, :"phx-click"]) == "inc"
 
     assert %{op: :native_event, payload: %{type: :window_updated, window_id: 1}} in GPUI.Runtime.host_messages(
              pid
