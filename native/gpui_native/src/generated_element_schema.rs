@@ -40,20 +40,20 @@ pub(crate) mod generated_styles {
     #[cfg(feature = "real-gpui")]
     pub(crate) fn apply_generated_style_attr(attrs: &mut StyleAttrs, key: &str, value: Term) {
         match key {
-                "display" => attrs.display_flex = atom_eq(value, "flex"),
-                "flex_direction" => attrs.flex_direction = atom_string(value),
-                "align_items" => attrs.align_items = atom_string(value),
-                "justify_content" => attrs.justify_content = atom_string(value),
-                "background" => attrs.background = rgb_value(value),
-                "color" => attrs.color = rgb_value(value),
-                "font_size" => attrs.font_size = px_value(value),
-                "gap" => attrs.gap = px_value(value),
-                "padding" => attrs.padding = px_value(value),
-                "margin" => attrs.margin = px_value(value),
-                "width" => attrs.width = px_value(value),
-                "height" => attrs.height = px_value(value),
-                "border_radius" => attrs.border_radius = radius_value(value),
-                "border_width" => attrs.border_width = px_value(value),
+    "display" => attrs.display_flex = atom_eq(value, "flex"),
+    "flex_direction" => attrs.flex_direction = atom_string(value),
+    "align_items" => attrs.align_items = atom_string(value),
+    "justify_content" => attrs.justify_content = atom_string(value),
+    "background" => attrs.background = rgb_value(value),
+    "color" => attrs.color = rgb_value(value),
+    "font_size" => attrs.font_size = px_value(value),
+    "gap" => attrs.gap = px_value(value),
+    "padding" => attrs.padding = px_value(value),
+    "margin" => attrs.margin = px_value(value),
+    "width" => attrs.width = px_value(value),
+    "height" => attrs.height = px_value(value),
+    "border_radius" => attrs.border_radius = radius_value(value),
+    "border_width" => attrs.border_width = px_value(value),
             _ => {}
         }
     
@@ -69,22 +69,22 @@ pub(crate) mod generated_styles {
         }
     
         match style.flex_direction.as_deref() {
-                Some("column") => element = element.flex_col(),
-                Some("row") => element = element.flex_row(),
+    Some("column") => element = element.flex_col(),
+    Some("row") => element = element.flex_row(),
             _ => {}
         }
     
         match style.align_items.as_deref() {
-                Some("center") => element = element.items_center(),
-                Some("start") => element = element.items_start(),
-                Some("end") => element = element.items_end(),
+    Some("center") => element = element.items_center(),
+    Some("start") => element = element.items_start(),
+    Some("end") => element = element.items_end(),
             _ => {}
         }
     
         match style.justify_content.as_deref() {
-                Some("center") => element = element.justify_center(),
-                Some("start") => element = element.justify_start(),
-                Some("end") => element = element.justify_end(),
+    Some("center") => element = element.justify_center(),
+    Some("start") => element = element.justify_start(),
+    Some("end") => element = element.justify_end(),
             _ => {}
         }
     
@@ -603,57 +603,16 @@ pub(crate) mod generated_components {
     #[cfg(feature = "real-gpui")]
     pub(crate) fn decode_generated_element_node(tag: GeneratedElementTag, term: Term) -> NifResult<ElementNode> {
         match tag {
-            GeneratedElementTag::Div => decode_generated_div(term).map(|node| ElementNode::Div {
-                style: node.style,
-                children: node.children,
-                click: node.click,
-            }),
-    
-            GeneratedElementTag::Button => decode_generated_button(term).map(|node| ElementNode::Div {
-                style: node.style,
-                children: node.children,
-                click: node.click,
-            }),
-    
-            GeneratedElementTag::Span => decode_generated_span(term).map(|node| ElementNode::Div {
-                style: node.style,
-                children: node.children,
-                click: node.click,
-            }),
-    
-            GeneratedElementTag::Scroll => decode_generated_scroll(term).map(|node| ElementNode::Div {
-                style: node.style,
-                children: node.children,
-                click: node.click,
-            }),
-    
-            GeneratedElementTag::List => decode_generated_list(term).map(|node| ElementNode::Div {
-                style: node.style,
-                children: node.children,
-                click: node.click,
-            }),
-    
-            GeneratedElementTag::Item => decode_generated_item(term).map(|node| ElementNode::Div {
-                style: node.style,
-                children: node.children,
-                click: node.click,
-            }),
-    
-            GeneratedElementTag::Icon => decode_generated_icon(term).map(|node| ElementNode::Text(node.text)),
-    
-            GeneratedElementTag::Input => decode_generated_input(term).map(|node| ElementNode::Input {
-                style: node.style,
-                value: node.value,
-                placeholder: node.placeholder,
-                change: node.change,
-                keydown: node.keydown,
-                keyup: node.keyup,
-            }),
-    
-            GeneratedElementTag::Img => decode_generated_img(term).map(|node| ElementNode::Image(node.raster)),
-    
-            GeneratedElementTag::Text => decode_generated_text(term).map(|node| ElementNode::Text(node.text)),
-    
+    GeneratedElementTag::Div => decode_generated_div(term).map(|node| ElementNode::Div { style: node.style, children: node.children, click: node.click }),
+    GeneratedElementTag::Button => decode_generated_button(term).map(|node| ElementNode::Div { style: node.style, children: node.children, click: node.click }),
+    GeneratedElementTag::Span => decode_generated_span(term).map(|node| ElementNode::Div { style: node.style, children: node.children, click: node.click }),
+    GeneratedElementTag::Scroll => decode_generated_scroll(term).map(|node| ElementNode::Div { style: node.style, children: node.children, click: node.click }),
+    GeneratedElementTag::List => decode_generated_list(term).map(|node| ElementNode::Div { style: node.style, children: node.children, click: node.click }),
+    GeneratedElementTag::Item => decode_generated_item(term).map(|node| ElementNode::Div { style: node.style, children: node.children, click: node.click }),
+    GeneratedElementTag::Icon => decode_generated_icon(term).map(|node| ElementNode::Text(node.text)),
+    GeneratedElementTag::Input => decode_generated_input(term).map(|node| ElementNode::Input { style: node.style, value: node.value, placeholder: node.placeholder, change: node.change, keydown: node.keydown, keyup: node.keyup }),
+    GeneratedElementTag::Img => decode_generated_img(term).map(|node| ElementNode::Image(node.raster)),
+    GeneratedElementTag::Text => decode_generated_text(term).map(|node| ElementNode::Text(node.text)),
             GeneratedElementTag::Unknown => Ok(ElementNode::Text(String::new())),
         }
     
