@@ -21,8 +21,10 @@ defmodule GPUI.Backend.RemoteTCP do
     session_id = Keyword.get_lazy(opts, :session_id, &new_session_id/0)
 
     with {:ok, client} <- SafeRPC.Client.start_link(opts),
-         %{op: op, payload: payload} = DisplayProtocol.hello(),
-         {:ok, _hello} <- call(client, session_id, op, payload) do
+         %{op: hello_op, payload: hello_payload} = DisplayProtocol.hello(),
+         {:ok, _hello} <- call(client, session_id, hello_op, hello_payload),
+         %{op: resume_op, payload: resume_payload} = DisplayProtocol.resume_session(session_id),
+         {:ok, _session} <- call(client, session_id, resume_op, resume_payload) do
       {:ok, %{client: client, session_id: session_id}}
     end
   end

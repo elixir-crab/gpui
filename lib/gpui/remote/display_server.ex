@@ -127,6 +127,13 @@ defmodule GPUI.Remote.DisplayServer do
     {{:ok, %{version: 1, capabilities: [:runtime_v1, :display_server, :safe_rpc]}}, state}
   end
 
+  defp dispatch_call(:resume_session, %{session_id: session_id}, _request_session_id, state) do
+    state = ensure_session(state, session_id)
+    session = Map.fetch!(state.sessions, session_id)
+
+    {{:ok, %{session_id: session_id, windows: Map.values(session.windows)}}, state}
+  end
+
   defp dispatch_call(:open_window, %{id: window_id} = window_payload, session_id, state) do
     case state.display_backend.open_window(state.display_backend_state, window_payload) do
       :ok -> {{:ok, %{}}, put_session_window(state, session_id, window_id, window_payload)}
@@ -180,6 +187,12 @@ defmodule GPUI.Remote.DisplayServer do
       Map.update(sessions, session_id, %{empty_session() | events: [event]}, fn session ->
         update_in(session.events, &[event | &1])
       end)
+    end)
+  end
+
+  defp ensure_session(state, session_id) do
+    update_in(state.sessions, fn sessions ->
+      Map.put_new(sessions, session_id, empty_session())
     end)
   end
 

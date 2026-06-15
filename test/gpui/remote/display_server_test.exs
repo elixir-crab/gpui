@@ -95,6 +95,23 @@ defmodule GPUI.Remote.DisplayServerTest do
              )
   end
 
+  test "resume_session returns known windows for a session" do
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
+    {:ok, client} = start_client(port)
+    session_id = "resume-session"
+
+    window = %{id: 1, title: "Resume"}
+
+    assert {:ok, %{}} =
+             SafeRPC.call(client, :open_window, window, meta: %{session_id: session_id})
+
+    assert {:ok, %{session_id: ^session_id, windows: [^window]}} =
+             SafeRPC.call(client, :resume_session, %{session_id: session_id},
+               meta: %{session_id: session_id}
+             )
+  end
+
   test "preserves session windows across reconnect when session id is reused" do
     {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)

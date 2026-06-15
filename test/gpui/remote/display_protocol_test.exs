@@ -8,6 +8,7 @@ defmodule GPUI.Remote.DisplayProtocolTest do
 
     assert DisplayProtocol.ops() == [
              :hello,
+             :resume_session,
              :open_window,
              :update_window,
              :drain_events,
@@ -22,6 +23,10 @@ defmodule GPUI.Remote.DisplayProtocolTest do
     window = %{id: 1, title: "Counter"}
 
     assert %{op: :hello, payload: %{role: :runtime}} = DisplayProtocol.hello(%{role: :runtime})
+
+    assert %{op: :resume_session, payload: %{session_id: "abc"}} =
+             DisplayProtocol.resume_session("abc")
+
     assert %{op: :open_window, payload: ^window} = DisplayProtocol.open_window(window)
 
     assert %{op: :update_window, payload: %{window_id: 1, tree: %{type: :div}}} =
