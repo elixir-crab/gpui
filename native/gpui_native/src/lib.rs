@@ -2,7 +2,14 @@ use rustler::{Atom, Encoder, Env, NifResult, ResourceArc, Term};
 use std::sync::Mutex;
 
 #[cfg(feature = "real-gpui")]
-use std::{collections::HashMap, sync::atomic::{AtomicBool, Ordering}, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    time::Duration,
+};
 
 #[cfg(feature = "real-gpui")]
 static GPUI_STARTED: AtomicBool = AtomicBool::new(false);
@@ -13,7 +20,7 @@ include!("generated_nifs.rs");
 pub struct RuntimeResource {
     events: Mutex<Vec<NativeEvent>>,
     #[cfg(feature = "real-gpui")]
-    windows: Mutex<HashMap<u64, SharedTree>>,
+    windows: Mutex<HashMap<u64, SharedWindow>>,
 }
 
 #[derive(Clone, Debug)]
@@ -56,13 +63,16 @@ fn open_window_impl<'a>(
     let title = window_title(env, window)?;
     let window_id = window_id(env, window).unwrap_or(1);
     let tree = window_tree(window).unwrap_or_else(ElementNode::default_root);
-    let shared_tree = Arc::new(Mutex::new(tree));
+    let shared_window = Arc::new(WindowState {
+        tree: Mutex::new(tree),
+        refresh_requested: AtomicBool::new(false),
+    });
 
     runtime
         .windows
         .lock()
         .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))?
-        .insert(window_id, shared_tree.clone());
+        .insert(window_id, shared_window.clone());
 
     if GPUI_STARTED.swap(true, Ordering::SeqCst) {
         push_text_event(&runtime, "window_open_rejected:already_started".to_string())?;
@@ -71,7 +81,7 @@ fn open_window_impl<'a>(
 
     let event_title = title.clone();
     let runtime_for_window = runtime.clone();
-    std::thread::spawn(move || run_gpui_window(title, window_id, shared_tree, runtime_for_window));
+    std::thread::spawn(move || run_gpui_window(title, window_id, shared_window, runtime_for_window));
     push_text_event(&runtime, format!("window_open_requested:{event_title}"))?;
 
     Ok((atoms::ok(), event_title).encode(env))
@@ -114,10 +124,12 @@ fn update_window_impl<'a>(
         .lock()
         .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))?;
 
-    if let Some(shared_tree) = windows.get(&window_id) {
-        *shared_tree
+    if let Some(shared_window) = windows.get(&window_id) {
+        *shared_window
+            .tree
             .lock()
             .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))? = tree;
+        shared_window.refresh_requested.store(true, Ordering::SeqCst);
         push_event(&runtime, NativeEvent::WindowUpdated { window_id })?;
         Ok((atoms::ok(), window_id).encode(env))
     } else {
@@ -390,7 +402,13 @@ impl RasterData {
 }
 
 #[cfg(feature = "real-gpui")]
-type SharedTree = Arc<Mutex<ElementNode>>;
+struct WindowState {
+    tree: Mutex<ElementNode>,
+    refresh_requested: AtomicBool,
+}
+
+#[cfg(feature = "real-gpui")]
+type SharedWindow = Arc<WindowState>;
 
 #[cfg(feature = "real-gpui")]
 #[derive(Clone, Debug)]
@@ -493,13 +511,13 @@ impl ElementNode {
 fn run_gpui_window(
     title: String,
     window_id: u64,
-    tree: SharedTree,
+    window_state: SharedWindow,
     runtime: ResourceArc<RuntimeResource>,
 ) {
     use gpui::{px, size, App, AppContext, Bounds, Context, Render, Window, WindowBounds, WindowOptions};
 
     struct ElixirRoot {
-        tree: SharedTree,
+        window_state: SharedWindow,
         runtime: ResourceArc<RuntimeResource>,
         window_id: u64,
     }
@@ -507,6 +525,7 @@ fn run_gpui_window(
     impl Render for ElixirRoot {
         fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl gpui::IntoElement {
             let tree = self
+                .window_state
                 .tree
                 .lock()
                 .map(|tree| tree.clone())
@@ -517,7 +536,7 @@ fn run_gpui_window(
 
     gpui_platform::application().run(move |cx: &mut App| {
         let bounds = Bounds::centered(None, size(px(500.0), px(500.0)), cx);
-        let tree_for_view = tree.clone();
+        let window_state_for_view = window_state.clone();
         let runtime_for_view = runtime.clone();
 
         let _ = cx.open_window(
@@ -527,10 +546,35 @@ fn run_gpui_window(
             },
             |window, cx| {
                 window.set_window_title(&title);
-                cx.new(|_| ElixirRoot {
-                    tree: tree_for_view.clone(),
-                    runtime: runtime_for_view.clone(),
-                    window_id,
+                cx.new(|cx| {
+                    let window_state_for_refresh = window_state_for_view.clone();
+                    cx.spawn(async move |root, cx| {
+                        loop {
+                            cx.background_executor().timer(Duration::from_millis(16)).await;
+
+                            if window_state_for_refresh
+                                .refresh_requested
+                                .swap(false, Ordering::SeqCst)
+                            {
+                                if root
+                                    .update_in(cx, |_root, window, cx| {
+                                        cx.notify();
+                                        window.refresh();
+                                    })
+                                    .is_err()
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                    })
+                    .detach();
+
+                    ElixirRoot {
+                        window_state: window_state_for_view.clone(),
+                        runtime: runtime_for_view.clone(),
+                        window_id,
+                    }
                 })
             },
         );
