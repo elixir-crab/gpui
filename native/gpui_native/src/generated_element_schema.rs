@@ -4,3 +4,49 @@ pub const GPUI_ELEMENT_TAGS: &[&str] = &["div", "button", "input", "img", "text"
 pub const GPUI_STYLE_ATTRS: &[&str] = &["display", "flex_direction", "align_items", "justify_content", "background", "color", "font_size", "gap", "padding", "margin", "width", "height", "border_radius", "border_width"];
 pub const GPUI_EVENT_ATTRS: &[&str] = &["phx-click", "phx-change", "phx-keydown", "phx-keyup"];
 pub const GPUI_RESOURCE_TYPES: &[&str] = &["raster", "resource_ref"];
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum GeneratedElementTag {
+    Div,
+    Button,
+    Input,
+    Img,
+    Text,
+    Unknown,
+}
+
+pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
+    match tag {
+        "div" => GeneratedElementTag::Div,
+        "button" => GeneratedElementTag::Button,
+        "input" => GeneratedElementTag::Input,
+        "img" => GeneratedElementTag::Img,
+        "text" => GeneratedElementTag::Text,
+        _ => GeneratedElementTag::Unknown,
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum GeneratedResourceType {
+    Raster,
+    ResourceRef,
+    Unknown,
+}
+
+pub fn decode_generated_resource_type(resource_type: &str) -> GeneratedResourceType {
+    match resource_type {
+        "raster" => GeneratedResourceType::Raster,
+        "resource_ref" => GeneratedResourceType::ResourceRef,
+        _ => GeneratedResourceType::Unknown,
+    }
+}
+
+pub fn generated_event_attr_to_type(attr: &str) -> Option<&'static str> {
+    match attr {
+        "phx-click" => Some("click"),
+        "phx-change" => Some("change"),
+        "phx-keydown" => Some("keydown"),
+        "phx-keyup" => Some("keyup"),
+        _ => None,
+    }
+}

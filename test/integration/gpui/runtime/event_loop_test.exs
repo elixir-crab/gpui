@@ -20,6 +20,31 @@ defmodule GPUI.Runtime.EventLoopTest do
     end
   end
 
+  defmodule ResourceImageView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(assigns) do
+      ~GPUI"""
+      <img raster={assigns.logo} />
+      """
+    end
+  end
+
+  defmodule ResourceImageApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(_args) do
+      {:ok, %{},
+       [
+         window("Resource Image",
+           do: root(ResourceImageView, logo: GPUI.ResourceRef.new("logo", :raster))
+         )
+       ]}
+    end
+  end
+
   defmodule InputView do
     use GPUI.View
 
@@ -94,6 +119,20 @@ defmodule GPUI.Runtime.EventLoopTest do
     assert %{op: :backend_event, payload: %{type: :window_updated, window_id: 1}} in GPUI.Runtime.host_messages(
              pid
            )
+
+    GenServer.stop(pid)
+  end
+
+  test "runtime resolves resource refs after resources are stored" do
+    {:ok, pid} = GPUI.Runtime.start_link(app: ResourceImageApp, backend: :data)
+
+    raster = %{__type__: :raster, width: 1, height: 1, format: :rgba8, data: <<255, 0, 0, 255>>}
+    assert :ok = GPUI.Runtime.put_resource(pid, "logo", raster)
+
+    {_event, [payload]} =
+      GPUI.Runtime.dispatch_event(pid, %{type: :noop, window_id: 1, event: "noop"})
+
+    assert get_in(payload, [:root, :tree, :attrs, :raster]) == raster
 
     GenServer.stop(pid)
   end

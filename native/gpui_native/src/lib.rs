@@ -259,21 +259,21 @@ fn decode_element_node(term: Term) -> NifResult<ElementNode> {
     let type_term = term.map_get(Atom::from_bytes(env, b"type")?)?;
     let node_type = type_term.atom_to_string()?;
 
-    match node_type.as_str() {
-        "div" | "button" => Ok(ElementNode::Div {
+    match decode_generated_element_tag(node_type.as_str()) {
+        GeneratedElementTag::Div | GeneratedElementTag::Button => Ok(ElementNode::Div {
             style: decode_style(term).unwrap_or_default(),
             children: decode_children(term).unwrap_or_default(),
             click: decode_click(term).ok().flatten(),
         }),
-        "input" => Ok(ElementNode::Input {
+        GeneratedElementTag::Input => Ok(ElementNode::Input {
             style: decode_style(term).unwrap_or_default(),
             value: decode_string_attr(term, "value").unwrap_or_default(),
             placeholder: decode_string_attr(term, "placeholder"),
             change: decode_event_attr(term, "phx-change").or_else(|| decode_event_attr(term, "phx-click")),
         }),
-        "img" => decode_raster(term).map(ElementNode::Image),
-        "text" => Ok(ElementNode::Text(decode_text_children(term).unwrap_or_default())),
-        _ => Ok(ElementNode::Text(String::new())),
+        GeneratedElementTag::Img => decode_raster(term).map(ElementNode::Image),
+        GeneratedElementTag::Text => Ok(ElementNode::Text(decode_text_children(term).unwrap_or_default())),
+        GeneratedElementTag::Unknown => Ok(ElementNode::Text(String::new())),
     }
 }
 
@@ -591,8 +591,7 @@ impl ElementNode {
                 } else {
                     value
                 };
-                let child = ElementNode::Text(label);
-                ElementNode::Div { style, children: vec![child], click: change }.render(runtime, window_id)
+                ElementNode::Div { style, children: vec![ElementNode::Text(label)], click: change }.render(runtime, window_id)
             }
             ElementNode::Div { style, children, click } => {
                 let mut element = div();

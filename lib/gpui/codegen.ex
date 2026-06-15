@@ -32,6 +32,47 @@ defmodule GPUI.Codegen do
     pub const GPUI_STYLE_ATTRS: &[&str] = &[#{rust_string_list(styles)}];
     pub const GPUI_EVENT_ATTRS: &[&str] = &[#{rust_string_list(events)}];
     pub const GPUI_RESOURCE_TYPES: &[&str] = &[#{rust_string_list(resources)}];
+
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub enum GeneratedElementTag {
+        Div,
+        Button,
+        Input,
+        Img,
+        Text,
+        Unknown,
+    }
+
+    pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
+        match tag {
+    #{rust_match_arms(elements, "GeneratedElementTag")}
+            _ => GeneratedElementTag::Unknown,
+        }
+    }
+
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub enum GeneratedResourceType {
+        Raster,
+        ResourceRef,
+        Unknown,
+    }
+
+    pub fn decode_generated_resource_type(resource_type: &str) -> GeneratedResourceType {
+        match resource_type {
+    #{rust_match_arms(resources, "GeneratedResourceType")}
+            _ => GeneratedResourceType::Unknown,
+        }
+    }
+
+    pub fn generated_event_attr_to_type(attr: &str) -> Option<&'static str> {
+        match attr {
+            "phx-click" => Some("click"),
+            "phx-change" => Some("change"),
+            "phx-keydown" => Some("keydown"),
+            "phx-keyup" => Some("keyup"),
+            _ => None,
+        }
+    }
     """
   end
 
@@ -93,6 +134,14 @@ defmodule GPUI.Codegen do
           })
       }
       """
+    end)
+  end
+
+  defp rust_match_arms(values, enum_name) do
+    values
+    |> Enum.map_join("\n", fn value ->
+      variant = value |> Atom.to_string() |> Macro.camelize()
+      ~s(        "#{value}" => #{enum_name}::#{variant},)
     end)
   end
 

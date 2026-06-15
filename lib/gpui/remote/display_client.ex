@@ -3,14 +3,16 @@ defmodule GPUI.Remote.DisplayClient do
   Local display-side client for the inverted GPUI remote model.
 
   It connects to a remote `GPUI.Remote.AppServer`, mounts the remote app, opens
-  returned windows on a local display backend, and forwards UI events back to the
-  remote app for updated snapshots.
+  returned windows on a local display backend, forwards UI events, and reconnects
+  on demand by remounting and resynchronizing local windows.
   """
 
   use GenServer
 
   alias GPUI.Remote.AppProtocol
   alias GPUI.Remote.Transport.SafeRPC.TCP, as: SafeRPCTCP
+
+  @reconnect_errors [:closed, :timeout, :econnrefused, :enetunreach, :nxdomain]
 
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
   def mount(client, args \\ %{}), do: GenServer.call(client, {:mount, args})
@@ -25,48 +27,122 @@ defmodule GPUI.Remote.DisplayClient do
     with {:ok, app_client} <- start_app_client(opts),
          {:ok, backend_state} <- backend.init(backend_opts) do
       {:ok,
-       %{app_client: app_client, backend: backend, backend_state: backend_state, windows: %{}}}
+       %{
+         opts: opts,
+         app_client: app_client,
+         backend: backend,
+         backend_state: backend_state,
+         windows: %{},
+         mounted_args: nil
+       }}
     end
   end
 
   @impl GenServer
   def handle_call({:mount, args}, _from, state) do
-    %{op: op, payload: payload} = AppProtocol.mount(Map.new(args))
+    args = Map.new(args)
+    %{op: op, payload: payload} = AppProtocol.mount(args)
 
-    case SafeRPC.call(state.app_client, op, payload) do
-      {:ok, %{windows: windows}} ->
-        state = sync_windows(state, windows, :open)
+    case call_with_reconnect(state, op, payload) do
+      {:ok, %{windows: windows}, state} ->
+        state = state |> Map.put(:mounted_args, args) |> sync_windows(windows, :open)
         {:reply, {:ok, windows}, state}
 
-      error ->
-        {:reply, error, state}
+      {:error, reason, state} ->
+        {:reply, {:error, reason}, state}
     end
   end
 
   def handle_call({:event, event}, _from, state) do
     %{op: op, payload: payload} = AppProtocol.event(event)
 
-    case SafeRPC.call(state.app_client, op, payload) do
-      {:ok, %{windows: windows}} ->
+    case call_with_reconnect(state, op, payload) do
+      {:ok, %{windows: windows}, state} ->
         state = sync_windows(state, windows, :update)
         {:reply, {:ok, windows}, state}
 
-      error ->
-        {:reply, error, state}
+      {:error, reason, state} ->
+        {:reply, {:error, reason}, state}
     end
   end
 
   def handle_call(:snapshot, _from, state) do
     %{op: op, payload: payload} = AppProtocol.snapshot()
 
-    case SafeRPC.call(state.app_client, op, payload) do
-      {:ok, %{windows: windows}} ->
+    case call_with_reconnect(state, op, payload) do
+      {:ok, %{windows: windows}, state} ->
         state = sync_windows(state, windows, :update)
         {:reply, {:ok, windows}, state}
 
-      error ->
-        {:reply, error, state}
+      {:error, reason, state} ->
+        {:reply, {:error, reason}, state}
     end
+  end
+
+  defp call_with_reconnect(state, op, payload) do
+    case safe_call(state.app_client, op, payload) do
+      {:ok, reply} ->
+        {:ok, reply, state}
+
+      {:error, reason} ->
+        if reconnectable?(reason) do
+          case reconnect(state) do
+            {:ok, state} -> retry_after_reconnect(state, op, payload)
+            {:error, reconnect_reason, state} -> {:error, reconnect_reason, state}
+          end
+        else
+          {:error, reason, state}
+        end
+    end
+  end
+
+  defp retry_after_reconnect(state, op, payload) do
+    case safe_call(state.app_client, op, payload) do
+      {:ok, reply} -> {:ok, reply, state}
+      {:error, reason} -> {:error, reason, state}
+    end
+  end
+
+  defp reconnect(state) do
+    stop_client(state.app_client)
+
+    case start_app_client(state.opts) do
+      {:ok, app_client} -> remount_if_needed(%{state | app_client: app_client})
+      {:error, reason} -> {:error, reason, state}
+    end
+  end
+
+  defp remount_if_needed(%{mounted_args: nil} = state), do: {:ok, state}
+
+  defp remount_if_needed(%{mounted_args: args} = state) do
+    %{op: op, payload: payload} = AppProtocol.mount(args)
+
+    case safe_call(state.app_client, op, payload) do
+      {:ok, %{windows: windows}} -> {:ok, sync_windows(state, windows, :update)}
+      {:error, reason} -> {:error, reason, state}
+    end
+  end
+
+  defp safe_call(client, op, payload) do
+    SafeRPC.call(client, op, payload)
+  catch
+    :exit, {:noproc, _} -> {:error, :closed}
+    :exit, {:normal, _} -> {:error, :closed}
+    :exit, {:timeout, _} -> {:error, :timeout}
+    :exit, reason -> {:error, {:exit, reason}}
+  end
+
+  defp reconnectable?(reason) when reason in @reconnect_errors, do: true
+  defp reconnectable?({:exit, _reason}), do: true
+  defp reconnectable?(_reason), do: false
+
+  defp stop_client(nil), do: :ok
+
+  defp stop_client(client) when is_pid(client) do
+    if Process.alive?(client), do: GenServer.stop(client)
+    :ok
+  catch
+    :exit, _reason -> :ok
   end
 
   defp start_app_client(opts) do

@@ -77,8 +77,18 @@ defmodule GPUI.Remote.AppServer do
 
   @impl GenServer
   def terminate(_reason, state) do
+    stop_runtime(state.runtime)
     SafeRPCTCP.close(state.listener)
     Supervisor.stop(state.connection_supervisor)
+  end
+
+  defp stop_runtime(nil), do: :ok
+
+  defp stop_runtime(runtime) when is_pid(runtime) do
+    if Process.alive?(runtime), do: GenServer.stop(runtime)
+    :ok
+  catch
+    :exit, _reason -> :ok
   end
 
   defp dispatch(%{cap: cap}, state) when cap not in [nil, @app_capability],

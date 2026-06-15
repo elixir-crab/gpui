@@ -71,6 +71,27 @@ defmodule GPUI.Remote.AppServerTest do
              })
   end
 
+  test "display client reconnects and remounts after app server restart" do
+    {:ok, server} = GPUI.Remote.AppServer.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.AppServer.port(server)
+
+    {:ok, display} =
+      GPUI.Remote.DisplayClient.start_link(host: "127.0.0.1", port: port, backend: :data)
+
+    assert {:ok, [%{id: 1}]} = GPUI.Remote.DisplayClient.mount(display)
+
+    GenServer.stop(server)
+    {:ok, _server} = GPUI.Remote.AppServer.start_link(app: FormApp, port: port)
+
+    assert {:ok, [%{root: %{assigns: %{name: "after-reconnect"}}}]} =
+             GPUI.Remote.DisplayClient.event(display, %{
+               type: :change,
+               window_id: 1,
+               event: "rename",
+               value: "after-reconnect"
+             })
+  end
+
   test "rejects unauthorized app clients" do
     {:ok, server} = GPUI.Remote.AppServer.start_link(app: FormApp, port: 0)
     {:ok, port} = GPUI.Remote.AppServer.port(server)

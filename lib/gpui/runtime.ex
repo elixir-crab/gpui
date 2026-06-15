@@ -18,7 +18,8 @@ defmodule GPUI.Runtime do
           backend: module(),
           backend_state: GPUI.Backend.state(),
           host_messages: [map()],
-          poll_interval: pos_integer() | nil
+          poll_interval: pos_integer() | nil,
+          resources: %{optional(term()) => map()}
         }
 
   @spec start_link(keyword()) :: GenServer.on_start()
@@ -100,19 +101,25 @@ defmodule GPUI.Runtime do
 
   @impl GenServer
   def handle_call({:put_resource, resource_id, resource}, _from, state) do
-    {:reply, state.backend.put_resource(state.backend_state, resource_id, resource), state}
+    case state.backend.put_resource(state.backend_state, resource_id, resource) do
+      :ok -> {:reply, :ok, put_in(state.resources[resource_id], resource)}
+      error -> {:reply, error, state}
+    end
   end
 
   @impl GenServer
   def handle_call({:drop_resource, resource_id}, _from, state) do
-    {:reply, state.backend.drop_resource(state.backend_state, resource_id), state}
+    case state.backend.drop_resource(state.backend_state, resource_id) do
+      :ok -> {:reply, :ok, update_in(state.resources, &Map.delete(&1, resource_id))}
+      error -> {:reply, error, state}
+    end
   end
 
   @impl GenServer
   def handle_call({:dispatch_event, event}, _from, state) do
     event = normalize_backend_event(event)
     {handled, state} = handle_backend_event(event, state)
-    {:reply, {handled, window_payloads(state.windows)}, state}
+    {:reply, {handled, window_payloads(state)}, state}
   end
 
   @impl GenServer
@@ -157,7 +164,8 @@ defmodule GPUI.Runtime do
       backend: backend,
       backend_state: backend_state,
       host_messages: [],
-      poll_interval: poll_interval
+      poll_interval: poll_interval,
+      resources: %{}
     }
   end
 
@@ -182,17 +190,17 @@ defmodule GPUI.Runtime do
   end
 
   defp sync_window(state, %WindowSpec{} = window) do
-    :ok = state.backend.open_window(state.backend_state, window_payload(window))
+    :ok = state.backend.open_window(state.backend_state, window_payload(state, window))
   end
 
-  defp window_payloads(windows), do: Enum.map(windows, &window_payload/1)
+  defp window_payloads(state), do: Enum.map(state.windows, &window_payload(state, &1))
 
   defp update_window(state, %WindowSpec{} = window) do
     :ok =
       state.backend.update_window(
         state.backend_state,
         window.id,
-        window_payload(window).root.tree
+        window_payload(state, window).root.tree
       )
   end
 
@@ -206,6 +214,30 @@ defmodule GPUI.Runtime do
       root: encode_root(window.root)
     }
   end
+
+  defp window_payload(state, %WindowSpec{} = window) do
+    window
+    |> window_payload()
+    |> resolve_resource_refs(state.resources)
+  end
+
+  defp resolve_resource_refs(%GPUI.ResourceRef{} = ref, resources) do
+    resolve_resource_refs(GPUI.ResourceRef.to_payload(ref), resources)
+  end
+
+  defp resolve_resource_refs(%{__type__: :resource_ref, id: id}, resources) do
+    Map.get(resources, id, %{__type__: :missing_resource, id: id})
+  end
+
+  defp resolve_resource_refs(%{} = map, resources) do
+    Map.new(map, fn {key, value} -> {key, resolve_resource_refs(value, resources)} end)
+  end
+
+  defp resolve_resource_refs(values, resources) when is_list(values) do
+    Enum.map(values, &resolve_resource_refs(&1, resources))
+  end
+
+  defp resolve_resource_refs(value, _resources), do: value
 
   defp encode_root(nil), do: nil
 
