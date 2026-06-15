@@ -18,6 +18,19 @@ defmodule GPUIRasterTest do
            } = GPUI.Raster.to_payload(raster)
   end
 
+  test "validates raster payload shape" do
+    assert_raise ArgumentError, ~r/data is too short/, fn ->
+      GPUI.Raster.new(2, 1, <<255, 0, 0, 255>>)
+    end
+
+    assert_raise ArgumentError, ~r/unsupported raster format/, fn ->
+      GPUI.Raster.new(1, 1, <<255, 0, 0, 255>>, format: :gray8)
+    end
+
+    assert %GPUI.Raster{stride: 8} =
+             GPUI.Raster.new(1, 2, <<255, 0, 0, 255, 0, 0, 0, 0, 0, 255, 0, 255>>, stride: 8)
+  end
+
   test "supports <img raster={raster}> in GPUI templates" do
     raster = GPUI.Raster.new(1, 1, <<255, 0, 0, 255>>)
 

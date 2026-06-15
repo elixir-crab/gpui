@@ -286,20 +286,22 @@ fn decode_raster(term: Term) -> NifResult<RasterData> {
     let env = term.get_env();
     let attrs = term.map_get(Atom::from_bytes(env, b"attrs")?)?;
     let raster = attrs.map_get(Atom::from_bytes(env, b"raster")?)?;
+    let width = raster.map_get(Atom::from_bytes(env, b"width")?)?.decode::<u32>()?;
+    let height = raster.map_get(Atom::from_bytes(env, b"height")?)?.decode::<u32>()?;
+    let format = raster
+        .map_get(Atom::from_bytes(env, b"format")?)?
+        .atom_to_string()
+        .unwrap_or_else(|_| "rgba8".to_string());
+    let stride = optional_u32(raster.map_get(Atom::from_bytes(env, b"stride")?).ok());
+    let data = raster
+        .map_get(Atom::from_bytes(env, b"data")?)?
+        .decode::<rustler::Binary>()?
+        .as_slice()
+        .to_vec();
+    let raster = RasterData { width, height, format, stride, data };
 
-    Ok(RasterData {
-        width: raster.map_get(Atom::from_bytes(env, b"width")?)?.decode::<u32>()?,
-        height: raster.map_get(Atom::from_bytes(env, b"height")?)?.decode::<u32>()?,
-        format: raster
-            .map_get(Atom::from_bytes(env, b"format")?)?
-            .atom_to_string()
-            .unwrap_or_else(|_| "rgba8".to_string()),
-        data: raster
-            .map_get(Atom::from_bytes(env, b"data")?)?
-            .decode::<rustler::Binary>()?
-            .as_slice()
-            .to_vec(),
-    })
+    raster.validate()?;
+    Ok(raster)
 }
 
 #[cfg(feature = "real-gpui")]
@@ -319,6 +321,13 @@ fn decode_style(term: Term) -> NifResult<StyleAttrs> {
             "background" => attrs.background = rgb_value(value),
             "color" => attrs.color = rgb_value(value),
             "font_size" => attrs.font_size = px_value(value),
+            "gap" => attrs.gap = px_value(value),
+            "padding" => attrs.padding = px_value(value),
+            "margin" => attrs.margin = px_value(value),
+            "width" => attrs.width = px_value(value),
+            "height" => attrs.height = px_value(value),
+            "border_radius" => attrs.border_radius = radius_value(value),
+            "border_width" => attrs.border_width = px_value(value),
             _ => {}
         }
     }
@@ -347,6 +356,11 @@ fn rgb_value(term: Term) -> Option<u32> {
 }
 
 #[cfg(feature = "real-gpui")]
+fn optional_u32(term: Option<Term>) -> Option<u32> {
+    term.and_then(|term| term.decode::<u32>().ok())
+}
+
+#[cfg(feature = "real-gpui")]
 fn px_value(term: Term) -> Option<f32> {
     let values = term.decode::<Vec<Term>>().ok()?;
     if values.len() != 2 || !atom_eq(values[0], "px") {
@@ -357,11 +371,21 @@ fn px_value(term: Term) -> Option<f32> {
 }
 
 #[cfg(feature = "real-gpui")]
+fn radius_value(term: Term) -> Option<f32> {
+    if atom_eq(term, "full") {
+        return Some(9999.0);
+    }
+
+    px_value(term)
+}
+
+#[cfg(feature = "real-gpui")]
 #[derive(Clone, Debug, Default)]
 struct RasterData {
     width: u32,
     height: u32,
     format: String,
+    stride: Option<u32>,
     data: Vec<u8>,
 }
 
@@ -375,10 +399,41 @@ struct StyleAttrs {
     background: Option<u32>,
     color: Option<u32>,
     font_size: Option<f32>,
+    gap: Option<f32>,
+    padding: Option<f32>,
+    margin: Option<f32>,
+    width: Option<f32>,
+    height: Option<f32>,
+    border_radius: Option<f32>,
+    border_width: Option<f32>,
 }
 
 #[cfg(feature = "real-gpui")]
 impl RasterData {
+    fn validate(&self) -> NifResult<()> {
+        if self.width == 0 || self.height == 0 {
+            return Err(rustler::Error::Term(Box::new("invalid_raster_dimensions")));
+        }
+
+        if self.format != "rgba8" && self.format != "bgra8" {
+            return Err(rustler::Error::Term(Box::new("unsupported_raster_format")));
+        }
+
+        let row_bytes = self.width as usize * 4;
+        let stride = self.stride.map(|stride| stride as usize).unwrap_or(row_bytes);
+
+        if stride < row_bytes {
+            return Err(rustler::Error::Term(Box::new("invalid_raster_stride")));
+        }
+
+        let expected_len = stride * (self.height as usize - 1) + row_bytes;
+        if self.data.len() < expected_len {
+            return Err(rustler::Error::Term(Box::new("invalid_raster_data")));
+        }
+
+        Ok(())
+    }
+
     fn render(self) -> gpui::AnyElement {
         use gpui::{img, IntoElement, RenderImage};
         use image::{Frame, RgbaImage};
@@ -393,6 +448,19 @@ impl RasterData {
     }
 
     fn into_rgba(mut self) -> Vec<u8> {
+        let row_bytes = self.width as usize * 4;
+
+        if let Some(stride) = self.stride.map(|stride| stride as usize) {
+            if stride != row_bytes {
+                let mut compact = Vec::with_capacity(row_bytes * self.height as usize);
+                for row in 0..self.height as usize {
+                    let start = row * stride;
+                    compact.extend_from_slice(&self.data[start..start + row_bytes]);
+                }
+                self.data = compact;
+            }
+        }
+
         if self.format == "bgra8" {
             for pixel in self.data.chunks_exact_mut(4) {
                 pixel.swap(0, 2);
@@ -456,6 +524,7 @@ impl ElementNode {
                 background: Some(0x505050),
                 color: Some(0xffffff),
                 font_size: Some(20.0),
+                ..Default::default()
             },
             children: vec![Self::Text("Hello from Elixir/OTP".to_string())],
             click: None,
@@ -506,6 +575,34 @@ impl ElementNode {
 
                 if let Some(size) = style.font_size {
                     element = element.text_size(px(size));
+                }
+
+                if let Some(gap) = style.gap {
+                    element = element.gap(px(gap));
+                }
+
+                if let Some(padding) = style.padding {
+                    element = element.p(px(padding));
+                }
+
+                if let Some(margin) = style.margin {
+                    element = element.m(px(margin));
+                }
+
+                if let Some(width) = style.width {
+                    element = element.w(px(width));
+                }
+
+                if let Some(height) = style.height {
+                    element = element.h(px(height));
+                }
+
+                if let Some(radius) = style.border_radius {
+                    element = element.rounded(px(radius));
+                }
+
+                if let Some(width) = style.border_width {
+                    element = element.border(px(width));
                 }
 
                 for child in children {

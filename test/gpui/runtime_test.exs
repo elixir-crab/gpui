@@ -31,6 +31,13 @@ defmodule GPUIRuntimeTest do
     end
   end
 
+  test "application modules can be started as OTP children" do
+    {:ok, pid} = start_supervised({DemoApp, backend: :data})
+
+    assert [%GPUI.WindowSpec{title: "GPUI + Elixir", size: {500, 500}}] =
+             GPUI.Runtime.windows(pid)
+  end
+
   test "runtime keeps declarative windows in data backend" do
     {:ok, pid} = GPUI.Runtime.start_link(app: DemoApp, backend: :data)
 

@@ -24,14 +24,25 @@ defmodule CounterView do
 end
 
 defmodule CounterApp do
-  alias GPUI.WindowSpec
+  use GPUI.Application
 
+  @impl GPUI.Application
   def mount(_args) do
-    {:ok, %{}, [%WindowSpec{title: "GPUI Counter", root: {CounterView, %{count: 0}}}]}
+    {:ok, %{},
+     [
+       window "GPUI Counter" do
+         size(320, 240)
+         root(CounterView, count: 0)
+       end
+     ]}
   end
 end
 
-{:ok, _pid} = GPUI.Runtime.start_link(app: CounterApp, backend: :native, poll_interval: 16)
+children = [
+  {CounterApp, backend: :native, poll_interval: 16}
+]
 
-IO.puts("Counter running. Click + in the GPUI window. Press Ctrl+C twice to exit.")
+{:ok, _supervisor} = Supervisor.start_link(children, strategy: :one_for_one)
+
+IO.puts("Counter running under an OTP supervisor. Click + in the GPUI window. Press Ctrl+C twice to exit.")
 Process.sleep(:infinity)

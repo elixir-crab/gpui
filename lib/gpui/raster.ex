@@ -43,11 +43,35 @@ defmodule GPUI.Raster do
       color_space: Keyword.get(opts, :color_space, :srgb),
       alpha: Keyword.get(opts, :alpha, :premultiplied)
     }
+    |> validate!()
+  end
+
+  @spec validate!(t()) :: t()
+  def validate!(%__MODULE__{} = raster) do
+    unless raster.format in [:rgba8, :bgra8] do
+      raise ArgumentError, "unsupported raster format #{inspect(raster.format)}"
+    end
+
+    row_bytes = raster.width * 4
+    stride = raster.stride || row_bytes
+
+    cond do
+      not is_integer(stride) or stride < row_bytes ->
+        raise ArgumentError, "raster stride must be at least #{row_bytes} bytes"
+
+      byte_size(raster.data) < stride * (raster.height - 1) + row_bytes ->
+        raise ArgumentError, "raster data is too short for dimensions and stride"
+
+      true ->
+        raster
+    end
   end
 
   @doc false
   @spec to_payload(t()) :: map()
   def to_payload(%__MODULE__{} = raster) do
+    raster = validate!(raster)
+
     %{
       __type__: :raster,
       width: raster.width,
