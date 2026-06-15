@@ -53,6 +53,12 @@ Run a local native counter:
 PATH="$HOME/.cargo/bin:$PATH" mix run examples/counter.exs
 ```
 
+Run a local native image using a runtime resource cache and `%GPUI.ResourceRef{}`:
+
+```sh
+PATH="$HOME/.cargo/bin:$PATH" mix run examples/resource_ref_image.exs
+```
+
 Run a headless remote smoke check over SSH/CI:
 
 ```sh

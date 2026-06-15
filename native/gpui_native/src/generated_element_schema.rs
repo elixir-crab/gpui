@@ -286,12 +286,18 @@ pub(crate) mod generated_events {
             let runtime_for_click = runtime.clone();
             let element_id = format!("gpui-elixir-click-{window_id}-{event}");
     
-            element.id(element_id).on_click(move |_event, _window, _cx| {
-                let _ = push_event(
-                    &runtime_for_click,
-                    NativeEvent::Click { window_id, event: event.clone() },
-                );
-            }).into_any_element()
+            element
+                .id(element_id)
+                .on_click(move |_event, _window, _cx| {
+                    let _ = push_event(
+                        &runtime_for_click,
+                        NativeEvent::Click {
+                            window_id,
+                            event: event.clone(),
+                        },
+                    );
+                })
+                .into_any_element()
         } else {
             element.into_any_element()
         }
@@ -344,7 +350,9 @@ pub(crate) mod generated_events {
                     .clone()
                     .or_else(|| Some(key_event.keystroke.key.clone()));
     
-                if let Some(updated_value) = mutate_generated_input_value(&local_value_for_keydown, &key_event.keystroke) {
+                if let Some(updated_value) =
+                    mutate_generated_input_value(&local_value_for_keydown, &key_event.keystroke)
+                {
                     if let Some(change_event) = change_for_keydown.as_ref() {
                         let _ = push_event(
                             &runtime_for_change,
@@ -642,7 +650,16 @@ pub(crate) mod generated_components {
         runtime: ResourceArc<RuntimeResource>,
         window_id: u64,
     ) -> gpui::AnyElement {
-        render_generated_input_primitive(style, value, placeholder, change, keydown, keyup, runtime, window_id)
+        render_generated_input_primitive(
+            style,
+            value,
+            placeholder,
+            change,
+            keydown,
+            keyup,
+            runtime,
+            window_id,
+        )
     }
     
     #[cfg(feature = "real-gpui")]

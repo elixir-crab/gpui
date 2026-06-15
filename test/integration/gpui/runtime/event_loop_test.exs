@@ -137,6 +137,24 @@ defmodule GPUI.Runtime.EventLoopTest do
     GenServer.stop(pid)
   end
 
+  test "native backend preserves resource refs for native-side resolution" do
+    {:ok, pid} = GPUI.Runtime.start_link(app: ResourceImageApp, backend: :native)
+
+    raster = %{__type__: :raster, width: 1, height: 1, format: :rgba8, data: <<255, 0, 0, 255>>}
+    assert :ok = GPUI.Runtime.put_resource(pid, "logo", raster)
+
+    {_event, [payload]} =
+      GPUI.Runtime.dispatch_event(pid, %{type: :noop, window_id: 1, event: "noop"})
+
+    assert get_in(payload, [:root, :tree, :attrs, :raster]) == %{
+             __type__: :resource_ref,
+             id: "logo",
+             type: :raster
+           }
+
+    GenServer.stop(pid)
+  end
+
   test "native change events update view assigns" do
     {:ok, pid} = GPUI.Runtime.start_link(app: InputApp, backend: :native)
     [window] = GPUI.Runtime.windows(pid)
