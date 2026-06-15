@@ -9,8 +9,10 @@ The package name is `gpui`, with public modules under `GPUI`.
 - Elixir views render serializable `%GPUI.Element{}` trees.
 - OTP owns lifecycle through `GPUI.Runtime`.
 - Rust/Rustler provides the primary native GPUI backend.
+- Native input uses GPUI `EntityInputHandler` with focus, cursor/selection paint, clipboard, IME hooks, and UTF-16/UTF-8 offset handling.
 - Remote display experiments use `SafeRPC` for safe ETF RPC, request IDs, timeouts, and capability checks.
-- GPUI owns the display operation contract in `GPUI.Remote.DisplayProtocol`.
+- GPUI owns the display/app operation contracts in `GPUI.Remote.DisplayProtocol` and `GPUI.Remote.AppProtocol`.
+- Remote servers require protocol `hello` before other operations, support session TTL/GC, and expose resource/window/event quota options.
 - RustQ generates native/host glue from project specs as the surface grows.
 
 ## Installation
@@ -38,6 +40,15 @@ Tests are split by intent:
 
 - `test/gpui/**` contains unit-focused tests.
 - `test/integration/**` contains runtime, transport, and remote-flow integration tests.
+
+Useful verification gates:
+
+```sh
+mix test_unit
+mix test_integration
+mix rustq.gen --check
+PATH="$HOME/.cargo/bin:$PATH" mix gpui.native.build --real-gpui
+```
 
 ## Examples
 

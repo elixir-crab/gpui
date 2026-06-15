@@ -41,6 +41,14 @@ defmodule GPUI.Remote.DisplayServer do
     session_ttl = Keyword.get(opts, :session_ttl, :timer.minutes(30))
     session_gc_interval = Keyword.get(opts, :session_gc_interval, :timer.minutes(1))
 
+    limits = %{
+      max_resources_per_session: Keyword.get(opts, :max_resources_per_session, :infinity),
+      max_resource_bytes_per_session:
+        Keyword.get(opts, :max_resource_bytes_per_session, :infinity),
+      max_windows_per_session: Keyword.get(opts, :max_windows_per_session, :infinity),
+      max_queued_events_per_session: Keyword.get(opts, :max_queued_events_per_session, :infinity)
+    }
+
     with {:ok, backend_state} <- display_backend.init(display_backend_opts),
          {:ok, listener} <- SafeRPCTCP.listen(listen_opts),
          {:ok, connection_supervisor} <- DynamicSupervisor.start_link(strategy: :one_for_one) do
@@ -52,7 +60,8 @@ defmodule GPUI.Remote.DisplayServer do
         display_backend_state: backend_state,
         sessions: %{},
         session_ttl: session_ttl,
-        session_gc_interval: session_gc_interval
+        session_gc_interval: session_gc_interval,
+        limits: limits
       }
 
       start_acceptor(listener)
@@ -120,28 +129,47 @@ defmodule GPUI.Remote.DisplayServer do
     {{:error, :unauthorized}, state}
   end
 
+  defp dispatch(%{kind: :call, op: :hello, payload: payload} = request, state) do
+    session_id = session_id(request)
+    state = touch_session(state, session_id)
+    dispatch_call(:hello, payload, session_id, state)
+  end
+
   defp dispatch(%{kind: :call, op: op, payload: payload} = request, state) do
     session_id = session_id(request)
     state = touch_session(state, session_id)
 
-    if DisplayProtocol.known_op?(op) do
-      dispatch_call(op, payload, session_id, state)
-    else
-      {{:error, {:unsupported_op, op}}, state}
+    cond do
+      not session_negotiated?(state, session_id) ->
+        {{:error, :handshake_required}, state}
+
+      DisplayProtocol.known_op?(op) ->
+        dispatch_call(op, payload, session_id, state)
+
+      true ->
+        {{:error, {:unsupported_op, op}}, state}
     end
   end
 
   defp dispatch(%{kind: :cast, op: :event, payload: event} = request, state) do
     session_id = session_id(request)
     state = touch_session(state, session_id)
-    {{:ok, :noreply}, push_event(state, session_id, event)}
+
+    if session_negotiated?(state, session_id) do
+      case push_event(state, session_id, event) do
+        {:ok, state} -> {{:ok, :noreply}, state}
+        {:error, reason} -> {{:error, reason}, state}
+      end
+    else
+      {{:error, :handshake_required}, state}
+    end
   end
 
   defp dispatch(_request, state), do: {{:error, :unsupported_request}, state}
 
-  defp dispatch_call(:hello, payload, _session_id, state) do
+  defp dispatch_call(:hello, payload, session_id, state) do
     case DisplayProtocol.negotiate(payload) do
-      {:ok, reply} -> {{:ok, reply}, state}
+      {:ok, reply} -> {{:ok, reply}, mark_session_negotiated(state, session_id)}
       {:error, reason} -> {{:error, reason}, state}
     end
   end
@@ -158,8 +186,10 @@ defmodule GPUI.Remote.DisplayServer do
   end
 
   defp dispatch_call(:open_window, %{id: window_id} = window_payload, session_id, state) do
-    case state.display_backend.open_window(state.display_backend_state, window_payload) do
-      :ok -> {{:ok, %{}}, put_session_window(state, session_id, window_id, window_payload)}
+    with :ok <- check_window_quota(state, session_id, window_id),
+         :ok <- state.display_backend.open_window(state.display_backend_state, window_payload) do
+      {{:ok, %{}}, put_session_window(state, session_id, window_id, window_payload)}
+    else
       {:error, reason} -> {{:error, reason}, state}
     end
   end
@@ -168,12 +198,12 @@ defmodule GPUI.Remote.DisplayServer do
     if session_has_window?(state, session_id, window_id) do
       case state.display_backend.update_window(state.display_backend_state, window_id, tree) do
         :ok ->
-          state =
-            state
-            |> put_session_window_tree(session_id, window_id, tree)
-            |> push_event(session_id, %{type: :window_updated, window_id: window_id})
+          state = put_session_window_tree(state, session_id, window_id, tree)
 
-          {{:ok, %{}}, state}
+          case push_event(state, session_id, %{type: :window_updated, window_id: window_id}) do
+            {:ok, state} -> {{:ok, %{}}, state}
+            {:error, reason} -> {{:error, reason}, state}
+          end
 
         {:error, reason} ->
           {{:error, reason}, state}
@@ -184,7 +214,10 @@ defmodule GPUI.Remote.DisplayServer do
   end
 
   defp dispatch_call(:put_resource, %{id: resource_id, resource: resource}, session_id, state) do
-    {{:ok, %{}}, put_session_resource(state, session_id, resource_id, resource)}
+    case check_resource_quota(state, session_id, resource_id, resource) do
+      :ok -> {{:ok, %{}}, put_session_resource(state, session_id, resource_id, resource)}
+      {:error, reason} -> {{:error, reason}, state}
+    end
   end
 
   defp dispatch_call(:drop_resource, %{id: resource_id}, session_id, state) do
@@ -197,7 +230,10 @@ defmodule GPUI.Remote.DisplayServer do
   end
 
   defp dispatch_call(:event, event, session_id, state) do
-    {{:ok, %{}}, push_event(state, session_id, event)}
+    case push_event(state, session_id, event) do
+      {:ok, state} -> {{:ok, %{}}, state}
+      {:error, reason} -> {{:error, reason}, state}
+    end
   end
 
   defp session_id(%{meta: %{session_id: session_id}}), do: session_id
@@ -231,6 +267,85 @@ defmodule GPUI.Remote.DisplayServer do
     end)
   end
 
+  defp session_negotiated?(state, session_id) do
+    session_negotiated_for?(state, session_id) or session_negotiated_for?(state, :default)
+  end
+
+  defp session_negotiated_for?(state, session_id) do
+    state.sessions
+    |> Map.get(session_id, empty_session())
+    |> Map.get(:negotiated, false)
+  end
+
+  defp mark_session_negotiated(state, session_id) do
+    update_in(state.sessions, fn sessions ->
+      Map.update(sessions, session_id, %{empty_session() | negotiated: true}, fn session ->
+        %{session | negotiated: true}
+      end)
+    end)
+  end
+
+  defp check_window_quota(state, session_id, window_id) do
+    session = Map.get(state.sessions, session_id, empty_session())
+
+    if Map.has_key?(session.windows, window_id) do
+      :ok
+    else
+      check_limit(:max_windows_per_session, map_size(session.windows), state.limits)
+    end
+  end
+
+  defp check_resource_quota(state, session_id, resource_id, resource) do
+    session = Map.get(state.sessions, session_id, empty_session())
+    adding_resource? = not Map.has_key?(session.resources, resource_id)
+
+    with :ok <-
+           maybe_check_limit(
+             adding_resource?,
+             :max_resources_per_session,
+             map_size(session.resources),
+             state.limits
+           ) do
+      projected_bytes = session_resource_bytes(session, resource_id, resource)
+
+      check_limit(:max_resource_bytes_per_session, projected_bytes, state.limits,
+        inclusive?: true
+      )
+    end
+  end
+
+  defp maybe_check_limit(false, _key, _current, _limits), do: :ok
+  defp maybe_check_limit(true, key, current, limits), do: check_limit(key, current, limits)
+
+  defp check_event_quota(state, session_id) do
+    session = Map.get(state.sessions, session_id, empty_session())
+    check_limit(:max_queued_events_per_session, length(session.events), state.limits)
+  end
+
+  defp check_limit(key, current, limits, opts \\ []) do
+    case Map.fetch!(limits, key) do
+      :infinity ->
+        :ok
+
+      limit when is_integer(limit) and limit >= 0 ->
+        over? =
+          if Keyword.get(opts, :inclusive?, false), do: current > limit, else: current >= limit
+
+        if over?, do: {:error, key}, else: :ok
+    end
+  end
+
+  defp session_resource_bytes(session, resource_id, resource) do
+    session.resources
+    |> Map.put(resource_id, resource)
+    |> Map.values()
+    |> Enum.reduce(0, &(&2 + resource_bytes(&1)))
+  end
+
+  defp resource_bytes(%{data: data}) when is_binary(data), do: byte_size(data)
+  defp resource_bytes(%{"data" => data}) when is_binary(data), do: byte_size(data)
+  defp resource_bytes(resource), do: :erlang.external_size(resource)
+
   defp session_events(state, session_id) do
     state.sessions |> Map.get(session_id, empty_session()) |> Map.fetch!(:events)
   end
@@ -242,11 +357,14 @@ defmodule GPUI.Remote.DisplayServer do
   end
 
   defp push_event(state, session_id, event) do
-    update_in(state.sessions, fn sessions ->
-      Map.update(sessions, session_id, %{empty_session() | events: [event]}, fn session ->
-        update_in(session.events, &[event | &1])
-      end)
-    end)
+    with :ok <- check_event_quota(state, session_id) do
+      {:ok,
+       update_in(state.sessions, fn sessions ->
+         Map.update(sessions, session_id, %{empty_session() | events: [event]}, fn session ->
+           update_in(session.events, &[event | &1])
+         end)
+       end)}
+    end
   end
 
   defp ensure_session(state, session_id) do
@@ -309,7 +427,8 @@ defmodule GPUI.Remote.DisplayServer do
     end)
   end
 
-  defp empty_session, do: %{events: [], windows: %{}, resources: %{}, last_seen: monotonic_ms()}
+  defp empty_session,
+    do: %{events: [], windows: %{}, resources: %{}, negotiated: false, last_seen: monotonic_ms()}
 
   defp monotonic_ms, do: System.monotonic_time(:millisecond)
 

@@ -299,12 +299,59 @@ defmodule GPUI.Remote.DisplayServerTest do
              SafeRPC.call(client_b, :drain_events, %{}, meta: %{session_id: session_b})
   end
 
-  test "rejects unsupported operations" do
+  test "rejects operations before hello" do
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
+    {:ok, client} = raw_client(port)
+
+    assert {:error, :handshake_required} = SafeRPC.call(client, :ping, %{})
+  end
+
+  test "rejects unsupported operations after hello" do
     {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
     {:ok, client} = start_client(port)
 
     assert {:error, {:unsupported_op, :unknown}} = SafeRPC.call(client, :unknown, %{})
+  end
+
+  test "enforces resource, window, and event quotas" do
+    {:ok, server} =
+      GPUI.Remote.DisplayServer.start_link(
+        port: 0,
+        display_backend: :data,
+        max_resources_per_session: 1,
+        max_resource_bytes_per_session: 4,
+        max_windows_per_session: 1,
+        max_queued_events_per_session: 1
+      )
+
+    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
+    {:ok, client} = start_client(port)
+    meta = %{session_id: "quota"}
+
+    assert {:ok, %{}} = SafeRPC.call(client, :open_window, %{id: 1, title: "one"}, meta: meta)
+
+    assert {:error, :max_windows_per_session} =
+             SafeRPC.call(client, :open_window, %{id: 2, title: "two"}, meta: meta)
+
+    assert {:ok, %{}} =
+             SafeRPC.call(client, :put_resource, %{id: "a", resource: %{data: <<1, 2, 3, 4>>}},
+               meta: meta
+             )
+
+    assert {:error, :max_resource_bytes_per_session} =
+             SafeRPC.call(client, :put_resource, %{id: "a", resource: %{data: <<1, 2, 3, 4, 5>>}},
+               meta: meta
+             )
+
+    assert {:error, :max_resources_per_session} =
+             SafeRPC.call(client, :put_resource, %{id: "b", resource: %{data: <<1>>}}, meta: meta)
+
+    assert {:ok, %{}} = SafeRPC.call(client, :event, %{type: :click}, meta: meta)
+
+    assert {:error, :max_queued_events_per_session} =
+             SafeRPC.call(client, :event, %{type: :click}, meta: meta)
   end
 
   test "rejects unauthorized capabilities" do
@@ -342,6 +389,14 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   defp start_client(port) do
+    with {:ok, client} <- raw_client(port),
+         {:ok, _hello} <-
+           SafeRPC.call(client, :hello, DisplayProtocol.hello(%{role: :test}).payload) do
+      {:ok, client}
+    end
+  end
+
+  defp raw_client(port) do
     SafeRPC.Client.start_link(
       transport: SafeRPCTCP,
       host: "127.0.0.1",

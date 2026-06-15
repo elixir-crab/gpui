@@ -73,6 +73,35 @@ defmodule GPUI.Remote.AppServerTest do
              })
   end
 
+  test "rejects operations before hello" do
+    {:ok, server} = GPUI.Remote.AppServer.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.AppServer.port(server)
+    {:ok, client} = raw_client(port)
+
+    assert {:error, :handshake_required} = SafeRPC.call(client, :mount, %{})
+  end
+
+  test "garbage collects expired app sessions" do
+    {:ok, server} =
+      GPUI.Remote.AppServer.start_link(
+        app: FormApp,
+        port: 0,
+        app_session_ttl: 20,
+        app_session_gc_interval: 10
+      )
+
+    {:ok, port} = GPUI.Remote.AppServer.port(server)
+    {:ok, client} = start_client(port)
+
+    assert {:ok, %{session_id: "gc-app", windows: [%{id: 1}]}} =
+             SafeRPC.call(client, :mount, %{session_id: "gc-app"})
+
+    assert_eventually(fn ->
+      state = :sys.get_state(server)
+      refute Map.has_key?(state.sessions, "gc-app")
+    end)
+  end
+
   test "resumes mounted app sessions" do
     {:ok, server} = GPUI.Remote.AppServer.start_link(app: FormApp, port: 0)
     {:ok, port} = GPUI.Remote.AppServer.port(server)
@@ -121,7 +150,33 @@ defmodule GPUI.Remote.AppServerTest do
     assert {:error, :unauthorized} = SafeRPC.call(client, :hello, %{})
   end
 
+  defp assert_eventually(fun) do
+    deadline = System.monotonic_time(:millisecond) + 1_000
+    assert_eventually(fun, deadline)
+  end
+
+  defp assert_eventually(fun, deadline) do
+    try do
+      fun.()
+    rescue
+      error in [ExUnit.AssertionError] ->
+        if System.monotonic_time(:millisecond) > deadline do
+          reraise(error, __STACKTRACE__)
+        else
+          Process.sleep(10)
+          assert_eventually(fun, deadline)
+        end
+    end
+  end
+
   defp start_client(port) do
+    with {:ok, client} <- raw_client(port),
+         {:ok, _hello} <- SafeRPC.call(client, :hello, AppProtocol.hello().payload) do
+      {:ok, client}
+    end
+  end
+
+  defp raw_client(port) do
     SafeRPC.Client.start_link(
       transport: SafeRPCTCP,
       host: "127.0.0.1",

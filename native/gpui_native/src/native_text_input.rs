@@ -112,6 +112,46 @@ impl NativeTextInput {
         offset
     }
 
+    fn offset_from_utf16(&self, offset: usize) -> usize {
+        let value = self.value();
+        let mut utf8_offset = 0;
+        let mut utf16_count = 0;
+
+        for ch in value.chars() {
+            if utf16_count >= offset {
+                break;
+            }
+            utf16_count += ch.len_utf16();
+            utf8_offset += ch.len_utf8();
+        }
+
+        utf8_offset
+    }
+
+    fn offset_to_utf16_for(value: &str, offset: usize) -> usize {
+        let offset = Self::clamp(value, offset);
+        let mut utf16_offset = 0;
+        let mut utf8_count = 0;
+
+        for ch in value.chars() {
+            if utf8_count >= offset {
+                break;
+            }
+            utf8_count += ch.len_utf8();
+            utf16_offset += ch.len_utf16();
+        }
+
+        utf16_offset
+    }
+
+    fn range_from_utf16(&self, range: &Range<usize>) -> Range<usize> {
+        self.offset_from_utf16(range.start)..self.offset_from_utf16(range.end)
+    }
+
+    fn range_to_utf16_for(value: &str, range: &Range<usize>) -> Range<usize> {
+        Self::offset_to_utf16_for(value, range.start)..Self::offset_to_utf16_for(value, range.end)
+    }
+
     fn cursor_offset(&self) -> usize {
         if self.selection_reversed {
             self.selected_range.start
@@ -300,9 +340,10 @@ impl EntityInputHandler for NativeTextInput {
         _cx: &mut Context<Self>,
     ) -> Option<String> {
         let value = self.value();
+        let range = self.range_from_utf16(&range);
         let start = Self::clamp(&value, range.start);
         let end = Self::clamp(&value, range.end.max(start));
-        adjusted_range.replace(start..end);
+        adjusted_range.replace(Self::range_to_utf16_for(&value, &(start..end)));
         Some(value[start..end].to_string())
     }
 
@@ -312,8 +353,9 @@ impl EntityInputHandler for NativeTextInput {
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) -> Option<UTF16Selection> {
+        let value = self.value();
         Some(UTF16Selection {
-            range: self.selected_range.clone(),
+            range: Self::range_to_utf16_for(&value, &self.selected_range),
             reversed: self.selection_reversed,
         })
     }
@@ -323,7 +365,10 @@ impl EntityInputHandler for NativeTextInput {
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) -> Option<Range<usize>> {
-        self.marked_range.clone()
+        let value = self.value();
+        self.marked_range
+            .as_ref()
+            .map(|range| Self::range_to_utf16_for(&value, range))
     }
 
     fn unmark_text(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
@@ -338,6 +383,8 @@ impl EntityInputHandler for NativeTextInput {
         cx: &mut Context<Self>,
     ) {
         let range = range
+            .as_ref()
+            .map(|range| self.range_from_utf16(range))
             .or_else(|| self.marked_range.clone())
             .unwrap_or_else(|| self.selected_range.clone());
         self.replace_value(range, text);
@@ -354,12 +401,15 @@ impl EntityInputHandler for NativeTextInput {
         cx: &mut Context<Self>,
     ) {
         let range = range
+            .as_ref()
+            .map(|range| self.range_from_utf16(range))
             .or_else(|| self.marked_range.clone())
             .unwrap_or_else(|| self.selected_range.clone());
         let start = range.start;
         self.replace_value(range, new_text);
         self.marked_range = (!new_text.is_empty()).then_some(start..start + new_text.len());
         if let Some(selection) = new_selected_range {
+            let selection = self.range_from_utf16(&selection);
             self.selected_range = start + selection.start..start + selection.end;
         }
         cx.notify();
@@ -373,6 +423,7 @@ impl EntityInputHandler for NativeTextInput {
         _cx: &mut Context<Self>,
     ) -> Option<Bounds<Pixels>> {
         let line = self.last_layout.as_ref()?;
+        let range = self.range_from_utf16(&range);
         Some(Bounds::from_corners(
             point(bounds.left() + line.x_for_index(range.start), bounds.top()),
             point(bounds.left() + line.x_for_index(range.end), bounds.bottom()),
@@ -385,7 +436,8 @@ impl EntityInputHandler for NativeTextInput {
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) -> Option<usize> {
-        Some(self.point_index(point))
+        let value = self.value();
+        Some(Self::offset_to_utf16_for(&value, self.point_index(point)))
     }
 }
 
