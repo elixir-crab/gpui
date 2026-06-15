@@ -1,0 +1,62 @@
+defmodule GPUI.Raster do
+  @moduledoc """
+  Generic CPU raster image payload for GPUI image elements.
+
+  This is intentionally renderer-agnostic. Skia, image decoders, screenshots,
+  video frames, or tensors can all produce `%GPUI.Raster{}` values.
+  """
+
+  @type format :: :rgba8 | :bgra8
+  @type alpha :: :premultiplied | :straight | :opaque
+  @type color_space :: :srgb | :linear
+
+  @type t :: %__MODULE__{
+          width: pos_integer(),
+          height: pos_integer(),
+          format: format(),
+          data: binary(),
+          stride: pos_integer() | nil,
+          color_space: color_space(),
+          alpha: alpha()
+        }
+
+  defstruct [
+    :width,
+    :height,
+    :data,
+    format: :rgba8,
+    stride: nil,
+    color_space: :srgb,
+    alpha: :premultiplied
+  ]
+
+  @spec new(pos_integer(), pos_integer(), binary(), keyword()) :: t()
+  def new(width, height, data, opts \\ [])
+      when is_integer(width) and width > 0 and is_integer(height) and height > 0 and
+             is_binary(data) do
+    %__MODULE__{
+      width: width,
+      height: height,
+      data: data,
+      format: Keyword.get(opts, :format, :rgba8),
+      stride: Keyword.get(opts, :stride),
+      color_space: Keyword.get(opts, :color_space, :srgb),
+      alpha: Keyword.get(opts, :alpha, :premultiplied)
+    }
+  end
+
+  @doc false
+  @spec to_payload(t()) :: map()
+  def to_payload(%__MODULE__{} = raster) do
+    %{
+      __type__: :raster,
+      width: raster.width,
+      height: raster.height,
+      format: raster.format,
+      data: raster.data,
+      stride: raster.stride,
+      color_space: raster.color_space,
+      alpha: raster.alpha
+    }
+  end
+end

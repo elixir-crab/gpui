@@ -221,6 +221,7 @@ fn decode_element_node(term: Term) -> NifResult<ElementNode> {
             children: decode_children(term).unwrap_or_default(),
             click: decode_click(term).ok().flatten(),
         }),
+        "img" => decode_raster(term).map(ElementNode::Image),
         "text" => Ok(ElementNode::Text(decode_text_children(term).unwrap_or_default())),
         _ => Ok(ElementNode::Text(String::new())),
     }
@@ -264,6 +265,27 @@ fn decode_click(term: Term) -> NifResult<Option<String>> {
         Ok(value) => Ok(value.decode::<String>().ok()),
         Err(_) => Ok(None),
     }
+}
+
+#[cfg(feature = "real-gpui")]
+fn decode_raster(term: Term) -> NifResult<RasterData> {
+    let env = term.get_env();
+    let attrs = term.map_get(Atom::from_bytes(env, b"attrs")?)?;
+    let raster = attrs.map_get(Atom::from_bytes(env, b"raster")?)?;
+
+    Ok(RasterData {
+        width: raster.map_get(Atom::from_bytes(env, b"width")?)?.decode::<u32>()?,
+        height: raster.map_get(Atom::from_bytes(env, b"height")?)?.decode::<u32>()?,
+        format: raster
+            .map_get(Atom::from_bytes(env, b"format")?)?
+            .atom_to_string()
+            .unwrap_or_else(|_| "rgba8".to_string()),
+        data: raster
+            .map_get(Atom::from_bytes(env, b"data")?)?
+            .decode::<rustler::Binary>()?
+            .as_slice()
+            .to_vec(),
+    })
 }
 
 #[cfg(feature = "real-gpui")]
@@ -322,6 +344,15 @@ fn px_value(term: Term) -> Option<f32> {
 
 #[cfg(feature = "real-gpui")]
 #[derive(Clone, Debug, Default)]
+struct RasterData {
+    width: u32,
+    height: u32,
+    format: String,
+    data: Vec<u8>,
+}
+
+#[cfg(feature = "real-gpui")]
+#[derive(Clone, Debug, Default)]
 struct StyleAttrs {
     display_flex: bool,
     flex_direction: Option<String>,
@@ -333,12 +364,39 @@ struct StyleAttrs {
 }
 
 #[cfg(feature = "real-gpui")]
+impl RasterData {
+    fn render(self) -> gpui::AnyElement {
+        use gpui::{img, IntoElement, RenderImage};
+        use image::{Frame, RgbaImage};
+
+        let width = self.width;
+        let height = self.height;
+        let data = self.into_rgba();
+        let image = RgbaImage::from_raw(width, height, data).unwrap_or_else(|| RgbaImage::new(1, 1));
+        let render_image = Arc::new(RenderImage::new(vec![Frame::new(image)]));
+
+        img(render_image).into_any_element()
+    }
+
+    fn into_rgba(mut self) -> Vec<u8> {
+        if self.format == "bgra8" {
+            for pixel in self.data.chunks_exact_mut(4) {
+                pixel.swap(0, 2);
+            }
+        }
+
+        self.data
+    }
+}
+
+#[cfg(feature = "real-gpui")]
 type SharedTree = Arc<Mutex<ElementNode>>;
 
 #[cfg(feature = "real-gpui")]
 #[derive(Clone, Debug)]
 enum ElementNode {
     Div { style: StyleAttrs, children: Vec<ElementNode>, click: Option<String> },
+    Image(RasterData),
     Text(String),
 }
 
@@ -366,6 +424,7 @@ impl ElementNode {
 
         match self {
             ElementNode::Text(text) => text.into_any_element(),
+            ElementNode::Image(raster) => raster.render(),
             ElementNode::Div { style, children, click } => {
                 let mut element = div();
 

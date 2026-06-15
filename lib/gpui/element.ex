@@ -41,6 +41,8 @@ defmodule GPUI.Element do
     |> Map.new()
   end
 
+  defp attr_value_to_payload(%GPUI.Raster{} = raster), do: GPUI.Raster.to_payload(raster)
+
   defp attr_value_to_payload(value) when is_list(value) do
     Enum.map(value, fn
       {key, item} -> {key, attr_value_to_payload(item)}
