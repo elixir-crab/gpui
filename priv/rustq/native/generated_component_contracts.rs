@@ -22,6 +22,8 @@ pub(crate) fn render_generated_input_component(
     keyup: Option<String>,
     runtime: ResourceArc<RuntimeResource>,
     window_id: u64,
+    input_entities: &mut HashMap<String, gpui::Entity<NativeTextInput>>,
+    cx: &mut gpui::Context<ElixirRoot>,
 ) -> gpui::AnyElement {
     render_generated_input_primitive(
         style,
@@ -32,6 +34,8 @@ pub(crate) fn render_generated_input_component(
         keyup,
         runtime,
         window_id,
+        input_entities,
+        cx,
     )
 }
 
@@ -43,6 +47,8 @@ pub(crate) fn render_generated_container_component(
     click: Option<String>,
     runtime: ResourceArc<RuntimeResource>,
     window_id: u64,
+    input_entities: &mut HashMap<String, gpui::Entity<NativeTextInput>>,
+    cx: &mut gpui::Context<ElixirRoot>,
 ) -> gpui::AnyElement {
-    render_generated_container_primitive(tag, style, children, click, runtime, window_id)
+    render_generated_container_primitive(tag, style, children, click, runtime, window_id, input_entities, cx)
 }

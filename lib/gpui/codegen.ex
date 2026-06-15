@@ -486,7 +486,9 @@ defmodule GPUI.Codegen do
       args: [
         {:node, "ElementNode"},
         {:runtime, "ResourceArc<RuntimeResource>"},
-        {:window_id, "u64"}
+        {:window_id, "u64"},
+        {:input_entities, "&mut HashMap<String, gpui::Entity<NativeTextInput>>"},
+        {:cx, "&mut gpui::Context<ElixirRoot>"}
       ],
       returns: "gpui::AnyElement",
       body: rust_template!("generated_render_dispatch.rs")

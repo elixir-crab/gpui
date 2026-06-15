@@ -15,6 +15,11 @@ use std::{
 #[cfg(feature = "real-gpui")]
 static GPUI_STARTED: AtomicBool = AtomicBool::new(false);
 
+#[cfg(feature = "real-gpui")]
+mod native_text_input;
+#[cfg(feature = "real-gpui")]
+use native_text_input::NativeTextInput;
+
 include!("generated_atoms.rs");
 include!("generated_element_schema.rs");
 include!("generated_nifs.rs");
@@ -32,11 +37,25 @@ pub struct RuntimeResource {
 #[derive(Clone, Debug)]
 enum NativeEvent {
     Text(String),
-    Click { window_id: u64, event: String },
-    Input { kind: String, window_id: u64, event: String, value: Option<String> },
+    Click {
+        window_id: u64,
+        event: String,
+    },
+    Input {
+        kind: String,
+        window_id: u64,
+        event: String,
+        value: Option<String>,
+    },
     #[cfg(feature = "real-gpui")]
-    MissingResource { window_id: u64, id: String, resource_type: String },
-    WindowUpdated { window_id: u64 },
+    MissingResource {
+        window_id: u64,
+        id: String,
+        resource_type: String,
+    },
+    WindowUpdated {
+        window_id: u64,
+    },
 }
 
 #[rustler::resource_impl]
@@ -95,13 +114,18 @@ fn open_window_impl<'a>(
 
     let event_title = title.clone();
     let runtime_for_window = runtime.clone();
-    std::thread::spawn(move || run_gpui_window(title, window_id, shared_window, runtime_for_window));
+    std::thread::spawn(move || {
+        run_gpui_window(title, window_id, shared_window, runtime_for_window)
+    });
     push_text_event(&runtime, format!("window_open_requested:{event_title}"))?;
 
     Ok((atoms::ok(), event_title).encode(env))
 }
 
-fn drain_events_impl<'a>(env: Env<'a>, runtime: ResourceArc<RuntimeResource>) -> NifResult<Term<'a>> {
+fn drain_events_impl<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+) -> NifResult<Term<'a>> {
     let mut events = runtime
         .events
         .lock()
@@ -223,9 +247,23 @@ fn emit_test_event_impl<'a>(
         .and_then(|term| term.decode::<String>().ok());
 
     if event_type == "click" {
-        push_event(&runtime, NativeEvent::Click { window_id, event: event_name })?;
+        push_event(
+            &runtime,
+            NativeEvent::Click {
+                window_id,
+                event: event_name,
+            },
+        )?;
     } else {
-        push_event(&runtime, NativeEvent::Input { kind: event_type, window_id, event: event_name, value })?;
+        push_event(
+            &runtime,
+            NativeEvent::Input {
+                kind: event_type,
+                window_id,
+                event: event_name,
+                value,
+            },
+        )?;
     }
     Ok((atoms::ok(), atoms::ok()).encode(env))
 }
@@ -279,7 +317,12 @@ fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifResult<Term<'
             (Atom::from_bytes(env, b"event")?, event.encode(env)),
         ]
         .encode(env)),
-        NativeEvent::Input { kind, window_id, event, value } => {
+        NativeEvent::Input {
+            kind,
+            window_id,
+            event,
+            value,
+        } => {
             let type_atom = Atom::from_bytes(env, kind.as_bytes())?;
             let mut entries = vec![
                 (Atom::from_bytes(env, b"type")?, type_atom.to_term(env)),
@@ -294,15 +337,28 @@ fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifResult<Term<'
             Ok(entries.encode(env))
         }
         #[cfg(feature = "real-gpui")]
-        NativeEvent::MissingResource { window_id, id, resource_type } => Ok(vec![
-            (Atom::from_bytes(env, b"type")?, Atom::from_bytes(env, b"missing_resource")?.to_term(env)),
+        NativeEvent::MissingResource {
+            window_id,
+            id,
+            resource_type,
+        } => Ok(vec![
+            (
+                Atom::from_bytes(env, b"type")?,
+                Atom::from_bytes(env, b"missing_resource")?.to_term(env),
+            ),
             (Atom::from_bytes(env, b"window_id")?, window_id.encode(env)),
             (Atom::from_bytes(env, b"id")?, id.encode(env)),
-            (Atom::from_bytes(env, b"resource_type")?, Atom::from_bytes(env, resource_type.as_bytes())?.to_term(env)),
+            (
+                Atom::from_bytes(env, b"resource_type")?,
+                Atom::from_bytes(env, resource_type.as_bytes())?.to_term(env),
+            ),
         ]
         .encode(env)),
         NativeEvent::WindowUpdated { window_id } => Ok(vec![
-            (Atom::from_bytes(env, b"type")?, atoms::window_updated().to_term(env)),
+            (
+                Atom::from_bytes(env, b"type")?,
+                atoms::window_updated().to_term(env),
+            ),
             (Atom::from_bytes(env, b"window_id")?, window_id.encode(env)),
         ]
         .encode(env)),
@@ -377,7 +433,10 @@ fn decode_raster(term: Term) -> NifResult<ImageData> {
     let raster = attrs.map_get(Atom::from_bytes(env, b"raster")?)?;
 
     if let Ok(type_term) = raster.map_get(Atom::from_bytes(env, b"__type__")?) {
-        if type_term.atom_to_string().is_ok_and(|value| value == "resource_ref") {
+        if type_term
+            .atom_to_string()
+            .is_ok_and(|value| value == "resource_ref")
+        {
             let resource_ref = decode_generated_resource_ref_resource(raster)?;
             return Ok(ImageData::Ref(resource_ref.id));
         }
@@ -479,126 +538,6 @@ impl From<GeneratedRaster> for RasterData {
 }
 
 #[cfg(feature = "real-gpui")]
-#[allow(dead_code)]
-struct NativeTextInput {
-    id: String,
-    runtime: ResourceArc<RuntimeResource>,
-    selected_range: std::ops::Range<usize>,
-    marked_range: Option<std::ops::Range<usize>>,
-}
-
-#[cfg(feature = "real-gpui")]
-#[allow(dead_code)]
-impl NativeTextInput {
-    fn value(&self) -> String {
-        self.runtime
-            .input_values
-            .lock()
-            .ok()
-            .and_then(|values| values.get(&self.id).cloned())
-            .unwrap_or_default()
-    }
-
-    fn replace_value(&mut self, range: std::ops::Range<usize>, text: &str) {
-        if let Ok(mut values) = self.runtime.input_values.lock() {
-            let value = values.entry(self.id.clone()).or_default();
-            let start = range.start.min(value.len());
-            let end = range.end.min(value.len());
-            value.replace_range(start..end, text);
-            self.selected_range = start + text.len()..start + text.len();
-        }
-    }
-}
-
-#[cfg(feature = "real-gpui")]
-impl gpui::EntityInputHandler for NativeTextInput {
-    fn text_for_range(
-        &mut self,
-        range: std::ops::Range<usize>,
-        adjusted_range: &mut Option<std::ops::Range<usize>>,
-        _window: &mut gpui::Window,
-        _cx: &mut gpui::Context<Self>,
-    ) -> Option<String> {
-        let value = self.value();
-        let start = range.start.min(value.len());
-        let end = range.end.min(value.len());
-        adjusted_range.replace(start..end);
-        Some(value[start..end].to_string())
-    }
-
-    fn selected_text_range(
-        &mut self,
-        _ignore_disabled_input: bool,
-        _window: &mut gpui::Window,
-        _cx: &mut gpui::Context<Self>,
-    ) -> Option<gpui::UTF16Selection> {
-        Some(gpui::UTF16Selection { range: self.selected_range.clone(), reversed: false })
-    }
-
-    fn marked_text_range(
-        &self,
-        _window: &mut gpui::Window,
-        _cx: &mut gpui::Context<Self>,
-    ) -> Option<std::ops::Range<usize>> {
-        self.marked_range.clone()
-    }
-
-    fn unmark_text(&mut self, _window: &mut gpui::Window, _cx: &mut gpui::Context<Self>) {
-        self.marked_range = None;
-    }
-
-    fn replace_text_in_range(
-        &mut self,
-        range: Option<std::ops::Range<usize>>,
-        text: &str,
-        _window: &mut gpui::Window,
-        cx: &mut gpui::Context<Self>,
-    ) {
-        let range = range.or_else(|| self.marked_range.clone()).unwrap_or_else(|| self.selected_range.clone());
-        self.replace_value(range, text);
-        self.marked_range = None;
-        cx.notify();
-    }
-
-    fn replace_and_mark_text_in_range(
-        &mut self,
-        range: Option<std::ops::Range<usize>>,
-        new_text: &str,
-        new_selected_range: Option<std::ops::Range<usize>>,
-        _window: &mut gpui::Window,
-        cx: &mut gpui::Context<Self>,
-    ) {
-        let range = range.or_else(|| self.marked_range.clone()).unwrap_or_else(|| self.selected_range.clone());
-        let start = range.start;
-        self.replace_value(range, new_text);
-        self.marked_range = if new_text.is_empty() { None } else { Some(start..start + new_text.len()) };
-        if let Some(selection) = new_selected_range {
-            self.selected_range = start + selection.start..start + selection.end;
-        }
-        cx.notify();
-    }
-
-    fn bounds_for_range(
-        &mut self,
-        _range_utf16: std::ops::Range<usize>,
-        element_bounds: gpui::Bounds<gpui::Pixels>,
-        _window: &mut gpui::Window,
-        _cx: &mut gpui::Context<Self>,
-    ) -> Option<gpui::Bounds<gpui::Pixels>> {
-        Some(element_bounds)
-    }
-
-    fn character_index_for_point(
-        &mut self,
-        _point: gpui::Point<gpui::Pixels>,
-        _window: &mut gpui::Window,
-        _cx: &mut gpui::Context<Self>,
-    ) -> Option<usize> {
-        Some(self.selected_range.end)
-    }
-}
-
-#[cfg(feature = "real-gpui")]
 impl RasterData {
     fn validate(&self) -> NifResult<()> {
         if self.width == 0 || self.height == 0 {
@@ -610,7 +549,10 @@ impl RasterData {
         }
 
         let row_bytes = self.width as usize * 4;
-        let stride = self.stride.map(|stride| stride as usize).unwrap_or(row_bytes);
+        let stride = self
+            .stride
+            .map(|stride| stride as usize)
+            .unwrap_or(row_bytes);
 
         if stride < row_bytes {
             return Err(rustler::Error::Term(Box::new("invalid_raster_stride")));
@@ -631,7 +573,8 @@ impl RasterData {
         let width = self.width;
         let height = self.height;
         let data = self.into_rgba();
-        let image = RgbaImage::from_raw(width, height, data).unwrap_or_else(|| RgbaImage::new(1, 1));
+        let image =
+            RgbaImage::from_raw(width, height, data).unwrap_or_else(|| RgbaImage::new(1, 1));
         let render_image = Arc::new(RenderImage::new(vec![Frame::new(image)]));
 
         img(render_image).into_any_element()
@@ -695,9 +638,44 @@ impl WindowState {
 type SharedWindow = Arc<WindowState>;
 
 #[cfg(feature = "real-gpui")]
+struct ElixirRoot {
+    window_state: SharedWindow,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+    input_entities: HashMap<String, gpui::Entity<NativeTextInput>>,
+}
+
+#[cfg(feature = "real-gpui")]
+impl gpui::Render for ElixirRoot {
+    fn render(
+        &mut self,
+        _window: &mut gpui::Window,
+        cx: &mut gpui::Context<Self>,
+    ) -> impl gpui::IntoElement {
+        let tree = self
+            .window_state
+            .tree
+            .lock()
+            .map(|tree| tree.clone())
+            .unwrap_or_else(|_| ElementNode::default_root());
+        tree.render(
+            self.runtime.clone(),
+            self.window_id,
+            &mut self.input_entities,
+            cx,
+        )
+    }
+}
+
+#[cfg(feature = "real-gpui")]
 #[derive(Clone, Debug)]
 enum ElementNode {
-    Div { tag: GeneratedElementTag, style: StyleAttrs, children: Vec<ElementNode>, click: Option<String> },
+    Div {
+        tag: GeneratedElementTag,
+        style: StyleAttrs,
+        children: Vec<ElementNode>,
+        click: Option<String>,
+    },
     Input {
         style: StyleAttrs,
         value: String,
@@ -730,8 +708,14 @@ impl ElementNode {
         }
     }
 
-    fn render(self, runtime: ResourceArc<RuntimeResource>, window_id: u64) -> gpui::AnyElement {
-        render_generated_element_node(self, runtime, window_id)
+    fn render(
+        self,
+        runtime: ResourceArc<RuntimeResource>,
+        window_id: u64,
+        input_entities: &mut HashMap<String, gpui::Entity<NativeTextInput>>,
+        cx: &mut gpui::Context<ElixirRoot>,
+    ) -> gpui::AnyElement {
+        render_generated_element_node(self, runtime, window_id, input_entities, cx)
     }
 }
 
@@ -790,10 +774,7 @@ fn render_missing_resource_placeholder() -> gpui::AnyElement {
 }
 
 #[cfg(feature = "real-gpui")]
-fn apply_generated_container_semantics(
-    element: gpui::Div,
-    tag: GeneratedElementTag,
-) -> gpui::Div {
+fn apply_generated_container_semantics(element: gpui::Div, tag: GeneratedElementTag) -> gpui::Div {
     use gpui::Styled;
 
     match tag {
@@ -820,15 +801,37 @@ fn render_generated_input_primitive(
     keyup: Option<String>,
     runtime: ResourceArc<RuntimeResource>,
     window_id: u64,
+    input_entities: &mut HashMap<String, gpui::Entity<NativeTextInput>>,
+    cx: &mut gpui::Context<ElixirRoot>,
 ) -> gpui::AnyElement {
-    use gpui::{div, ParentElement};
+    use gpui::{div, AppContext, ParentElement};
 
-    let label = if value.is_empty() {
-        placeholder.unwrap_or_else(|| "".to_string())
+    let input_id = format!(
+        "gpui-elixir-input-{window_id}-{}",
+        change.clone().unwrap_or_default()
+    );
+    let input = if let Some(input) = input_entities.get(&input_id).cloned() {
+        cx.update_entity(&input, |input, _cx| {
+            input.update_props(value.clone(), placeholder.clone(), change.clone());
+        });
+        input
     } else {
-        value.clone()
+        let input = cx.new(|cx| {
+            NativeTextInput::new(
+                input_id.clone(),
+                runtime.clone(),
+                window_id,
+                value.clone(),
+                placeholder.clone(),
+                change.clone(),
+                cx,
+            )
+        });
+        input_entities.insert(input_id.clone(), input.clone());
+        input
     };
-    let element = apply_generated_render_styles(div(), style).child(label);
+
+    let element = apply_generated_render_styles(div(), style).child(input);
     apply_generated_input_events(element, value, change, keydown, keyup, runtime, window_id)
 }
 
@@ -840,6 +843,8 @@ fn render_generated_container_primitive(
     click: Option<String>,
     runtime: ResourceArc<RuntimeResource>,
     window_id: u64,
+    input_entities: &mut HashMap<String, gpui::Entity<NativeTextInput>>,
+    cx: &mut gpui::Context<ElixirRoot>,
 ) -> gpui::AnyElement {
     use gpui::{div, ParentElement};
 
@@ -847,7 +852,7 @@ fn render_generated_container_primitive(
     element = apply_generated_container_semantics(element, tag);
 
     for child in children {
-        element = element.child(child.render(runtime.clone(), window_id));
+        element = element.child(child.render(runtime.clone(), window_id, input_entities, cx));
     }
 
     apply_generated_click_event(element, click, runtime, window_id)
@@ -860,25 +865,7 @@ fn run_gpui_window(
     window_state: SharedWindow,
     runtime: ResourceArc<RuntimeResource>,
 ) {
-    use gpui::{px, size, App, AppContext, Bounds, Context, Render, Window, WindowBounds, WindowOptions};
-
-    struct ElixirRoot {
-        window_state: SharedWindow,
-        runtime: ResourceArc<RuntimeResource>,
-        window_id: u64,
-    }
-
-    impl Render for ElixirRoot {
-        fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl gpui::IntoElement {
-            let tree = self
-                .window_state
-                .tree
-                .lock()
-                .map(|tree| tree.clone())
-                .unwrap_or_else(|_| ElementNode::default_root());
-            tree.render(self.runtime.clone(), self.window_id)
-        }
-    }
+    use gpui::{px, size, App, AppContext, Bounds, WindowBounds, WindowOptions};
 
     gpui_platform::application().run(move |cx: &mut App| {
         let bounds = Bounds::centered(None, size(px(500.0), px(500.0)), cx);
@@ -915,6 +902,7 @@ fn run_gpui_window(
                         window_state: window_state_for_view.clone(),
                         runtime: runtime_for_view.clone(),
                         window_id,
+                        input_entities: HashMap::new(),
                     }
                 })
             },

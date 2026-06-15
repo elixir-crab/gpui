@@ -685,6 +685,8 @@ pub(crate) mod generated_components {
         keyup: Option<String>,
         runtime: ResourceArc<RuntimeResource>,
         window_id: u64,
+        input_entities: &mut HashMap<String, gpui::Entity<NativeTextInput>>,
+        cx: &mut gpui::Context<ElixirRoot>,
     ) -> gpui::AnyElement {
         render_generated_input_primitive(
             style,
@@ -695,6 +697,8 @@ pub(crate) mod generated_components {
             keyup,
             runtime,
             window_id,
+            input_entities,
+            cx,
         )
     }
     
@@ -706,12 +710,14 @@ pub(crate) mod generated_components {
         click: Option<String>,
         runtime: ResourceArc<RuntimeResource>,
         window_id: u64,
+        input_entities: &mut HashMap<String, gpui::Entity<NativeTextInput>>,
+        cx: &mut gpui::Context<ElixirRoot>,
     ) -> gpui::AnyElement {
-        render_generated_container_primitive(tag, style, children, click, runtime, window_id)
+        render_generated_container_primitive(tag, style, children, click, runtime, window_id, input_entities, cx)
     }
 
     #[cfg(feature = "real-gpui")]
-    pub(crate) fn render_generated_element_node(node: ElementNode, runtime: ResourceArc<RuntimeResource>, window_id: u64) -> gpui::AnyElement {
+    pub(crate) fn render_generated_element_node(node: ElementNode, runtime: ResourceArc<RuntimeResource>, window_id: u64, input_entities: &mut HashMap<String, gpui::Entity<NativeTextInput>>, cx: &mut gpui::Context<ElixirRoot>) -> gpui::AnyElement {
     match node {
         ElementNode::Text(text) => render_generated_text_component(text),
         ElementNode::Image(raster) => render_generated_image_component(raster, runtime, window_id),
@@ -731,13 +737,15 @@ pub(crate) mod generated_components {
             keyup,
             runtime,
             window_id,
+            input_entities,
+            cx,
         ),
         ElementNode::Div {
             tag,
             style,
             children,
             click,
-        } => render_generated_container_component(tag, style, children, click, runtime, window_id),
+        } => render_generated_container_component(tag, style, children, click, runtime, window_id, input_entities, cx),
     }
     
     }

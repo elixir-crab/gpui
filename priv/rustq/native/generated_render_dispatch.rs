@@ -17,11 +17,13 @@ match node {
         keyup,
         runtime,
         window_id,
+        input_entities,
+        cx,
     ),
     ElementNode::Div {
         tag,
         style,
         children,
         click,
-    } => render_generated_container_component(tag, style, children, click, runtime, window_id),
+    } => render_generated_container_component(tag, style, children, click, runtime, window_id, input_entities, cx),
 }
