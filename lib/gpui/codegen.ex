@@ -407,12 +407,10 @@ defmodule GPUI.Codegen do
       attrs: [~s|cfg(feature = "real-gpui")|],
       args: [{:tag, "GeneratedElementTag"}, {:term, "Term"}],
       returns: "NifResult<ElementNode>",
-      body: """
-          match tag {
-      #{rust_decode_element_arms(components)}
-              GeneratedElementTag::Unknown => Ok(ElementNode::Text(String::new())),
-          }
-      """
+      body:
+        rust_template!("generated_decode_element.rs", %{
+          "__GPUI_DECODE_ELEMENT_ARMS__" => rust_decode_element_arms(components)
+        })
     )
     |> Rust.to_fragment()
   end
@@ -459,13 +457,10 @@ defmodule GPUI.Codegen do
       attrs: [~s|cfg(feature = "real-gpui")|],
       args: [{:element, "gpui::Div"}, {:style, "StyleAttrs"}],
       returns: "gpui::Div",
-      body: """
-          use gpui::{px, rgb, Styled};
-
-          let mut element = element;
-      #{rust_render_style_statements(style_specs)}
-          element
-      """
+      body:
+        rust_template!("generated_style_render.rs", %{
+          "__GPUI_STYLE_RENDER_STATEMENTS__" => rust_render_style_statements(style_specs)
+        })
     )
     |> Rust.to_fragment()
   end
@@ -533,18 +528,7 @@ defmodule GPUI.Codegen do
         {:window_id, "u64"}
       ],
       returns: "gpui::AnyElement",
-      body: """
-          match node {
-              ElementNode::Text(text) => render_generated_text_component(text),
-              ElementNode::Image(raster) => render_generated_image_component(raster, runtime),
-              ElementNode::Input { style, value, placeholder, change, keydown, keyup } => {
-                  render_generated_input_component(style, value, placeholder, change, keydown, keyup, runtime, window_id)
-              }
-              ElementNode::Div { style, children, click } => {
-                  render_generated_container_component(style, children, click, runtime, window_id)
-              }
-          }
-      """
+      body: rust_template!("generated_render_dispatch.rs")
     )
     |> Rust.to_fragment()
   end
@@ -554,12 +538,10 @@ defmodule GPUI.Codegen do
       vis: :crate,
       attrs: [~s|cfg(feature = "real-gpui")|],
       args: [{:attrs, "&mut StyleAttrs"}, {:key, "&str"}, {:value, "Term"}],
-      body: """
-          match key {
-      #{rust_style_apply_arms(style_specs)}
-              _ => {}
-          }
-      """
+      body:
+        rust_template!("generated_style_apply.rs", %{
+          "__GPUI_STYLE_APPLY_ARMS__" => rust_style_apply_arms(style_specs)
+        })
     )
     |> Rust.to_fragment()
   end
@@ -605,11 +587,16 @@ defmodule GPUI.Codegen do
     end)
   end
 
-  defp rust_template!(name) do
-    [__DIR__, "..", "..", "priv", "rustq", "native", name]
-    |> Path.join()
-    |> Path.expand()
-    |> File.read!()
+  defp rust_template!(name, replacements \\ %{}) do
+    source =
+      [__DIR__, "..", "..", "priv", "rustq", "native", name]
+      |> Path.join()
+      |> Path.expand()
+      |> File.read!()
+
+    Enum.reduce(replacements, source, fn {placeholder, replacement}, source ->
+      String.replace(source, placeholder, replacement)
+    end)
   end
 
   defp generated_string_slice_const(name, values) do

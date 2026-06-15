@@ -625,7 +625,7 @@ fn render_generated_image_primitive(
 
 #[cfg(feature = "real-gpui")]
 fn render_generated_input_primitive(
-    _style: StyleAttrs,
+    style: StyleAttrs,
     value: String,
     placeholder: Option<String>,
     change: Option<String>,
@@ -641,7 +641,7 @@ fn render_generated_input_primitive(
     } else {
         value.clone()
     };
-    let element = div().child(label);
+    let element = apply_generated_render_styles(div(), style).child(label);
     apply_generated_input_events(element, value, change, keydown, keyup, runtime, window_id)
 }
 
