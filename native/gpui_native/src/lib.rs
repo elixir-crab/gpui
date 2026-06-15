@@ -25,6 +25,8 @@ pub struct RuntimeResource {
     windows: Mutex<HashMap<u64, SharedWindow>>,
     #[cfg(feature = "real-gpui")]
     resources: Mutex<HashMap<String, RasterData>>,
+    #[cfg(feature = "real-gpui")]
+    input_values: Mutex<HashMap<String, String>>,
 }
 
 #[derive(Clone, Debug)]
@@ -45,6 +47,8 @@ fn start_runtime_impl<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
         windows: Mutex::new(HashMap::new()),
         #[cfg(feature = "real-gpui")]
         resources: Mutex::new(HashMap::new()),
+        #[cfg(feature = "real-gpui")]
+        input_values: Mutex::new(HashMap::new()),
     });
 
     Ok((atoms::ok(), runtime).encode(env))
