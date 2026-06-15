@@ -66,6 +66,27 @@ defmodule GPUIEventLoopTest do
     GenServer.stop(pid)
   end
 
+  test "remote loopback backend uses runtime protocol for event/update flow" do
+    {:ok, pid} =
+      GPUI.Runtime.start_link(app: CounterApp, backend: :remote_loopback, poll_interval: 10)
+
+    [window] = GPUI.Runtime.windows(pid)
+
+    assert {:ok, :ok} = GPUI.Runtime.emit_test_event(pid, %{window_id: window.id, event: "inc"})
+
+    handled = GPUI.Runtime.drain_events(pid)
+    assert %{type: :click, window_id: 1, event: "inc"} in handled
+
+    [updated] = GPUI.Runtime.windows(pid)
+    assert {_module, %{count: 1}} = updated.root
+
+    assert %{op: :backend_event, payload: %{type: :window_updated, window_id: 1}} in GPUI.Runtime.host_messages(
+             pid
+           )
+
+    GenServer.stop(pid)
+  end
+
   test "native events can be polled automatically" do
     {:ok, pid} = GPUI.Runtime.start_link(app: CounterApp, backend: :native, poll_interval: 10)
     [window] = GPUI.Runtime.windows(pid)
