@@ -1,0 +1,18 @@
+[package]
+name = "gpui_native"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "gpui_native"
+crate-type = ["cdylib"]
+
+[features]
+default = []
+real-gpui = ["dep:gpui", "dep:gpui_platform"]
+
+[dependencies]
+rustler = "0.38.0"
+gpui = { git = "https://github.com/zed-industries/zed", package = "gpui", optional = true }
+gpui_platform = { git = "https://github.com/zed-industries/zed", package = "gpui_platform", features = ["wayland", "x11"], optional = true }

@@ -1,0 +1,49 @@
+defmodule GPUI.Application do
+  @moduledoc """
+  Behaviour and DSL for OTP-supervised GPUI applications.
+  """
+
+  alias GPUI.WindowSpec
+
+  @callback mount(term()) :: {:ok, term()} | {:ok, term(), [WindowSpec.t()]}
+
+  defmacro __using__(_opts) do
+    quote do
+      @behaviour GPUI.Application
+
+      import GPUI.Application, only: [window: 2, size: 2, root: 2]
+
+      def child_spec(opts) do
+        %{
+          id: __MODULE__,
+          start: {GPUI.Runtime, :start_link, [Keyword.put(opts, :app, __MODULE__)]}
+        }
+      end
+    end
+  end
+
+  @doc "Builds a window specification from a DSL block."
+  defmacro window(title, do: block) do
+    entries = block_entries(block)
+
+    quote do
+      Enum.reduce(unquote(entries), %GPUI.WindowSpec{title: unquote(title)}, fn
+        {:size, width, height}, spec -> %{spec | size: {width, height}}
+        {:root, module, assigns}, spec -> %{spec | root: {module, Map.new(assigns)}}
+      end)
+    end
+  end
+
+  @doc "Declares a window size inside `window`."
+  defmacro size(width, height), do: quote(do: {:size, unquote(width), unquote(height)})
+
+  @doc "Declares a root view inside `window`."
+  defmacro root(module, assigns \\ []) do
+    quote do
+      {:root, unquote(module), unquote(assigns)}
+    end
+  end
+
+  defp block_entries({:__block__, _meta, expressions}), do: expressions
+  defp block_entries(expression), do: [expression]
+end
