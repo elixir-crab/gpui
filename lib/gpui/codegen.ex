@@ -387,7 +387,7 @@ defmodule GPUI.Codegen do
   defp rust_decode_element_arm(:container, variant, decoder) do
     rust_arm(
       "GeneratedElementTag::#{variant}",
-      "#{decoder}(term).map(|node| ElementNode::Div { style: node.style, children: node.children, click: node.click })"
+      "#{decoder}(term).map(|node| ElementNode::Div { tag: GeneratedElementTag::#{variant}, style: node.style, children: node.children, click: node.click })"
     )
   end
 

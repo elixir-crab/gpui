@@ -646,12 +646,12 @@ pub(crate) mod generated_components {
     #[cfg(feature = "real-gpui")]
     pub(crate) fn decode_generated_element_node(tag: GeneratedElementTag, term: Term) -> NifResult<ElementNode> {
     match tag {
-    GeneratedElementTag::Div => decode_generated_div(term).map(|node| ElementNode::Div { style: node.style, children: node.children, click: node.click }),
-    GeneratedElementTag::Button => decode_generated_button(term).map(|node| ElementNode::Div { style: node.style, children: node.children, click: node.click }),
-    GeneratedElementTag::Span => decode_generated_span(term).map(|node| ElementNode::Div { style: node.style, children: node.children, click: node.click }),
-    GeneratedElementTag::Scroll => decode_generated_scroll(term).map(|node| ElementNode::Div { style: node.style, children: node.children, click: node.click }),
-    GeneratedElementTag::List => decode_generated_list(term).map(|node| ElementNode::Div { style: node.style, children: node.children, click: node.click }),
-    GeneratedElementTag::Item => decode_generated_item(term).map(|node| ElementNode::Div { style: node.style, children: node.children, click: node.click }),
+    GeneratedElementTag::Div => decode_generated_div(term).map(|node| ElementNode::Div { tag: GeneratedElementTag::Div, style: node.style, children: node.children, click: node.click }),
+    GeneratedElementTag::Button => decode_generated_button(term).map(|node| ElementNode::Div { tag: GeneratedElementTag::Button, style: node.style, children: node.children, click: node.click }),
+    GeneratedElementTag::Span => decode_generated_span(term).map(|node| ElementNode::Div { tag: GeneratedElementTag::Span, style: node.style, children: node.children, click: node.click }),
+    GeneratedElementTag::Scroll => decode_generated_scroll(term).map(|node| ElementNode::Div { tag: GeneratedElementTag::Scroll, style: node.style, children: node.children, click: node.click }),
+    GeneratedElementTag::List => decode_generated_list(term).map(|node| ElementNode::Div { tag: GeneratedElementTag::List, style: node.style, children: node.children, click: node.click }),
+    GeneratedElementTag::Item => decode_generated_item(term).map(|node| ElementNode::Div { tag: GeneratedElementTag::Item, style: node.style, children: node.children, click: node.click }),
     GeneratedElementTag::Icon => decode_generated_icon(term).map(|node| ElementNode::Text(node.text)),
     GeneratedElementTag::Input => decode_generated_input(term).map(|node| ElementNode::Input { style: node.style, value: node.value, placeholder: node.placeholder, change: node.change, keydown: node.keydown, keyup: node.keyup }),
     GeneratedElementTag::Img => decode_generated_img(term).map(|node| ElementNode::Image(node.raster)),
@@ -670,8 +670,9 @@ pub(crate) mod generated_components {
     pub(crate) fn render_generated_image_component(
         raster: ImageData,
         runtime: ResourceArc<RuntimeResource>,
+        window_id: u64,
     ) -> gpui::AnyElement {
-        render_generated_image_primitive(raster, runtime)
+        render_generated_image_primitive(raster, runtime, window_id)
     }
     
     #[cfg(feature = "real-gpui")]
@@ -699,20 +700,21 @@ pub(crate) mod generated_components {
     
     #[cfg(feature = "real-gpui")]
     pub(crate) fn render_generated_container_component(
+        tag: GeneratedElementTag,
         style: StyleAttrs,
         children: Vec<ElementNode>,
         click: Option<String>,
         runtime: ResourceArc<RuntimeResource>,
         window_id: u64,
     ) -> gpui::AnyElement {
-        render_generated_container_primitive(style, children, click, runtime, window_id)
+        render_generated_container_primitive(tag, style, children, click, runtime, window_id)
     }
 
     #[cfg(feature = "real-gpui")]
     pub(crate) fn render_generated_element_node(node: ElementNode, runtime: ResourceArc<RuntimeResource>, window_id: u64) -> gpui::AnyElement {
     match node {
         ElementNode::Text(text) => render_generated_text_component(text),
-        ElementNode::Image(raster) => render_generated_image_component(raster, runtime),
+        ElementNode::Image(raster) => render_generated_image_component(raster, runtime, window_id),
         ElementNode::Input {
             style,
             value,
@@ -731,10 +733,11 @@ pub(crate) mod generated_components {
             window_id,
         ),
         ElementNode::Div {
+            tag,
             style,
             children,
             click,
-        } => render_generated_container_component(style, children, click, runtime, window_id),
+        } => render_generated_container_component(tag, style, children, click, runtime, window_id),
     }
     
     }

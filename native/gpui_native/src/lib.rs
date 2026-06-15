@@ -34,6 +34,8 @@ enum NativeEvent {
     Text(String),
     Click { window_id: u64, event: String },
     Input { kind: String, window_id: u64, event: String, value: Option<String> },
+    #[cfg(feature = "real-gpui")]
+    MissingResource { window_id: u64, id: String, resource_type: String },
     WindowUpdated { window_id: u64 },
 }
 
@@ -291,6 +293,14 @@ fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifResult<Term<'
 
             Ok(entries.encode(env))
         }
+        #[cfg(feature = "real-gpui")]
+        NativeEvent::MissingResource { window_id, id, resource_type } => Ok(vec![
+            (Atom::from_bytes(env, b"type")?, Atom::from_bytes(env, b"missing_resource")?.to_term(env)),
+            (Atom::from_bytes(env, b"window_id")?, window_id.encode(env)),
+            (Atom::from_bytes(env, b"id")?, id.encode(env)),
+            (Atom::from_bytes(env, b"resource_type")?, Atom::from_bytes(env, resource_type.as_bytes())?.to_term(env)),
+        ]
+        .encode(env)),
         NativeEvent::WindowUpdated { window_id } => Ok(vec![
             (Atom::from_bytes(env, b"type")?, atoms::window_updated().to_term(env)),
             (Atom::from_bytes(env, b"window_id")?, window_id.encode(env)),
@@ -687,7 +697,7 @@ type SharedWindow = Arc<WindowState>;
 #[cfg(feature = "real-gpui")]
 #[derive(Clone, Debug)]
 enum ElementNode {
-    Div { style: StyleAttrs, children: Vec<ElementNode>, click: Option<String> },
+    Div { tag: GeneratedElementTag, style: StyleAttrs, children: Vec<ElementNode>, click: Option<String> },
     Input {
         style: StyleAttrs,
         value: String,
@@ -715,6 +725,7 @@ impl ElementNode {
                 ..Default::default()
             },
             children: vec![Self::Text("Hello from Elixir/OTP".to_string())],
+            tag: GeneratedElementTag::Div,
             click: None,
         }
     }
@@ -734,16 +745,68 @@ fn render_generated_text_primitive(text: String) -> gpui::AnyElement {
 fn render_generated_image_primitive(
     raster: ImageData,
     runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
 ) -> gpui::AnyElement {
     match raster {
         ImageData::Raster(raster) => raster.render(),
-        ImageData::Ref(resource_id) => runtime
-            .resources
-            .lock()
-            .ok()
-            .and_then(|resources| resources.get(&resource_id).cloned())
-            .unwrap_or_default()
-            .render(),
+        ImageData::Ref(resource_id) => {
+            if let Some(raster) = runtime
+                .resources
+                .lock()
+                .ok()
+                .and_then(|resources| resources.get(&resource_id).cloned())
+            {
+                raster.render()
+            } else {
+                let _ = push_event(
+                    &runtime,
+                    NativeEvent::MissingResource {
+                        window_id,
+                        id: resource_id,
+                        resource_type: "raster".to_string(),
+                    },
+                );
+                render_missing_resource_placeholder()
+            }
+        }
+    }
+}
+
+#[cfg(feature = "real-gpui")]
+fn render_missing_resource_placeholder() -> gpui::AnyElement {
+    use gpui::{div, IntoElement, ParentElement, Styled};
+
+    div()
+        .flex()
+        .items_center()
+        .justify_center()
+        .border(gpui::px(1.0))
+        .border_color(gpui::rgb(0xcc3333))
+        .bg(gpui::rgb(0x332222))
+        .text_color(gpui::rgb(0xffaaaa))
+        .p(gpui::px(8.0))
+        .child("missing resource")
+        .into_any_element()
+}
+
+#[cfg(feature = "real-gpui")]
+fn apply_generated_container_semantics(
+    element: gpui::Div,
+    tag: GeneratedElementTag,
+) -> gpui::Div {
+    use gpui::Styled;
+
+    match tag {
+        GeneratedElementTag::Button => element
+            .cursor(gpui::CursorStyle::PointingHand)
+            .rounded(gpui::px(6.0))
+            .px(gpui::px(10.0))
+            .py(gpui::px(6.0)),
+        GeneratedElementTag::Scroll => element,
+        GeneratedElementTag::List => element.flex().flex_col().gap(gpui::px(4.0)),
+        GeneratedElementTag::Item => element.p(gpui::px(4.0)),
+        GeneratedElementTag::Span => element,
+        _ => element,
     }
 }
 
@@ -771,6 +834,7 @@ fn render_generated_input_primitive(
 
 #[cfg(feature = "real-gpui")]
 fn render_generated_container_primitive(
+    tag: GeneratedElementTag,
     style: StyleAttrs,
     children: Vec<ElementNode>,
     click: Option<String>,
@@ -780,6 +844,7 @@ fn render_generated_container_primitive(
     use gpui::{div, ParentElement};
 
     let mut element = apply_generated_render_styles(div(), style);
+    element = apply_generated_container_semantics(element, tag);
 
     for child in children {
         element = element.child(child.render(runtime.clone(), window_id));
