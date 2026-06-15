@@ -148,6 +148,10 @@ defmodule GPUI.Runtime do
 
   def handle_info(message, state) do
     case state.backend.handle_info(state.backend_state, message) do
+      {:ok, %{type: type} = event} when type in [:click, :change, :keydown, :keyup] ->
+        {handled, state} = handle_backend_event(event, state)
+        {:noreply, prepend_host_messages([%{op: :backend_event, payload: handled}], state)}
+
       {:ok, event} ->
         {:noreply, %{state | host_messages: [event | state.host_messages]}}
 
