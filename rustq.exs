@@ -4,6 +4,7 @@ alias RustQ.Rustler
 
 require_file "lib/gpui/command_spec.ex"
 require_file "lib/gpui/component_spec/component.ex"
+require_file "lib/gpui/component_spec/resource.ex"
 require_file "lib/gpui/component_spec/style.ex"
 require_file "lib/gpui/component_spec.ex"
 require_file "lib/gpui/codegen.ex"

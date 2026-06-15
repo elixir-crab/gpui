@@ -15,6 +15,25 @@ pub enum GeneratedComponentKind {
 }
 
 
+#[derive(Clone, Debug, Default)]
+#[cfg(feature = "real-gpui")]
+struct StyleAttrs {
+display_flex: bool,
+flex_direction: Option<String>,
+align_items: Option<String>,
+justify_content: Option<String>,
+background: Option<u32>,
+color: Option<u32>,
+font_size: Option<f32>,
+gap: Option<f32>,
+padding: Option<f32>,
+margin: Option<f32>,
+width: Option<f32>,
+height: Option<f32>,
+border_radius: Option<f32>,
+border_width: Option<f32>,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GeneratedElementTag {
     Div,
@@ -70,6 +89,57 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
             GeneratedElementTag::Text => GeneratedComponentKind::Text,
         GeneratedElementTag::Unknown => GeneratedComponentKind::Unknown,
     }
+}
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct GeneratedRaster {
+pub(crate) width: u32,
+pub(crate) height: u32,
+pub(crate) format: String,
+pub(crate) stride: Option<u32>,
+pub(crate) data: Vec<u8>,
+}
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct GeneratedResourceRef {
+pub(crate) id: String,
+pub(crate) type_: String,
+}
+
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) fn decode_generated_raster_resource(term: Term) -> NifResult<GeneratedRaster> {
+    let env = term.get_env();
+    Ok(GeneratedRaster {
+        width: term.map_get(Atom::from_bytes(env, b"width")?)?.decode::<u32>()?,
+        height: term.map_get(Atom::from_bytes(env, b"height")?)?.decode::<u32>()?,
+        format: term
+            .map_get(Atom::from_bytes(env, b"format")?)?
+            .atom_to_string()
+            .unwrap_or_else(|_| "rgba8".to_string()),
+        stride: optional_u32(term.map_get(Atom::from_bytes(env, b"stride")?).ok()),
+        data: term
+            .map_get(Atom::from_bytes(env, b"data")?)?
+            .decode::<rustler::Binary>()?
+            .as_slice()
+            .to_vec(),
+    })
+
+}
+
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) fn decode_generated_resource_ref_resource(term: Term) -> NifResult<GeneratedResourceRef> {
+    let env = term.get_env();
+    Ok(GeneratedResourceRef {
+        id: term.map_get(Atom::from_bytes(env, b"id")?)?.decode::<String>()?,
+        type_: term.map_get(Atom::from_bytes(env, b"type")?)?.atom_to_string().unwrap_or_default(),
+    })
+
 }
 
 #[derive(Clone, Debug)]
@@ -178,6 +248,94 @@ pub(crate) fn apply_generated_style_attr(attrs: &mut StyleAttrs, key: &str, valu
             "border_radius" => attrs.border_radius = radius_value(value),
             "border_width" => attrs.border_width = px_value(value),
         _ => {}
+    }
+
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn apply_generated_render_styles(element: gpui::Div, style: StyleAttrs) -> gpui::Div {
+    use gpui::{px, rgb, Styled};
+
+    let mut element = element;
+    if style.display_flex {
+        element = element.flex();
+    }
+
+    match style.flex_direction.as_deref() {
+            Some("column") => element = element.flex_col(),
+            Some("row") => element = element.flex_row(),
+        _ => {}
+    }
+
+    match style.align_items.as_deref() {
+            Some("center") => element = element.items_center(),
+            Some("start") => element = element.items_start(),
+            Some("end") => element = element.items_end(),
+        _ => {}
+    }
+
+    match style.justify_content.as_deref() {
+            Some("center") => element = element.justify_center(),
+            Some("start") => element = element.justify_start(),
+            Some("end") => element = element.justify_end(),
+        _ => {}
+    }
+
+    if let Some(value) = style.background {
+        element = element.bg(rgb(value));
+    }
+
+    if let Some(value) = style.color {
+        element = element.text_color(rgb(value));
+    }
+
+    if let Some(value) = style.font_size {
+        element = element.text_size(px(value));
+    }
+
+    if let Some(value) = style.gap {
+        element = element.gap(px(value));
+    }
+
+    if let Some(value) = style.padding {
+        element = element.p(px(value));
+    }
+
+    if let Some(value) = style.margin {
+        element = element.m(px(value));
+    }
+
+    if let Some(value) = style.width {
+        element = element.w(px(value));
+    }
+
+    if let Some(value) = style.height {
+        element = element.h(px(value));
+    }
+
+    if let Some(value) = style.border_radius {
+        element = element.rounded(px(value));
+    }
+
+    if let Some(value) = style.border_width {
+        element = element.border(px(value));
+    }
+
+    element
+
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn render_generated_element_node(node: ElementNode, runtime: ResourceArc<RuntimeResource>, window_id: u64) -> gpui::AnyElement {
+    match node {
+        ElementNode::Text(text) => render_generated_text_primitive(text),
+        ElementNode::Image(raster) => render_generated_image_primitive(raster),
+        ElementNode::Input { style, value, placeholder, change, keydown, keyup } => {
+            render_generated_input_primitive(style, value, placeholder, change, keydown, keyup, runtime, window_id)
+        }
+        ElementNode::Div { style, children, click } => {
+            render_generated_container_primitive(style, children, click, runtime, window_id)
+        }
     }
 
 }

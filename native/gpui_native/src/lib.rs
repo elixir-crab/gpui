@@ -329,19 +329,7 @@ fn decode_raster(term: Term) -> NifResult<RasterData> {
     let env = term.get_env();
     let attrs = term.map_get(Atom::from_bytes(env, b"attrs")?)?;
     let raster = attrs.map_get(Atom::from_bytes(env, b"raster")?)?;
-    let width = raster.map_get(Atom::from_bytes(env, b"width")?)?.decode::<u32>()?;
-    let height = raster.map_get(Atom::from_bytes(env, b"height")?)?.decode::<u32>()?;
-    let format = raster
-        .map_get(Atom::from_bytes(env, b"format")?)?
-        .atom_to_string()
-        .unwrap_or_else(|_| "rgba8".to_string());
-    let stride = optional_u32(raster.map_get(Atom::from_bytes(env, b"stride")?).ok());
-    let data = raster
-        .map_get(Atom::from_bytes(env, b"data")?)?
-        .decode::<rustler::Binary>()?
-        .as_slice()
-        .to_vec();
-    let raster = RasterData { width, height, format, stride, data };
+    let raster = RasterData::from(decode_generated_raster_resource(raster)?);
 
     raster.validate()?;
     Ok(raster)
@@ -418,22 +406,16 @@ struct RasterData {
 }
 
 #[cfg(feature = "real-gpui")]
-#[derive(Clone, Debug, Default)]
-struct StyleAttrs {
-    display_flex: bool,
-    flex_direction: Option<String>,
-    align_items: Option<String>,
-    justify_content: Option<String>,
-    background: Option<u32>,
-    color: Option<u32>,
-    font_size: Option<f32>,
-    gap: Option<f32>,
-    padding: Option<f32>,
-    margin: Option<f32>,
-    width: Option<f32>,
-    height: Option<f32>,
-    border_radius: Option<f32>,
-    border_width: Option<f32>,
+impl From<GeneratedRaster> for RasterData {
+    fn from(raster: GeneratedRaster) -> Self {
+        Self {
+            width: raster.width,
+            height: raster.height,
+            format: raster.format,
+            stride: raster.stride,
+            data: raster.data,
+        }
+    }
 }
 
 #[cfg(feature = "real-gpui")]
@@ -568,161 +550,133 @@ impl ElementNode {
     }
 
     fn render(self, runtime: ResourceArc<RuntimeResource>, window_id: u64) -> gpui::AnyElement {
-        use gpui::prelude::*;
-        use gpui::{div, px, rgb, InteractiveElement, IntoElement, ParentElement, StatefulInteractiveElement};
+        render_generated_element_node(self, runtime, window_id)
+    }
+}
 
-        match self {
-            ElementNode::Text(text) => text.into_any_element(),
-            ElementNode::Image(raster) => raster.render(),
-            ElementNode::Input { style: _style, value, placeholder, change, keydown, keyup } => {
-                let label = if value.is_empty() {
-                    placeholder.unwrap_or_else(|| "".to_string())
-                } else {
-                    value.clone()
-                };
-                let mut element = div()
-                    .id(format!("gpui-elixir-input-{window_id}-{}", change.clone().unwrap_or_default()))
-                    .child(label);
+#[cfg(feature = "real-gpui")]
+fn render_generated_text_primitive(text: String) -> gpui::AnyElement {
+    use gpui::IntoElement;
+    text.into_any_element()
+}
 
-                if let Some(event) = change {
-                    let runtime_for_change = runtime.clone();
-                    let value_for_change = value.clone();
-                    element = element.on_click(move |_event, _window, _cx| {
-                        let _ = push_event(
-                            &runtime_for_change,
-                            NativeEvent::Input {
-                                kind: "change".to_string(),
-                                window_id,
-                                event: event.clone(),
-                                value: Some(value_for_change.clone()),
-                            },
-                        );
-                    });
-                }
+#[cfg(feature = "real-gpui")]
+fn render_generated_image_primitive(raster: RasterData) -> gpui::AnyElement {
+    raster.render()
+}
 
-                if let Some(event) = keydown {
-                    let runtime_for_keydown = runtime.clone();
-                    element = element.on_key_down(move |key_event, _window, _cx| {
-                        let value = key_event.keystroke.key_char.clone().or_else(|| Some(key_event.keystroke.key.clone()));
-                        let _ = push_event(
-                            &runtime_for_keydown,
-                            NativeEvent::Input {
-                                kind: "keydown".to_string(),
-                                window_id,
-                                event: event.clone(),
-                                value,
-                            },
-                        );
-                    });
-                }
+#[cfg(feature = "real-gpui")]
+fn render_generated_input_primitive(
+    _style: StyleAttrs,
+    value: String,
+    placeholder: Option<String>,
+    change: Option<String>,
+    keydown: Option<String>,
+    keyup: Option<String>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+) -> gpui::AnyElement {
+    use gpui::{div, InteractiveElement, IntoElement, ParentElement, StatefulInteractiveElement};
 
-                if let Some(event) = keyup {
-                    let runtime_for_keyup = runtime.clone();
-                    element = element.on_key_up(move |key_event, _window, _cx| {
-                        let value = key_event.keystroke.key_char.clone().or_else(|| Some(key_event.keystroke.key.clone()));
-                        let _ = push_event(
-                            &runtime_for_keyup,
-                            NativeEvent::Input {
-                                kind: "keyup".to_string(),
-                                window_id,
-                                event: event.clone(),
-                                value,
-                            },
-                        );
-                    });
-                }
+    let label = if value.is_empty() {
+        placeholder.unwrap_or_else(|| "".to_string())
+    } else {
+        value.clone()
+    };
+    let mut element = div()
+        .id(format!("gpui-elixir-input-{window_id}-{}", change.clone().unwrap_or_default()))
+        .child(label);
 
-                element.into_any_element()
-            }
-            ElementNode::Div { style, children, click } => {
-                let mut element = div();
+    if let Some(event) = change {
+        let runtime_for_change = runtime.clone();
+        let value_for_change = value.clone();
+        element = element.on_click(move |_event, _window, _cx| {
+            let _ = push_event(
+                &runtime_for_change,
+                NativeEvent::Input {
+                    kind: "change".to_string(),
+                    window_id,
+                    event: event.clone(),
+                    value: Some(value_for_change.clone()),
+                },
+            );
+        });
+    }
 
-                if style.display_flex {
-                    element = element.flex();
-                }
+    if let Some(event) = keydown {
+        let runtime_for_keydown = runtime.clone();
+        element = element.on_key_down(move |key_event, _window, _cx| {
+            let value = key_event
+                .keystroke
+                .key_char
+                .clone()
+                .or_else(|| Some(key_event.keystroke.key.clone()));
+            let _ = push_event(
+                &runtime_for_keydown,
+                NativeEvent::Input {
+                    kind: "keydown".to_string(),
+                    window_id,
+                    event: event.clone(),
+                    value,
+                },
+            );
+        });
+    }
 
-                match style.flex_direction.as_deref() {
-                    Some("column") => element = element.flex_col(),
-                    Some("row") => element = element.flex_row(),
-                    _ => {}
-                }
+    if let Some(event) = keyup {
+        let runtime_for_keyup = runtime.clone();
+        element = element.on_key_up(move |key_event, _window, _cx| {
+            let value = key_event
+                .keystroke
+                .key_char
+                .clone()
+                .or_else(|| Some(key_event.keystroke.key.clone()));
+            let _ = push_event(
+                &runtime_for_keyup,
+                NativeEvent::Input {
+                    kind: "keyup".to_string(),
+                    window_id,
+                    event: event.clone(),
+                    value,
+                },
+            );
+        });
+    }
 
-                match style.align_items.as_deref() {
-                    Some("center") => element = element.items_center(),
-                    Some("start") => element = element.items_start(),
-                    Some("end") => element = element.items_end(),
-                    _ => {}
-                }
+    element.into_any_element()
+}
 
-                match style.justify_content.as_deref() {
-                    Some("center") => element = element.justify_center(),
-                    Some("start") => element = element.justify_start(),
-                    Some("end") => element = element.justify_end(),
-                    _ => {}
-                }
+#[cfg(feature = "real-gpui")]
+fn render_generated_container_primitive(
+    style: StyleAttrs,
+    children: Vec<ElementNode>,
+    click: Option<String>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+) -> gpui::AnyElement {
+    use gpui::{div, InteractiveElement, IntoElement, ParentElement, StatefulInteractiveElement};
 
-                if let Some(color) = style.background {
-                    element = element.bg(rgb(color));
-                }
+    let mut element = apply_generated_render_styles(div(), style);
 
-                if let Some(color) = style.color {
-                    element = element.text_color(rgb(color));
-                }
+    for child in children {
+        element = element.child(child.render(runtime.clone(), window_id));
+    }
 
-                if let Some(size) = style.font_size {
-                    element = element.text_size(px(size));
-                }
+    if let Some(event) = click {
+        let runtime_for_click = runtime.clone();
+        let element_id = format!("gpui-elixir-click-{window_id}-{event}");
 
-                if let Some(gap) = style.gap {
-                    element = element.gap(px(gap));
-                }
-
-                if let Some(padding) = style.padding {
-                    element = element.p(px(padding));
-                }
-
-                if let Some(margin) = style.margin {
-                    element = element.m(px(margin));
-                }
-
-                if let Some(width) = style.width {
-                    element = element.w(px(width));
-                }
-
-                if let Some(height) = style.height {
-                    element = element.h(px(height));
-                }
-
-                if let Some(radius) = style.border_radius {
-                    element = element.rounded(px(radius));
-                }
-
-                if let Some(width) = style.border_width {
-                    element = element.border(px(width));
-                }
-
-                for child in children {
-                    element = element.child(child.render(runtime.clone(), window_id));
-                }
-
-                if let Some(event) = click {
-                    let runtime_for_click = runtime.clone();
-                    let element_id = format!("gpui-elixir-click-{window_id}-{event}");
-
-                    element
-                        .id(element_id)
-                        .on_click(move |_event, _window, _cx| {
-                            let _ = push_event(
-                                &runtime_for_click,
-                                NativeEvent::Click { window_id, event: event.clone() },
-                            );
-                        })
-                        .into_any_element()
-                } else {
-                    element.into_any_element()
-                }
-            }
-        }
+        element
+            .id(element_id)
+            .on_click(move |_event, _window, _cx| {
+                let _ = push_event(
+                    &runtime_for_click,
+                    NativeEvent::Click { window_id, event: event.clone() },
+                );
+            })
+            .into_any_element()
+    } else {
+        element.into_any_element()
     }
 }
 

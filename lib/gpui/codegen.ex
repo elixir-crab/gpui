@@ -10,6 +10,7 @@ defmodule GPUI.Codegen do
     style_specs = GPUI.ComponentSpec.style_specs()
     styles = GPUI.ComponentSpec.styles()
     events = GPUI.ComponentSpec.events()
+    resource_specs = GPUI.ComponentSpec.resource_specs()
     resources = GPUI.ComponentSpec.resources()
 
     """
@@ -21,6 +22,8 @@ defmodule GPUI.Codegen do
     pub const GPUI_RESOURCE_TYPES: &[&str] = &[#{rust_string_list(resources)}];
 
     #{generated_component_specs(components)}
+
+    #{generated_style_struct(style_specs)}
 
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub enum GeneratedElementTag {
@@ -67,11 +70,19 @@ defmodule GPUI.Codegen do
         }
     }
 
+    #{generated_decoded_resource_structs(resource_specs)}
+
+    #{generated_decode_resource_functions(resource_specs)}
+
     #{generated_decoded_component_structs(components)}
 
     #{generated_decode_component_functions(components)}
 
     #{generated_apply_style_function(style_specs)}
+
+    #{generated_apply_render_style_function(style_specs)}
+
+    #{generated_render_dispatch()}
     """
   end
 
@@ -135,6 +146,102 @@ defmodule GPUI.Codegen do
       """
     end)
   end
+
+  defp generated_style_struct(style_specs) do
+    Rust.struct(:StyleAttrs,
+      derive: [:Clone, :Debug, :Default],
+      attrs: [~s|cfg(feature = "real-gpui")|],
+      fields:
+        Enum.map(style_specs, fn spec ->
+          Rust.field(spec.field, rust_style_type(spec.type))
+        end)
+    )
+    |> Rust.to_fragment()
+  end
+
+  defp rust_style_type({:atom_eq, _expected}), do: "bool"
+  defp rust_style_type(:atom_string), do: "Option<String>"
+  defp rust_style_type(:rgb), do: "Option<u32>"
+  defp rust_style_type(:px), do: "Option<f32>"
+  defp rust_style_type(:radius), do: "Option<f32>"
+
+  defp generated_decoded_resource_structs(resource_specs) do
+    resource_specs
+    |> Enum.map_join("\n\n", fn resource ->
+      resource.name
+      |> generated_resource_struct_name()
+      |> Rust.struct(
+        vis: :crate,
+        derive: [:Clone, :Debug],
+        attrs: [~s|cfg(feature = "real-gpui")|, "allow(dead_code)"],
+        fields:
+          Enum.map(resource.fields, fn {field, type} ->
+            Rust.field(rust_field_name(field), rust_resource_type(type), vis: :crate)
+          end)
+      )
+      |> Rust.to_fragment()
+    end)
+  end
+
+  defp generated_decode_resource_functions(resource_specs) do
+    resource_specs
+    |> Enum.map_join("\n\n", fn resource ->
+      struct_name = generated_resource_struct_name(resource.name)
+      function_name = "decode_generated_#{resource.name}_resource"
+
+      function_name
+      |> Rust.fn_(
+        vis: :crate,
+        attrs: [~s|cfg(feature = "real-gpui")|, "allow(dead_code)"],
+        args: [{:term, "Term"}],
+        returns: "NifResult<#{struct_name}>",
+        body: generated_decode_resource_body(resource, struct_name)
+      )
+      |> Rust.to_fragment()
+    end)
+  end
+
+  defp generated_decode_resource_body(%{name: :raster}, struct_name) do
+    """
+        let env = term.get_env();
+        Ok(#{struct_name} {
+            width: term.map_get(Atom::from_bytes(env, b\"width\")?)?.decode::<u32>()?,
+            height: term.map_get(Atom::from_bytes(env, b\"height\")?)?.decode::<u32>()?,
+            format: term
+                .map_get(Atom::from_bytes(env, b\"format\")?)?
+                .atom_to_string()
+                .unwrap_or_else(|_| \"rgba8\".to_string()),
+            stride: optional_u32(term.map_get(Atom::from_bytes(env, b\"stride\")?).ok()),
+            data: term
+                .map_get(Atom::from_bytes(env, b\"data\")?)?
+                .decode::<rustler::Binary>()?
+                .as_slice()
+                .to_vec(),
+        })
+    """
+  end
+
+  defp generated_decode_resource_body(%{name: :resource_ref}, struct_name) do
+    """
+        let env = term.get_env();
+        Ok(#{struct_name} {
+            id: term.map_get(Atom::from_bytes(env, b\"id\")?)?.decode::<String>()?,
+            type_: term.map_get(Atom::from_bytes(env, b\"type\")?)?.atom_to_string().unwrap_or_default(),
+        })
+    """
+  end
+
+  defp rust_field_name(:type), do: :type_
+  defp rust_field_name(field), do: field
+
+  defp rust_resource_type(:u32), do: "u32"
+  defp rust_resource_type(:string), do: "String"
+  defp rust_resource_type(:binary), do: "Vec<u8>"
+
+  defp rust_resource_type(:atom), do: "String"
+  defp rust_resource_type({:option, :u32}), do: "Option<u32>"
+
+  defp generated_resource_struct_name(name), do: "Generated#{Macro.camelize(to_string(name))}"
 
   defp generated_decoded_component_structs(components) do
     components
@@ -235,6 +342,94 @@ defmodule GPUI.Codegen do
               text: decode_text_children(term).unwrap_or_default(),
           })
     """
+  end
+
+  defp generated_apply_render_style_function(style_specs) do
+    Rust.fn_(:apply_generated_render_styles,
+      vis: :crate,
+      attrs: [~s|cfg(feature = "real-gpui")|],
+      args: [{:element, "gpui::Div"}, {:style, "StyleAttrs"}],
+      returns: "gpui::Div",
+      body: """
+          use gpui::{px, rgb, Styled};
+
+          let mut element = element;
+      #{rust_render_style_statements(style_specs)}
+          element
+      """
+    )
+    |> Rust.to_fragment()
+  end
+
+  defp rust_render_style_statements(style_specs) do
+    style_specs
+    |> Enum.reject(&is_nil(&1.render))
+    |> Enum.map_join("\n", &rust_render_style_statement/1)
+  end
+
+  defp rust_render_style_statement(%{field: field, render: :flex_if_true}) do
+    """
+        if style.#{field} {
+            element = element.flex();
+        }
+    """
+  end
+
+  defp rust_render_style_statement(%{field: field, render: {:enum_methods, values}}) do
+    arms =
+      values
+      |> Enum.map_join("\n", fn {value, method} ->
+        ~s|            Some("#{value}") => element = element.#{method}(),|
+      end)
+
+    """
+        match style.#{field}.as_deref() {
+    #{arms}
+            _ => {}
+        }
+    """
+  end
+
+  defp rust_render_style_statement(%{field: field, render: {:option_method, method, :rgb}}) do
+    """
+        if let Some(value) = style.#{field} {
+            element = element.#{method}(rgb(value));
+        }
+    """
+  end
+
+  defp rust_render_style_statement(%{field: field, render: {:option_method, method, :px}}) do
+    """
+        if let Some(value) = style.#{field} {
+            element = element.#{method}(px(value));
+        }
+    """
+  end
+
+  defp generated_render_dispatch do
+    Rust.fn_(:render_generated_element_node,
+      vis: :crate,
+      attrs: [~s|cfg(feature = "real-gpui")|],
+      args: [
+        {:node, "ElementNode"},
+        {:runtime, "ResourceArc<RuntimeResource>"},
+        {:window_id, "u64"}
+      ],
+      returns: "gpui::AnyElement",
+      body: """
+          match node {
+              ElementNode::Text(text) => render_generated_text_primitive(text),
+              ElementNode::Image(raster) => render_generated_image_primitive(raster),
+              ElementNode::Input { style, value, placeholder, change, keydown, keyup } => {
+                  render_generated_input_primitive(style, value, placeholder, change, keydown, keyup, runtime, window_id)
+              }
+              ElementNode::Div { style, children, click } => {
+                  render_generated_container_primitive(style, children, click, runtime, window_id)
+              }
+          }
+      """
+    )
+    |> Rust.to_fragment()
   end
 
   defp generated_apply_style_function(style_specs) do
