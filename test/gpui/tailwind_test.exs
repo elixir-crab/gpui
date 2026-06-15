@@ -1,4 +1,4 @@
-defmodule GPUITailwindTest do
+defmodule GPUI.TailwindTest do
   use ExUnit.Case, async: true
 
   test "normalizes a useful Tailwind subset" do

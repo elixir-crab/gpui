@@ -1,4 +1,4 @@
-defmodule GPUIRasterTest do
+defmodule GPUI.RasterTest do
   use ExUnit.Case, async: true
 
   import GPUI.Template, only: [sigil_GPUI: 2]

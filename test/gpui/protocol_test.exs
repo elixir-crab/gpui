@@ -1,4 +1,4 @@
-defmodule GPUIProtocolTest do
+defmodule GPUI.ProtocolTest do
   use ExUnit.Case, async: true
 
   test "round trips ETF messages" do

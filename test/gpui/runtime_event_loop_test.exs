@@ -1,4 +1,4 @@
-defmodule GPUIEventLoopTest do
+defmodule GPUI.Runtime.EventLoopTest do
   use ExUnit.Case, async: false
 
   defmodule CounterView do

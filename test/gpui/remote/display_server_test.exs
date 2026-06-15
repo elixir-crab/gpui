@@ -1,4 +1,4 @@
-defmodule GPUIRemoteDisplayServerTest do
+defmodule GPUI.Remote.DisplayServerTest do
   use ExUnit.Case, async: false
 
   alias GPUI.Remote.ClientConnection

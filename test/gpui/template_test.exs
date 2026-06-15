@@ -1,4 +1,4 @@
-defmodule GPUITemplateTest do
+defmodule GPUI.TemplateTest do
   use ExUnit.Case, async: true
 
   import GPUI.Template, only: [sigil_GPUI: 2]
@@ -58,9 +58,9 @@ defmodule GPUITemplateTest do
              children: [%GPUI.Element{type: :text, children: ["Body"]}]
            } =
              ~GPUI"""
-             <GPUITemplateTest.Demo.Card title="Hello">
+             <GPUI.TemplateTest.Demo.Card title="Hello">
                <text>Body</text>
-             </GPUITemplateTest.Demo.Card>
+             </GPUI.TemplateTest.Demo.Card>
              """
   end
 
@@ -71,7 +71,7 @@ defmodule GPUITemplateTest do
              children: []
            } =
              ~GPUI"""
-             <GPUITemplateTest.Demo.Components.badge label="New" />
+             <GPUI.TemplateTest.Demo.Components.badge label="New" />
              """
   end
 

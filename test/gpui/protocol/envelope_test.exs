@@ -1,4 +1,4 @@
-defmodule GPUIProtocolEnvelopeTest do
+defmodule GPUI.Protocol.EnvelopeTest do
   use ExUnit.Case, async: true
 
   alias GPUI.Protocol.Envelope

@@ -1,4 +1,4 @@
-defmodule GPUIProtocolRuntimeTest do
+defmodule GPUI.Protocol.RuntimeTest do
   use ExUnit.Case, async: true
 
   alias GPUI.Protocol.Runtime, as: RuntimeProtocol

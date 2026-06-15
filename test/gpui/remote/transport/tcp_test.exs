@@ -1,4 +1,4 @@
-defmodule GPUIRemoteTransportTCPTest do
+defmodule GPUI.Remote.Transport.TCPTest do
   use ExUnit.Case, async: false
 
   alias GPUI.Protocol.Envelope

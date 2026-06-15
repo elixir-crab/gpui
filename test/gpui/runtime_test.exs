@@ -1,4 +1,4 @@
-defmodule GPUIRuntimeTest do
+defmodule GPUI.RuntimeTest do
   use ExUnit.Case, async: false
 
   @host Path.expand("native/gpui_host/target/release/gpui_host", File.cwd!())
