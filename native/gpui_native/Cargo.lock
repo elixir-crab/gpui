@@ -399,8 +399,7 @@ dependencies = [
 [[package]]
 name = "async-process"
 version = "2.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc50921ec0055cdd8a16de48773bfeec5c972598674347252c0399676be7da75"
+source = "git+https://github.com/zed-industries/async-process.git?rev=0b6d6713570af61806e1e5cb40e0f757cb93fd9d#0b6d6713570af61806e1e5cb40e0f757cb93fd9d"
 dependencies = [
  "async-channel 2.5.0",
  "async-io",
@@ -2371,6 +2370,7 @@ dependencies = [
  "strum",
  "util",
  "uuid",
+ "zed-font-kit",
 ]
 
 [[package]]
