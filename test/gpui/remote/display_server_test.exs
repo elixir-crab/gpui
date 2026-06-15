@@ -53,6 +53,73 @@ defmodule GPUI.Remote.DisplayServerTest do
     assert :display_server in capabilities
   end
 
+  test "rejects updates for windows not opened by the session" do
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
+    {:ok, client} = start_client(port)
+
+    assert {:error, :unknown_window} =
+             SafeRPC.call(
+               client,
+               :update_window,
+               %{window_id: 1, tree: %{type: :div}},
+               meta: %{session_id: "session-a"}
+             )
+  end
+
+  test "allows updates only for windows opened by the same session" do
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
+    {:ok, client_a} = start_client(port)
+    {:ok, client_b} = start_client(port)
+
+    window = %{id: 1, title: "Owned", root: %{tree: %{type: :div}}}
+
+    assert {:ok, %{}} =
+             SafeRPC.call(client_a, :open_window, window, meta: %{session_id: "session-a"})
+
+    assert {:error, :unknown_window} =
+             SafeRPC.call(
+               client_b,
+               :update_window,
+               %{window_id: 1, tree: %{type: :text}},
+               meta: %{session_id: "session-b"}
+             )
+
+    assert {:ok, %{}} =
+             SafeRPC.call(
+               client_a,
+               :update_window,
+               %{window_id: 1, tree: %{type: :text}},
+               meta: %{session_id: "session-a"}
+             )
+  end
+
+  test "preserves session windows across reconnect when session id is reused" do
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
+    session_id = "stable-session"
+
+    {:ok, first_client} = start_client(port)
+
+    assert {:ok, %{}} =
+             SafeRPC.call(first_client, :open_window, %{id: 1, title: "Reconnect"},
+               meta: %{session_id: session_id}
+             )
+
+    GenServer.stop(first_client)
+
+    {:ok, second_client} = start_client(port)
+
+    assert {:ok, %{}} =
+             SafeRPC.call(
+               second_client,
+               :update_window,
+               %{window_id: 1, tree: %{type: :div}},
+               meta: %{session_id: session_id}
+             )
+  end
+
   test "isolates event queues per session" do
     {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
@@ -96,6 +163,11 @@ defmodule GPUI.Remote.DisplayServerTest do
 
     session_a = "session-a"
     session_b = "session-b"
+
+    assert {:ok, %{}} =
+             SafeRPC.call(client_a, :open_window, %{id: 1, title: "A"},
+               meta: %{session_id: session_a}
+             )
 
     assert {:ok, %{}} =
              SafeRPC.call(

@@ -127,21 +127,29 @@ defmodule GPUI.Remote.DisplayServer do
     {{:ok, %{version: 1, capabilities: [:runtime_v1, :display_server, :safe_rpc]}}, state}
   end
 
-  defp dispatch_call(:open_window, window_payload, _session_id, state) do
+  defp dispatch_call(:open_window, %{id: window_id} = window_payload, session_id, state) do
     case state.display_backend.open_window(state.display_backend_state, window_payload) do
-      :ok -> {{:ok, %{}}, state}
+      :ok -> {{:ok, %{}}, put_session_window(state, session_id, window_id, window_payload)}
       {:error, reason} -> {{:error, reason}, state}
     end
   end
 
   defp dispatch_call(:update_window, %{window_id: window_id, tree: tree}, session_id, state) do
-    case state.display_backend.update_window(state.display_backend_state, window_id, tree) do
-      :ok ->
-        state = push_event(state, session_id, %{type: :window_updated, window_id: window_id})
-        {{:ok, %{}}, state}
+    if session_has_window?(state, session_id, window_id) do
+      case state.display_backend.update_window(state.display_backend_state, window_id, tree) do
+        :ok ->
+          state =
+            state
+            |> put_session_window_tree(session_id, window_id, tree)
+            |> push_event(session_id, %{type: :window_updated, window_id: window_id})
 
-      {:error, reason} ->
-        {{:error, reason}, state}
+          {{:ok, %{}}, state}
+
+        {:error, reason} ->
+          {{:error, reason}, state}
+      end
+    else
+      {{:error, :unknown_window}, state}
     end
   end
 
@@ -158,22 +166,57 @@ defmodule GPUI.Remote.DisplayServer do
   defp session_id(_request), do: :default
 
   defp session_events(state, session_id) do
-    state.sessions |> Map.get(session_id, %{events: []}) |> Map.fetch!(:events)
+    state.sessions |> Map.get(session_id, empty_session()) |> Map.fetch!(:events)
   end
 
   defp clear_session_events(state, session_id) do
     update_in(state.sessions, fn sessions ->
-      Map.update(sessions, session_id, %{events: []}, &%{&1 | events: []})
+      Map.update(sessions, session_id, empty_session(), &%{&1 | events: []})
     end)
   end
 
   defp push_event(state, session_id, event) do
     update_in(state.sessions, fn sessions ->
-      Map.update(sessions, session_id, %{events: [event]}, fn session ->
+      Map.update(sessions, session_id, %{empty_session() | events: [event]}, fn session ->
         update_in(session.events, &[event | &1])
       end)
     end)
   end
+
+  defp session_has_window?(state, session_id, window_id) do
+    state.sessions
+    |> Map.get(session_id, empty_session())
+    |> Map.fetch!(:windows)
+    |> Map.has_key?(window_id)
+  end
+
+  defp put_session_window(state, session_id, window_id, window_payload) do
+    update_in(state.sessions, fn sessions ->
+      Map.update(
+        sessions,
+        session_id,
+        put_in(empty_session(), [:windows, window_id], window_payload),
+        fn session ->
+          put_in(session, [:windows, window_id], window_payload)
+        end
+      )
+    end)
+  end
+
+  defp put_session_window_tree(state, session_id, window_id, tree) do
+    update_in(state.sessions, fn sessions ->
+      Map.update(sessions, session_id, empty_session(), fn session ->
+        update_in(session.windows, fn windows ->
+          Map.update(windows, window_id, %{id: window_id, root: %{tree: tree}}, fn window ->
+            root = Map.get(window, :root) || %{}
+            Map.put(window, :root, Map.put(root, :tree, tree))
+          end)
+        end)
+      end)
+    end)
+  end
+
+  defp empty_session, do: %{events: [], windows: %{}}
 
   defp start_acceptor(listener) do
     owner = self()
