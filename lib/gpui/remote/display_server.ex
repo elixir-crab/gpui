@@ -38,6 +38,8 @@ defmodule GPUI.Remote.DisplayServer do
     display_backend_opts = Keyword.get(opts, :display_backend_opts, [])
 
     listen_opts = [port: Keyword.get(opts, :port, 0), ssl: Keyword.get(opts, :ssl, false)]
+    session_ttl = Keyword.get(opts, :session_ttl, :timer.minutes(30))
+    session_gc_interval = Keyword.get(opts, :session_gc_interval, :timer.minutes(1))
 
     with {:ok, backend_state} <- display_backend.init(display_backend_opts),
          {:ok, listener} <- SafeRPCTCP.listen(listen_opts),
@@ -48,10 +50,13 @@ defmodule GPUI.Remote.DisplayServer do
         connections: %{},
         display_backend: display_backend,
         display_backend_state: backend_state,
-        sessions: %{}
+        sessions: %{},
+        session_ttl: session_ttl,
+        session_gc_interval: session_gc_interval
       }
 
       start_acceptor(listener)
+      schedule_session_gc(state)
       {:ok, state}
     end
   end
@@ -99,6 +104,12 @@ defmodule GPUI.Remote.DisplayServer do
     {:noreply, update_in(state.connections, &Map.delete(&1, pid))}
   end
 
+  def handle_info(:gc_sessions, state) do
+    state = gc_sessions(state)
+    schedule_session_gc(state)
+    {:noreply, state}
+  end
+
   @impl GenServer
   def terminate(_reason, state) do
     SafeRPCTCP.close(state.listener)
@@ -110,15 +121,20 @@ defmodule GPUI.Remote.DisplayServer do
   end
 
   defp dispatch(%{kind: :call, op: op, payload: payload} = request, state) do
+    session_id = session_id(request)
+    state = touch_session(state, session_id)
+
     if DisplayProtocol.known_op?(op) do
-      dispatch_call(op, payload, session_id(request), state)
+      dispatch_call(op, payload, session_id, state)
     else
       {{:error, {:unsupported_op, op}}, state}
     end
   end
 
   defp dispatch(%{kind: :cast, op: :event, payload: event} = request, state) do
-    {{:ok, :noreply}, push_event(state, session_id(request), event)}
+    session_id = session_id(request)
+    state = touch_session(state, session_id)
+    {{:ok, :noreply}, push_event(state, session_id, event)}
   end
 
   defp dispatch(_request, state), do: {{:error, :unsupported_request}, state}
@@ -175,6 +191,34 @@ defmodule GPUI.Remote.DisplayServer do
 
   defp session_id(%{meta: %{session_id: session_id}}), do: session_id
   defp session_id(_request), do: :default
+
+  defp schedule_session_gc(%{session_gc_interval: :infinity}), do: :ok
+
+  defp schedule_session_gc(%{session_gc_interval: interval})
+       when is_integer(interval) and interval > 0 do
+    Process.send_after(self(), :gc_sessions, interval)
+    :ok
+  end
+
+  defp gc_sessions(%{session_ttl: :infinity} = state), do: state
+
+  defp gc_sessions(%{session_ttl: ttl} = state) when is_integer(ttl) and ttl >= 0 do
+    now = monotonic_ms()
+
+    update_in(state.sessions, fn sessions ->
+      Map.reject(sessions, fn {_session_id, session} -> now - session.last_seen > ttl end)
+    end)
+  end
+
+  defp touch_session(state, session_id) do
+    now = monotonic_ms()
+
+    update_in(state.sessions, fn sessions ->
+      Map.update(sessions, session_id, %{empty_session() | last_seen: now}, fn session ->
+        %{session | last_seen: now}
+      end)
+    end)
+  end
 
   defp session_events(state, session_id) do
     state.sessions |> Map.get(session_id, empty_session()) |> Map.fetch!(:events)
@@ -233,7 +277,9 @@ defmodule GPUI.Remote.DisplayServer do
     end)
   end
 
-  defp empty_session, do: %{events: [], windows: %{}}
+  defp empty_session, do: %{events: [], windows: %{}, last_seen: monotonic_ms()}
+
+  defp monotonic_ms, do: System.monotonic_time(:millisecond)
 
   defp start_acceptor(listener) do
     owner = self()

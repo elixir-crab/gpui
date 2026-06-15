@@ -53,6 +53,52 @@ defmodule GPUI.Remote.DisplayServerTest do
     assert :display_server in capabilities
   end
 
+  test "garbage collects expired sessions" do
+    {:ok, server} =
+      GPUI.Remote.DisplayServer.start_link(
+        port: 0,
+        display_backend: :data,
+        session_ttl: 20,
+        session_gc_interval: 10
+      )
+
+    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
+    {:ok, client} = start_client(port)
+
+    assert {:ok, %{}} =
+             SafeRPC.call(client, :open_window, %{id: 1, title: "GC"},
+               meta: %{session_id: "gc-session"}
+             )
+
+    assert_eventually(fn ->
+      state = :sys.get_state(server)
+      refute Map.has_key?(state.sessions, "gc-session")
+    end)
+  end
+
+  test "retains active sessions while they are touched" do
+    {:ok, server} =
+      GPUI.Remote.DisplayServer.start_link(
+        port: 0,
+        display_backend: :data,
+        session_ttl: 50,
+        session_gc_interval: 10
+      )
+
+    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
+    {:ok, client} = start_client(port)
+
+    for _ <- 1..3 do
+      assert {:ok, %{pong: true}} =
+               SafeRPC.call(client, :ping, %{}, meta: %{session_id: "active-session"})
+
+      Process.sleep(20)
+    end
+
+    state = :sys.get_state(server)
+    assert Map.has_key?(state.sessions, "active-session")
+  end
+
   test "responds to ping for heartbeat checks" do
     {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
@@ -230,6 +276,25 @@ defmodule GPUI.Remote.DisplayServerTest do
       )
 
     assert {:error, :unauthorized} = SafeRPC.call(client, :hello, %{role: :test})
+  end
+
+  defp assert_eventually(fun) do
+    deadline = System.monotonic_time(:millisecond) + 1_000
+    assert_eventually(fun, deadline)
+  end
+
+  defp assert_eventually(fun, deadline) do
+    try do
+      fun.()
+    rescue
+      error in [ExUnit.AssertionError] ->
+        if System.monotonic_time(:millisecond) > deadline do
+          reraise(error, __STACKTRACE__)
+        else
+          Process.sleep(10)
+          assert_eventually(fun, deadline)
+        end
+    end
   end
 
   defp start_client(port) do
