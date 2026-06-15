@@ -846,7 +846,7 @@ fn render_generated_container_primitive(
     input_entities: &mut HashMap<String, gpui::Entity<NativeTextInput>>,
     cx: &mut gpui::Context<ElixirRoot>,
 ) -> gpui::AnyElement {
-    use gpui::{div, ParentElement};
+    use gpui::{div, InteractiveElement, IntoElement, ParentElement, StatefulInteractiveElement};
 
     let mut element = apply_generated_render_styles(div(), style);
     element = apply_generated_container_semantics(element, tag);
@@ -855,7 +855,29 @@ fn render_generated_container_primitive(
         element = element.child(child.render(runtime.clone(), window_id, input_entities, cx));
     }
 
-    apply_generated_click_event(element, click, runtime, window_id)
+    if tag == GeneratedElementTag::Scroll {
+        let scroll_id = format!("gpui-elixir-scroll-{window_id}");
+        let element = element.id(scroll_id).overflow_y_scroll();
+
+        if let Some(event) = click {
+            let runtime_for_click = runtime.clone();
+            element
+                .on_click(move |_event, _window, _cx| {
+                    let _ = push_event(
+                        &runtime_for_click,
+                        NativeEvent::Click {
+                            window_id,
+                            event: event.clone(),
+                        },
+                    );
+                })
+                .into_any_element()
+        } else {
+            element.into_any_element()
+        }
+    } else {
+        apply_generated_click_event(element, click, runtime, window_id)
+    }
 }
 
 #[cfg(feature = "real-gpui")]

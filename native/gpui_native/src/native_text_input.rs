@@ -6,10 +6,11 @@ use gpui::{
     Element, ElementId, ElementInputHandler, Entity, EntityInputHandler, FocusHandle, Focusable,
     GlobalElementId, InspectorElementId, InteractiveElement, IntoElement, LayoutId, MouseButton,
     MouseDownEvent, PaintQuad, ParentElement, Pixels, Render, ShapedLine, Style, Styled, TextAlign,
-    TextRun, UTF16Selection, Window,
+    TextRun, UTF16Selection, UnderlineStyle, Window,
 };
 use rustler::ResourceArc;
 use std::ops::Range;
+use unicode_segmentation::UnicodeSegmentation;
 
 #[cfg(feature = "real-gpui")]
 actions!(
@@ -176,8 +177,9 @@ impl NativeTextInput {
     }
 
     fn previous_boundary(&self, offset: usize) -> usize {
-        self.value()
-            .char_indices()
+        let value = self.value();
+        value
+            .grapheme_indices(true)
             .map(|(idx, _)| idx)
             .filter(|idx| *idx < offset)
             .last()
@@ -187,7 +189,7 @@ impl NativeTextInput {
     fn next_boundary(&self, offset: usize) -> usize {
         let value = self.value();
         value
-            .char_indices()
+            .grapheme_indices(true)
             .map(|(idx, _)| idx)
             .find(|idx| *idx > offset)
             .unwrap_or(value.len())
@@ -514,10 +516,38 @@ impl Element for NativeTextInputElement {
             underline: None,
             strikethrough: None,
         };
+        let runs = if content.is_empty() {
+            vec![run]
+        } else if let Some(marked_range) = input.marked_range.as_ref() {
+            vec![
+                TextRun {
+                    len: marked_range.start,
+                    ..run.clone()
+                },
+                TextRun {
+                    len: marked_range.end.saturating_sub(marked_range.start),
+                    underline: Some(UnderlineStyle {
+                        color: Some(color),
+                        thickness: px(1.0),
+                        wavy: false,
+                    }),
+                    ..run.clone()
+                },
+                TextRun {
+                    len: display_text.len().saturating_sub(marked_range.end),
+                    ..run
+                },
+            ]
+            .into_iter()
+            .filter(|run| run.len > 0)
+            .collect()
+        } else {
+            vec![run]
+        };
         let line = window.text_system().shape_line(
             display_text.into(),
             style.font_size.to_pixels(window.rem_size()),
-            &[run],
+            &runs,
             None,
         );
         let cursor_pos = line.x_for_index(input.cursor_offset());

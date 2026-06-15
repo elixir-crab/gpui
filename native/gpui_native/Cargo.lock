@@ -2393,6 +2393,7 @@ dependencies = [
  "gpui_platform",
  "image",
  "rustler",
+ "unicode-segmentation",
 ]
 
 [[package]]
