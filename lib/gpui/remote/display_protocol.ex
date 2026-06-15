@@ -7,7 +7,10 @@ defmodule GPUI.Remote.DisplayProtocol do
   payload shapes.
   """
 
+  @version 1
   @capability :gpui_display
+  @required_peer_capabilities [:runtime_v1]
+  @server_capabilities [:runtime_v1, :display_server, :safe_rpc]
   @ops [
     :hello,
     :ping,
@@ -32,8 +35,13 @@ defmodule GPUI.Remote.DisplayProtocol do
           | :event
   @type message :: %{op: op(), payload: map()}
 
+  def version, do: @version
+
   @spec capability() :: :gpui_display
   def capability, do: @capability
+
+  def required_peer_capabilities, do: @required_peer_capabilities
+  def server_capabilities, do: @server_capabilities
 
   @spec ops() :: [op()]
   def ops, do: @ops
@@ -42,8 +50,24 @@ defmodule GPUI.Remote.DisplayProtocol do
   def known_op?(op), do: op in @ops
 
   @spec hello(map()) :: message()
-  def hello(payload \\ %{role: :runtime, capabilities: [:runtime_v1]}) when is_map(payload) do
+  def hello(payload \\ %{}) when is_map(payload) do
+    payload =
+      Map.merge(%{role: :runtime, version: @version, capabilities: [:runtime_v1]}, payload)
+
     message(:hello, payload)
+  end
+
+  def negotiate(%{version: version}) when version != @version do
+    {:error, {:incompatible_version, %{expected: @version, got: version}}}
+  end
+
+  def negotiate(payload) when is_map(payload) do
+    capabilities = Map.get(payload, :capabilities, [])
+
+    case @required_peer_capabilities -- capabilities do
+      [] -> {:ok, %{version: @version, capabilities: @server_capabilities}}
+      missing -> {:error, {:missing_capabilities, missing}}
+    end
   end
 
   @spec ping() :: message()

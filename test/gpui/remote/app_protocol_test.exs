@@ -22,4 +22,17 @@ defmodule GPUI.Remote.AppProtocolTest do
     assert %{op: :event, payload: %{type: :click}} = AppProtocol.event(%{type: :click})
     assert %{op: :snapshot, payload: %{}} = AppProtocol.snapshot()
   end
+
+  test "negotiates protocol version and capabilities" do
+    assert {:ok, %{version: 1, capabilities: capabilities}} =
+             AppProtocol.negotiate(%{version: 1, capabilities: [:display_v1]})
+
+    assert :app_server in capabilities
+
+    assert {:error, {:incompatible_version, %{expected: 1, got: 2}}} =
+             AppProtocol.negotiate(%{version: 2, capabilities: [:display_v1]})
+
+    assert {:error, {:missing_capabilities, [:display_v1]}} =
+             AppProtocol.negotiate(%{version: 1, capabilities: []})
+  end
 end

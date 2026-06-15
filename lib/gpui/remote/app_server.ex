@@ -105,8 +105,11 @@ defmodule GPUI.Remote.AppServer do
 
   defp dispatch(_request, state), do: {{:error, :unsupported_request}, state}
 
-  defp dispatch_call(:hello, _payload, state) do
-    {{:ok, %{version: 1, capabilities: [:app_server, :safe_rpc, :snapshot_v1]}}, state}
+  defp dispatch_call(:hello, payload, state) do
+    case AppProtocol.negotiate(payload) do
+      {:ok, reply} -> {{:ok, reply}, state}
+      {:error, reason} -> {{:error, reason}, state}
+    end
   end
 
   defp dispatch_call(:mount, payload, state) do

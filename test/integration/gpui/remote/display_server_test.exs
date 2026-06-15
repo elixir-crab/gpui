@@ -30,8 +30,9 @@ defmodule GPUI.Remote.DisplayServerTest do
     assert %{connection_supervisor: connection_supervisor} = :sys.get_state(server)
     assert is_pid(connection_supervisor)
 
-    assert {:ok, %{capabilities: capabilities1}} = SafeRPC.call(conn1, :hello, %{role: :test})
-    assert {:ok, %{capabilities: capabilities2}} = SafeRPC.call(conn2, :hello, %{role: :test})
+    hello = DisplayProtocol.hello(%{role: :test}).payload
+    assert {:ok, %{capabilities: capabilities1}} = SafeRPC.call(conn1, :hello, hello)
+    assert {:ok, %{capabilities: capabilities2}} = SafeRPC.call(conn2, :hello, hello)
 
     assert :display_server in capabilities1
     assert :safe_rpc in capabilities1
@@ -49,7 +50,9 @@ defmodule GPUI.Remote.DisplayServerTest do
     GenServer.stop(conn1)
     Process.sleep(10)
 
-    assert {:ok, %{capabilities: capabilities}} = SafeRPC.call(conn2, :hello, %{role: :test})
+    assert {:ok, %{capabilities: capabilities}} =
+             SafeRPC.call(conn2, :hello, DisplayProtocol.hello(%{role: :test}).payload)
+
     assert :display_server in capabilities
   end
 

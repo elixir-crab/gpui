@@ -36,7 +36,9 @@ defmodule GPUI.Remote.AppServerTest do
     {:ok, port} = GPUI.Remote.AppServer.port(server)
     {:ok, client} = start_client(port)
 
-    assert {:ok, %{capabilities: capabilities}} = SafeRPC.call(client, :hello, %{})
+    assert {:ok, %{capabilities: capabilities}} =
+             SafeRPC.call(client, :hello, AppProtocol.hello().payload)
+
     assert :app_server in capabilities
 
     assert {:ok, %{session_id: :default, windows: [%{id: 1, root: %{tree: mounted_tree}}]}} =

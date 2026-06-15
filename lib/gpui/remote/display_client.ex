@@ -167,10 +167,16 @@ defmodule GPUI.Remote.DisplayClient do
   end
 
   defp start_app_client(opts) do
-    opts
-    |> Keyword.put(:transport, SafeRPCTCP)
-    |> Keyword.put_new(:cap, AppProtocol.capability())
-    |> SafeRPC.Client.start_link()
+    opts =
+      opts
+      |> Keyword.put(:transport, SafeRPCTCP)
+      |> Keyword.put_new(:cap, AppProtocol.capability())
+
+    with {:ok, client} <- SafeRPC.Client.start_link(opts),
+         %{op: op, payload: payload} = AppProtocol.hello(),
+         {:ok, _hello} <- safe_call(client, op, payload) do
+      {:ok, client}
+    end
   end
 
   defp sync_windows(state, windows, mode) do

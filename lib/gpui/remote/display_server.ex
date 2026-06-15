@@ -139,8 +139,11 @@ defmodule GPUI.Remote.DisplayServer do
 
   defp dispatch(_request, state), do: {{:error, :unsupported_request}, state}
 
-  defp dispatch_call(:hello, _payload, _session_id, state) do
-    {{:ok, %{version: 1, capabilities: [:runtime_v1, :display_server, :safe_rpc]}}, state}
+  defp dispatch_call(:hello, payload, _session_id, state) do
+    case DisplayProtocol.negotiate(payload) do
+      {:ok, reply} -> {{:ok, reply}, state}
+      {:error, reason} -> {{:error, reason}, state}
+    end
   end
 
   defp dispatch_call(:ping, _payload, _session_id, state) do

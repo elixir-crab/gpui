@@ -71,7 +71,17 @@ Run a RemoteTCP smoke check using SafeRPC over framed TCP:
 PATH="$HOME/.cargo/bin:$PATH" mix run examples/remote_tcp_check.exs
 ```
 
-Run the two-terminal RemoteTCP prototype:
+Run the preferred inverted two-terminal remote app prototype:
+
+```sh
+# Terminal 1: remote OTP app server
+GPUI_APP_PORT=5050 mix run examples/remote_app_server.exs
+
+# Terminal 2: local display client
+GPUI_APP_HOST=127.0.0.1 GPUI_APP_PORT=5050 PATH="$HOME/.cargo/bin:$PATH" mix run examples/local_display_client.exs
+```
+
+Run the older two-terminal RemoteTCP display-server prototype:
 
 ```sh
 # Terminal 1: display server, data/headless backend

@@ -44,4 +44,17 @@ defmodule GPUI.Remote.DisplayProtocolTest do
     assert %{op: :event, payload: %{type: :click}} = DisplayProtocol.event(%{type: :click})
     assert %{op: :drain_events, payload: %{}} = DisplayProtocol.drain_events()
   end
+
+  test "negotiates protocol version and capabilities" do
+    assert {:ok, %{version: 1, capabilities: capabilities}} =
+             DisplayProtocol.negotiate(%{version: 1, capabilities: [:runtime_v1]})
+
+    assert :display_server in capabilities
+
+    assert {:error, {:incompatible_version, %{expected: 1, got: 2}}} =
+             DisplayProtocol.negotiate(%{version: 2, capabilities: [:runtime_v1]})
+
+    assert {:error, {:missing_capabilities, [:runtime_v1]}} =
+             DisplayProtocol.negotiate(%{version: 1, capabilities: []})
+  end
 end

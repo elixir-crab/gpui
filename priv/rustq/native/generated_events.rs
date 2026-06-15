@@ -40,10 +40,13 @@ pub(crate) fn apply_generated_input_events(
 ) -> gpui::AnyElement {
     use gpui::{InteractiveElement, IntoElement, StatefulInteractiveElement};
 
-    let mut element = element.id(format!(
-        "gpui-elixir-input-{window_id}-{}",
-        change.clone().unwrap_or_default()
-    ));
+    let mut element = element
+        .key_context("GPUIInput")
+        .tab_index(0)
+        .id(format!(
+            "gpui-elixir-input-{window_id}-{}",
+            change.clone().unwrap_or_default()
+        ));
     let local_value = std::sync::Arc::new(std::sync::Mutex::new(value.clone()));
     let change_for_keys = change.clone();
 
