@@ -36,7 +36,8 @@ defmodule GPUI.Remote.AppServer do
         runtime: nil,
         listener: listener,
         connection_supervisor: connection_supervisor,
-        connections: %{}
+        connections: %{},
+        sessions: %{}
       }
 
       start_acceptor(listener)
@@ -110,10 +111,30 @@ defmodule GPUI.Remote.AppServer do
 
   defp dispatch_call(:mount, payload, state) do
     args = Map.get(payload, :args, state.app_args)
+    session_id = Map.get(payload, :session_id, :default)
 
     case ensure_runtime(%{state | app_args: args}) do
-      {:ok, state} -> {{:ok, %{windows: snapshot(state)}}, state}
-      {:error, reason} -> {{:error, reason}, state}
+      {:ok, state} ->
+        state = put_in(state.sessions[session_id], %{runtime: state.runtime, app_args: args})
+        {{:ok, %{session_id: session_id, windows: snapshot(state)}}, state}
+
+      {:error, reason} ->
+        {{:error, reason}, state}
+    end
+  end
+
+  defp dispatch_call(:resume_session, %{session_id: session_id}, state) do
+    case Map.fetch(state.sessions, session_id) do
+      {:ok, %{runtime: runtime}} when is_pid(runtime) ->
+        if Process.alive?(runtime) do
+          state = %{state | runtime: runtime}
+          {{:ok, %{session_id: session_id, resumed: true, windows: snapshot(state)}}, state}
+        else
+          {{:error, :session_expired}, update_in(state.sessions, &Map.delete(&1, session_id))}
+        end
+
+      :error ->
+        {{:error, :unknown_session}, state}
     end
   end
 

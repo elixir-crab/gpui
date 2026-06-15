@@ -33,7 +33,8 @@ defmodule GPUI.Remote.DisplayClient do
          backend: backend,
          backend_state: backend_state,
          windows: %{},
-         mounted_args: nil
+         mounted_args: nil,
+         session_id: Keyword.get_lazy(opts, :session_id, &new_session_id/0)
        }}
     end
   end
@@ -41,7 +42,7 @@ defmodule GPUI.Remote.DisplayClient do
   @impl GenServer
   def handle_call({:mount, args}, _from, state) do
     args = Map.new(args)
-    %{op: op, payload: payload} = AppProtocol.mount(args)
+    %{op: op, payload: payload} = AppProtocol.mount(Map.put(args, :session_id, state.session_id))
 
     case call_with_reconnect(state, op, payload) do
       {:ok, %{windows: windows}, state} ->
@@ -114,8 +115,24 @@ defmodule GPUI.Remote.DisplayClient do
 
   defp remount_if_needed(%{mounted_args: nil} = state), do: {:ok, state}
 
-  defp remount_if_needed(%{mounted_args: args} = state) do
-    %{op: op, payload: payload} = AppProtocol.mount(args)
+  defp remount_if_needed(state) do
+    case resume_session(state) do
+      {:ok, state} -> {:ok, state}
+      {:error, _reason, state} -> remount(state)
+    end
+  end
+
+  defp resume_session(state) do
+    %{op: op, payload: payload} = AppProtocol.resume_session(state.session_id)
+
+    case safe_call(state.app_client, op, payload) do
+      {:ok, %{windows: windows}} -> {:ok, sync_windows(state, windows, :update)}
+      {:error, reason} -> {:error, reason, state}
+    end
+  end
+
+  defp remount(%{mounted_args: args} = state) do
+    %{op: op, payload: payload} = AppProtocol.mount(Map.put(args, :session_id, state.session_id))
 
     case safe_call(state.app_client, op, payload) do
       {:ok, %{windows: windows}} -> {:ok, sync_windows(state, windows, :update)}
@@ -143,6 +160,10 @@ defmodule GPUI.Remote.DisplayClient do
     :ok
   catch
     :exit, _reason -> :ok
+  end
+
+  defp new_session_id do
+    System.unique_integer([:positive, :monotonic])
   end
 
   defp start_app_client(opts) do

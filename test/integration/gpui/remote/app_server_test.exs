@@ -39,7 +39,7 @@ defmodule GPUI.Remote.AppServerTest do
     assert {:ok, %{capabilities: capabilities}} = SafeRPC.call(client, :hello, %{})
     assert :app_server in capabilities
 
-    assert {:ok, %{windows: [%{id: 1, root: %{tree: mounted_tree}}]}} =
+    assert {:ok, %{session_id: :default, windows: [%{id: 1, root: %{tree: mounted_tree}}]}} =
              SafeRPC.call(client, :mount, %{})
 
     assert mounted_tree.type == :div
@@ -69,6 +69,18 @@ defmodule GPUI.Remote.AppServerTest do
                event: "rename",
                value: "client"
              })
+  end
+
+  test "resumes mounted app sessions" do
+    {:ok, server} = GPUI.Remote.AppServer.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.AppServer.port(server)
+    {:ok, client} = start_client(port)
+
+    assert {:ok, %{session_id: "stable", windows: [%{id: 1}]}} =
+             SafeRPC.call(client, :mount, %{session_id: "stable"})
+
+    assert {:ok, %{resumed: true, session_id: "stable", windows: [%{id: 1}]}} =
+             SafeRPC.call(client, :resume_session, %{session_id: "stable"})
   end
 
   test "display client reconnects and remounts after app server restart" do

@@ -5,7 +5,7 @@ defmodule GPUI.Remote.AppProtocolTest do
 
   test "defines app capability and operations" do
     assert AppProtocol.capability() == :gpui_app
-    assert AppProtocol.ops() == [:hello, :mount, :event, :snapshot]
+    assert AppProtocol.ops() == [:hello, :mount, :resume_session, :event, :snapshot]
     assert AppProtocol.known_op?(:event)
     refute AppProtocol.known_op?(:open_window)
   end
@@ -15,6 +15,10 @@ defmodule GPUI.Remote.AppProtocolTest do
              AppProtocol.hello(%{role: :display_client})
 
     assert %{op: :mount, payload: %{args: []}} = AppProtocol.mount(%{args: []})
+
+    assert %{op: :resume_session, payload: %{session_id: "abc"}} =
+             AppProtocol.resume_session("abc")
+
     assert %{op: :event, payload: %{type: :click}} = AppProtocol.event(%{type: :click})
     assert %{op: :snapshot, payload: %{}} = AppProtocol.snapshot()
   end

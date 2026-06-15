@@ -6,6 +6,16 @@ pub const GPUI_EVENT_ATTRS: &[&str] = &["phx-click", "phx-change", "phx-keydown"
 pub const GPUI_RESOURCE_TYPES: &[&str] = &["raster", "resource_ref"];
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum GeneratedComponentKind {
+    Container,
+    Input,
+    Image,
+    Text,
+    Unknown,
+}
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GeneratedElementTag {
     Div,
     Button,
@@ -43,10 +53,21 @@ pub fn decode_generated_resource_type(resource_type: &str) -> GeneratedResourceT
 
 pub fn generated_event_attr_to_type(attr: &str) -> Option<&'static str> {
     match attr {
-        "phx-click" => Some("click"),
-        "phx-change" => Some("change"),
-        "phx-keydown" => Some("keydown"),
-        "phx-keyup" => Some("keyup"),
+            "phx-click" => Some("click"),
+            "phx-change" => Some("change"),
+            "phx-keydown" => Some("keydown"),
+            "phx-keyup" => Some("keyup"),
         _ => None,
+    }
+}
+
+pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentKind {
+    match tag {
+            GeneratedElementTag::Div => GeneratedComponentKind::Container,
+            GeneratedElementTag::Button => GeneratedComponentKind::Container,
+            GeneratedElementTag::Input => GeneratedComponentKind::Input,
+            GeneratedElementTag::Img => GeneratedComponentKind::Image,
+            GeneratedElementTag::Text => GeneratedComponentKind::Text,
+        GeneratedElementTag::Unknown => GeneratedComponentKind::Unknown,
     }
 }

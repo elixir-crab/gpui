@@ -270,6 +270,8 @@ fn decode_element_node(term: Term) -> NifResult<ElementNode> {
             value: decode_string_attr(term, "value").unwrap_or_default(),
             placeholder: decode_string_attr(term, "placeholder"),
             change: decode_event_attr(term, "phx-change").or_else(|| decode_event_attr(term, "phx-click")),
+            keydown: decode_event_attr(term, "phx-keydown"),
+            keyup: decode_event_attr(term, "phx-keyup"),
         }),
         GeneratedElementTag::Img => decode_raster(term).map(ElementNode::Image),
         GeneratedElementTag::Text => Ok(ElementNode::Text(decode_text_children(term).unwrap_or_default())),
@@ -554,7 +556,14 @@ type SharedWindow = Arc<WindowState>;
 #[derive(Clone, Debug)]
 enum ElementNode {
     Div { style: StyleAttrs, children: Vec<ElementNode>, click: Option<String> },
-    Input { style: StyleAttrs, value: String, placeholder: Option<String>, change: Option<String> },
+    Input {
+        style: StyleAttrs,
+        value: String,
+        placeholder: Option<String>,
+        change: Option<String>,
+        keydown: Option<String>,
+        keyup: Option<String>,
+    },
     Image(RasterData),
     Text(String),
 }
@@ -585,13 +594,65 @@ impl ElementNode {
         match self {
             ElementNode::Text(text) => text.into_any_element(),
             ElementNode::Image(raster) => raster.render(),
-            ElementNode::Input { style, value, placeholder, change } => {
+            ElementNode::Input { style: _style, value, placeholder, change, keydown, keyup } => {
                 let label = if value.is_empty() {
                     placeholder.unwrap_or_else(|| "".to_string())
                 } else {
-                    value
+                    value.clone()
                 };
-                ElementNode::Div { style, children: vec![ElementNode::Text(label)], click: change }.render(runtime, window_id)
+                let mut element = div()
+                    .id(format!("gpui-elixir-input-{window_id}-{}", change.clone().unwrap_or_default()))
+                    .child(label);
+
+                if let Some(event) = change {
+                    let runtime_for_change = runtime.clone();
+                    let value_for_change = value.clone();
+                    element = element.on_click(move |_event, _window, _cx| {
+                        let _ = push_event(
+                            &runtime_for_change,
+                            NativeEvent::Input {
+                                kind: "change".to_string(),
+                                window_id,
+                                event: event.clone(),
+                                value: Some(value_for_change.clone()),
+                            },
+                        );
+                    });
+                }
+
+                if let Some(event) = keydown {
+                    let runtime_for_keydown = runtime.clone();
+                    element = element.on_key_down(move |key_event, _window, _cx| {
+                        let value = key_event.keystroke.key_char.clone().or_else(|| Some(key_event.keystroke.key.clone()));
+                        let _ = push_event(
+                            &runtime_for_keydown,
+                            NativeEvent::Input {
+                                kind: "keydown".to_string(),
+                                window_id,
+                                event: event.clone(),
+                                value,
+                            },
+                        );
+                    });
+                }
+
+                if let Some(event) = keyup {
+                    let runtime_for_keyup = runtime.clone();
+                    element = element.on_key_up(move |key_event, _window, _cx| {
+                        let value = key_event.keystroke.key_char.clone().or_else(|| Some(key_event.keystroke.key.clone()));
+                        let _ = push_event(
+                            &runtime_for_keyup,
+                            NativeEvent::Input {
+                                kind: "keyup".to_string(),
+                                window_id,
+                                event: event.clone(),
+                                value,
+                            },
+                        );
+                    });
+                }
+
+                element.into_any_element()
             }
             ElementNode::Div { style, children, click } => {
                 let mut element = div();

@@ -8,9 +8,9 @@ defmodule GPUI.Remote.AppProtocol do
   """
 
   @capability :gpui_app
-  @ops [:hello, :mount, :event, :snapshot]
+  @ops [:hello, :mount, :resume_session, :event, :snapshot]
 
-  @type op :: :hello | :mount | :event | :snapshot
+  @type op :: :hello | :mount | :resume_session | :event | :snapshot
   @type message :: %{op: op(), payload: map()}
 
   def capability, do: @capability
@@ -22,6 +22,7 @@ defmodule GPUI.Remote.AppProtocol do
       do: message(:hello, payload)
 
   def mount(args \\ %{}) when is_map(args), do: message(:mount, args)
+  def resume_session(session_id), do: message(:resume_session, %{session_id: session_id})
   def event(event) when is_map(event), do: message(:event, event)
   def snapshot, do: message(:snapshot, %{})
 
