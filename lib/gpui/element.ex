@@ -21,4 +21,32 @@ defmodule GPUI.Element do
     attrs = Keyword.put(element.attrs, :style, Keyword.put(styles, key, value))
     %{element | attrs: attrs}
   end
+
+  @doc "Converts an element tree into plain serializable maps/lists."
+  @spec to_payload(t() | child()) :: map() | String.t()
+  def to_payload(%__MODULE__{} = element) do
+    %{
+      type: element.type,
+      attrs: attrs_to_payload(element.attrs),
+      children: Enum.map(element.children, &to_payload/1)
+    }
+  end
+
+  def to_payload(text) when is_binary(text), do: text
+
+  defp attrs_to_payload(attrs) do
+    attrs
+    |> Enum.map(fn {key, value} -> {key, attr_value_to_payload(value)} end)
+    |> Map.new()
+  end
+
+  defp attr_value_to_payload(value) when is_list(value) do
+    Enum.map(value, fn
+      {key, item} -> {key, attr_value_to_payload(item)}
+      item -> attr_value_to_payload(item)
+    end)
+  end
+
+  defp attr_value_to_payload(value) when is_tuple(value), do: Tuple.to_list(value)
+  defp attr_value_to_payload(value), do: value
 end

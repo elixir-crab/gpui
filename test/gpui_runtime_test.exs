@@ -8,9 +8,11 @@ defmodule GPUIRuntimeTest do
 
     @impl GPUI.View
     def render(assigns) do
-      div(class: "hello") do
-        text("Hello #{assigns.name}")
-      end
+      ~GPUI"""
+      <div class="flex flex-col items-center bg-neutral-700">
+        <text>Hello {assigns.name}</text>
+      </div>
+      """
     end
   end
 
@@ -34,6 +36,39 @@ defmodule GPUIRuntimeTest do
 
     assert [%GPUI.WindowSpec{title: "GPUI + Elixir", size: {500, 500}}] =
              GPUI.Runtime.windows(pid)
+
+    GenServer.stop(pid)
+  end
+
+  test "runtime encodes rendered root trees for native payloads" do
+    {:ok, pid} = GPUI.Runtime.start_link(app: DemoApp, backend: :data)
+
+    payload =
+      pid
+      |> GPUI.Runtime.windows()
+      |> hd()
+      |> GPUI.Runtime.window_payload()
+
+    assert %{
+             root: %{
+               module: module,
+               assigns: %{name: "OTP"},
+               tree: %{
+                 type: :div,
+                 attrs: %{
+                   style: [
+                     display: :flex,
+                     flex_direction: :column,
+                     align_items: :center,
+                     background: [:rgb, 4_210_752]
+                   ]
+                 },
+                 children: [%{type: :text, children: ["Hello ", "OTP"]}]
+               }
+             }
+           } = payload
+
+    assert module =~ "HelloView"
 
     GenServer.stop(pid)
   end

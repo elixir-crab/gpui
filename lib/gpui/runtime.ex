@@ -125,7 +125,9 @@ defmodule GPUI.Runtime do
     :ok
   end
 
-  defp window_payload(%WindowSpec{} = window) do
+  @doc false
+  @spec window_payload(WindowSpec.t()) :: map()
+  def window_payload(%WindowSpec{} = window) do
     %{
       title: window.title,
       size: Tuple.to_list(window.size || {800, 600}),
@@ -134,5 +136,24 @@ defmodule GPUI.Runtime do
   end
 
   defp encode_root(nil), do: nil
-  defp encode_root({module, assigns}), do: %{module: inspect(module), assigns: Map.new(assigns)}
+
+  defp encode_root({module, assigns}) do
+    assigns = Map.new(assigns)
+
+    %{
+      module: inspect(module),
+      assigns: assigns,
+      tree: render_root(module, assigns)
+    }
+  end
+
+  defp render_root(module, assigns) do
+    if function_exported?(module, :render, 1) do
+      module
+      |> apply(:render, [assigns])
+      |> GPUI.Element.to_payload()
+    else
+      nil
+    end
+  end
 end
