@@ -48,7 +48,7 @@ defmodule GPUI.Remote.DisplayServer do
         connections: %{},
         display_backend: display_backend,
         display_backend_state: backend_state,
-        events: []
+        sessions: %{}
       }
 
       start_acceptor(listener)
@@ -109,35 +109,35 @@ defmodule GPUI.Remote.DisplayServer do
     {{:error, :unauthorized}, state}
   end
 
-  defp dispatch(%{kind: :call, op: op, payload: payload}, state) do
+  defp dispatch(%{kind: :call, op: op, payload: payload} = request, state) do
     if DisplayProtocol.known_op?(op) do
-      dispatch_call(op, payload, state)
+      dispatch_call(op, payload, session_id(request), state)
     else
       {{:error, {:unsupported_op, op}}, state}
     end
   end
 
-  defp dispatch(%{kind: :cast, op: :event, payload: event}, state) do
-    {{:ok, :noreply}, push_event(state, event)}
+  defp dispatch(%{kind: :cast, op: :event, payload: event} = request, state) do
+    {{:ok, :noreply}, push_event(state, session_id(request), event)}
   end
 
   defp dispatch(_request, state), do: {{:error, :unsupported_request}, state}
 
-  defp dispatch_call(:hello, _payload, state) do
+  defp dispatch_call(:hello, _payload, _session_id, state) do
     {{:ok, %{version: 1, capabilities: [:runtime_v1, :display_server, :safe_rpc]}}, state}
   end
 
-  defp dispatch_call(:open_window, window_payload, state) do
+  defp dispatch_call(:open_window, window_payload, _session_id, state) do
     case state.display_backend.open_window(state.display_backend_state, window_payload) do
       :ok -> {{:ok, %{}}, state}
       {:error, reason} -> {{:error, reason}, state}
     end
   end
 
-  defp dispatch_call(:update_window, %{window_id: window_id, tree: tree}, state) do
+  defp dispatch_call(:update_window, %{window_id: window_id, tree: tree}, session_id, state) do
     case state.display_backend.update_window(state.display_backend_state, window_id, tree) do
       :ok ->
-        state = push_event(state, %{type: :window_updated, window_id: window_id})
+        state = push_event(state, session_id, %{type: :window_updated, window_id: window_id})
         {{:ok, %{}}, state}
 
       {:error, reason} ->
@@ -145,15 +145,35 @@ defmodule GPUI.Remote.DisplayServer do
     end
   end
 
-  defp dispatch_call(:drain_events, _payload, state) do
-    {{:ok, %{events: Enum.reverse(state.events)}}, %{state | events: []}}
+  defp dispatch_call(:drain_events, _payload, session_id, state) do
+    events = session_events(state, session_id)
+    {{:ok, %{events: Enum.reverse(events)}}, clear_session_events(state, session_id)}
   end
 
-  defp dispatch_call(:event, event, state) do
-    {{:ok, %{}}, push_event(state, event)}
+  defp dispatch_call(:event, event, session_id, state) do
+    {{:ok, %{}}, push_event(state, session_id, event)}
   end
 
-  defp push_event(state, event), do: update_in(state.events, &[event | &1])
+  defp session_id(%{meta: %{session_id: session_id}}), do: session_id
+  defp session_id(_request), do: :default
+
+  defp session_events(state, session_id) do
+    state.sessions |> Map.get(session_id, %{events: []}) |> Map.fetch!(:events)
+  end
+
+  defp clear_session_events(state, session_id) do
+    update_in(state.sessions, fn sessions ->
+      Map.update(sessions, session_id, %{events: []}, &%{&1 | events: []})
+    end)
+  end
+
+  defp push_event(state, session_id, event) do
+    update_in(state.sessions, fn sessions ->
+      Map.update(sessions, session_id, %{events: [event]}, fn session ->
+        update_in(session.events, &[event | &1])
+      end)
+    end)
+  end
 
   defp start_acceptor(listener) do
     owner = self()

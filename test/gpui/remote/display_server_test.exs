@@ -53,6 +53,65 @@ defmodule GPUI.Remote.DisplayServerTest do
     assert :display_server in capabilities
   end
 
+  test "isolates event queues per session" do
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
+    {:ok, client_a} = start_client(port)
+    {:ok, client_b} = start_client(port)
+
+    session_a = "session-a"
+    session_b = "session-b"
+
+    assert {:ok, %{}} =
+             SafeRPC.call(
+               client_a,
+               :event,
+               %{type: :click, window_id: 1, event: "a"},
+               meta: %{session_id: session_a}
+             )
+
+    assert {:ok, %{}} =
+             SafeRPC.call(
+               client_b,
+               :event,
+               %{type: :click, window_id: 1, event: "b"},
+               meta: %{session_id: session_b}
+             )
+
+    assert {:ok, %{events: [%{event: "a"}]}} =
+             SafeRPC.call(client_a, :drain_events, %{}, meta: %{session_id: session_a})
+
+    assert {:ok, %{events: [%{event: "b"}]}} =
+             SafeRPC.call(client_b, :drain_events, %{}, meta: %{session_id: session_b})
+
+    assert {:ok, %{events: []}} =
+             SafeRPC.call(client_a, :drain_events, %{}, meta: %{session_id: session_a})
+  end
+
+  test "isolates window update events per session" do
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
+    {:ok, client_a} = start_client(port)
+    {:ok, client_b} = start_client(port)
+
+    session_a = "session-a"
+    session_b = "session-b"
+
+    assert {:ok, %{}} =
+             SafeRPC.call(
+               client_a,
+               :update_window,
+               %{window_id: 1, tree: %{type: :div}},
+               meta: %{session_id: session_a}
+             )
+
+    assert {:ok, %{events: [%{type: :window_updated, window_id: 1}]}} =
+             SafeRPC.call(client_a, :drain_events, %{}, meta: %{session_id: session_a})
+
+    assert {:ok, %{events: []}} =
+             SafeRPC.call(client_b, :drain_events, %{}, meta: %{session_id: session_b})
+  end
+
   test "rejects unsupported operations" do
     {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
