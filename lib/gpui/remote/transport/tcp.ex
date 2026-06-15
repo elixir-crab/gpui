@@ -82,6 +82,13 @@ defmodule GPUI.Remote.Transport.TCP do
   def recv(%Connection{socket: socket, mode: :ssl}, size, timeout),
     do: :ssl.recv(socket, size, timeout)
 
+  @spec controlling_process(Connection.t(), pid()) :: :ok | {:error, term()}
+  def controlling_process(%Connection{socket: socket, mode: :tcp}, pid),
+    do: :gen_tcp.controlling_process(socket, pid)
+
+  def controlling_process(%Connection{socket: socket, mode: :ssl}, pid),
+    do: :ssl.controlling_process(socket, pid)
+
   @spec close(Connection.t() | Listener.t()) :: :ok
   def close(%Connection{socket: socket, mode: :tcp}), do: :gen_tcp.close(socket)
   def close(%Connection{socket: socket, mode: :ssl}), do: :ssl.close(socket)
