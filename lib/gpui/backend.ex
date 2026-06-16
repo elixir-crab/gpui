@@ -22,11 +22,5 @@ defmodule GPUI.Backend do
   @spec module_for(:native | :remote_tcp | module()) :: module()
   def module_for(:native), do: GPUI.Backend.Native
   def module_for(:remote_tcp), do: GPUI.Backend.RemoteTCP
-
-  def module_for(backend) when backend in [:data, :remote_loopback] do
-    raise ArgumentError,
-          "unsupported GPUI backend #{inspect(backend)}; use :native or :remote_tcp"
-  end
-
   def module_for(module) when is_atom(module), do: module
 end
