@@ -386,17 +386,15 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   defp assert_eventually(fun, deadline) do
-    try do
-      fun.()
-    rescue
-      error in [ExUnit.AssertionError] ->
-        if System.monotonic_time(:millisecond) > deadline do
-          reraise(error, __STACKTRACE__)
-        else
-          Process.sleep(10)
-          assert_eventually(fun, deadline)
-        end
-    end
+    fun.()
+  rescue
+    error in [ExUnit.AssertionError] ->
+      if System.monotonic_time(:millisecond) > deadline do
+        reraise(error, __STACKTRACE__)
+      else
+        Process.sleep(10)
+        assert_eventually(fun, deadline)
+      end
   end
 
   defp start_client(port) do

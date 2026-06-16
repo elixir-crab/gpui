@@ -3,7 +3,7 @@ defmodule GPUI.Native do
 
   use Rustler, otp_app: :gpui, crate: :gpui_nif, path: "native/gpui"
 
-  def start_runtime(), do: :erlang.nif_error(:nif_not_loaded)
+  def start_runtime, do: :erlang.nif_error(:nif_not_loaded)
   def open_window(_runtime, _window), do: :erlang.nif_error(:nif_not_loaded)
   def update_window(_runtime, _window_id, _tree), do: :erlang.nif_error(:nif_not_loaded)
   def put_resource(_runtime, _resource_id, _resource), do: :erlang.nif_error(:nif_not_loaded)

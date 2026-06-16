@@ -122,9 +122,8 @@ defmodule GPUI.Backend.RemoteTCP.Session do
          state = %{state | client: client},
          {:ok, state} <- hello(state),
          {:ok, state} <- resume_session(state),
-         {:ok, state} <- replay_resources(state),
-         {:ok, state} <- replay_windows(state) do
-      {:ok, state}
+         {:ok, state} <- replay_resources(state) do
+      replay_windows(state)
     end
   end
 
@@ -171,18 +170,23 @@ defmodule GPUI.Backend.RemoteTCP.Session do
 
   defp call_with_reconnect(state, op, payload) do
     case safe_call(state.client, state.session_id, op, payload) do
-      {:ok, reply} ->
-        {:ok, reply, state}
+      {:ok, reply} -> {:ok, reply, state}
+      {:error, reason} -> maybe_reconnect(reason, state, op, payload)
+    end
+  end
 
-      {:error, reason} ->
-        if reconnectable?(reason) do
-          case reconnect(state) do
-            {:ok, state} -> retry_after_reconnect(state, op, payload)
-            {:error, reconnect_reason, state} -> {:error, reconnect_reason, state}
-          end
-        else
-          {:error, reason, state}
-        end
+  defp maybe_reconnect(reason, state, op, payload) do
+    if reconnectable?(reason) do
+      reconnect_and_retry(state, op, payload)
+    else
+      {:error, reason, state}
+    end
+  end
+
+  defp reconnect_and_retry(state, op, payload) do
+    case reconnect(state) do
+      {:ok, state} -> retry_after_reconnect(state, op, payload)
+      {:error, reconnect_reason, state} -> {:error, reconnect_reason, state}
     end
   end
 

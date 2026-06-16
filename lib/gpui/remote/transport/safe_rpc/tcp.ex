@@ -28,9 +28,8 @@ defmodule GPUI.Remote.Transport.SafeRPC.TCP do
 
   @impl SafeRPC.Transport
   def recv(conn, timeout) do
-    with {:ok, <<size::32-big>>} <- TCP.recv(conn, 4, timeout),
-         {:ok, payload} <- TCP.recv(conn, size, timeout) do
-      {:ok, payload}
+    with {:ok, <<size::32-big>>} <- TCP.recv(conn, 4, timeout) do
+      TCP.recv(conn, size, timeout)
     end
   end
 

@@ -222,21 +222,15 @@ defmodule GPUI.Remote.DisplayServer do
   end
 
   defp dispatch_call(:update_window, %{window_id: window_id, tree: tree}, session_id, state) do
-    if session_has_window?(state, session_id, window_id) do
-      case state.display_backend.update_window(state.display_backend_state, window_id, tree) do
-        :ok ->
-          state = put_session_window_tree(state, session_id, window_id, tree)
-
-          case push_event(state, session_id, %{type: :window_updated, window_id: window_id}) do
-            {:ok, state} -> {{:ok, %{}}, state}
-            {:error, reason} -> {{:error, reason}, state}
-          end
-
-        {:error, reason} ->
-          {{:error, reason}, state}
-      end
+    with true <- session_has_window?(state, session_id, window_id),
+         :ok <- state.display_backend.update_window(state.display_backend_state, window_id, tree),
+         state = put_session_window_tree(state, session_id, window_id, tree),
+         {:ok, state} <-
+           push_event(state, session_id, %{type: :window_updated, window_id: window_id}) do
+      {{:ok, %{}}, state}
     else
-      {{:error, :unknown_window}, state}
+      false -> {{:error, :unknown_window}, state}
+      {:error, reason} -> {{:error, reason}, state}
     end
   end
 
@@ -436,17 +430,29 @@ defmodule GPUI.Remote.DisplayServer do
   end
 
   defp put_session_window_tree(state, session_id, window_id, tree) do
-    update_in(state.sessions, fn sessions ->
-      Map.update(sessions, session_id, empty_session(), fn session ->
-        update_in(session.windows, fn windows ->
-          Map.update(windows, window_id, %{id: window_id, root: %{tree: tree}}, fn window ->
-            root = Map.get(window, :root) || %{}
-            Map.put(window, :root, Map.put(root, :tree, tree))
-          end)
-        end)
+    update_in(
+      state.sessions,
+      &Map.update(&1, session_id, empty_session(), fn session ->
+        put_window_tree(session, window_id, tree)
       end)
-    end)
+    )
   end
+
+  defp put_window_tree(session, window_id, tree) do
+    update_in(
+      session.windows,
+      &Map.update(&1, window_id, window_tree(window_id, tree), fn window ->
+        put_window_root_tree(window, tree)
+      end)
+    )
+  end
+
+  defp put_window_root_tree(window, tree) do
+    root = Map.get(window, :root) || %{}
+    Map.put(window, :root, Map.put(root, :tree, tree))
+  end
+
+  defp window_tree(window_id, tree), do: %{id: window_id, root: %{tree: tree}}
 
   defp empty_session,
     do: %{events: [], windows: %{}, resources: %{}, negotiated: false, last_seen: monotonic_ms()}

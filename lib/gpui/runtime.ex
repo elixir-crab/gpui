@@ -261,8 +261,7 @@ defmodule GPUI.Runtime do
 
   defp render_root(module, assigns) do
     if function_exported?(module, :render, 1) do
-      module
-      |> apply(:render, [assigns])
+      module.render(assigns)
       |> GPUI.Element.to_payload()
     else
       nil

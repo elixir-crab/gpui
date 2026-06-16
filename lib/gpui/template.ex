@@ -107,7 +107,7 @@ defmodule GPUI.Template do
     parts = String.split(name, ".")
     last = List.last(parts)
 
-    if function_name?(last) and length(parts) > 1 do
+    if function_name?(last) and match?([_, _ | _], parts) do
       module = parts |> Enum.drop(-1) |> Module.concat()
       {module, String.to_atom(last)}
     else

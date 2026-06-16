@@ -284,26 +284,24 @@ defmodule GPUI.Runtime.EventLoopTest do
   end
 
   defp assert_eventually(fun, deadline, last_error) do
-    try do
-      fun.()
-    rescue
-      error in [ExUnit.AssertionError] ->
-        if System.monotonic_time(:millisecond) > deadline do
-          reraise(error, __STACKTRACE__)
-        else
-          Process.sleep(10)
-          assert_eventually(fun, deadline, error)
-        end
-    else
-      result -> result
-    catch
-      kind, reason ->
-        if System.monotonic_time(:millisecond) > deadline do
-          :erlang.raise(kind, reason, __STACKTRACE__)
-        else
-          Process.sleep(10)
-          assert_eventually(fun, deadline, last_error)
-        end
-    end
+    fun.()
+  rescue
+    error in [ExUnit.AssertionError] ->
+      if System.monotonic_time(:millisecond) > deadline do
+        reraise(error, __STACKTRACE__)
+      else
+        Process.sleep(10)
+        assert_eventually(fun, deadline, error)
+      end
+  else
+    result -> result
+  catch
+    kind, reason ->
+      if System.monotonic_time(:millisecond) > deadline do
+        :erlang.raise(kind, reason, __STACKTRACE__)
+      else
+        Process.sleep(10)
+        assert_eventually(fun, deadline, last_error)
+      end
   end
 end
