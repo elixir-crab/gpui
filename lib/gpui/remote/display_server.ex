@@ -12,6 +12,7 @@ defmodule GPUI.Remote.DisplayServer do
 
   alias GPUI.Remote.Acceptor
   alias GPUI.Remote.DisplayProtocol
+  alias GPUI.Remote.DisplaySession
   alias GPUI.Remote.Request
   alias GPUI.Remote.SessionGC
   alias GPUI.Remote.Transport.SafeRPC.TCP, as: SafeRPCTCP
@@ -333,9 +334,9 @@ defmodule GPUI.Remote.DisplayServer do
       Map.update(
         sessions,
         session_id,
-        put_in(empty_session(), [:windows, window_id], window_payload),
+        %{empty_session() | windows: %{window_id => window_payload}},
         fn session ->
-          put_in(session, [:windows, window_id], window_payload)
+          %{session | windows: Map.put(session.windows, window_id, window_payload)}
         end
       )
     end)
@@ -346,9 +347,9 @@ defmodule GPUI.Remote.DisplayServer do
       Map.update(
         sessions,
         session_id,
-        put_in(empty_session(), [:resources, resource_id], resource),
+        %{empty_session() | resources: %{resource_id => resource}},
         fn session ->
-          put_in(session, [:resources, resource_id], resource)
+          %{session | resources: Map.put(session.resources, resource_id, resource)}
         end
       )
     end)
@@ -387,14 +388,7 @@ defmodule GPUI.Remote.DisplayServer do
 
   defp window_tree(window_id, tree), do: %{id: window_id, root: %{tree: tree}}
 
-  defp empty_session,
-    do: %{
-      events: [],
-      windows: %{},
-      resources: %{},
-      negotiated: false,
-      last_seen: SessionGC.monotonic_ms()
-    }
+  defp empty_session, do: DisplaySession.new()
 
   defp start_acceptor(listener), do: Acceptor.start(listener)
 end

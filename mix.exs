@@ -8,6 +8,11 @@ defmodule GPUI.MixProject do
       elixir: "~> 1.20",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      package: package(),
+      description: description(),
+      source_url: "https://github.com/dannote/gpui",
+      homepage_url: "https://github.com/dannote/gpui",
+      docs: docs(),
       dialyzer: [plt_add_apps: [:ex_unit]],
       aliases: aliases()
     ]
@@ -23,6 +28,32 @@ defmodule GPUI.MixProject do
   def cli do
     [
       preferred_envs: [ci: :test, test_unit: :test, test_integration: :test, test_all: :test]
+    ]
+  end
+
+  defp description do
+    "Elixir/OTP bindings and HEEx-style UI DSL for Rust GPUI."
+  end
+
+  defp package do
+    [
+      name: "gpui",
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/dannote/gpui"},
+      files:
+        ~w(lib priv/rustq config/config.exs native/gpui/Cargo.toml native/gpui/src mix.exs README.md)
+    ]
+  end
+
+  defp docs do
+    [
+      main: "readme",
+      extras: ["README.md"],
+      groups_for_modules: [
+        Core: [GPUI, GPUI.Application, GPUI.View, GPUI.Runtime],
+        Elements: [GPUI.Element, GPUI.Raster, GPUI.ResourceRef, GPUI.WindowSpec],
+        Remote: [GPUI.Remote.AppServer, GPUI.Remote.DisplayClient]
+      ]
     ]
   end
 

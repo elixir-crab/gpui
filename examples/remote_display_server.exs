@@ -13,7 +13,6 @@ port =
 display_backend =
   case System.get_env("GPUI_REMOTE_DISPLAY_BACKEND", "native") do
     "native" -> :native
-    "remote_tcp" -> :remote_tcp
     other -> raise ArgumentError, "unsupported GPUI_REMOTE_DISPLAY_BACKEND=#{inspect(other)}"
   end
 

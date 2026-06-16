@@ -112,12 +112,12 @@ defmodule GPUI.Remote.DisplayServerTest do
     assert :ok = GPUI.Backend.RemoteTCP.put_resource(backend, "logo", %{type: :raster})
 
     state = :sys.get_state(server)
-    assert get_in(state.sessions, ["backend-resource", :resources, "logo"]) == %{type: :raster}
+    assert state.sessions["backend-resource"].resources["logo"] == %{type: :raster}
 
     assert :ok = GPUI.Backend.RemoteTCP.drop_resource(backend, "logo")
 
     state = :sys.get_state(server)
-    refute Map.has_key?(get_in(state.sessions, ["backend-resource", :resources]), "logo")
+    refute Map.has_key?(state.sessions["backend-resource"].resources, "logo")
   end
 
   test "stores and drops resources per session" do
@@ -134,13 +134,13 @@ defmodule GPUI.Remote.DisplayServerTest do
              )
 
     state = :sys.get_state(server)
-    assert get_in(state.sessions, [session_id, :resources, "logo"]) == resource
+    assert state.sessions[session_id].resources["logo"] == resource
 
     assert {:ok, %{}} =
              SafeRPC.call(client, :drop_resource, %{id: "logo"}, meta: %{session_id: session_id})
 
     state = :sys.get_state(server)
-    refute Map.has_key?(get_in(state.sessions, [session_id, :resources]), "logo")
+    refute Map.has_key?(state.sessions[session_id].resources, "logo")
   end
 
   test "responds to ping for heartbeat checks" do

@@ -12,6 +12,7 @@ defmodule GPUI.Remote.AppServer do
 
   alias GPUI.Remote.Acceptor
   alias GPUI.Remote.AppProtocol
+  alias GPUI.Remote.AppSession
   alias GPUI.Remote.Request
   alias GPUI.Remote.SessionGC
   alias GPUI.Remote.Transport.SafeRPC.TCP, as: SafeRPCTCP
@@ -118,11 +119,10 @@ defmodule GPUI.Remote.AppServer do
     case ensure_runtime(%{state | app_args: args}) do
       {:ok, state} ->
         state =
-          put_in(state.sessions[session_id], %{
-            runtime: state.runtime,
-            app_args: args,
-            last_seen: SessionGC.monotonic_ms()
-          })
+          put_in(
+            state.sessions[session_id],
+            AppSession.new(runtime: state.runtime, app_args: args)
+          )
 
         {{:ok, %{session_id: session_id, windows: snapshot(state)}}, state}
 

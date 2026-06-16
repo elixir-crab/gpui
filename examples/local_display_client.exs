@@ -7,7 +7,6 @@ port = System.get_env("GPUI_APP_PORT", "5050") |> String.to_integer()
 backend =
   case System.get_env("GPUI_DISPLAY_BACKEND", "native") do
     "native" -> :native
-    "remote_tcp" -> :remote_tcp
     other -> raise ArgumentError, "unsupported GPUI_DISPLAY_BACKEND=#{inspect(other)}"
   end
 

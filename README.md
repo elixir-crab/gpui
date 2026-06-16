@@ -98,7 +98,7 @@ GPUI_APP_PORT=5050 mix run examples/remote_app_server.exs
 GPUI_REAL_GPUI=1 GPUI_APP_HOST=127.0.0.1 GPUI_APP_PORT=5050 PATH="$HOME/.cargo/bin:$PATH" mix run examples/local_display_client.exs
 ```
 
-Run the older two-terminal RemoteTCP display-server prototype:
+Run the two-terminal RemoteTCP display-server flow:
 
 ```sh
 # Terminal 1: display server

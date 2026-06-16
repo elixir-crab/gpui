@@ -1,5 +1,4 @@
 use rustler::{Atom, Encoder, Env, NifResult, ResourceArc, Term};
-use std::sync::Mutex;
 
 #[cfg(feature = "real-gpui")]
 use futures::{channel::mpsc, StreamExt};
@@ -8,54 +7,31 @@ use std::{
     collections::HashMap,
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc,
+        Arc, Mutex,
     },
 };
 #[cfg(feature = "real-gpui")]
 use zed_gpui as gpui;
-
-#[cfg(feature = "real-gpui")]
-static GPUI_STARTED: AtomicBool = AtomicBool::new(false);
 
 mod events;
 #[cfg(feature = "real-gpui")]
 mod native_text_input;
 #[cfg(feature = "real-gpui")]
 mod raster;
+mod runtime_resource;
 use events::{encode_native_event, push_event, push_text_event, NativeEvent};
 #[cfg(feature = "real-gpui")]
 use native_text_input::NativeTextInput;
 #[cfg(feature = "real-gpui")]
 use raster::{ImageData, RasterData};
+use runtime_resource::RuntimeResource;
 
 include!("generated_atoms.rs");
 include!("generated_element_schema.rs");
 include!("generated_nifs.rs");
 
-pub struct RuntimeResource {
-    events: Mutex<Vec<NativeEvent>>,
-    #[cfg(feature = "real-gpui")]
-    windows: Mutex<HashMap<u64, SharedWindow>>,
-    #[cfg(feature = "real-gpui")]
-    resources: Mutex<HashMap<String, RasterData>>,
-    #[cfg(feature = "real-gpui")]
-    input_values: Mutex<HashMap<String, String>>,
-}
-
-#[rustler::resource_impl]
-impl rustler::Resource for RuntimeResource {}
-
 fn start_runtime_impl<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
-    let runtime = ResourceArc::new(RuntimeResource {
-        events: Mutex::new(Vec::new()),
-        #[cfg(feature = "real-gpui")]
-        windows: Mutex::new(HashMap::new()),
-        #[cfg(feature = "real-gpui")]
-        resources: Mutex::new(HashMap::new()),
-        #[cfg(feature = "real-gpui")]
-        input_values: Mutex::new(HashMap::new()),
-    });
-
+    let runtime = ResourceArc::new(RuntimeResource::new());
     Ok((atoms::ok(), runtime).encode(env))
 }
 
@@ -90,11 +66,6 @@ fn open_window_impl<'a>(
         .lock()
         .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))?
         .insert(window_id, shared_window.clone());
-
-    if GPUI_STARTED.swap(true, Ordering::SeqCst) {
-        push_text_event(&runtime, "window_open_rejected:already_started".to_string())?;
-        return Ok((atoms::error(), "gpui_already_started").encode(env));
-    }
 
     let event_title = title.clone();
     let runtime_for_window = runtime.clone();
