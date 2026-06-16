@@ -1,6 +1,6 @@
 # Run with:
-#   GPUI_REAL_GPUI=1 PATH="$HOME/.cargo/bin:$PATH" mix compile
-#   GPUI_REAL_GPUI=1 PATH="$HOME/.cargo/bin:$PATH" mix run examples/resource_ref_image.exs
+#   PATH="$HOME/.cargo/bin:$PATH" mix compile
+#   PATH="$HOME/.cargo/bin:$PATH" mix run examples/resource_ref_image.exs
 
 import GPUI.Template, only: [sigil_GPUI: 2]
 

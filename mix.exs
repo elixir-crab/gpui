@@ -41,7 +41,7 @@ defmodule GPUI.MixProject do
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/dannote/gpui"},
       files:
-        ~w(lib priv/rustq config/config.exs native/gpui/Cargo.toml native/gpui/src mix.exs README.md)
+        ~w(lib priv/rustq config/config.exs native/gpui/Cargo.toml native/gpui/src mix.exs README.md LICENSE)
     ]
   end
 
@@ -51,7 +51,7 @@ defmodule GPUI.MixProject do
       extras: ["README.md"],
       groups_for_modules: [
         Core: [GPUI, GPUI.Application, GPUI.View, GPUI.Runtime],
-        Elements: [GPUI.Element, GPUI.Raster, GPUI.ResourceRef, GPUI.WindowSpec],
+        Elements: [GPUI.Element, GPUI.Event, GPUI.Raster, GPUI.ResourceRef, GPUI.WindowSpec],
         Remote: [GPUI.Remote.AppServer, GPUI.Remote.DisplayClient]
       ]
     ]

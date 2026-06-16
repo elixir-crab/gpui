@@ -19,7 +19,6 @@ defmodule GPUI.Backend do
   @callback inject_event(state(), map()) :: {:ok, term()} | {:error, term()}
   @callback handle_info(state(), term()) :: {:ok, event()} | :unhandled
 
-  @spec module_for(:native | :remote_tcp) :: module()
+  @spec module_for(:native) :: module()
   def module_for(:native), do: GPUI.Backend.Native
-  def module_for(:remote_tcp), do: GPUI.Backend.RemoteTCP
 end

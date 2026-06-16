@@ -1,6 +1,6 @@
 # Run with:
-#   GPUI_REAL_GPUI=1 PATH="$HOME/.cargo/bin:$PATH" mix compile
-#   GPUI_REAL_GPUI=1 PATH="$HOME/.cargo/bin:$PATH" mix run examples/counter.exs
+#   PATH="$HOME/.cargo/bin:$PATH" mix compile
+#   PATH="$HOME/.cargo/bin:$PATH" mix run examples/counter.exs
 
 Code.require_file("support/counter_app.exs", __DIR__)
 

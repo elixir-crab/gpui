@@ -162,63 +162,6 @@ defmodule GPUI.Runtime.EventLoopTest do
     GenServer.stop(pid)
   end
 
-  test "remote TCP backend reconnects and replays windows" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
-    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
-
-    {:ok, pid} =
-      GPUI.Runtime.start_link(
-        app: CounterApp,
-        backend: :remote_tcp,
-        host: "127.0.0.1",
-        port: port,
-        session_id: "reconnect-test-session"
-      )
-
-    [window] = GPUI.Runtime.windows(pid)
-    GenServer.stop(server)
-    {:ok, _server} = GPUI.Remote.DisplayServer.start_link(port: port, display_backend: :native)
-
-    assert {:ok, %{}} = GPUI.Runtime.inject_event(pid, %{window_id: window.id, event: "inc"})
-
-    handled = GPUI.Runtime.drain_events(pid)
-    assert %{type: :click, window_id: 1, event: "inc"} in handled
-
-    [updated] = GPUI.Runtime.windows(pid)
-    assert {_module, %{count: 1}} = updated.root
-
-    GenServer.stop(pid)
-  end
-
-  test "remote TCP backend uses display server for event/update flow" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
-    {:ok, port} = GPUI.Remote.DisplayServer.port(server)
-
-    {:ok, pid} =
-      GPUI.Runtime.start_link(
-        app: CounterApp,
-        backend: :remote_tcp,
-        host: "127.0.0.1",
-        port: port
-      )
-
-    [window] = GPUI.Runtime.windows(pid)
-
-    assert {:ok, %{}} = GPUI.Runtime.inject_event(pid, %{window_id: window.id, event: "inc"})
-
-    handled = GPUI.Runtime.drain_events(pid)
-    assert %{type: :click, window_id: 1, event: "inc"} in handled
-
-    [updated] = GPUI.Runtime.windows(pid)
-    assert {_module, %{count: 1}} = updated.root
-
-    assert %{op: :backend_event, payload: %{type: :window_updated, window_id: 1}} in GPUI.Runtime.backend_messages(
-             pid
-           )
-
-    GenServer.stop(pid)
-  end
-
   test "native events can be polled automatically" do
     {:ok, pid} = GPUI.Runtime.start_link(app: CounterApp, backend: :native, poll_interval: 10)
     [window] = GPUI.Runtime.windows(pid)

@@ -9,7 +9,7 @@ name = "gpui_nif"
 crate-type = ["cdylib"]
 
 [features]
-default = []
+default = ["real-gpui"]
 real-gpui = ["dep:zed_gpui", "dep:gpui_platform", "dep:image", "dep:futures", "dep:unicode-segmentation"]
 
 [dependencies]

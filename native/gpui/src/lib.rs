@@ -35,17 +35,6 @@ fn start_runtime_impl<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
     Ok((atoms::ok(), runtime).encode(env))
 }
 
-#[cfg(not(feature = "real-gpui"))]
-fn open_window_impl<'a>(
-    env: Env<'a>,
-    runtime: ResourceArc<RuntimeResource>,
-    window: Term<'a>,
-) -> NifResult<Term<'a>> {
-    let title = window_title(env, window)?;
-    push_text_event(&runtime, format!("window_open_requested:{title}"))?;
-    Ok((atoms::ok(), title).encode(env))
-}
-
 #[cfg(feature = "real-gpui")]
 fn open_window_impl<'a>(
     env: Env<'a>,
@@ -93,17 +82,6 @@ fn drain_events_impl<'a>(
     Ok((atoms::ok(), encoded).encode(env))
 }
 
-#[cfg(not(feature = "real-gpui"))]
-fn update_window_impl<'a>(
-    env: Env<'a>,
-    runtime: ResourceArc<RuntimeResource>,
-    window_id: u64,
-    _tree: Term<'a>,
-) -> NifResult<Term<'a>> {
-    push_event(&runtime, NativeEvent::WindowUpdated { window_id })?;
-    Ok((atoms::ok(), window_id).encode(env))
-}
-
 #[cfg(feature = "real-gpui")]
 fn update_window_impl<'a>(
     env: Env<'a>,
@@ -130,16 +108,6 @@ fn update_window_impl<'a>(
     }
 }
 
-#[cfg(not(feature = "real-gpui"))]
-fn put_resource_impl<'a>(
-    env: Env<'a>,
-    _runtime: ResourceArc<RuntimeResource>,
-    resource_id: String,
-    _resource: Term<'a>,
-) -> NifResult<Term<'a>> {
-    Ok((atoms::ok(), resource_id).encode(env))
-}
-
 #[cfg(feature = "real-gpui")]
 fn put_resource_impl<'a>(
     env: Env<'a>,
@@ -154,15 +122,6 @@ fn put_resource_impl<'a>(
         .lock()
         .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))?
         .insert(resource_id.clone(), raster);
-    Ok((atoms::ok(), resource_id).encode(env))
-}
-
-#[cfg(not(feature = "real-gpui"))]
-fn drop_resource_impl<'a>(
-    env: Env<'a>,
-    _runtime: ResourceArc<RuntimeResource>,
-    resource_id: String,
-) -> NifResult<Term<'a>> {
     Ok((atoms::ok(), resource_id).encode(env))
 }
 

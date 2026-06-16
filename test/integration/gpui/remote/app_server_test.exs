@@ -107,10 +107,10 @@ defmodule GPUI.Remote.AppServerTest do
     assert {:ok, %{session_id: "gc-app", windows: [%{id: 1}]}} =
              SafeRPC.call(client, :mount, %{session_id: "gc-app"})
 
-    assert_eventually(fn ->
-      state = :sys.get_state(server)
-      refute Map.has_key?(state.sessions, "gc-app")
-    end)
+    Process.sleep(80)
+
+    assert {:error, :unknown_session} =
+             SafeRPC.call(client, :resume_session, %{session_id: "gc-app"})
   end
 
   test "resumes mounted app sessions" do
@@ -159,23 +159,6 @@ defmodule GPUI.Remote.AppServerTest do
       )
 
     assert {:error, :unauthorized} = SafeRPC.call(client, :hello, %{})
-  end
-
-  defp assert_eventually(fun) do
-    deadline = System.monotonic_time(:millisecond) + 1_000
-    assert_eventually(fun, deadline)
-  end
-
-  defp assert_eventually(fun, deadline) do
-    fun.()
-  rescue
-    error in [ExUnit.AssertionError] ->
-      if System.monotonic_time(:millisecond) > deadline do
-        reraise(error, __STACKTRACE__)
-      else
-        Process.sleep(10)
-        assert_eventually(fun, deadline)
-      end
   end
 
   defp start_client(port) do

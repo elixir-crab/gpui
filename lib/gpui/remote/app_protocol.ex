@@ -2,8 +2,8 @@ defmodule GPUI.Remote.AppProtocol do
   @moduledoc """
   Zed-style remote app operation contract.
 
-  This is the inverse of `GPUI.Remote.DisplayProtocol`: a local display client
-  can talk to a remote OTP app server that owns application/runtime state.
+  A local display client can talk to a remote OTP app server that owns
+  application/runtime state.
   SafeRPC owns the RPC mechanics; this module only defines GPUI app ops.
   """
 

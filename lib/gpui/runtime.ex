@@ -3,8 +3,8 @@ defmodule GPUI.Runtime do
   OTP owner for a GPUI application runtime.
 
   The runtime owns application state and rendered window specs. Concrete IO is
-  delegated to a real `GPUI.Backend` implementation: local native windows or
-  SafeRPC/TCP remote display transport.
+  delegated to the native GPUI backend. Remote workflows run through
+  `GPUI.Remote.AppServer` and `GPUI.Remote.DisplayClient`.
   """
 
   use GenServer
@@ -268,8 +268,7 @@ defmodule GPUI.Runtime do
     end
   end
 
-  defp normalize_backend_event(event) when is_list(event), do: Map.new(event)
-  defp normalize_backend_event(event), do: event
+  defp normalize_backend_event(event), do: GPUI.Event.normalize(event)
 
   defp drain_backend_events(state) do
     {:ok, events} = state.backend.drain_events(state.backend_state)

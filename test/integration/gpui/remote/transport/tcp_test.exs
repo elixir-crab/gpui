@@ -1,7 +1,7 @@
 defmodule GPUI.Remote.Transport.TCPTest do
   use ExUnit.Case, async: false
 
-  alias GPUI.Remote.DisplayProtocol
+  alias GPUI.Remote.AppProtocol
   alias GPUI.Remote.Transport.SafeRPC.TCP, as: SafeRPCTCP
   alias GPUI.Remote.Transport.TCP
   alias SafeRPC.Protocol
@@ -26,7 +26,7 @@ defmodule GPUI.Remote.Transport.TCPTest do
     {:ok, client} = SafeRPCTCP.connect(host: "127.0.0.1", port: port)
 
     request_payload =
-      Protocol.encode_call(make_ref(), DisplayProtocol.capability(), :ping, %{message: "hello"})
+      Protocol.encode_call(make_ref(), AppProtocol.capability(), :ping, %{message: "hello"})
 
     {:ok, request} = Protocol.decode_request(request_payload)
 
@@ -80,7 +80,7 @@ defmodule GPUI.Remote.Transport.TCPTest do
       )
 
     request_payload =
-      Protocol.encode_call(make_ref(), DisplayProtocol.capability(), :ping, %{
+      Protocol.encode_call(make_ref(), AppProtocol.capability(), :ping, %{
         message: "secure hello"
       })
 
