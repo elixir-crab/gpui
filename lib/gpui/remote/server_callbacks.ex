@@ -12,11 +12,6 @@ defmodule GPUI.Remote.ServerCallbacks do
         {:reply, reply, state}
       end
 
-      def handle_call({:dispatch, request}, _from, state) do
-        {reply, state} = dispatch(request, :legacy, state)
-        {:reply, reply, state}
-      end
-
       @impl GenServer
       def handle_info({:gpui_remote_accepted, socket}, state),
         do: {:noreply, GPUI.Remote.ServerConnection.accept(state, socket)}
