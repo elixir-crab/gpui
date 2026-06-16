@@ -1,12 +1,13 @@
-use crate::{
-    generated_events::initialize_generated_input_value, push_event, NativeEvent, RuntimeResource,
-};
-use gpui::{
+use crate::gpui::{
     actions, div, fill, point, px, rgba, size, App, Bounds, ClipboardItem, Context, CursorStyle,
     Element, ElementId, ElementInputHandler, Entity, EntityInputHandler, FocusHandle, Focusable,
     GlobalElementId, InspectorElementId, InteractiveElement, IntoElement, LayoutId, MouseButton,
     MouseDownEvent, PaintQuad, ParentElement, Pixels, Render, ShapedLine, Style, Styled, TextAlign,
     TextRun, UTF16Selection, UnderlineStyle, Window,
+};
+use crate::{
+    generated_events::initialize_generated_input_value, gpui, push_event, NativeEvent,
+    RuntimeResource,
 };
 use rustler::ResourceArc;
 use std::ops::Range;

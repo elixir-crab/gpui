@@ -22,7 +22,6 @@ defmodule GPUI.Backend do
   @spec module_for(atom() | module()) :: module()
   def module_for(:data), do: GPUI.Backend.Data
   def module_for(:native), do: GPUI.Backend.Native
-  def module_for(:host), do: GPUI.Backend.Host
   def module_for(:remote_loopback), do: GPUI.Backend.RemoteLoopback
   def module_for(:remote_tcp), do: GPUI.Backend.RemoteTCP
   def module_for(module) when is_atom(module), do: module

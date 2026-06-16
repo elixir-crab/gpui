@@ -2385,7 +2385,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "gpui_native"
+name = "gpui_nif"
 version = "0.1.0"
 dependencies = [
  "futures",

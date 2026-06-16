@@ -1,8 +1,6 @@
 defmodule GPUI.RuntimeTest do
   use ExUnit.Case, async: false
 
-  @host Path.expand("native/gpui_host/target/release/gpui_host", File.cwd!())
-
   defmodule HelloView do
     use GPUI.View
 
@@ -92,25 +90,6 @@ defmodule GPUI.RuntimeTest do
     })
 
     GenServer.stop(pid)
-  end
-
-  test "runtime sends declared windows to host backend" do
-    unless File.exists?(@host) do
-      Mix.shell().info("Skipping runtime host test; run mix gpui.host.build first")
-    else
-      {:ok, pid} = GPUI.Runtime.start_link(app: DemoApp, backend: :host, executable: @host)
-
-      assert [%GPUI.WindowSpec{title: "GPUI + Elixir", size: {500, 500}}] =
-               GPUI.Runtime.windows(pid)
-
-      assert_receive_host_message(pid, %{
-        op: :reply,
-        status: :ok,
-        payload: %{event: :window_open_requested}
-      })
-
-      GenServer.stop(pid)
-    end
   end
 
   defp assert_receive_host_message(pid, expected) do

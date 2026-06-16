@@ -1,8 +1,8 @@
 # Remote display server.
 #
 # Native display:
-#   PATH="$HOME/.cargo/bin:$PATH" mix gpui.native.build --real-gpui
-#   GPUI_REMOTE_DISPLAY_BACKEND=native PATH="$HOME/.cargo/bin:$PATH" mix run examples/remote_display_server.exs
+#   GPUI_REAL_GPUI=1 PATH="$HOME/.cargo/bin:$PATH" mix compile
+#   GPUI_REAL_GPUI=1 GPUI_REMOTE_DISPLAY_BACKEND=native PATH="$HOME/.cargo/bin:$PATH" mix run examples/remote_display_server.exs
 #
 # Headless/data display for SSH smoke checks:
 #   GPUI_REMOTE_DISPLAY_BACKEND=data mix run examples/remote_display_server.exs

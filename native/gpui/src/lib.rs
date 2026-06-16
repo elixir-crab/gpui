@@ -11,6 +11,8 @@ use std::{
         Arc,
     },
 };
+#[cfg(feature = "real-gpui")]
+use zed_gpui as gpui;
 
 #[cfg(feature = "real-gpui")]
 static GPUI_STARTED: AtomicBool = AtomicBool::new(false);
@@ -94,7 +96,7 @@ fn open_window_impl<'a>(
 ) -> NifResult<Term<'a>> {
     let title = window_title(env, window)?;
     let window_id = window_id(env, window).unwrap_or(1);
-    let tree = window_tree(window).unwrap_or_else(ElementNode::default_root);
+    let tree = window_tree(window).unwrap_or_else(ElementNode::empty_root);
     let shared_window = Arc::new(WindowState {
         tree: Mutex::new(tree),
         refresh_tx: Mutex::new(None),
@@ -657,7 +659,7 @@ impl gpui::Render for ElixirRoot {
             .tree
             .lock()
             .map(|tree| tree.clone())
-            .unwrap_or_else(|_| ElementNode::default_root());
+            .unwrap_or_else(|_| ElementNode::empty_root());
         tree.render(
             self.runtime.clone(),
             self.window_id,
@@ -690,20 +692,11 @@ enum ElementNode {
 
 #[cfg(feature = "real-gpui")]
 impl ElementNode {
-    fn default_root() -> Self {
+    fn empty_root() -> Self {
         Self::Div {
-            style: StyleAttrs {
-                display_flex: true,
-                flex_direction: Some("column".to_string()),
-                align_items: Some("center".to_string()),
-                justify_content: Some("center".to_string()),
-                background: Some(0x505050),
-                color: Some(0xffffff),
-                font_size: Some(20.0),
-                ..Default::default()
-            },
-            children: vec![Self::Text("Hello from Elixir/OTP".to_string())],
             tag: GeneratedElementTag::Div,
+            style: StyleAttrs::default(),
+            children: Vec::new(),
             click: None,
         }
     }

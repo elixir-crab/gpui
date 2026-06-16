@@ -1,6 +1,6 @@
 # Run with:
-#   PATH="$HOME/.cargo/bin:$PATH" mix gpui.native.build --real-gpui
-#   PATH="$HOME/.cargo/bin:$PATH" mix run examples/counter.exs
+#   GPUI_REAL_GPUI=1 PATH="$HOME/.cargo/bin:$PATH" mix compile
+#   GPUI_REAL_GPUI=1 PATH="$HOME/.cargo/bin:$PATH" mix run examples/counter.exs
 
 Code.require_file("support/counter_app.exs", __DIR__)
 

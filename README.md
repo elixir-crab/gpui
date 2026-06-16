@@ -47,7 +47,7 @@ Useful verification gates:
 mix test_unit
 mix test_integration
 mix rustq.gen --check
-PATH="$HOME/.cargo/bin:$PATH" mix gpui.native.build --real-gpui
+GPUI_REAL_GPUI=1 PATH="$HOME/.cargo/bin:$PATH" mix compile
 ```
 
 ## Examples
@@ -55,25 +55,25 @@ PATH="$HOME/.cargo/bin:$PATH" mix gpui.native.build --real-gpui
 Build the real GPUI native backend:
 
 ```sh
-PATH="$HOME/.cargo/bin:$PATH" mix gpui.native.build --real-gpui
+GPUI_REAL_GPUI=1 PATH="$HOME/.cargo/bin:$PATH" mix compile
 ```
 
 Run a local native counter:
 
 ```sh
-PATH="$HOME/.cargo/bin:$PATH" mix run examples/counter.exs
+GPUI_REAL_GPUI=1 PATH="$HOME/.cargo/bin:$PATH" mix run examples/counter.exs
 ```
 
 Run a local native image using a runtime resource cache and `%GPUI.ResourceRef{}`:
 
 ```sh
-PATH="$HOME/.cargo/bin:$PATH" mix run examples/resource_ref_image.exs
+GPUI_REAL_GPUI=1 PATH="$HOME/.cargo/bin:$PATH" mix run examples/resource_ref_image.exs
 ```
 
 Run a headless remote smoke check over SSH/CI:
 
 ```sh
-ZED_HEADLESS=1 PATH="$HOME/.cargo/bin:$PATH" mix run examples/remote_check.exs
+ZED_HEADLESS=1 GPUI_REAL_GPUI=1 PATH="$HOME/.cargo/bin:$PATH" mix run examples/remote_check.exs
 ```
 
 Run a RemoteTCP smoke check using SafeRPC over framed TCP:
@@ -89,7 +89,7 @@ Run the preferred inverted two-terminal remote app prototype:
 GPUI_APP_PORT=5050 mix run examples/remote_app_server.exs
 
 # Terminal 2: local display client
-GPUI_APP_HOST=127.0.0.1 GPUI_APP_PORT=5050 PATH="$HOME/.cargo/bin:$PATH" mix run examples/local_display_client.exs
+GPUI_REAL_GPUI=1 GPUI_APP_HOST=127.0.0.1 GPUI_APP_PORT=5050 PATH="$HOME/.cargo/bin:$PATH" mix run examples/local_display_client.exs
 ```
 
 Run the older two-terminal RemoteTCP display-server prototype:
@@ -105,7 +105,7 @@ GPUI_REMOTE_HOST=127.0.0.1 GPUI_REMOTE_PORT=4040 mix run examples/remote_tcp_cou
 For a native display server, use:
 
 ```sh
-GPUI_REMOTE_DISPLAY_BACKEND=native PATH="$HOME/.cargo/bin:$PATH" mix run examples/remote_display_server.exs
+GPUI_REAL_GPUI=1 GPUI_REMOTE_DISPLAY_BACKEND=native PATH="$HOME/.cargo/bin:$PATH" mix run examples/remote_display_server.exs
 ```
 
 RemoteTCP can also run over TLS/SSL. The server expects a certificate and key:

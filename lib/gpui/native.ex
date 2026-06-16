@@ -1,7 +1,7 @@
 defmodule GPUI.Native do
   @moduledoc false
 
-  use Rustler, otp_app: :gpui, crate: :gpui_native
+  use Rustler, otp_app: :gpui, crate: :gpui_nif, path: "native/gpui"
 
   def start_runtime(), do: :erlang.nif_error(:nif_not_loaded)
   def open_window(_runtime, _window), do: :erlang.nif_error(:nif_not_loaded)
