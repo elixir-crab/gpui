@@ -9,7 +9,7 @@ defmodule GPUI.Remote.DisplayServerTest do
       Supervisor.start_link(
         [
           {GPUI.Remote.DisplayServer,
-           port: 0, display_backend: :data, name: __MODULE__.SupervisedDisplay}
+           port: 0, display_backend: :native, name: __MODULE__.SupervisedDisplay}
         ],
         strategy: :one_for_one
       )
@@ -21,7 +21,7 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   test "accepts multiple RemoteTCP clients" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
 
     {:ok, conn1} = start_client(port)
@@ -41,7 +41,7 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   test "keeps serving clients after one client disconnects" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
 
     {:ok, conn1} = start_client(port)
@@ -60,7 +60,7 @@ defmodule GPUI.Remote.DisplayServerTest do
     {:ok, server} =
       GPUI.Remote.DisplayServer.start_link(
         port: 0,
-        display_backend: :data,
+        display_backend: :native,
         session_ttl: 20,
         session_gc_interval: 10
       )
@@ -83,7 +83,7 @@ defmodule GPUI.Remote.DisplayServerTest do
     {:ok, server} =
       GPUI.Remote.DisplayServer.start_link(
         port: 0,
-        display_backend: :data,
+        display_backend: :native,
         session_ttl: 50,
         session_gc_interval: 10
       )
@@ -103,7 +103,7 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   test "RemoteTCP backend stores resources on the display server" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
 
     {:ok, backend} =
@@ -121,7 +121,7 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   test "stores and drops resources per session" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
     {:ok, client} = start_client(port)
     session_id = "resource-session"
@@ -144,7 +144,7 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   test "responds to ping for heartbeat checks" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
     {:ok, client} = start_client(port)
 
@@ -152,7 +152,7 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   test "rejects updates for windows not opened by the session" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
     {:ok, client} = start_client(port)
 
@@ -166,7 +166,7 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   test "allows updates only for windows opened by the same session" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
     {:ok, client_a} = start_client(port)
     {:ok, client_b} = start_client(port)
@@ -194,7 +194,7 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   test "resume_session returns known windows for a session" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
     {:ok, client} = start_client(port)
     session_id = "resume-session"
@@ -211,7 +211,7 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   test "preserves session windows across reconnect when session id is reused" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
     session_id = "stable-session"
 
@@ -236,7 +236,7 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   test "isolates event queues per session" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
     {:ok, client_a} = start_client(port)
     {:ok, client_b} = start_client(port)
@@ -271,7 +271,7 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   test "isolates window update events per session" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
     {:ok, client_a} = start_client(port)
     {:ok, client_b} = start_client(port)
@@ -300,7 +300,7 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   test "rejects operations before hello" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
     {:ok, client} = raw_client(port)
 
@@ -308,7 +308,7 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   test "tracks hello per connection" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
     {:ok, client_a} = raw_client(port)
     {:ok, client_b} = raw_client(port)
@@ -319,7 +319,7 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   test "rejects unsupported operations after hello" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
     {:ok, client} = start_client(port)
 
@@ -330,7 +330,7 @@ defmodule GPUI.Remote.DisplayServerTest do
     {:ok, server} =
       GPUI.Remote.DisplayServer.start_link(
         port: 0,
-        display_backend: :data,
+        display_backend: :native,
         max_resources_per_session: 1,
         max_resource_bytes_per_session: 4,
         max_windows_per_session: 1,
@@ -366,7 +366,7 @@ defmodule GPUI.Remote.DisplayServerTest do
   end
 
   test "rejects unauthorized capabilities" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
 
     {:ok, client} =

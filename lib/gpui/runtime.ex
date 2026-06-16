@@ -3,8 +3,8 @@ defmodule GPUI.Runtime do
   OTP owner for a GPUI application runtime.
 
   The runtime owns application state and rendered window specs. Concrete IO is
-  delegated to a `GPUI.Backend` implementation, which creates the seam for
-  local native windows today and remote transports later.
+  delegated to a real `GPUI.Backend` implementation: local native windows or
+  SafeRPC/TCP remote display transport.
   """
 
   use GenServer
@@ -17,7 +17,7 @@ defmodule GPUI.Runtime do
           windows: [WindowSpec.t()],
           backend: module(),
           backend_state: GPUI.Backend.state(),
-          host_messages: [map()],
+          backend_messages: [map()],
           poll_interval: pos_integer() | nil,
           resources: %{optional(term()) => map()}
         }
@@ -32,7 +32,7 @@ defmodule GPUI.Runtime do
   def init(opts) do
     app = Keyword.fetch!(opts, :app)
     args = Keyword.get(opts, :args, [])
-    backend = opts |> Keyword.get(:backend, :data) |> GPUI.Backend.module_for()
+    backend = opts |> Keyword.get(:backend, :native) |> GPUI.Backend.module_for()
 
     with {:ok, backend_state} <- backend.init(opts) do
       case app.mount(args) do
@@ -59,8 +59,8 @@ defmodule GPUI.Runtime do
   def windows(server), do: GenServer.call(server, :windows)
 
   @doc "Returns replies/events received from the backend."
-  @spec host_messages(GenServer.server()) :: [map()]
-  def host_messages(server), do: GenServer.call(server, :host_messages)
+  @spec backend_messages(GenServer.server()) :: [map()]
+  def backend_messages(server), do: GenServer.call(server, :backend_messages)
 
   @doc "Drains backend events, applies view callbacks, and syncs updated views."
   @spec drain_events(GenServer.server()) :: [map()]
@@ -80,9 +80,9 @@ defmodule GPUI.Runtime do
   @spec dispatch_event(GenServer.server(), map()) :: {map(), [map()]}
   def dispatch_event(server, event), do: GenServer.call(server, {:dispatch_event, event})
 
-  @doc "Injects a backend test event when supported by the active backend."
-  @spec emit_test_event(GenServer.server(), map()) :: {:ok, term()} | {:error, term()}
-  def emit_test_event(server, event), do: GenServer.call(server, {:emit_test_event, event})
+  @doc "Injects a normalized backend event through the active backend."
+  @spec inject_event(GenServer.server(), map()) :: {:ok, term()} | {:error, term()}
+  def inject_event(server, event), do: GenServer.call(server, {:inject_event, event})
 
   @impl GenServer
   def handle_call(:windows, _from, state) do
@@ -90,13 +90,13 @@ defmodule GPUI.Runtime do
   end
 
   @impl GenServer
-  def handle_call(:host_messages, _from, state) do
+  def handle_call(:backend_messages, _from, state) do
     {:ok, events} = state.backend.drain_events(state.backend_state)
 
     backend_messages =
       Enum.map(events, &%{op: :backend_event, payload: normalize_backend_event(&1)})
 
-    {:reply, Enum.reverse(state.host_messages) ++ backend_messages, state}
+    {:reply, Enum.reverse(state.backend_messages, backend_messages), state}
   end
 
   @impl GenServer
@@ -129,8 +129,8 @@ defmodule GPUI.Runtime do
   end
 
   @impl GenServer
-  def handle_call({:emit_test_event, event}, _from, state) do
-    {:reply, state.backend.emit_test_event(state.backend_state, event), state}
+  def handle_call({:inject_event, event}, _from, state) do
+    {:reply, state.backend.inject_event(state.backend_state, event), state}
   end
 
   @impl GenServer
@@ -140,7 +140,7 @@ defmodule GPUI.Runtime do
     state =
       handled
       |> Enum.map(&%{op: :backend_event, payload: &1})
-      |> prepend_host_messages(state)
+      |> prepend_backend_messages(state)
 
     schedule_backend_poll(state)
     {:noreply, state}
@@ -150,10 +150,10 @@ defmodule GPUI.Runtime do
     case state.backend.handle_info(state.backend_state, message) do
       {:ok, %{type: type} = event} when type in [:click, :change, :keydown, :keyup] ->
         {handled, state} = handle_backend_event(event, state)
-        {:noreply, prepend_host_messages([%{op: :backend_event, payload: handled}], state)}
+        {:noreply, prepend_backend_messages([%{op: :backend_event, payload: handled}], state)}
 
       {:ok, event} ->
-        {:noreply, %{state | host_messages: [event | state.host_messages]}}
+        {:noreply, %{state | backend_messages: [event | state.backend_messages]}}
 
       :unhandled ->
         {:noreply, state}
@@ -167,7 +167,7 @@ defmodule GPUI.Runtime do
       windows: windows,
       backend: backend,
       backend_state: backend_state,
-      host_messages: [],
+      backend_messages: [],
       poll_interval: poll_interval,
       resources: %{}
     }
@@ -307,10 +307,10 @@ defmodule GPUI.Runtime do
 
   defp handle_backend_event(event, state), do: {event, state}
 
-  defp prepend_host_messages([], state), do: state
+  defp prepend_backend_messages([], state), do: state
 
-  defp prepend_host_messages(messages, state) do
-    %{state | host_messages: Enum.reverse(messages) ++ state.host_messages}
+  defp prepend_backend_messages(messages, state) do
+    %{state | backend_messages: Enum.reverse(messages, state.backend_messages)}
   end
 
   defp replace_window(windows, updated_window) do

@@ -8,7 +8,7 @@
 
 Code.require_file("support/counter_app.exs", __DIR__)
 
-{:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+{:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
 {:ok, port} = GPUI.Remote.DisplayServer.port(server)
 
 children = [
@@ -24,7 +24,7 @@ children = [
 pid = Process.whereis(CounterApp)
 [window] = GPUI.Runtime.windows(pid)
 
-{:ok, %{}} = GPUI.Runtime.emit_test_event(pid, %{window_id: window.id, event: "inc"})
+{:ok, %{}} = GPUI.Runtime.inject_event(pid, %{window_id: window.id, event: "inc"})
 
 deadline = System.monotonic_time(:millisecond) + 1_000
 

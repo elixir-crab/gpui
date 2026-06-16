@@ -8,12 +8,13 @@ defmodule GPUI.Remote.DisplayServer do
   """
 
   use GenServer
+  use GPUI.Remote.ServerCallbacks
 
-  alias GPUI.Remote.ConnectionOwner
+  alias GPUI.Remote.Acceptor
   alias GPUI.Remote.DisplayProtocol
+  alias GPUI.Remote.Request
+  alias GPUI.Remote.SessionGC
   alias GPUI.Remote.Transport.SafeRPC.TCP, as: SafeRPCTCP
-  alias GPUI.Remote.Transport.TCP
-  alias SafeRPC.Server.Connection
 
   @display_capability DisplayProtocol.capability()
 
@@ -35,7 +36,7 @@ defmodule GPUI.Remote.DisplayServer do
 
   @impl GenServer
   def init(opts) do
-    display_backend = opts |> Keyword.get(:display_backend, :data) |> GPUI.Backend.module_for()
+    display_backend = opts |> Keyword.get(:display_backend, :native) |> GPUI.Backend.module_for()
     display_backend_opts = Keyword.get(opts, :display_backend_opts, [])
 
     listen_opts = [port: Keyword.get(opts, :port, 0), ssl: Keyword.get(opts, :ssl, false)]
@@ -73,97 +74,34 @@ defmodule GPUI.Remote.DisplayServer do
   end
 
   @impl GenServer
-  def handle_call(:port, _from, state) do
-    {:reply, TCP.port(state.listener), state}
-  end
-
-  def handle_call({:dispatch, connection_id, request}, _from, state) do
-    {reply, state} = dispatch(request, connection_id, state)
-    {:reply, reply, state}
-  end
-
-  def handle_call({:dispatch, request}, _from, state) do
-    {reply, state} = dispatch(request, :legacy, state)
-    {:reply, reply, state}
-  end
-
-  @impl GenServer
-  def handle_info({:gpui_remote_accepted, socket}, state) do
-    start_acceptor(state.listener)
-
-    connection_id = System.unique_integer([:positive])
-
-    {:ok, owner} =
-      ConnectionOwner.start_link(server: self(), connection_id: connection_id)
-
-    child_spec = %{
-      id: {Connection, connection_id},
-      start:
-        {Connection, :start_link,
-         [
-           [
-             owner: owner,
-             transport: SafeRPCTCP,
-             socket: socket,
-             recv_timeout: 5_000
-           ]
-         ]},
-      restart: :temporary
-    }
-
-    {:ok, pid} = DynamicSupervisor.start_child(state.connection_supervisor, child_spec)
-    Process.monitor(pid)
-
-    {:noreply, put_in(state.connections[pid], %{socket: socket, owner: owner, id: connection_id})}
-  end
-
-  def handle_info({:gpui_remote_accept_error, reason}, state) do
-    {:stop, {:accept_failed, reason}, state}
-  end
-
-  def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
-    {connection, connections} = Map.pop(state.connections, pid)
-
-    if connection && Process.alive?(connection.owner) do
-      GenServer.stop(connection.owner)
-    end
-
-    state = %{state | connections: connections}
-
-    state =
-      if connection do
-        update_in(state.negotiated_connections, &MapSet.delete(&1, connection.id))
-      else
-        state
-      end
-
-    {:noreply, state}
-  end
-
-  def handle_info(:gc_sessions, state) do
-    state = gc_sessions(state)
-    schedule_session_gc(state)
-    {:noreply, state}
-  end
-
-  @impl GenServer
   def terminate(_reason, state) do
     SafeRPCTCP.close(state.listener)
     Supervisor.stop(state.connection_supervisor)
   end
 
-  defp dispatch(%{cap: cap}, _connection_id, state) when cap not in [nil, @display_capability] do
-    {{:error, :unauthorized}, state}
-  end
+  defp dispatch(request, connection_id, state),
+    do: Request.dispatch(request, connection_id, state, &dispatch_request/3)
 
-  defp dispatch(%{kind: :call, op: :hello, payload: payload} = request, connection_id, state) do
-    session_id = session_id(request)
+  defp dispatch_request(%Request{cap: cap}, _connection_id, state)
+       when cap not in [nil, @display_capability],
+       do: {{:error, :unauthorized}, state}
+
+  defp dispatch_request(
+         %Request{kind: :call, op: :hello, payload: payload} = request,
+         connection_id,
+         state
+       ) do
+    session_id = request.session_id
     state = touch_session(state, session_id)
     dispatch_call(:hello, payload, session_id, connection_id, state)
   end
 
-  defp dispatch(%{kind: :call, op: op, payload: payload} = request, connection_id, state) do
-    session_id = session_id(request)
+  defp dispatch_request(
+         %Request{kind: :call, op: op, payload: payload} = request,
+         connection_id,
+         state
+       ) do
+    session_id = request.session_id
     state = touch_session(state, session_id)
 
     cond do
@@ -178,8 +116,12 @@ defmodule GPUI.Remote.DisplayServer do
     end
   end
 
-  defp dispatch(%{kind: :cast, op: :event, payload: event} = request, connection_id, state) do
-    session_id = session_id(request)
+  defp dispatch_request(
+         %Request{kind: :cast, op: :event, payload: event} = request,
+         connection_id,
+         state
+       ) do
+    session_id = request.session_id
     state = touch_session(state, session_id)
 
     if connection_negotiated?(state, connection_id) do
@@ -192,7 +134,8 @@ defmodule GPUI.Remote.DisplayServer do
     end
   end
 
-  defp dispatch(_request, _connection_id, state), do: {{:error, :unsupported_request}, state}
+  defp dispatch_request(_request, _connection_id, state),
+    do: {{:error, :unsupported_request}, state}
 
   defp dispatch_call(:hello, payload, session_id, connection_id, state) do
     case DisplayProtocol.negotiate(payload) do
@@ -257,29 +200,19 @@ defmodule GPUI.Remote.DisplayServer do
     end
   end
 
-  defp session_id(%{meta: %{session_id: session_id}}), do: session_id
-  defp session_id(_request), do: :default
-
-  defp schedule_session_gc(%{session_gc_interval: :infinity}), do: :ok
-
-  defp schedule_session_gc(%{session_gc_interval: interval})
-       when is_integer(interval) and interval > 0 do
-    Process.send_after(self(), :gc_sessions, interval)
-    :ok
+  defp schedule_session_gc(%{session_gc_interval: interval}) do
+    SessionGC.schedule(interval, :gc_sessions)
   end
 
-  defp gc_sessions(%{session_ttl: :infinity} = state), do: state
-
-  defp gc_sessions(%{session_ttl: ttl} = state) when is_integer(ttl) and ttl >= 0 do
-    now = monotonic_ms()
-
-    update_in(state.sessions, fn sessions ->
-      Map.reject(sessions, fn {_session_id, session} -> now - session.last_seen > ttl end)
-    end)
+  defp gc_sessions(%{session_ttl: ttl} = state) do
+    update_in(
+      state.sessions,
+      &SessionGC.reject_expired(&1, ttl, fn _session_id, _session -> :ok end)
+    )
   end
 
   defp touch_session(state, session_id) do
-    now = monotonic_ms()
+    now = SessionGC.monotonic_ms()
 
     update_in(state.sessions, fn sessions ->
       Map.update(sessions, session_id, %{empty_session() | last_seen: now}, fn session ->
@@ -455,22 +388,13 @@ defmodule GPUI.Remote.DisplayServer do
   defp window_tree(window_id, tree), do: %{id: window_id, root: %{tree: tree}}
 
   defp empty_session,
-    do: %{events: [], windows: %{}, resources: %{}, negotiated: false, last_seen: monotonic_ms()}
+    do: %{
+      events: [],
+      windows: %{},
+      resources: %{},
+      negotiated: false,
+      last_seen: SessionGC.monotonic_ms()
+    }
 
-  defp monotonic_ms, do: System.monotonic_time(:millisecond)
-
-  defp start_acceptor(listener) do
-    owner = self()
-
-    Task.start(fn ->
-      case SafeRPCTCP.accept(listener, :infinity) do
-        {:ok, socket} ->
-          :ok = TCP.controlling_process(socket, owner)
-          send(owner, {:gpui_remote_accepted, socket})
-
-        {:error, reason} ->
-          send(owner, {:gpui_remote_accept_error, reason})
-      end
-    end)
-  end
+  defp start_acceptor(listener), do: Acceptor.start(listener)
 end

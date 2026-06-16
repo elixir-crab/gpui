@@ -101,7 +101,7 @@ defmodule GPUI.Runtime.EventLoopTest do
            |> Map.fetch!(:children) == ["Count: ", 0]
 
     {:ok, :ok} =
-      GPUI.Runtime.emit_test_event(pid, %{
+      GPUI.Runtime.inject_event(pid, %{
         window_id: window.id,
         event: "inc"
       })
@@ -116,23 +116,9 @@ defmodule GPUI.Runtime.EventLoopTest do
     assert get_in(payload, [:root, :tree, :children, Access.at(0), :children]) == ["Count: ", 1]
     assert get_in(payload, [:root, :tree, :children, Access.at(1), :attrs, :"phx-click"]) == "inc"
 
-    assert %{op: :backend_event, payload: %{type: :window_updated, window_id: 1}} in GPUI.Runtime.host_messages(
+    assert %{op: :backend_event, payload: %{type: :window_updated, window_id: 1}} in GPUI.Runtime.backend_messages(
              pid
            )
-
-    GenServer.stop(pid)
-  end
-
-  test "runtime resolves resource refs after resources are stored" do
-    {:ok, pid} = GPUI.Runtime.start_link(app: ResourceImageApp, backend: :data)
-
-    raster = %{__type__: :raster, width: 1, height: 1, format: :rgba8, data: <<255, 0, 0, 255>>}
-    assert :ok = GPUI.Runtime.put_resource(pid, "logo", raster)
-
-    {_event, [payload]} =
-      GPUI.Runtime.dispatch_event(pid, %{type: :noop, window_id: 1, event: "noop"})
-
-    assert get_in(payload, [:root, :tree, :attrs, :raster]) == raster
 
     GenServer.stop(pid)
   end
@@ -160,7 +146,7 @@ defmodule GPUI.Runtime.EventLoopTest do
     [window] = GPUI.Runtime.windows(pid)
 
     assert {:ok, :ok} =
-             GPUI.Runtime.emit_test_event(pid, %{
+             GPUI.Runtime.inject_event(pid, %{
                type: :change,
                window_id: window.id,
                event: "rename",
@@ -177,7 +163,7 @@ defmodule GPUI.Runtime.EventLoopTest do
   end
 
   test "remote TCP backend reconnects and replays windows" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
 
     {:ok, pid} =
@@ -191,9 +177,9 @@ defmodule GPUI.Runtime.EventLoopTest do
 
     [window] = GPUI.Runtime.windows(pid)
     GenServer.stop(server)
-    {:ok, _server} = GPUI.Remote.DisplayServer.start_link(port: port, display_backend: :data)
+    {:ok, _server} = GPUI.Remote.DisplayServer.start_link(port: port, display_backend: :native)
 
-    assert {:ok, %{}} = GPUI.Runtime.emit_test_event(pid, %{window_id: window.id, event: "inc"})
+    assert {:ok, %{}} = GPUI.Runtime.inject_event(pid, %{window_id: window.id, event: "inc"})
 
     handled = GPUI.Runtime.drain_events(pid)
     assert %{type: :click, window_id: 1, event: "inc"} in handled
@@ -205,7 +191,7 @@ defmodule GPUI.Runtime.EventLoopTest do
   end
 
   test "remote TCP backend uses display server for event/update flow" do
-    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :data)
+    {:ok, server} = GPUI.Remote.DisplayServer.start_link(port: 0, display_backend: :native)
     {:ok, port} = GPUI.Remote.DisplayServer.port(server)
 
     {:ok, pid} =
@@ -218,7 +204,7 @@ defmodule GPUI.Runtime.EventLoopTest do
 
     [window] = GPUI.Runtime.windows(pid)
 
-    assert {:ok, %{}} = GPUI.Runtime.emit_test_event(pid, %{window_id: window.id, event: "inc"})
+    assert {:ok, %{}} = GPUI.Runtime.inject_event(pid, %{window_id: window.id, event: "inc"})
 
     handled = GPUI.Runtime.drain_events(pid)
     assert %{type: :click, window_id: 1, event: "inc"} in handled
@@ -226,28 +212,7 @@ defmodule GPUI.Runtime.EventLoopTest do
     [updated] = GPUI.Runtime.windows(pid)
     assert {_module, %{count: 1}} = updated.root
 
-    assert %{op: :backend_event, payload: %{type: :window_updated, window_id: 1}} in GPUI.Runtime.host_messages(
-             pid
-           )
-
-    GenServer.stop(pid)
-  end
-
-  test "remote loopback backend uses runtime protocol for event/update flow" do
-    {:ok, pid} =
-      GPUI.Runtime.start_link(app: CounterApp, backend: :remote_loopback, poll_interval: 10)
-
-    [window] = GPUI.Runtime.windows(pid)
-
-    assert {:ok, :ok} = GPUI.Runtime.emit_test_event(pid, %{window_id: window.id, event: "inc"})
-
-    handled = GPUI.Runtime.drain_events(pid)
-    assert %{type: :click, window_id: 1, event: "inc"} in handled
-
-    [updated] = GPUI.Runtime.windows(pid)
-    assert {_module, %{count: 1}} = updated.root
-
-    assert %{op: :backend_event, payload: %{type: :window_updated, window_id: 1}} in GPUI.Runtime.host_messages(
+    assert %{op: :backend_event, payload: %{type: :window_updated, window_id: 1}} in GPUI.Runtime.backend_messages(
              pid
            )
 
@@ -259,7 +224,7 @@ defmodule GPUI.Runtime.EventLoopTest do
     [window] = GPUI.Runtime.windows(pid)
 
     {:ok, :ok} =
-      GPUI.Runtime.emit_test_event(pid, %{
+      GPUI.Runtime.inject_event(pid, %{
         window_id: window.id,
         event: "inc"
       })
@@ -270,7 +235,7 @@ defmodule GPUI.Runtime.EventLoopTest do
     end)
 
     assert_eventually(fn ->
-      assert %{op: :backend_event, payload: %{type: :click, event: "inc", window_id: 1}} in GPUI.Runtime.host_messages(
+      assert %{op: :backend_event, payload: %{type: :click, event: "inc", window_id: 1}} in GPUI.Runtime.backend_messages(
                pid
              )
     end)

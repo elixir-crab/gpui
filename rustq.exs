@@ -6,7 +6,7 @@ require_file "lib/gpui/component_spec/component.ex"
 require_file "lib/gpui/component_spec/resource.ex"
 require_file "lib/gpui/component_spec/style.ex"
 require_file "lib/gpui/component_spec.ex"
-require_file "lib/gpui/codegen.ex"
+require_file "priv/rustq/codegen.exs"
 
 rust "native/gpui/src/generated_atoms.rs" do
   Rustler.atoms([:ok, :error, :invalid_tree, :click, :window_updated])
@@ -51,7 +51,7 @@ rust "native/gpui/src/generated_nifs.rs" do
       returns: "NifResult<Term<'a>>",
       lifetime: :a
     ],
-    emit_test_event: [
+    inject_event: [
       args: [env: "Env<'a>", runtime: "ResourceArc<RuntimeResource>", event: "Term<'a>"],
       returns: "NifResult<Term<'a>>",
       lifetime: :a

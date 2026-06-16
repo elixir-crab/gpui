@@ -4,7 +4,12 @@
 
 host = System.get_env("GPUI_APP_HOST", "127.0.0.1")
 port = System.get_env("GPUI_APP_PORT", "5050") |> String.to_integer()
-backend = System.get_env("GPUI_DISPLAY_BACKEND", "native") |> String.to_atom()
+backend =
+  case System.get_env("GPUI_DISPLAY_BACKEND", "native") do
+    "native" -> :native
+    "remote_tcp" -> :remote_tcp
+    other -> raise ArgumentError, "unsupported GPUI_DISPLAY_BACKEND=#{inspect(other)}"
+  end
 
 {:ok, display} =
   GPUI.Remote.DisplayClient.start_link(

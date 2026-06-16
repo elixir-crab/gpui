@@ -3,9 +3,6 @@
 # Native display:
 #   GPUI_REAL_GPUI=1 PATH="$HOME/.cargo/bin:$PATH" mix compile
 #   GPUI_REAL_GPUI=1 GPUI_REMOTE_DISPLAY_BACKEND=native PATH="$HOME/.cargo/bin:$PATH" mix run examples/remote_display_server.exs
-#
-# Headless/data display for SSH smoke checks:
-#   GPUI_REMOTE_DISPLAY_BACKEND=data mix run examples/remote_display_server.exs
 
 Code.require_file("support/remote_opts.exs", __DIR__)
 
@@ -14,8 +11,11 @@ port =
   |> String.to_integer()
 
 display_backend =
-  System.get_env("GPUI_REMOTE_DISPLAY_BACKEND", "data")
-  |> String.to_atom()
+  case System.get_env("GPUI_REMOTE_DISPLAY_BACKEND", "native") do
+    "native" -> :native
+    "remote_tcp" -> :remote_tcp
+    other -> raise ArgumentError, "unsupported GPUI_REMOTE_DISPLAY_BACKEND=#{inspect(other)}"
+  end
 
 ssl = ExampleRemoteOpts.ssl_server_opts()
 

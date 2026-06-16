@@ -57,17 +57,13 @@ defmodule GPUI.Remote.DisplayProtocol do
     message(:hello, payload)
   end
 
-  def negotiate(%{version: version}) when version != @version do
-    {:error, {:incompatible_version, %{expected: @version, got: version}}}
-  end
-
   def negotiate(payload) when is_map(payload) do
-    capabilities = Map.get(payload, :capabilities, [])
-
-    case @required_peer_capabilities -- capabilities do
-      [] -> {:ok, %{version: @version, capabilities: @server_capabilities}}
-      missing -> {:error, {:missing_capabilities, missing}}
-    end
+    GPUI.Remote.ProtocolNegotiation.negotiate(
+      payload,
+      @version,
+      @required_peer_capabilities,
+      @server_capabilities
+    )
   end
 
   @spec ping() :: message()

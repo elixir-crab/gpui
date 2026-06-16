@@ -51,7 +51,7 @@ pid = Process.whereis(RemoteCheckApp)
 [window] = GPUI.Runtime.windows(pid)
 
 {:ok, :ok} =
-  GPUI.Runtime.emit_test_event(pid, %{
+  GPUI.Runtime.inject_event(pid, %{
     window_id: window.id,
     event: "inc"
   })

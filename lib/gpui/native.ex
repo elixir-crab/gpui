@@ -9,6 +9,6 @@ defmodule GPUI.Native do
   def put_resource(_runtime, _resource_id, _resource), do: :erlang.nif_error(:nif_not_loaded)
   def drop_resource(_runtime, _resource_id), do: :erlang.nif_error(:nif_not_loaded)
   def drain_events(_runtime), do: :erlang.nif_error(:nif_not_loaded)
-  def emit_test_event(_runtime, _event), do: :erlang.nif_error(:nif_not_loaded)
+  def inject_event(_runtime, _event), do: :erlang.nif_error(:nif_not_loaded)
   def validate_tree(_tree), do: :erlang.nif_error(:nif_not_loaded)
 end

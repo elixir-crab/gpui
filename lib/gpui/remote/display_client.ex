@@ -10,6 +10,7 @@ defmodule GPUI.Remote.DisplayClient do
   use GenServer
 
   alias GPUI.Remote.AppProtocol
+  alias GPUI.Remote.Reconnect
   alias GPUI.Remote.Transport.SafeRPC.TCP, as: SafeRPCTCP
 
   @reconnect_errors [:closed, :timeout, :econnrefused, :enetunreach, :nxdomain]
@@ -21,7 +22,7 @@ defmodule GPUI.Remote.DisplayClient do
 
   @impl GenServer
   def init(opts) do
-    backend = opts |> Keyword.get(:backend, :data) |> GPUI.Backend.module_for()
+    backend = opts |> Keyword.get(:backend, :native) |> GPUI.Backend.module_for()
     backend_opts = Keyword.get(opts, :backend_opts, [])
 
     with {:ok, app_client} <- start_app_client(opts),
@@ -56,20 +57,15 @@ defmodule GPUI.Remote.DisplayClient do
 
   def handle_call({:event, event}, _from, state) do
     %{op: op, payload: payload} = AppProtocol.event(event)
-
-    case call_with_reconnect(state, op, payload) do
-      {:ok, %{windows: windows}, state} ->
-        state = sync_windows(state, windows, :update)
-        {:reply, {:ok, windows}, state}
-
-      {:error, reason, state} ->
-        {:reply, {:error, reason}, state}
-    end
+    handle_remote_windows_call(state, op, payload)
   end
 
   def handle_call(:snapshot, _from, state) do
     %{op: op, payload: payload} = AppProtocol.snapshot()
+    handle_remote_windows_call(state, op, payload)
+  end
 
+  defp handle_remote_windows_call(state, op, payload) do
     case call_with_reconnect(state, op, payload) do
       {:ok, %{windows: windows}, state} ->
         state = sync_windows(state, windows, :update)
@@ -81,36 +77,20 @@ defmodule GPUI.Remote.DisplayClient do
   end
 
   defp call_with_reconnect(state, op, payload) do
-    case safe_call(state.app_client, op, payload) do
-      {:ok, reply} -> {:ok, reply, state}
-      {:error, reason} -> maybe_reconnect(reason, state, op, payload)
-    end
+    Reconnect.call_with_reconnect(
+      state,
+      op,
+      payload,
+      &safe_call_from_state/3,
+      &reconnect/1,
+      @reconnect_errors
+    )
   end
 
-  defp maybe_reconnect(reason, state, op, payload) do
-    if reconnectable?(reason) do
-      reconnect_and_retry(state, op, payload)
-    else
-      {:error, reason, state}
-    end
-  end
-
-  defp reconnect_and_retry(state, op, payload) do
-    case reconnect(state) do
-      {:ok, state} -> retry_after_reconnect(state, op, payload)
-      {:error, reconnect_reason, state} -> {:error, reconnect_reason, state}
-    end
-  end
-
-  defp retry_after_reconnect(state, op, payload) do
-    case safe_call(state.app_client, op, payload) do
-      {:ok, reply} -> {:ok, reply, state}
-      {:error, reason} -> {:error, reason, state}
-    end
-  end
+  defp safe_call_from_state(state, op, payload), do: safe_call(state.app_client, op, payload)
 
   defp reconnect(state) do
-    stop_client(state.app_client)
+    Reconnect.stop_client(state.app_client)
 
     case start_app_client(state.opts) do
       {:ok, app_client} -> remount_if_needed(%{state | app_client: app_client})
@@ -152,19 +132,6 @@ defmodule GPUI.Remote.DisplayClient do
     :exit, {:normal, _} -> {:error, :closed}
     :exit, {:timeout, _} -> {:error, :timeout}
     :exit, reason -> {:error, {:exit, reason}}
-  end
-
-  defp reconnectable?(reason) when reason in @reconnect_errors, do: true
-  defp reconnectable?({:exit, _reason}), do: true
-  defp reconnectable?(_reason), do: false
-
-  defp stop_client(nil), do: :ok
-
-  defp stop_client(client) when is_pid(client) do
-    if Process.alive?(client), do: GenServer.stop(client)
-    :ok
-  catch
-    :exit, _reason -> :ok
   end
 
   defp new_session_id do

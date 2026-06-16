@@ -17,10 +17,16 @@ use zed_gpui as gpui;
 #[cfg(feature = "real-gpui")]
 static GPUI_STARTED: AtomicBool = AtomicBool::new(false);
 
+mod events;
 #[cfg(feature = "real-gpui")]
 mod native_text_input;
 #[cfg(feature = "real-gpui")]
+mod raster;
+use events::{encode_native_event, push_event, push_text_event, NativeEvent};
+#[cfg(feature = "real-gpui")]
 use native_text_input::NativeTextInput;
+#[cfg(feature = "real-gpui")]
+use raster::{ImageData, RasterData};
 
 include!("generated_atoms.rs");
 include!("generated_element_schema.rs");
@@ -34,30 +40,6 @@ pub struct RuntimeResource {
     resources: Mutex<HashMap<String, RasterData>>,
     #[cfg(feature = "real-gpui")]
     input_values: Mutex<HashMap<String, String>>,
-}
-
-#[derive(Clone, Debug)]
-enum NativeEvent {
-    Text(String),
-    Click {
-        window_id: u64,
-        event: String,
-    },
-    Input {
-        kind: String,
-        window_id: u64,
-        event: String,
-        value: Option<String>,
-    },
-    #[cfg(feature = "real-gpui")]
-    MissingResource {
-        window_id: u64,
-        id: String,
-        resource_type: String,
-    },
-    WindowUpdated {
-        window_id: u64,
-    },
 }
 
 #[rustler::resource_impl]
@@ -227,7 +209,7 @@ fn drop_resource_impl<'a>(
     Ok((atoms::ok(), resource_id).encode(env))
 }
 
-fn emit_test_event_impl<'a>(
+fn inject_event_impl<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,
     event: Term<'a>,
@@ -294,77 +276,6 @@ fn window_title(env: Env, window: Term) -> NifResult<String> {
         .ok()
         .and_then(|term| term.decode::<String>().ok())
         .unwrap_or_else(|| "GPUI + Elixir".to_string()))
-}
-
-fn push_text_event(runtime: &ResourceArc<RuntimeResource>, event: String) -> NifResult<()> {
-    push_event(runtime, NativeEvent::Text(event))
-}
-
-fn push_event(runtime: &ResourceArc<RuntimeResource>, event: NativeEvent) -> NifResult<()> {
-    runtime
-        .events
-        .lock()
-        .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))?
-        .push(event);
-
-    Ok(())
-}
-
-fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifResult<Term<'a>> {
-    match event {
-        NativeEvent::Text(text) => Ok(text.encode(env)),
-        NativeEvent::Click { window_id, event } => Ok(vec![
-            (Atom::from_bytes(env, b"type")?, atoms::click().to_term(env)),
-            (Atom::from_bytes(env, b"window_id")?, window_id.encode(env)),
-            (Atom::from_bytes(env, b"event")?, event.encode(env)),
-        ]
-        .encode(env)),
-        NativeEvent::Input {
-            kind,
-            window_id,
-            event,
-            value,
-        } => {
-            let type_atom = Atom::from_bytes(env, kind.as_bytes())?;
-            let mut entries = vec![
-                (Atom::from_bytes(env, b"type")?, type_atom.to_term(env)),
-                (Atom::from_bytes(env, b"window_id")?, window_id.encode(env)),
-                (Atom::from_bytes(env, b"event")?, event.encode(env)),
-            ];
-
-            if let Some(value) = value {
-                entries.push((Atom::from_bytes(env, b"value")?, value.encode(env)));
-            }
-
-            Ok(entries.encode(env))
-        }
-        #[cfg(feature = "real-gpui")]
-        NativeEvent::MissingResource {
-            window_id,
-            id,
-            resource_type,
-        } => Ok(vec![
-            (
-                Atom::from_bytes(env, b"type")?,
-                Atom::from_bytes(env, b"missing_resource")?.to_term(env),
-            ),
-            (Atom::from_bytes(env, b"window_id")?, window_id.encode(env)),
-            (Atom::from_bytes(env, b"id")?, id.encode(env)),
-            (
-                Atom::from_bytes(env, b"resource_type")?,
-                Atom::from_bytes(env, resource_type.as_bytes())?.to_term(env),
-            ),
-        ]
-        .encode(env)),
-        NativeEvent::WindowUpdated { window_id } => Ok(vec![
-            (
-                Atom::from_bytes(env, b"type")?,
-                atoms::window_updated().to_term(env),
-            ),
-            (Atom::from_bytes(env, b"window_id")?, window_id.encode(env)),
-        ]
-        .encode(env)),
-    }
 }
 
 #[cfg(feature = "real-gpui")]
@@ -507,103 +418,6 @@ fn radius_value(term: Term) -> Option<f32> {
     }
 
     px_value(term)
-}
-
-#[cfg(feature = "real-gpui")]
-#[derive(Clone, Debug)]
-enum ImageData {
-    Raster(RasterData),
-    Ref(String),
-}
-
-#[cfg(feature = "real-gpui")]
-#[derive(Clone, Debug, Default)]
-struct RasterData {
-    width: u32,
-    height: u32,
-    format: String,
-    stride: Option<u32>,
-    data: Vec<u8>,
-}
-
-#[cfg(feature = "real-gpui")]
-impl From<GeneratedRaster> for RasterData {
-    fn from(raster: GeneratedRaster) -> Self {
-        Self {
-            width: raster.width,
-            height: raster.height,
-            format: raster.format,
-            stride: raster.stride,
-            data: raster.data,
-        }
-    }
-}
-
-#[cfg(feature = "real-gpui")]
-impl RasterData {
-    fn validate(&self) -> NifResult<()> {
-        if self.width == 0 || self.height == 0 {
-            return Err(rustler::Error::Term(Box::new("invalid_raster_dimensions")));
-        }
-
-        if self.format != "rgba8" && self.format != "bgra8" {
-            return Err(rustler::Error::Term(Box::new("unsupported_raster_format")));
-        }
-
-        let row_bytes = self.width as usize * 4;
-        let stride = self
-            .stride
-            .map(|stride| stride as usize)
-            .unwrap_or(row_bytes);
-
-        if stride < row_bytes {
-            return Err(rustler::Error::Term(Box::new("invalid_raster_stride")));
-        }
-
-        let expected_len = stride * (self.height as usize - 1) + row_bytes;
-        if self.data.len() < expected_len {
-            return Err(rustler::Error::Term(Box::new("invalid_raster_data")));
-        }
-
-        Ok(())
-    }
-
-    fn render(self) -> gpui::AnyElement {
-        use gpui::{img, IntoElement, RenderImage};
-        use image::{Frame, RgbaImage};
-
-        let width = self.width;
-        let height = self.height;
-        let data = self.into_rgba();
-        let image =
-            RgbaImage::from_raw(width, height, data).unwrap_or_else(|| RgbaImage::new(1, 1));
-        let render_image = Arc::new(RenderImage::new(vec![Frame::new(image)]));
-
-        img(render_image).into_any_element()
-    }
-
-    fn into_rgba(mut self) -> Vec<u8> {
-        let row_bytes = self.width as usize * 4;
-
-        if let Some(stride) = self.stride.map(|stride| stride as usize) {
-            if stride != row_bytes {
-                let mut compact = Vec::with_capacity(row_bytes * self.height as usize);
-                for row in 0..self.height as usize {
-                    let start = row * stride;
-                    compact.extend_from_slice(&self.data[start..start + row_bytes]);
-                }
-                self.data = compact;
-            }
-        }
-
-        if self.format == "bgra8" {
-            for pixel in self.data.chunks_exact_mut(4) {
-                pixel.swap(0, 2);
-            }
-        }
-
-        self.data
-    }
 }
 
 #[cfg(feature = "real-gpui")]

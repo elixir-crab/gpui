@@ -95,13 +95,7 @@ defmodule GPUI.Remote.Transport.TCP do
   def close(%Listener{socket: socket, mode: :tcp}), do: :gen_tcp.close(socket)
   def close(%Listener{socket: socket, mode: :ssl}), do: :ssl.close(socket)
 
-  defp ssl_handshake(client) do
-    case :ssl.handshake(client) do
-      :ok -> {:ok, client}
-      {:ok, client} -> {:ok, client}
-      {:error, reason} -> {:error, reason}
-    end
-  end
+  defp ssl_handshake(client), do: :ssl.handshake(client)
 
   defp listen_tcp(port) do
     opts = [:binary, active: false, packet: :raw, reuseaddr: true, ip: {127, 0, 0, 1}]

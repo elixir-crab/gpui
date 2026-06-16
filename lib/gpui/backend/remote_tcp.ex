@@ -38,7 +38,7 @@ defmodule GPUI.Backend.RemoteTCP do
   def drain_events(%{session: session}), do: Session.drain_events(session)
 
   @impl GPUI.Backend
-  def emit_test_event(%{session: session}, event), do: Session.emit_test_event(session, event)
+  def inject_event(%{session: session}, event), do: Session.inject_event(session, event)
 
   @impl GPUI.Backend
   def handle_info(_state, _message), do: :unhandled

@@ -30,14 +30,14 @@ defmodule GPUI.RuntimeTest do
   end
 
   test "application modules can be started as OTP children" do
-    {:ok, pid} = start_supervised({DemoApp, backend: :data})
+    {:ok, pid} = start_supervised({DemoApp, backend: :native})
 
     assert [%GPUI.WindowSpec{title: "GPUI + Elixir", size: {500, 500}}] =
              GPUI.Runtime.windows(pid)
   end
 
-  test "runtime keeps declarative windows in data backend" do
-    {:ok, pid} = GPUI.Runtime.start_link(app: DemoApp, backend: :data)
+  test "runtime keeps declarative windows with the native backend" do
+    {:ok, pid} = GPUI.Runtime.start_link(app: DemoApp, backend: :native)
 
     assert [%GPUI.WindowSpec{title: "GPUI + Elixir", size: {500, 500}}] =
              GPUI.Runtime.windows(pid)
@@ -46,7 +46,7 @@ defmodule GPUI.RuntimeTest do
   end
 
   test "runtime encodes rendered root trees for native payloads" do
-    {:ok, pid} = GPUI.Runtime.start_link(app: DemoApp, backend: :data)
+    {:ok, pid} = GPUI.Runtime.start_link(app: DemoApp, backend: :native)
 
     payload =
       pid
@@ -84,7 +84,7 @@ defmodule GPUI.RuntimeTest do
     assert [%GPUI.WindowSpec{title: "GPUI + Elixir", size: {500, 500}}] =
              GPUI.Runtime.windows(pid)
 
-    assert_receive_host_message(pid, %{
+    assert_receive_backend_message(pid, %{
       op: :backend_event,
       payload: "window_open_requested:GPUI + Elixir"
     })
@@ -92,22 +92,22 @@ defmodule GPUI.RuntimeTest do
     GenServer.stop(pid)
   end
 
-  defp assert_receive_host_message(pid, expected) do
+  defp assert_receive_backend_message(pid, expected) do
     deadline = System.monotonic_time(:millisecond) + 1_000
-    assert_receive_host_message(pid, expected, deadline)
+    assert_receive_backend_message(pid, expected, deadline)
   end
 
-  defp assert_receive_host_message(pid, expected, deadline) do
-    messages = GPUI.Runtime.host_messages(pid)
+  defp assert_receive_backend_message(pid, expected, deadline) do
+    messages = GPUI.Runtime.backend_messages(pid)
 
     if Enum.any?(messages, &match_map?(expected, &1)) do
       assert true
     else
       if System.monotonic_time(:millisecond) > deadline do
-        flunk("expected host message #{inspect(expected)}, got #{inspect(messages)}")
+        flunk("expected backend message #{inspect(expected)}, got #{inspect(messages)}")
       else
         Process.sleep(10)
-        assert_receive_host_message(pid, expected, deadline)
+        assert_receive_backend_message(pid, expected, deadline)
       end
     end
   end

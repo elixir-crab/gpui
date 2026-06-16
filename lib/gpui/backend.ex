@@ -4,7 +4,7 @@ defmodule GPUI.Backend do
 
   Backends keep runtime state transport-safe: the runtime deals in rendered
   window payloads and normalized event maps, while each backend owns its local
-  implementation details such as Rustler resources or ports.
+  implementation details such as Rustler resources or SafeRPC/TCP connections.
   """
 
   @type state :: term()
@@ -16,13 +16,17 @@ defmodule GPUI.Backend do
   @callback put_resource(state(), term(), map()) :: :ok | {:error, term()}
   @callback drop_resource(state(), term()) :: :ok | {:error, term()}
   @callback drain_events(state()) :: {:ok, [event()]} | {:error, term()}
-  @callback emit_test_event(state(), map()) :: {:ok, term()} | {:error, term()}
+  @callback inject_event(state(), map()) :: {:ok, term()} | {:error, term()}
   @callback handle_info(state(), term()) :: {:ok, event()} | :unhandled
 
-  @spec module_for(atom() | module()) :: module()
-  def module_for(:data), do: GPUI.Backend.Data
+  @spec module_for(:native | :remote_tcp | module()) :: module()
   def module_for(:native), do: GPUI.Backend.Native
-  def module_for(:remote_loopback), do: GPUI.Backend.RemoteLoopback
   def module_for(:remote_tcp), do: GPUI.Backend.RemoteTCP
+
+  def module_for(backend) when backend in [:data, :remote_loopback] do
+    raise ArgumentError,
+          "unsupported GPUI backend #{inspect(backend)}; use :native or :remote_tcp"
+  end
+
   def module_for(module) when is_atom(module), do: module
 end

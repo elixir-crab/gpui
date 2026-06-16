@@ -4,6 +4,7 @@ defmodule GPUI.Backend.RemoteTCP.Session do
   use GenServer
 
   alias GPUI.Remote.DisplayProtocol
+  alias GPUI.Remote.Reconnect
   alias GPUI.Remote.Transport.SafeRPC.TCP, as: SafeRPCTCP
 
   @reconnect_errors [:closed, :timeout, :econnrefused, :enetunreach, :nxdomain]
@@ -23,7 +24,7 @@ defmodule GPUI.Backend.RemoteTCP.Session do
     do: GenServer.call(session, {:drop_resource, resource_id})
 
   def drain_events(session), do: GenServer.call(session, :drain_events)
-  def emit_test_event(session, event), do: GenServer.call(session, {:emit_test_event, event})
+  def inject_event(session, event), do: GenServer.call(session, {:inject_event, event})
 
   @impl GenServer
   def init(opts) do
@@ -95,8 +96,9 @@ defmodule GPUI.Backend.RemoteTCP.Session do
     end
   end
 
-  def handle_call({:emit_test_event, event}, _from, state) do
-    %{op: op, payload: payload} = event |> normalize_test_event() |> DisplayProtocol.event()
+  def handle_call({:inject_event, event}, _from, state) do
+    %{op: op, payload: payload} =
+      event |> GPUI.Backend.Event.normalize() |> DisplayProtocol.event()
 
     case call_with_reconnect(state, op, payload) do
       {:ok, reply, state} -> {:reply, {:ok, reply}, state}
@@ -169,36 +171,21 @@ defmodule GPUI.Backend.RemoteTCP.Session do
   end
 
   defp call_with_reconnect(state, op, payload) do
-    case safe_call(state.client, state.session_id, op, payload) do
-      {:ok, reply} -> {:ok, reply, state}
-      {:error, reason} -> maybe_reconnect(reason, state, op, payload)
-    end
+    Reconnect.call_with_reconnect(
+      state,
+      op,
+      payload,
+      &safe_call_from_state/3,
+      &reconnect/1,
+      @reconnect_errors
+    )
   end
 
-  defp maybe_reconnect(reason, state, op, payload) do
-    if reconnectable?(reason) do
-      reconnect_and_retry(state, op, payload)
-    else
-      {:error, reason, state}
-    end
-  end
-
-  defp reconnect_and_retry(state, op, payload) do
-    case reconnect(state) do
-      {:ok, state} -> retry_after_reconnect(state, op, payload)
-      {:error, reconnect_reason, state} -> {:error, reconnect_reason, state}
-    end
-  end
-
-  defp retry_after_reconnect(state, op, payload) do
-    case safe_call(state.client, state.session_id, op, payload) do
-      {:ok, reply} -> {:ok, reply, state}
-      {:error, reason} -> {:error, reason, state}
-    end
-  end
+  defp safe_call_from_state(state, op, payload),
+    do: safe_call(state.client, state.session_id, op, payload)
 
   defp reconnect(state) do
-    stop_client(state.client)
+    Reconnect.stop_client(state.client)
 
     case connect(%{state | client: nil}) do
       {:ok, state} -> {:ok, state}
@@ -213,19 +200,6 @@ defmodule GPUI.Backend.RemoteTCP.Session do
     :exit, {:normal, _} -> {:error, :closed}
     :exit, {:timeout, _} -> {:error, :timeout}
     :exit, reason -> {:error, {:exit, reason}}
-  end
-
-  defp reconnectable?(reason) when reason in @reconnect_errors, do: true
-  defp reconnectable?({:exit, _reason}), do: true
-  defp reconnectable?(_reason), do: false
-
-  defp stop_client(nil), do: :ok
-
-  defp stop_client(client) when is_pid(client) do
-    if Process.alive?(client), do: GenServer.stop(client)
-    :ok
-  catch
-    :exit, _reason -> :ok
   end
 
   defp put_window(state, %{id: window_id} = window_payload) do
@@ -252,11 +226,4 @@ defmodule GPUI.Backend.RemoteTCP.Session do
   defp new_session_id do
     System.unique_integer([:positive, :monotonic])
   end
-
-  defp normalize_test_event(%{type: _type} = event), do: event
-
-  defp normalize_test_event(%{window_id: _window_id, event: _event} = event),
-    do: Map.put(event, :type, :click)
-
-  defp normalize_test_event(event), do: event
 end

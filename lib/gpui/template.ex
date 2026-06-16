@@ -34,7 +34,7 @@ defmodule GPUI.Template do
   defp compile_node({:block, :tag, name, attrs, children, _open_meta, _close_meta}, caller) do
     quote do
       %Element{
-        type: unquote(String.to_atom(name)),
+        type: unquote(tag_atom(name)),
         attrs: unquote(compile_attrs(attrs)),
         children:
           List.flatten(
@@ -51,7 +51,7 @@ defmodule GPUI.Template do
   defp compile_node({:self_close, :tag, name, attrs, _meta}, _caller) do
     quote do
       %Element{
-        type: unquote(String.to_atom(name)),
+        type: unquote(tag_atom(name)),
         attrs: unquote(compile_attrs(attrs)),
         children: []
       }
@@ -93,7 +93,7 @@ defmodule GPUI.Template do
   end
 
   defp component_call(:local_component, name, attrs, children, caller) do
-    function = String.to_atom(name)
+    function = compile_time_atom(name)
     module = caller.module
 
     quote do
@@ -109,7 +109,7 @@ defmodule GPUI.Template do
 
     if function_name?(last) and match?([_, _ | _], parts) do
       module = parts |> Enum.drop(-1) |> Module.concat()
-      {module, String.to_atom(last)}
+      {module, compile_time_atom(last)}
     else
       {Module.concat(parts), :render}
     end
@@ -118,10 +118,38 @@ defmodule GPUI.Template do
   defp function_name?(<<first, _rest::binary>>), do: first in ?a..?z or first == ?_
   defp function_name?(""), do: false
 
+  defp tag_atom("button"), do: :button
+  defp tag_atom("div"), do: :div
+  defp tag_atom("img"), do: :img
+  defp tag_atom("input"), do: :input
+  defp tag_atom("scroll"), do: :scroll
+  defp tag_atom("text"), do: :text
+
+  defp tag_atom(name) do
+    raise ArgumentError, "unsupported GPUI tag #{inspect(name)}"
+  end
+
+  defp attr_atom("class"), do: :class
+  defp attr_atom("label"), do: :label
+  defp attr_atom("phx-change"), do: :"phx-change"
+  defp attr_atom("phx-click"), do: :"phx-click"
+  defp attr_atom("raster"), do: :raster
+  defp attr_atom("title"), do: :title
+  defp attr_atom("value"), do: :value
+  defp attr_atom(name), do: compile_time_atom(name)
+
+  defp compile_time_atom(name) when is_binary(name) do
+    if Regex.match?(~r/^[A-Za-z_][A-Za-z0-9_?!-]*$/, name) do
+      :erlang.binary_to_atom(name, :utf8)
+    else
+      raise ArgumentError, "invalid GPUI identifier #{inspect(name)}"
+    end
+  end
+
   defp compile_attrs(attrs) do
     attrs
     |> Enum.map(fn {name, value, _meta} ->
-      {String.to_atom(to_string(name)), compile_attr_value(value)}
+      {attr_atom(to_string(name)), compile_attr_value(value)}
     end)
     |> normalize_class_attr()
   end

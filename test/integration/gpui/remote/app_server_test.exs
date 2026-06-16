@@ -60,7 +60,7 @@ defmodule GPUI.Remote.AppServerTest do
     {:ok, port} = GPUI.Remote.AppServer.port(server)
 
     {:ok, display} =
-      GPUI.Remote.DisplayClient.start_link(host: "127.0.0.1", port: port, backend: :data)
+      GPUI.Remote.DisplayClient.start_link(host: "127.0.0.1", port: port, backend: :native)
 
     assert {:ok, [%{id: 1}]} = GPUI.Remote.DisplayClient.mount(display)
 
@@ -130,7 +130,7 @@ defmodule GPUI.Remote.AppServerTest do
     {:ok, port} = GPUI.Remote.AppServer.port(server)
 
     {:ok, display} =
-      GPUI.Remote.DisplayClient.start_link(host: "127.0.0.1", port: port, backend: :data)
+      GPUI.Remote.DisplayClient.start_link(host: "127.0.0.1", port: port, backend: :native)
 
     assert {:ok, [%{id: 1}]} = GPUI.Remote.DisplayClient.mount(display)
 

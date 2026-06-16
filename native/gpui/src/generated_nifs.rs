@@ -46,12 +46,12 @@ fn drain_events<'a>(
     drain_events_impl(env, runtime)
 }
 #[rustler::nif]
-fn emit_test_event<'a>(
+fn inject_event<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,
     event: Term<'a>,
 ) -> NifResult<Term<'a>> {
-    emit_test_event_impl(env, runtime, event)
+    inject_event_impl(env, runtime, event)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
 fn validate_tree<'a>(env: Env<'a>, tree: Term<'a>) -> NifResult<Term<'a>> {

@@ -1,10 +1,9 @@
 defmodule GPUI.Protocol do
   @moduledoc """
-  Erlang External Term Format protocol shared by the OTP runtime and Rust host.
+  Small Erlang External Term Format helpers for internal protocol payloads.
 
-  Port communication uses `{:packet, 4}` framing, so `encode/1` returns only the
-  ETF payload. Standalone length-prefixed framing can be added at the transport
-  layer if we need to talk over raw stdio without Erlang Port packet mode.
+  Remote transports and tests can use this when they need raw ETF payloads;
+  native rendering goes through the Rustler NIF backend directly.
   """
 
   @type message :: map()
@@ -16,7 +15,7 @@ defmodule GPUI.Protocol do
 
   @spec decode(binary()) :: message()
   def decode(payload) when is_binary(payload) do
-    :erlang.binary_to_term(payload)
+    :erlang.binary_to_term(payload, [:safe])
   end
 
   @spec command(atom(), map()) :: message()

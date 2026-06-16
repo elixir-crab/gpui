@@ -46,7 +46,7 @@ defmodule GPUI.Backend.Native do
   def drain_events(%{runtime: runtime}), do: GPUI.Native.drain_events(runtime)
 
   @impl GPUI.Backend
-  def emit_test_event(%{runtime: runtime}, event), do: GPUI.Native.emit_test_event(runtime, event)
+  def inject_event(%{runtime: runtime}, event), do: GPUI.Native.inject_event(runtime, event)
 
   @impl GPUI.Backend
   def handle_info(_state, _message), do: :unhandled
