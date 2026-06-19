@@ -2,6 +2,9 @@ defmodule GPUI.Codegen do
   @moduledoc false
 
   alias RustQ.Rust
+  alias RustQ.Rust.AST
+  alias RustQ.Rust.AST.Builder, as: A
+  alias RustQ.Rust.AST.TypeBuilder, as: T
 
   @spec generated_native_element_schema() :: String.t()
   def generated_native_element_schema do
@@ -27,21 +30,11 @@ defmodule GPUI.Codegen do
 
     #{generated_enum_decl(:GeneratedElementTag, elements ++ [:Unknown])}
 
-    pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
-        match tag {
-    #{rust_match_arms(elements, "GeneratedElementTag")}
-            _ => GeneratedElementTag::Unknown,
-        }
-    }
+    #{generated_string_enum_decoder(:decode_generated_element_tag, :tag, :GeneratedElementTag, elements, :Unknown)}
 
     #{generated_enum_decl(:GeneratedResourceType, resources ++ [:Unknown])}
 
-    pub fn decode_generated_resource_type(resource_type: &str) -> GeneratedResourceType {
-        match resource_type {
-    #{rust_match_arms(resources, "GeneratedResourceType")}
-            _ => GeneratedResourceType::Unknown,
-        }
-    }
+    #{generated_string_enum_decoder(:decode_generated_resource_type, :resource_type, :GeneratedResourceType, resources, :Unknown)}
 
     pub fn generated_event_attr_to_type(attr: &str) -> Option<&'static str> {
         match attr {
@@ -502,7 +495,10 @@ defmodule GPUI.Codegen do
   end
 
   defp generated_string_slice_const(name, values) do
-    Rust.const(name, "&[&str]", ["&[", Enum.map_join(values, ", ", &inspect(to_string(&1))), "]"],
+    Rust.const(
+      name,
+      T.ref(T.slice(T.ref(:str))),
+      values |> Enum.map(&to_string/1) |> A.slice() |> render_expr(),
       vis: :pub
     )
     |> Rust.to_fragment()
@@ -517,12 +513,32 @@ defmodule GPUI.Codegen do
     |> Rust.to_fragment()
   end
 
-  defp rust_match_arms(values, enum_name) do
-    values
-    |> Enum.map_join("\n", fn value ->
-      rust_arm(~s|"#{value}"|, "#{enum_name}::#{rust_variant(value)}")
-    end)
+  defp generated_string_enum_decoder(name, arg_name, enum_name, values, unknown) do
+    arms =
+      Enum.map(values, fn value ->
+        %AST.Arm{
+          pattern: %AST.PatLiteral{value: to_string(value)},
+          body: [A.return_stmt(A.path([enum_name, rust_variant(value)]))]
+        }
+      end) ++
+        [
+          %AST.Arm{
+            pattern: A.wildcard(),
+            body: [A.return_stmt(A.path([enum_name, rust_variant(unknown)]))]
+          }
+        ]
+
+    %AST.Function{
+      name: name,
+      vis: :pub,
+      args: [A.arg(arg_name, T.ref(:str))],
+      returns: T.path(enum_name),
+      body: [A.return_stmt(%AST.Match{expr: A.var(arg_name), arms: arms})]
+    }
+    |> RustQ.Rust.AST.Render.render_item()
   end
+
+  defp render_expr(expr), do: expr |> RustQ.Rust.AST.Render.render_expr() |> IO.iodata_to_binary()
 
   defp rust_arm(pattern, body) do
     pattern

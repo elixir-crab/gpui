@@ -67,7 +67,8 @@ defmodule GPUI.MixProject do
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:phoenix_live_view, "~> 1.2"},
       {:rustler, "~> 0.38.0", runtime: false},
-      {:rustq, "~> 0.5", only: [:dev, :test], runtime: false},
+      {:rustq,
+       github: "dannote/rustq", branch: "defrust-meta-mvp", only: [:dev, :test], runtime: false},
       {:vibe_kit, "== 0.1.5"},
       {:safe_rpc, "~> 0.1.3"},
       {:igniter, "~> 0.6", only: [:dev, :test]}

@@ -154,19 +154,20 @@ Unknown,
 
 pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
     match tag {
-"div" => GeneratedElementTag::Div,
-"button" => GeneratedElementTag::Button,
-"span" => GeneratedElementTag::Span,
-"scroll" => GeneratedElementTag::Scroll,
-"list" => GeneratedElementTag::List,
-"item" => GeneratedElementTag::Item,
-"icon" => GeneratedElementTag::Icon,
-"input" => GeneratedElementTag::Input,
-"img" => GeneratedElementTag::Img,
-"text" => GeneratedElementTag::Text,
+        "div" => GeneratedElementTag::Div,
+        "button" => GeneratedElementTag::Button,
+        "span" => GeneratedElementTag::Span,
+        "scroll" => GeneratedElementTag::Scroll,
+        "list" => GeneratedElementTag::List,
+        "item" => GeneratedElementTag::Item,
+        "icon" => GeneratedElementTag::Icon,
+        "input" => GeneratedElementTag::Input,
+        "img" => GeneratedElementTag::Img,
+        "text" => GeneratedElementTag::Text,
         _ => GeneratedElementTag::Unknown,
     }
 }
+
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GeneratedResourceType {
@@ -177,11 +178,12 @@ Unknown,
 
 pub fn decode_generated_resource_type(resource_type: &str) -> GeneratedResourceType {
     match resource_type {
-"raster" => GeneratedResourceType::Raster,
-"resource_ref" => GeneratedResourceType::ResourceRef,
+        "raster" => GeneratedResourceType::Raster,
+        "resource_ref" => GeneratedResourceType::ResourceRef,
         _ => GeneratedResourceType::Unknown,
     }
 }
+
 
 pub fn generated_event_attr_to_type(attr: &str) -> Option<&'static str> {
     match attr {
