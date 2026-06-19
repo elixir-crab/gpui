@@ -197,19 +197,20 @@ pub fn generated_event_attr_to_type(attr: &str) -> Option<&'static str> {
 
 pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentKind {
     match tag {
-GeneratedElementTag::Div => GeneratedComponentKind::Container,
-GeneratedElementTag::Button => GeneratedComponentKind::Container,
-GeneratedElementTag::Span => GeneratedComponentKind::Container,
-GeneratedElementTag::Scroll => GeneratedComponentKind::Container,
-GeneratedElementTag::List => GeneratedComponentKind::Container,
-GeneratedElementTag::Item => GeneratedComponentKind::Container,
-GeneratedElementTag::Icon => GeneratedComponentKind::Text,
-GeneratedElementTag::Input => GeneratedComponentKind::Input,
-GeneratedElementTag::Img => GeneratedComponentKind::Image,
-GeneratedElementTag::Text => GeneratedComponentKind::Text,
+        GeneratedElementTag::Div => GeneratedComponentKind::Container,
+        GeneratedElementTag::Button => GeneratedComponentKind::Container,
+        GeneratedElementTag::Span => GeneratedComponentKind::Container,
+        GeneratedElementTag::Scroll => GeneratedComponentKind::Container,
+        GeneratedElementTag::List => GeneratedComponentKind::Container,
+        GeneratedElementTag::Item => GeneratedComponentKind::Container,
+        GeneratedElementTag::Icon => GeneratedComponentKind::Text,
+        GeneratedElementTag::Input => GeneratedComponentKind::Input,
+        GeneratedElementTag::Img => GeneratedComponentKind::Image,
+        GeneratedElementTag::Text => GeneratedComponentKind::Text,
         GeneratedElementTag::Unknown => GeneratedComponentKind::Unknown,
     }
 }
+
 
 #[cfg(feature = "real-gpui")]
 pub(crate) mod generated_resources {

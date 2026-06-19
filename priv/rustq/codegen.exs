@@ -43,12 +43,7 @@ defmodule GPUI.Codegen do
         }
     }
 
-    pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentKind {
-        match tag {
-    #{rust_component_kind_arms(components)}
-            GeneratedElementTag::Unknown => GeneratedComponentKind::Unknown,
-        }
-    }
+    #{generated_component_kind_decoder(components)}
 
     #{generated_resource_module(resource_specs)}
 
@@ -472,14 +467,29 @@ defmodule GPUI.Codegen do
     end)
   end
 
-  defp rust_component_kind_arms(components) do
-    components
-    |> Enum.map_join("\n", fn component ->
-      rust_arm(
-        "GeneratedElementTag::#{rust_variant(component.tag)}",
-        "GeneratedComponentKind::#{rust_variant(component.kind)}"
-      )
-    end)
+  defp generated_component_kind_decoder(components) do
+    arms =
+      Enum.map(components, fn component ->
+        %AST.Arm{
+          pattern: %AST.PatPath{path: A.path([:GeneratedElementTag, rust_variant(component.tag)])},
+          body: [A.return_stmt(A.path([:GeneratedComponentKind, rust_variant(component.kind)]))]
+        }
+      end) ++
+        [
+          %AST.Arm{
+            pattern: %AST.PatPath{path: A.path([:GeneratedElementTag, :Unknown])},
+            body: [A.return_stmt(A.path([:GeneratedComponentKind, :Unknown]))]
+          }
+        ]
+
+    %AST.Function{
+      name: :generated_component_kind,
+      vis: :pub,
+      args: [A.arg(:tag, T.path(:GeneratedElementTag))],
+      returns: T.path(:GeneratedComponentKind),
+      body: [A.return_stmt(%AST.Match{expr: A.var(:tag), arms: arms})]
+    }
+    |> RustQ.Rust.AST.Render.render_item()
   end
 
   defp rust_template!(name, replacements \\ %{}) do
