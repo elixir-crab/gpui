@@ -15,7 +15,7 @@ defmodule GPUI.Session do
 
   @type state :: %{
           windows: [WindowSpec.t()],
-          resources: %{optional(term()) => map()}
+          resources: %{optional(String.t()) => map()}
         }
 
   @spec start_link(keyword()) :: GenServer.on_start()
@@ -29,15 +29,18 @@ defmodule GPUI.Session do
   @spec snapshot(GenServer.server()) :: snapshot()
   def snapshot(session), do: GenServer.call(session, :snapshot)
 
-  @spec put_resource(GenServer.server(), term(), map()) :: :ok
+  @spec put_resource(GenServer.server(), String.Chars.t(), map()) :: :ok
   def put_resource(session, id, resource),
     do: GenServer.call(session, {:put_resource, id, resource})
 
-  @spec drop_resource(GenServer.server(), term()) :: :ok
+  @spec drop_resource(GenServer.server(), String.Chars.t()) :: :ok
   def drop_resource(session, id), do: GenServer.call(session, {:drop_resource, id})
 
   @spec dispatch_event(GenServer.server(), map()) :: {map(), snapshot()}
   def dispatch_event(session, event), do: GenServer.call(session, {:dispatch_event, event})
+
+  @spec dispatch_events(GenServer.server(), [map()]) :: {[map()], snapshot()}
+  def dispatch_events(session, events), do: GenServer.call(session, {:dispatch_events, events})
 
   @doc "Converts a declarative window into its serializable representation."
   @spec window_payload(WindowSpec.t()) :: map()
@@ -67,16 +70,24 @@ defmodule GPUI.Session do
   def handle_call(:snapshot, _from, state), do: {:reply, snapshot_from_state(state), state}
 
   def handle_call({:put_resource, id, resource}, _from, state) do
-    {:reply, :ok, put_in(state.resources[id], resource)}
+    {:reply, :ok, put_in(state.resources[to_string(id)], resource)}
   end
 
   def handle_call({:drop_resource, id}, _from, state) do
-    {:reply, :ok, update_in(state.resources, &Map.delete(&1, id))}
+    {:reply, :ok, update_in(state.resources, &Map.delete(&1, to_string(id)))}
   end
 
   def handle_call({:dispatch_event, event}, _from, state) do
-    event = GPUI.Event.normalize(event)
-    {handled, state} = handle_event(event, state)
+    {handled, state} = event |> GPUI.Event.normalize() |> handle_event(state)
+    {:reply, {handled, snapshot_from_state(state)}, state}
+  end
+
+  def handle_call({:dispatch_events, events}, _from, state) do
+    {handled, state} =
+      Enum.map_reduce(events, state, fn event, state ->
+        event |> GPUI.Event.normalize() |> handle_event(state)
+      end)
+
     {:reply, {handled, snapshot_from_state(state)}, state}
   end
 
@@ -85,7 +96,9 @@ defmodule GPUI.Session do
   defp assign_window_ids(windows) do
     windows
     |> Enum.with_index(1)
-    |> Enum.map(fn {%WindowSpec{} = window, id} -> %{window | id: id} end)
+    |> Enum.map(fn {%WindowSpec{} = window, id} ->
+      window |> WindowSpec.validate!() |> Map.put(:id, id)
+    end)
   end
 
   defp snapshot_from_state(state) do
@@ -105,10 +118,12 @@ defmodule GPUI.Session do
   end
 
   defp render_root(module, assigns) do
-    if function_exported?(module, :render, 1) do
-      module.render(assigns)
-      |> GPUI.Element.to_payload()
+    unless Code.ensure_loaded?(module) and function_exported?(module, :render, 1) do
+      raise ArgumentError, "window root #{inspect(module)} must implement render/1"
     end
+
+    module.render(assigns)
+    |> GPUI.Element.to_payload()
   end
 
   defp handle_event(%{type: :window_closed, window_id: window_id} = native_event, state) do

@@ -1,4 +1,6 @@
-use rustler::{Atom, Encoder, Env, NifResult, ResourceArc, Term};
+#[cfg(feature = "real-gpui")]
+use rustler::Atom;
+use rustler::{Encoder, Env, NifResult, ResourceArc, Term};
 
 #[cfg(feature = "real-gpui")]
 use futures::{channel::mpsc, StreamExt};
@@ -6,7 +8,7 @@ use futures::{channel::mpsc, StreamExt};
 use gpui::Styled;
 #[cfg(feature = "real-gpui")]
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     sync::{Arc, Mutex},
 };
 #[cfg(feature = "real-gpui")]
@@ -18,9 +20,9 @@ mod input;
 #[cfg(feature = "real-gpui")]
 mod resource;
 mod runtime;
-use event::{encode_native_event, push_event, NativeEvent};
+use event::{encode_native_event, push_event, InputKind, NativeEvent};
 #[cfg(feature = "real-gpui")]
-use input::NativeTextInput;
+use input::{bind_input_keys, NativeTextInput};
 #[cfg(feature = "real-gpui")]
 use resource::{decode_raster_resource, decode_resource_ref, ImageData, RasterData};
 use runtime::{RuntimeResource, SharedRuntime};

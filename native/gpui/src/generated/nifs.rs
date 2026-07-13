@@ -68,7 +68,3 @@ fn inject_event<'a>(
 ) -> NifResult<Term<'a>> {
     inject_event_impl(env, runtime, event)
 }
-#[rustler::nif(schedule = "DirtyCpu")]
-fn validate_tree<'a>(env: Env<'a>, tree: Term<'a>) -> NifResult<Term<'a>> {
-    validate_tree_impl(env, tree)
-}

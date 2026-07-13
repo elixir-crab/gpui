@@ -7,7 +7,7 @@ defmodule GPUI.Display do
   """
 
   @type snapshot :: GPUI.Snapshot.t()
-  @type event :: map() | keyword() | String.t()
+  @type event :: map()
 
   @callback start_link(keyword()) :: GenServer.on_start()
   @callback sync(GenServer.server(), snapshot()) :: :ok | {:error, term()}

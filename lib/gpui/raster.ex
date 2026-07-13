@@ -1,34 +1,24 @@
 defmodule GPUI.Raster do
   @moduledoc """
-  Generic CPU raster image payload for GPUI image elements.
+  Generic packed 32-bit CPU raster image payload for GPUI image elements.
 
-  This is intentionally renderer-agnostic. Skia, image decoders, screenshots,
-  video frames, or tensors can all produce `%GPUI.Raster{}` values.
+  This is renderer-independent: image decoders, screenshots, video frames, or
+  tensors can produce `%GPUI.Raster{}` values. Rows may be tightly packed or
+  use an explicit byte stride.
   """
 
   @type format :: :rgba8 | :bgra8
-  @type alpha :: :premultiplied | :straight | :opaque
-  @type color_space :: :srgb | :linear
+
+  @enforce_keys [:width, :height, :data]
+  defstruct [:width, :height, :data, format: :rgba8, stride: nil]
 
   @type t :: %__MODULE__{
           width: pos_integer(),
           height: pos_integer(),
           format: format(),
           data: binary(),
-          stride: pos_integer() | nil,
-          color_space: color_space(),
-          alpha: alpha()
+          stride: pos_integer() | nil
         }
-
-  defstruct [
-    :width,
-    :height,
-    :data,
-    format: :rgba8,
-    stride: nil,
-    color_space: :srgb,
-    alpha: :premultiplied
-  ]
 
   @spec new(pos_integer(), pos_integer(), binary(), keyword()) :: t()
   def new(width, height, data, opts \\ [])
@@ -39,9 +29,7 @@ defmodule GPUI.Raster do
       height: height,
       data: data,
       format: Keyword.get(opts, :format, :rgba8),
-      stride: Keyword.get(opts, :stride),
-      color_space: Keyword.get(opts, :color_space, :srgb),
-      alpha: Keyword.get(opts, :alpha, :premultiplied)
+      stride: Keyword.get(opts, :stride)
     }
     |> validate!()
   end
@@ -78,9 +66,7 @@ defmodule GPUI.Raster do
       height: raster.height,
       format: raster.format,
       data: raster.data,
-      stride: raster.stride,
-      color_space: raster.color_space,
-      alpha: raster.alpha
+      stride: raster.stride
     }
   end
 end

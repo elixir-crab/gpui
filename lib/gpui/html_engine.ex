@@ -4,7 +4,8 @@ defmodule GPUI.HTMLEngine do
   @behaviour Phoenix.LiveView.TagEngine
 
   @impl Phoenix.LiveView.TagEngine
-  def classify_type(":" <> name), do: {:slot, name}
+  def classify_type(":" <> name),
+    do: {:error, "GPUI named slots are not supported: #{name}"}
 
   def classify_type(<<first, _rest::binary>> = name) when first in ?A..?Z,
     do: {:remote_component, name}

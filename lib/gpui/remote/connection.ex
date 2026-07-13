@@ -27,7 +27,7 @@ defmodule GPUI.Remote.Connection do
 
     {:ok, pid} = DynamicSupervisor.start_child(state.connection_supervisor, child_spec)
     Process.monitor(pid)
-    put_in(state.connections[pid], %{socket: socket, owner: owner, id: connection_id})
+    put_in(state.connections[pid], %{owner: owner, id: connection_id})
   end
 
   def remove(state, pid) do

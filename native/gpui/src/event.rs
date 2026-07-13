@@ -1,6 +1,23 @@
 use crate::{atoms, SharedRuntime};
 use rustler::{Atom, Encoder, Env, NifResult, Term};
 
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum InputKind {
+    Change,
+    KeyDown,
+    KeyUp,
+}
+
+impl InputKind {
+    fn atom(self) -> Atom {
+        match self {
+            Self::Change => atoms::change(),
+            Self::KeyDown => atoms::keydown(),
+            Self::KeyUp => atoms::keyup(),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub(crate) enum NativeEvent {
     Click {
@@ -8,7 +25,7 @@ pub(crate) enum NativeEvent {
         event: String,
     },
     Input {
-        kind: String,
+        kind: InputKind,
         window_id: u64,
         event: String,
         value: Option<String>,
@@ -20,7 +37,6 @@ pub(crate) enum NativeEvent {
     MissingResource {
         window_id: u64,
         id: String,
-        resource_type: String,
     },
 }
 
@@ -35,16 +51,13 @@ pub(crate) fn push_event(runtime: &SharedRuntime, event: NativeEvent) -> NifResu
 }
 
 pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifResult<Term<'a>> {
-    let type_key = Atom::from_bytes(env, b"type")?;
-    let window_id_key = Atom::from_bytes(env, b"window_id")?;
-
     match event {
         NativeEvent::Click { window_id, event } => encode_event_map(
             env,
             vec![
-                (type_key, atoms::click().to_term(env)),
-                (window_id_key, window_id.encode(env)),
-                (Atom::from_bytes(env, b"event")?, event.encode(env)),
+                (atoms::type_atom(), atoms::click().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
             ],
         ),
         NativeEvent::Input {
@@ -54,16 +67,13 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             value,
         } => {
             let mut entries = vec![
-                (
-                    type_key,
-                    Atom::from_bytes(env, kind.as_bytes())?.to_term(env),
-                ),
-                (window_id_key, window_id.encode(env)),
-                (Atom::from_bytes(env, b"event")?, event.encode(env)),
+                (atoms::type_atom(), kind.atom().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
             ];
 
             if let Some(value) = value {
-                entries.push((Atom::from_bytes(env, b"value")?, value.encode(env)));
+                entries.push((atoms::value(), value.encode(env)));
             }
 
             encode_event_map(env, entries)
@@ -71,28 +81,18 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
         NativeEvent::WindowClosed { window_id } => encode_event_map(
             env,
             vec![
-                (type_key, atoms::window_closed().to_term(env)),
-                (window_id_key, window_id.encode(env)),
+                (atoms::type_atom(), atoms::window_closed().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
             ],
         ),
         #[cfg(feature = "real-gpui")]
-        NativeEvent::MissingResource {
-            window_id,
-            id,
-            resource_type,
-        } => encode_event_map(
+        NativeEvent::MissingResource { window_id, id } => encode_event_map(
             env,
             vec![
-                (
-                    type_key,
-                    Atom::from_bytes(env, b"missing_resource")?.to_term(env),
-                ),
-                (window_id_key, window_id.encode(env)),
-                (Atom::from_bytes(env, b"id")?, id.encode(env)),
-                (
-                    Atom::from_bytes(env, b"resource_type")?,
-                    Atom::from_bytes(env, resource_type.as_bytes())?.to_term(env),
-                ),
+                (atoms::type_atom(), atoms::missing_resource().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::id(), id.encode(env)),
+                (atoms::resource_type(), atoms::raster().to_term(env)),
             ],
         ),
     }

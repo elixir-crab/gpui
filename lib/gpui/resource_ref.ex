@@ -3,11 +3,13 @@ defmodule GPUI.ResourceRef do
   Reference to a remote/display resource such as a raster image.
   """
 
-  @type t :: %__MODULE__{id: term(), type: atom()}
+  @enforce_keys [:id, :type]
   defstruct [:id, :type]
 
-  @spec new(term(), atom()) :: t()
-  def new(id, type), do: %__MODULE__{id: id, type: type}
+  @type t :: %__MODULE__{id: String.t(), type: :raster}
+
+  @spec new(String.Chars.t(), :raster) :: t()
+  def new(id, :raster), do: %__MODULE__{id: to_string(id), type: :raster}
 
   @doc false
   def to_payload(%__MODULE__{} = ref), do: %{__type__: :resource_ref, id: ref.id, type: ref.type}

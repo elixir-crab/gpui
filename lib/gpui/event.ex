@@ -23,7 +23,7 @@ defmodule GPUI.Event do
   def normalize(%{window_id: _window_id, event: _event} = event),
     do: Map.put(event, :type, :click)
 
-  def normalize(event), do: event
+  def normalize(event) when is_map(event), do: event
 
   @spec to_map(t()) :: map()
   def to_map(%__MODULE__{} = event) do

@@ -111,38 +111,37 @@ defmodule GPUI.Codegen.Native.Style do
     arms =
       Enum.map(style_specs, fn spec ->
         %AST.Arm{
-          pattern: P.lit(to_string(spec.name)),
+          pattern: %AST.PatAtomGuard{name: spec.name, module: [:atoms]},
           body: [
             A.assign(
               A.field(A.var(:attrs), spec.field),
               style_decode_call(spec.type)
-            )
+            ),
+            A.return_stmt(A.lit(true))
           ]
         }
-      end) ++ [%AST.Arm{pattern: P.wildcard(), body: []}]
+      end) ++
+        [%AST.Arm{pattern: P.wildcard(), body: [A.return_stmt(A.lit(false))]}]
 
     %AST.Function{
       name: :apply_generated_style_attr,
       vis: :crate,
-      attrs: [
-        A.attr(:cfg, feature: "real-gpui"),
-        A.attr(:allow, [A.path([:clippy, :unused_unit])])
-      ],
-      args: [A.arg(:attrs, "&mut StyleAttrs"), A.arg(:key, "&str"), A.arg(:value, "Term")],
-      returns: T.unit(),
-      body: [A.stmt(A.match_expr(A.var(:key), arms))]
+      attrs: [A.attr(:cfg, feature: "real-gpui")],
+      args: [A.arg(:attrs, "&mut StyleAttrs"), A.arg(:key, "Atom"), A.arg(:term, "Term")],
+      returns: T.path(:bool),
+      body: [A.return_stmt(A.match_expr(A.var(:key), arms))]
     }
     |> render_item()
   end
 
   defp style_decode_call({:atom_eq, expected}),
-    do: A.call(:atom_eq, [A.var(:value), A.lit(to_string(expected))])
+    do: A.call(:atom_eq, [A.var(:term), A.lit(to_string(expected))])
 
-  defp style_decode_call(:atom_string), do: A.call(:atom_string, [A.var(:value)])
-  defp style_decode_call(:rgb), do: A.call(:rgb_value, [A.var(:value)])
-  defp style_decode_call(:number), do: A.call(:number_value, [A.var(:value)])
-  defp style_decode_call(:px), do: A.call(:px_value, [A.var(:value)])
-  defp style_decode_call(:radius), do: A.call(:radius_value, [A.var(:value)])
+  defp style_decode_call(:atom_string), do: A.call(:atom_string, [A.var(:term)])
+  defp style_decode_call(:rgb), do: A.call(:rgb_value, [A.var(:term)])
+  defp style_decode_call(:number), do: A.call(:number_value, [A.var(:term)])
+  defp style_decode_call(:px), do: A.call(:px_value, [A.var(:term)])
+  defp style_decode_call(:radius), do: A.call(:radius_value, [A.var(:term)])
 
   defp render_item(item), do: RustQ.Rust.AST.Render.render_item(item)
 end

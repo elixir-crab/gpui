@@ -2,7 +2,6 @@ defmodule GPUI.Remote.Acceptor do
   @moduledoc false
 
   alias GPUI.Remote.Transport.TCP
-  alias GPUI.Remote.Transport.TCP
 
   @spec start(TCP.Listener.t()) :: {:ok, pid()}
   def start(listener) do

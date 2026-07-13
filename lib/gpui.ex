@@ -52,33 +52,43 @@ defmodule GPUI do
     Element.append_child(element, child)
   end
 
+  @doc "Sets a schema-backed style on an element."
+  @spec style(Element.t(), atom(), term()) :: Element.t()
+  def style(%Element{} = element, name, value) when is_atom(name) do
+    if name in GPUI.Schema.styles() do
+      Element.put_style(element, name, value)
+    else
+      raise ArgumentError, "unsupported GPUI style #{inspect(name)}"
+    end
+  end
+
   @doc "Adds flex display style to an element."
   @spec flex(Element.t()) :: Element.t()
-  def flex(%Element{} = element), do: Element.put_style(element, :display, :flex)
+  def flex(%Element{} = element), do: style(element, :display, :flex)
 
   @doc "Adds column flex direction to an element."
   @spec flex_col(Element.t()) :: Element.t()
-  def flex_col(%Element{} = element), do: Element.put_style(element, :flex_direction, :column)
+  def flex_col(%Element{} = element), do: style(element, :flex_direction, :column)
 
   @doc "Centers children on the cross axis."
   @spec items_center(Element.t()) :: Element.t()
-  def items_center(%Element{} = element), do: Element.put_style(element, :align_items, :center)
+  def items_center(%Element{} = element), do: style(element, :align_items, :center)
 
   @doc "Centers children on the main axis."
   @spec justify_center(Element.t()) :: Element.t()
   def justify_center(%Element{} = element),
-    do: Element.put_style(element, :justify_content, :center)
+    do: style(element, :justify_content, :center)
 
   @doc "Sets background color."
   @spec bg(Element.t(), term()) :: Element.t()
-  def bg(%Element{} = element, color), do: Element.put_style(element, :background, color)
+  def bg(%Element{} = element, color), do: style(element, :background, color)
 
   @doc "Sets width and height to the same value."
   @spec size(Element.t(), term()) :: Element.t()
   def size(%Element{} = element, size) do
     element
-    |> Element.put_style(:width, size)
-    |> Element.put_style(:height, size)
+    |> style(:width, size)
+    |> style(:height, size)
   end
 
   @doc "Represents a GPUI pixel length."

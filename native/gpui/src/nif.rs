@@ -18,9 +18,10 @@ pub(crate) fn open_window_impl<'a>(
     runtime: ResourceArc<RuntimeResource>,
     window: Term<'a>,
 ) -> NifResult<Term<'a>> {
-    let title = window_title(env, window)?;
-    let window_id = window_id(env, window).unwrap_or(1);
-    let tree = window_tree(window).unwrap_or_else(ElementNode::empty_root);
+    let title = window_title(window)?;
+    let window_id = window_id(window)?;
+    let (width, height) = window_size(window)?;
+    let tree = window_tree(window)?;
     let shared_window = Arc::new(WindowState {
         tree: Mutex::new(tree),
     });
@@ -30,6 +31,8 @@ pub(crate) fn open_window_impl<'a>(
         runtime_id: runtime.id,
         title: title.clone(),
         window_id,
+        width,
+        height,
         window_state: shared_window,
         runtime: runtime.state.clone(),
         reply,
@@ -134,7 +137,7 @@ pub(crate) fn stop_runtime_impl<'a>(
 ) -> NifResult<Term<'a>> {
     use std::sync::atomic::Ordering;
 
-    if runtime.stopped.swap(true, Ordering::AcqRel) {
+    if runtime.stopped.load(Ordering::Acquire) {
         return Ok((atoms::ok(), atoms::ok()).encode(env));
     }
 
@@ -146,6 +149,7 @@ pub(crate) fn stop_runtime_impl<'a>(
 
     match execute_window_command(&runtime, command, receiver) {
         Ok(()) => {
+            runtime.stopped.store(true, Ordering::Release);
             runtime
                 .state
                 .resources
@@ -160,10 +164,7 @@ pub(crate) fn stop_runtime_impl<'a>(
                 .clear();
             Ok((atoms::ok(), atoms::ok()).encode(env))
         }
-        Err(reason) => {
-            runtime.stopped.store(false, Ordering::Release);
-            Ok((atoms::error(), reason).encode(env))
-        }
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
     }
 }
 
@@ -181,6 +182,12 @@ fn execute_window_command(
     command: WindowCommand,
     receiver: std::sync::mpsc::Receiver<Result<(), String>>,
 ) -> Result<(), String> {
+    use std::sync::atomic::Ordering;
+
+    if runtime.stopped.load(Ordering::Acquire) {
+        return Err("gpui_runtime_stopped".to_string());
+    }
+
     runtime
         .command_tx
         .unbounded_send(command)
@@ -252,27 +259,19 @@ pub(crate) fn inject_event_impl<'a>(
     runtime: ResourceArc<RuntimeResource>,
     event: Term<'a>,
 ) -> NifResult<Term<'a>> {
-    let window_id = event
-        .map_get(Atom::from_bytes(env, b"window_id")?)?
-        .decode::<u64>()?;
+    let window_id = event.map_get(atoms::window_id())?.decode::<u64>()?;
     let event_type = event
-        .map_get(Atom::from_bytes(env, b"type")?)
+        .map_get(atoms::type_atom())
         .ok()
         .and_then(|term| term.atom_to_string().ok())
         .unwrap_or_else(|| "click".to_string());
 
-    if event_type == "window_closed" {
-        push_event(&runtime.state, NativeEvent::WindowClosed { window_id })?;
-    } else {
-        let event_name = event
-            .map_get(Atom::from_bytes(env, b"event")?)?
-            .decode::<String>()?;
-        let value = event
-            .map_get(Atom::from_bytes(env, b"value")?)
-            .ok()
-            .and_then(|term| term.decode::<String>().ok());
-
-        if event_type == "click" {
+    match event_type.as_str() {
+        "window_closed" => {
+            push_event(&runtime.state, NativeEvent::WindowClosed { window_id })?;
+        }
+        "click" => {
+            let event_name = event.map_get(atoms::event())?.decode::<String>()?;
             push_event(
                 &runtime.state,
                 NativeEvent::Click {
@@ -280,54 +279,66 @@ pub(crate) fn inject_event_impl<'a>(
                     event: event_name,
                 },
             )?;
-        } else {
+        }
+        "change" | "keydown" | "keyup" => {
+            let event_name = event.map_get(atoms::event())?.decode::<String>()?;
+            let value = event
+                .map_get(atoms::value())
+                .ok()
+                .and_then(|term| term.decode::<String>().ok());
+            let kind = match event_type.as_str() {
+                "change" => InputKind::Change,
+                "keydown" => InputKind::KeyDown,
+                "keyup" => InputKind::KeyUp,
+                _other => return Err(rustler::Error::BadArg),
+            };
+
             push_event(
                 &runtime.state,
                 NativeEvent::Input {
-                    kind: event_type,
+                    kind,
                     window_id,
                     event: event_name,
                     value,
                 },
             )?;
         }
+        _other => return Err(rustler::Error::BadArg),
     }
     Ok((atoms::ok(), atoms::ok()).encode(env))
 }
 
-pub(crate) fn validate_tree_impl<'a>(env: Env<'a>, tree: Term<'a>) -> NifResult<Term<'a>> {
-    if tree.is_map() {
-        Ok((atoms::ok(), tree).encode(env))
-    } else {
-        Ok((atoms::error(), atoms::invalid_tree()).encode(env))
+#[cfg(feature = "real-gpui")]
+pub(crate) fn window_id(window: Term) -> NifResult<u64> {
+    window.map_get(atoms::id())?.decode::<u64>()
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn window_size(window: Term) -> NifResult<(f32, f32)> {
+    let Ok(size) = window.map_get(atoms::size()) else {
+        return Ok((800.0, 600.0));
+    };
+    let size = size.decode::<Vec<u32>>()?;
+
+    match size.as_slice() {
+        [width, height] if *width > 0 && *height > 0 => Ok((*width as f32, *height as f32)),
+        _other => Err(rustler::Error::BadArg),
     }
 }
 
 #[cfg(feature = "real-gpui")]
-pub(crate) fn window_id(env: Env, window: Term) -> Option<u64> {
-    window
-        .map_get(Atom::from_bytes(env, b"id").ok()?)
-        .ok()
-        .and_then(|term| term.decode::<u64>().ok())
+pub(crate) fn window_title(window: Term) -> NifResult<String> {
+    window.map_get(atoms::title())?.decode::<String>()
 }
 
 #[cfg(feature = "real-gpui")]
-pub(crate) fn window_title(env: Env, window: Term) -> NifResult<String> {
-    let title_atom = Atom::from_bytes(env, b"title")?;
+pub(crate) fn window_tree(window: Term) -> NifResult<ElementNode> {
+    let root = window.map_get(atoms::root())?;
 
-    Ok(window
-        .map_get(title_atom)
-        .ok()
-        .and_then(|term| term.decode::<String>().ok())
-        .unwrap_or_else(|| "GPUI + Elixir".to_string()))
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn window_tree(window: Term) -> Option<ElementNode> {
-    let env = window.get_env();
-    let root = window.map_get(Atom::from_bytes(env, b"root").ok()?).ok()?;
-    let tree = root.map_get(Atom::from_bytes(env, b"tree").ok()?).ok()?;
-    decode_element_node(tree).ok()
+    match root.map_get(atoms::tree()) {
+        Ok(tree) => decode_element_node(tree),
+        Err(_error) => Ok(ElementNode::empty_root()),
+    }
 }
 
 #[cfg(feature = "real-gpui")]
@@ -339,8 +350,7 @@ pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
         });
     }
 
-    let env = term.get_env();
-    let type_term = term.map_get(Atom::from_bytes(env, b"type")?)?;
+    let type_term = term.map_get(atoms::type_atom())?;
     let node_type = type_term.atom_to_string()?;
 
     let tag = decode_generated_element_tag(node_type.as_str());
@@ -351,12 +361,9 @@ pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
         GeneratedComponentKind::Image => decode_image(term),
         GeneratedComponentKind::Text => Ok(ElementNode::Text {
             text: decode_text_children(term)?,
-            style: decode_style(term).unwrap_or_default(),
+            style: decode_style(term)?,
         }),
-        GeneratedComponentKind::Unknown => Ok(ElementNode::Text {
-            text: String::new(),
-            style: StyleAttrs::default(),
-        }),
+        GeneratedComponentKind::Unknown => Err(rustler::Error::BadArg),
     }
 }
 
@@ -364,78 +371,64 @@ pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
 fn decode_container(term: Term, tag: GeneratedElementTag) -> NifResult<ElementNode> {
     Ok(ElementNode::Div {
         tag,
-        style: decode_style(term).unwrap_or_default(),
-        children: decode_children(term).unwrap_or_default(),
-        click: string_attr(term, "phx-click"),
+        style: decode_style(term)?,
+        children: decode_children(term)?,
+        click: string_attr(term, atoms::phx_click()),
     })
 }
 
 #[cfg(feature = "real-gpui")]
 fn decode_input(term: Term) -> NifResult<ElementNode> {
-    Ok(ElementNode::Input {
-        style: decode_style(term).unwrap_or_default(),
-        value: string_attr(term, "value").unwrap_or_default(),
-        placeholder: string_attr(term, "placeholder"),
-        change: string_attr(term, "phx-change"),
-        keydown: string_attr(term, "phx-keydown"),
-        keyup: string_attr(term, "phx-keyup"),
-    })
+    Ok(ElementNode::Input(InputNode {
+        style: decode_style(term)?,
+        value: string_attr(term, atoms::value()).unwrap_or_default(),
+        placeholder: string_attr(term, atoms::placeholder()),
+        change: string_attr(term, atoms::phx_change()),
+        keydown: string_attr(term, atoms::phx_keydown()),
+        keyup: string_attr(term, atoms::phx_keyup()),
+    }))
 }
 
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_children(term: Term) -> NifResult<Vec<ElementNode>> {
-    let children = term
-        .map_get(Atom::from_bytes(term.get_env(), b"children")?)?
-        .decode::<Vec<Term>>()?;
+    let children = term.map_get(atoms::children())?.decode::<Vec<Term>>()?;
 
-    Ok(children
-        .into_iter()
-        .filter_map(|child| decode_element_node(child).ok())
-        .collect())
+    children.into_iter().map(decode_element_node).collect()
 }
 
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_text_children(term: Term) -> NifResult<String> {
-    let children = term
-        .map_get(Atom::from_bytes(term.get_env(), b"children")?)?
-        .decode::<Vec<Term>>()?;
+    let children = term.map_get(atoms::children())?.decode::<Vec<Term>>()?;
 
     let mut text = String::new();
 
     for child in children {
-        if let Ok(fragment) = child.decode::<String>() {
-            text.push_str(&fragment);
-        }
+        text.push_str(&text_fragment(child)?);
     }
 
     Ok(text)
 }
 
 #[cfg(feature = "real-gpui")]
-pub(crate) fn string_attr(term: Term, attr: &str) -> Option<String> {
-    let env = term.get_env();
-    let attrs = term.map_get(Atom::from_bytes(env, b"attrs").ok()?).ok()?;
-    attrs
-        .map_get(Atom::from_bytes(env, attr.as_bytes()).ok()?)
-        .ok()?
-        .decode::<String>()
-        .ok()
+pub(crate) fn string_attr(term: Term, attr: Atom) -> Option<String> {
+    let attrs = term.map_get(atoms::attrs()).ok()?;
+    attrs.map_get(attr).ok()?.decode::<String>().ok()
 }
 
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_image(term: Term) -> NifResult<ElementNode> {
-    let env = term.get_env();
-    let attrs = term.map_get(Atom::from_bytes(env, b"attrs")?)?;
-    let raster = attrs.map_get(Atom::from_bytes(env, b"raster")?)?;
+    let attrs = term.map_get(atoms::attrs())?;
+    let raster = attrs.map_get(atoms::raster())?;
 
-    if let Ok(type_term) = raster.map_get(Atom::from_bytes(env, b"__type__")?) {
+    if let Ok(type_term) = raster.map_get(atoms::__type__()) {
         if type_term
             .atom_to_string()
             .is_ok_and(|value| value == "resource_ref")
         {
-            return decode_resource_ref(raster).map(|id| ElementNode::Image {
+            let id = decode_resource_ref(raster)?;
+            return Ok(ElementNode::Image {
                 image: ImageData::Ref(id),
-                style: decode_style(term).unwrap_or_default(),
+                style: decode_style(term)?,
             });
         }
     }
@@ -444,69 +437,24 @@ pub(crate) fn decode_image(term: Term) -> NifResult<ElementNode> {
     raster.validate()?;
     Ok(ElementNode::Image {
         image: ImageData::Raster(raster),
-        style: decode_style(term).unwrap_or_default(),
+        style: decode_style(term)?,
     })
 }
 
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_style(term: Term) -> NifResult<StyleAttrs> {
-    let env = term.get_env();
-    let attrs = term.map_get(Atom::from_bytes(env, b"attrs")?)?;
-    let style = attrs.map_get(Atom::from_bytes(env, b"style")?)?;
+    let attrs = term.map_get(atoms::attrs())?;
+    let mut decoded = StyleAttrs::default();
+    let Ok(style) = attrs.map_get(atoms::style()) else {
+        return Ok(decoded);
+    };
     let entries = style.decode::<Vec<(Term, Term)>>()?;
-    let mut attrs = StyleAttrs::default();
 
     for (key, value) in entries {
-        let key = key.atom_to_string()?;
-        apply_generated_style_attr(&mut attrs, key.as_str(), value);
+        if !apply_generated_style_attr(&mut decoded, key.decode::<Atom>()?, value) {
+            return Err(rustler::Error::BadArg);
+        }
     }
 
-    Ok(attrs)
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn atom_eq(term: Term, expected: &str) -> bool {
-    term.atom_to_string().is_ok_and(|value| value == expected)
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn atom_string(term: Term) -> Option<String> {
-    term.atom_to_string().ok()
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn rgb_value(term: Term) -> Option<u32> {
-    let values = term.decode::<Vec<Term>>().ok()?;
-    if values.len() != 2 || !atom_eq(values[0], "rgb") {
-        return None;
-    }
-
-    values[1].decode::<u32>().ok()
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn number_value(term: Term) -> Option<f32> {
-    term.decode::<f64>()
-        .ok()
-        .map(|value| value as f32)
-        .or_else(|| term.decode::<i64>().ok().map(|value| value as f32))
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn px_value(term: Term) -> Option<f32> {
-    let values = term.decode::<Vec<Term>>().ok()?;
-    if values.len() != 2 || !atom_eq(values[0], "px") {
-        return None;
-    }
-
-    values[1].decode::<f64>().ok().map(|value| value as f32)
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn radius_value(term: Term) -> Option<f32> {
-    if atom_eq(term, "full") {
-        return Some(9999.0);
-    }
-
-    px_value(term)
+    Ok(decoded)
 }

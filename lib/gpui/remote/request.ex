@@ -1,14 +1,13 @@
 defmodule GPUI.Remote.Request do
   @moduledoc false
 
-  defstruct [:kind, :op, :payload, :cap, :session_id]
+  defstruct [:kind, :op, :payload, :cap]
 
   @type t :: %__MODULE__{
           kind: atom() | nil,
           op: atom() | nil,
-          payload: map(),
-          cap: atom() | nil,
-          session_id: term()
+          payload: term(),
+          cap: atom() | nil
         }
 
   @spec dispatch(term(), term(), term(), (t(), term(), term() -> term())) :: term()
@@ -27,13 +26,7 @@ defmodule GPUI.Remote.Request do
       kind: Map.get(request, :kind),
       op: Map.get(request, :op),
       payload: Map.get(request, :payload, %{}),
-      cap: Map.get(request, :cap),
-      session_id: session_id(request)
+      cap: Map.get(request, :cap)
     }
   end
-
-  @spec session_id(map()) :: term()
-  def session_id(%{meta: %{session_id: session_id}}), do: session_id
-  def session_id(%{session_id: session_id}), do: session_id
-  def session_id(_request), do: :default
 end

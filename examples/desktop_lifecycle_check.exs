@@ -21,9 +21,18 @@ defmodule DesktopLifecycleCheck do
 
     :ok = GPUI.Display.Native.sync(display_a, snapshot([window_a]))
     :ok = GPUI.Display.Native.sync(display_b, snapshot([window_b]))
-    :ok = GPUI.Display.Native.sync(display_a, snapshot([window(1, "Runtime A", tree("A updated"))]))
-    :ok = GPUI.Display.Native.sync(display_b, snapshot([window(1, "Runtime B", tree("B updated"))]))
-    :ok = GPUI.Display.Native.sync(display_b, snapshot([window(1, "Runtime B", expanded_style_tree())]))
+
+    :ok =
+      GPUI.Display.Native.sync(display_a, snapshot([window(1, "Runtime A", tree("A updated"))]))
+
+    :ok =
+      GPUI.Display.Native.sync(display_b, snapshot([window(1, "Runtime B", tree("B updated"))]))
+
+    :ok =
+      GPUI.Display.Native.sync(
+        display_b,
+        snapshot([window(1, "Runtime B", expanded_style_tree())])
+      )
 
     # Snapshot shrink must issue a real close command and wait for its acknowledgement.
     :ok = GPUI.Display.Native.sync(display_a, snapshot([]))
@@ -46,8 +55,13 @@ defmodule DesktopLifecycleCheck do
     :ok = GenServer.stop(display_a)
 
     # Shutdown must have removed A's live window, while B remains independently usable.
-    {:error, "unknown_window"} = GPUI.Native.update_window(runtime_a, 1, tree_a)
-    :ok = GPUI.Display.Native.sync(display_b, snapshot([window(1, "Runtime B", tree("B survived A"))]))
+    {:error, "gpui_runtime_stopped"} = GPUI.Native.update_window(runtime_a, 1, tree_a)
+
+    :ok =
+      GPUI.Display.Native.sync(
+        display_b,
+        snapshot([window(1, "Runtime B", tree("B survived A"))])
+      )
 
     runtime_b = :sys.get_state(display_b).runtime
     {:ok, 1} = GPUI.Native.close_window(runtime_b, 1)
@@ -131,7 +145,6 @@ defmodule DesktopLifecycleCheck do
       ]
     }
   end
-
 end
 
 DesktopLifecycleCheck.run()

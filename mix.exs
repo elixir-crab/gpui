@@ -4,7 +4,7 @@ defmodule GPUI.MixProject do
   def project do
     [
       app: :gpui,
-      version: "0.1.0",
+      version: "0.1.0-rc",
       elixir: "~> 1.20",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -18,7 +18,6 @@ defmodule GPUI.MixProject do
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
       extra_applications: [:logger, :ssl]
@@ -72,8 +71,6 @@ defmodule GPUI.MixProject do
       {:rustq, "~> 0.9.8", only: [:dev, :test], runtime: false},
       {:safe_rpc, "~> 0.1.14"},
       {:igniter, "~> 0.8.2", only: [:dev, :test]}
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]
   end
 
@@ -84,7 +81,6 @@ defmodule GPUI.MixProject do
       test_all: ["test"],
       ci: [
         "compile --warnings-as-errors",
-        "format",
         "rustq.check",
         "format --check-formatted",
         "rust.fmt --check",

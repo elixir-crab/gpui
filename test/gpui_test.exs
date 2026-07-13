@@ -17,6 +17,25 @@ defmodule GPUI.Test do
            } = element
   end
 
+  test "rejects styles outside the generated native schema" do
+    assert_raise ArgumentError, ~r/unsupported GPUI style/, fn ->
+      div() |> style(:made_up, :value)
+    end
+  end
+
+  test "validates window boundaries" do
+    assert %GPUI.WindowSpec{} =
+             GPUI.WindowSpec.validate!(%GPUI.WindowSpec{title: "Main", size: {800, 600}})
+
+    assert_raise ArgumentError, ~r/positive integer/, fn ->
+      GPUI.WindowSpec.validate!(%GPUI.WindowSpec{title: "Main", size: {0, 600}})
+    end
+
+    assert_raise ArgumentError, ~r/must implement render\/1/, fn ->
+      GPUI.WindowSpec.validate!(%GPUI.WindowSpec{title: "Main", root: {String, %{}}})
+    end
+  end
+
   test "builds pipe-style element trees" do
     assert %GPUI.Element{attrs: [style: style], children: ["Hello"]} =
              div()

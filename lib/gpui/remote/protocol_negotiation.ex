@@ -9,13 +9,23 @@ defmodule GPUI.Remote.ProtocolNegotiation do
     {:error, {:incompatible_version, %{expected: expected_version, got: version}}}
   end
 
-  def negotiate(payload, version, required_capabilities, provided_capabilities)
-      when is_map(payload) do
+  def negotiate(
+        %{version: version} = payload,
+        expected_version,
+        required_capabilities,
+        provided_capabilities
+      )
+      when version == expected_version do
     capabilities = Map.get(payload, :capabilities, [])
 
     case required_capabilities -- capabilities do
-      [] -> {:ok, %{version: version, capabilities: provided_capabilities}}
+      [] -> {:ok, %{version: expected_version, capabilities: provided_capabilities}}
       missing -> {:error, {:missing_capabilities, missing}}
     end
+  end
+
+  def negotiate(payload, expected_version, _required, _provided) when is_map(payload) do
+    {:error,
+     {:incompatible_version, %{expected: expected_version, got: Map.get(payload, :version)}}}
   end
 end

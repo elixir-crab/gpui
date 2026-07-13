@@ -10,6 +10,8 @@ defmodule GPUI.Template do
   alias GPUI.Element
   alias Phoenix.LiveView.TagEngine.Parser
 
+  @tag_lookup Map.new(GPUI.Schema.tags(), &{Atom.to_string(&1), &1})
+
   @doc "Compiles a HEEx-style GPUI template into an element tree."
   defmacro sigil_GPUI({:<<>>, meta, [source]}, _modifiers) when is_binary(source) do
     compile(source, __CALLER__, meta)
@@ -27,7 +29,8 @@ defmodule GPUI.Template do
 
     case Enum.reject(nodes, &blank_text?/1) do
       [node] -> compile_node(node, caller)
-      nodes -> quote(do: unquote(Enum.map(nodes, &compile_node(&1, caller))))
+      [] -> raise ArgumentError, "GPUI templates require one root element"
+      _nodes -> raise ArgumentError, "GPUI templates require exactly one root element"
     end
   end
 
@@ -118,19 +121,11 @@ defmodule GPUI.Template do
   defp function_name?(<<first, _rest::binary>>), do: first in ?a..?z or first == ?_
   defp function_name?(""), do: false
 
-  defp tag_atom("button"), do: :button
-  defp tag_atom("div"), do: :div
-  defp tag_atom("icon"), do: :icon
-  defp tag_atom("img"), do: :img
-  defp tag_atom("input"), do: :input
-  defp tag_atom("item"), do: :item
-  defp tag_atom("list"), do: :list
-  defp tag_atom("scroll"), do: :scroll
-  defp tag_atom("span"), do: :span
-  defp tag_atom("text"), do: :text
-
   defp tag_atom(name) do
-    raise ArgumentError, "unsupported GPUI tag #{inspect(name)}"
+    case Map.fetch(@tag_lookup, name) do
+      {:ok, tag} -> tag
+      :error -> raise ArgumentError, "unsupported GPUI tag #{inspect(name)}"
+    end
   end
 
   defp attr_atom("class"), do: :class

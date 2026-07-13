@@ -13,14 +13,7 @@ pub(crate) enum ElementNode {
         children: Vec<ElementNode>,
         click: Option<String>,
     },
-    Input {
-        style: StyleAttrs,
-        value: String,
-        placeholder: Option<String>,
-        change: Option<String>,
-        keydown: Option<String>,
-        keyup: Option<String>,
-    },
+    Input(InputNode),
     Image {
         image: ImageData,
         style: StyleAttrs,
@@ -32,11 +25,33 @@ pub(crate) enum ElementNode {
 }
 
 #[cfg(feature = "real-gpui")]
+#[derive(Clone, Debug)]
+pub(crate) struct InputNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) value: String,
+    pub(crate) placeholder: Option<String>,
+    pub(crate) change: Option<String>,
+    pub(crate) keydown: Option<String>,
+    pub(crate) keyup: Option<String>,
+}
+
+#[cfg(feature = "real-gpui")]
 pub(crate) struct ElementRenderContext<'a, 'cx> {
     pub(crate) runtime: SharedRuntime,
     pub(crate) window_id: u64,
+    pub(crate) next_element_id: usize,
+    pub(crate) active_input_ids: &'a mut HashSet<String>,
     pub(crate) input_entities: &'a mut HashMap<String, gpui::Entity<NativeTextInput>>,
     pub(crate) cx: &'a mut gpui::Context<'cx, ElixirRoot>,
+}
+
+#[cfg(feature = "real-gpui")]
+impl ElementRenderContext<'_, '_> {
+    fn allocate_element_id(&mut self) -> usize {
+        let element_id = self.next_element_id;
+        self.next_element_id += 1;
+        element_id
+    }
 }
 
 #[cfg(feature = "real-gpui")]
@@ -51,25 +66,20 @@ impl ElementNode {
     }
 
     pub(crate) fn render(self, context: &mut ElementRenderContext<'_, '_>) -> gpui::AnyElement {
+        let element_id = context.allocate_element_id();
+
         match self {
             Self::Text { text, style } => render_text_primitive(text, style),
             Self::Image { image, style } => {
                 render_image_primitive(image, style, context.runtime.clone(), context.window_id)
             }
-            Self::Input {
-                style,
-                value,
-                placeholder,
-                change,
-                keydown,
-                keyup,
-            } => render_input_primitive(style, value, placeholder, change, keydown, keyup, context),
+            Self::Input(input) => render_input_primitive(element_id, input, context),
             Self::Div {
                 tag,
                 style,
                 children,
                 click,
-            } => render_container_primitive(tag, style, children, click, context),
+            } => render_container_primitive(element_id, tag, style, children, click, context),
         }
     }
 }
@@ -108,7 +118,6 @@ pub(crate) fn render_image_primitive(
                     NativeEvent::MissingResource {
                         window_id,
                         id: resource_id,
-                        resource_type: "raster".to_string(),
                     },
                 );
                 render_missing_resource_placeholder()
@@ -158,22 +167,24 @@ pub(crate) fn apply_container_semantics(element: gpui::Div, tag: GeneratedElemen
 
 #[cfg(feature = "real-gpui")]
 pub(crate) fn render_input_primitive(
-    style: StyleAttrs,
-    value: String,
-    placeholder: Option<String>,
-    change: Option<String>,
-    keydown: Option<String>,
-    keyup: Option<String>,
+    element_id: usize,
+    input_node: InputNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     use gpui::{div, AppContext, ParentElement};
 
+    let InputNode {
+        style,
+        value,
+        placeholder,
+        change,
+        keydown,
+        keyup,
+    } = input_node;
     let runtime = context.runtime.clone();
     let window_id = context.window_id;
-    let input_id = format!(
-        "gpui-elixir-input-{window_id}-{}",
-        change.clone().unwrap_or_default()
-    );
+    let input_id = format!("gpui-elixir-input-{window_id}-{element_id}");
+    context.active_input_ids.insert(input_id.clone());
     let input = if let Some(input) = context.input_entities.get(&input_id).cloned() {
         context.cx.update_entity(&input, |input, _cx| {
             input.update_props(value.clone(), placeholder.clone(), change.clone());
@@ -198,11 +209,12 @@ pub(crate) fn render_input_primitive(
     };
 
     let element = apply_generated_render_styles(div(), style).child(input);
-    apply_input_events(element, value, change, keydown, keyup, runtime, window_id)
+    apply_input_events(element, input_id, keydown, keyup, runtime, window_id)
 }
 
 #[cfg(feature = "real-gpui")]
 pub(crate) fn render_container_primitive(
+    element_id: usize,
     tag: GeneratedElementTag,
     style: StyleAttrs,
     children: Vec<ElementNode>,
@@ -221,7 +233,7 @@ pub(crate) fn render_container_primitive(
     }
 
     if tag == GeneratedElementTag::Scroll {
-        let scroll_id = format!("gpui-elixir-scroll-{window_id}");
+        let scroll_id = format!("gpui-elixir-scroll-{window_id}-{element_id}");
         let element = element.id(scroll_id).overflow_y_scroll();
 
         if let Some(event) = click {
@@ -241,6 +253,6 @@ pub(crate) fn render_container_primitive(
             element.into_any_element()
         }
     } else {
-        apply_click_event(element, click, runtime, window_id)
+        apply_click_event(element, element_id, click, runtime, window_id)
     }
 }

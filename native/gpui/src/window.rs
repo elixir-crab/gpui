@@ -29,12 +29,26 @@ impl gpui::Render for ElixirRoot {
             .lock()
             .map(|tree| tree.clone())
             .unwrap_or_else(|_| ElementNode::empty_root());
-        tree.render(&mut ElementRenderContext {
+        let mut active_input_ids = HashSet::new();
+        let element = tree.render(&mut ElementRenderContext {
             runtime: self.runtime.clone(),
             window_id: self.window_id,
+            next_element_id: 0,
+            active_input_ids: &mut active_input_ids,
             input_entities: &mut self.input_entities,
             cx,
-        })
+        });
+        self.input_entities
+            .retain(|input_id, _entity| active_input_ids.contains(input_id));
+
+        let input_prefix = format!("gpui-elixir-input-{}-", self.window_id);
+        if let Ok(mut input_values) = self.runtime.input_values.lock() {
+            input_values.retain(|input_id, _value| {
+                !input_id.starts_with(&input_prefix) || active_input_ids.contains(input_id)
+            });
+        }
+
+        element
     }
 }
 
@@ -47,6 +61,8 @@ pub(crate) enum WindowCommand {
         runtime_id: u64,
         title: String,
         window_id: u64,
+        width: f32,
+        height: f32,
         window_state: SharedWindow,
         runtime: SharedRuntime,
         reply: WindowCommandReply,
@@ -91,6 +107,8 @@ pub(crate) fn run_gpui(
     gpui_platform::application()
         .with_quit_mode(gpui::QuitMode::Explicit)
         .run(move |cx: &mut App| {
+            bind_input_keys(cx);
+
             let window_closed_subscription = cx.on_window_closed(move |_cx, platform_id| {
                 let _ = command_tx.unbounded_send(WindowCommand::PlatformClosed { platform_id });
             });
@@ -120,6 +138,8 @@ fn handle_window_command(
             runtime_id,
             title,
             window_id,
+            width,
+            height,
             window_state,
             runtime,
             reply,
@@ -129,19 +149,25 @@ fn handle_window_command(
                 let _ = close_managed_window(window, cx);
             }
 
-            let result =
-                open_gpui_window(title, window_id, window_state.clone(), runtime.clone(), cx).map(
-                    |handle| {
-                        windows.insert(
-                            key,
-                            ManagedWindow {
-                                handle,
-                                state: window_state,
-                                runtime,
-                            },
-                        );
+            let result = open_gpui_window(
+                title,
+                window_id,
+                width,
+                height,
+                window_state.clone(),
+                runtime.clone(),
+                cx,
+            )
+            .map(|handle| {
+                windows.insert(
+                    key,
+                    ManagedWindow {
+                        handle,
+                        state: window_state,
+                        runtime,
                     },
                 );
+            });
             send_reply(reply, result);
         }
         WindowCommand::Update {
@@ -260,13 +286,15 @@ fn close_managed_window(window: ManagedWindow, cx: &mut gpui::App) -> Result<(),
 fn open_gpui_window(
     title: String,
     window_id: u64,
+    width: f32,
+    height: f32,
     window_state: SharedWindow,
     runtime: SharedRuntime,
     cx: &mut gpui::App,
 ) -> Result<gpui::WindowHandle<ElixirRoot>, String> {
     use gpui::{px, size, AppContext, Bounds, WindowBounds, WindowOptions};
 
-    let bounds = Bounds::centered(None, size(px(500.0), px(500.0)), cx);
+    let bounds = Bounds::centered(None, size(px(width), px(height)), cx);
     let window_state_for_view = window_state.clone();
     let runtime_for_view = runtime.clone();
 

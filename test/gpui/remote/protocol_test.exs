@@ -34,5 +34,8 @@ defmodule GPUI.Remote.ProtocolTest do
 
     assert {:error, {:missing_capabilities, [:display_v1]}} =
              Protocol.negotiate(%{version: 2, capabilities: []})
+
+    assert {:error, {:incompatible_version, %{expected: 2, got: nil}}} =
+             Protocol.negotiate(%{capabilities: [:display_v1]})
   end
 end

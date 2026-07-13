@@ -19,7 +19,7 @@ defmodule GPUI.Application do
 
       def child_spec(opts) do
         %{
-          id: __MODULE__,
+          id: Keyword.get(opts, :id, Keyword.get(opts, :name, __MODULE__)),
           start: {GPUI.Runtime, :start_link, [Keyword.put(opts, :app, __MODULE__)]}
         }
       end

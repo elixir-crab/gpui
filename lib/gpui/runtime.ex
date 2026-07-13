@@ -10,6 +10,7 @@ defmodule GPUI.Runtime do
   use GenServer
 
   @call_timeout 5_000
+  @event_history_limit 1_000
 
   @type state :: %{
           session: pid(),
@@ -36,11 +37,11 @@ defmodule GPUI.Runtime do
   @spec drain_events(GenServer.server()) :: [map()]
   def drain_events(runtime), do: GenServer.call(runtime, :drain_events, @call_timeout)
 
-  @spec put_resource(GenServer.server(), term(), map()) :: :ok | {:error, term()}
+  @spec put_resource(GenServer.server(), String.Chars.t(), map()) :: :ok | {:error, term()}
   def put_resource(runtime, id, resource),
     do: GenServer.call(runtime, {:put_resource, id, resource}, @call_timeout)
 
-  @spec drop_resource(GenServer.server(), term()) :: :ok | {:error, term()}
+  @spec drop_resource(GenServer.server(), String.Chars.t()) :: :ok | {:error, term()}
   def drop_resource(runtime, id),
     do: GenServer.call(runtime, {:drop_resource, id}, @call_timeout)
 
@@ -122,7 +123,8 @@ defmodule GPUI.Runtime do
   @impl GenServer
   def handle_info(:poll_display, state) do
     {handled, state} = drain_display_events(state)
-    state = %{state | events: Enum.reverse(handled, state.events)}
+    events = handled |> Enum.reverse(state.events) |> Enum.take(@event_history_limit)
+    state = %{state | events: events}
     schedule_poll(state)
     {:noreply, state}
   end
@@ -137,10 +139,7 @@ defmodule GPUI.Runtime do
   defp drain_display_events(state) do
     {:ok, events} = state.display_module.drain_events(state.display)
 
-    {handled, snapshot} =
-      Enum.map_reduce(events, GPUI.Session.snapshot(state.session), fn event, _snapshot ->
-        GPUI.Session.dispatch_event(state.session, GPUI.Event.normalize(event))
-      end)
+    {handled, snapshot} = GPUI.Session.dispatch_events(state.session, events)
 
     if events != [], do: :ok = state.display_module.sync(state.display, snapshot)
     {handled, state}

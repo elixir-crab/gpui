@@ -18,9 +18,7 @@ defmodule GPUI.Remote.Server do
 
   @capability Protocol.capability()
 
-  def child_spec(opts) do
-    %{id: Keyword.get(opts, :name, __MODULE__), start: {__MODULE__, :start_link, [opts]}}
-  end
+  def child_spec(opts), do: GPUI.Remote.child_spec(__MODULE__, opts)
 
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
   def port(server), do: GenServer.call(server, :port)
@@ -97,14 +95,20 @@ defmodule GPUI.Remote.Server do
        when cap not in [nil, @capability],
        do: {{:error, :unauthorized}, state}
 
-  defp dispatch_request(%Request{kind: :call, op: :hello, payload: payload}, connection_id, state) do
+  defp dispatch_request(
+         %Request{kind: :call, op: :hello, payload: payload},
+         connection_id,
+         state
+       )
+       when is_map(payload) do
     case Protocol.negotiate(payload) do
       {:ok, reply} -> {{:ok, reply}, mark_negotiated(state, connection_id)}
       {:error, reason} -> {{:error, reason}, state}
     end
   end
 
-  defp dispatch_request(%Request{kind: :call, op: op, payload: payload}, connection_id, state) do
+  defp dispatch_request(%Request{kind: :call, op: op, payload: payload}, connection_id, state)
+       when is_map(payload) do
     cond do
       not negotiated?(state, connection_id) ->
         {{:error, :handshake_required}, state}
@@ -117,6 +121,9 @@ defmodule GPUI.Remote.Server do
     end
   end
 
+  defp dispatch_request(%Request{kind: :call, op: op}, _connection_id, state),
+    do: {{:error, {:invalid_payload, op}}, state}
+
   defp dispatch_request(_request, _connection_id, state),
     do: {{:error, :unsupported_request}, state}
 
@@ -127,7 +134,7 @@ defmodule GPUI.Remote.Server do
 
     case SessionSupervisor.start_session(state.session_supervisor, app: state.app, args: args) do
       {:ok, session} ->
-        entry = %{pid: session, args: args, last_seen: SessionGC.monotonic_ms()}
+        entry = %{pid: session, last_seen: SessionGC.monotonic_ms()}
         state = put_in(state.sessions[session_id], entry)
         {{:ok, %{session_id: session_id, snapshot: GPUI.Session.snapshot(session)}}, state}
 

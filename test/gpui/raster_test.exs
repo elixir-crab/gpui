@@ -12,9 +12,7 @@ defmodule GPUI.RasterTest do
              height: 1,
              format: :rgba8,
              data: <<255, 0, 0, 255>>,
-             stride: nil,
-             color_space: :srgb,
-             alpha: :premultiplied
+             stride: nil
            } = GPUI.Raster.to_payload(raster)
   end
 

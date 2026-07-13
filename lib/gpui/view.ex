@@ -6,7 +6,7 @@ defmodule GPUI.View do
   alias GPUI.Element
 
   @callback render(map()) :: Element.t()
-  @callback handle_event(atom(), map(), map()) :: {:noreply, map()} | {:reply, term(), map()}
+  @callback handle_event(String.t(), map(), map()) :: {:noreply, map()} | {:reply, term(), map()}
 
   defmacro __using__(_opts) do
     quote do

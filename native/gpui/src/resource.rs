@@ -1,5 +1,5 @@
-use crate::gpui;
-use rustler::{Atom, Binary, NifResult, Term};
+use crate::{atoms, gpui};
+use rustler::{Binary, NifResult, Term};
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
@@ -18,25 +18,19 @@ pub(crate) struct RasterData {
 }
 
 pub(crate) fn decode_raster_resource(term: Term) -> NifResult<RasterData> {
-    let env = term.get_env();
-
     Ok(RasterData {
-        width: term
-            .map_get(Atom::from_bytes(env, b"width")?)?
-            .decode::<u32>()?,
-        height: term
-            .map_get(Atom::from_bytes(env, b"height")?)?
-            .decode::<u32>()?,
+        width: term.map_get(atoms::width())?.decode::<u32>()?,
+        height: term.map_get(atoms::height())?.decode::<u32>()?,
         format: term
-            .map_get(Atom::from_bytes(env, b"format")?)?
+            .map_get(atoms::format())?
             .atom_to_string()
             .unwrap_or_else(|_| "rgba8".to_string()),
         stride: term
-            .map_get(Atom::from_bytes(env, b"stride")?)
+            .map_get(atoms::stride())
             .ok()
             .and_then(|value| value.decode::<u32>().ok()),
         data: term
-            .map_get(Atom::from_bytes(env, b"data")?)?
+            .map_get(atoms::data())?
             .decode::<Binary>()?
             .as_slice()
             .to_vec(),
@@ -44,8 +38,13 @@ pub(crate) fn decode_raster_resource(term: Term) -> NifResult<RasterData> {
 }
 
 pub(crate) fn decode_resource_ref(term: Term) -> NifResult<String> {
-    term.map_get(Atom::from_bytes(term.get_env(), b"id")?)?
-        .decode::<String>()
+    let resource_type = term.map_get(atoms::type_atom())?.atom_to_string()?;
+
+    if resource_type != "raster" {
+        return Err(rustler::Error::Term(Box::new("unsupported_resource_type")));
+    }
+
+    term.map_get(atoms::id())?.decode::<String>()
 }
 
 impl RasterData {
@@ -104,6 +103,8 @@ impl RasterData {
             }
         }
 
+        self.data.truncate(row_bytes * self.height as usize);
+
         if self.format == "bgra8" {
             for pixel in self.data.chunks_exact_mut(4) {
                 pixel.swap(0, 2);
@@ -111,5 +112,36 @@ impl RasterData {
         }
 
         self.data
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn compacts_stride_and_converts_bgra_to_rgba() {
+        let raster = RasterData {
+            width: 1,
+            height: 2,
+            format: "bgra8".to_string(),
+            stride: Some(8),
+            data: vec![3, 2, 1, 255, 9, 9, 9, 9, 6, 5, 4, 255, 8, 8, 8, 8],
+        };
+
+        assert_eq!(raster.into_rgba(), vec![1, 2, 3, 255, 4, 5, 6, 255]);
+    }
+
+    #[test]
+    fn truncates_trailing_bytes_from_packed_rasters() {
+        let raster = RasterData {
+            width: 1,
+            height: 1,
+            format: "rgba8".to_string(),
+            stride: None,
+            data: vec![1, 2, 3, 255, 9, 9],
+        };
+
+        assert_eq!(raster.into_rgba(), vec![1, 2, 3, 255]);
     }
 }

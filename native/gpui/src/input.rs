@@ -1,11 +1,11 @@
 use crate::gpui::{
     actions, div, fill, point, px, rgba, size, App, Bounds, ClipboardItem, Context, CursorStyle,
     Element, ElementId, ElementInputHandler, Entity, EntityInputHandler, FocusHandle, Focusable,
-    GlobalElementId, InspectorElementId, InteractiveElement, IntoElement, LayoutId, MouseButton,
-    MouseDownEvent, PaintQuad, ParentElement, Pixels, Render, ShapedLine, Style, Styled, TextAlign,
-    TextRun, UTF16Selection, UnderlineStyle, Window,
+    GlobalElementId, InspectorElementId, InteractiveElement, IntoElement, KeyBinding, LayoutId,
+    MouseButton, MouseDownEvent, PaintQuad, ParentElement, Pixels, Render, ShapedLine, Style,
+    Styled, TextAlign, TextRun, UTF16Selection, UnderlineStyle, Window,
 };
-use crate::{element::event::initialize_input_value, gpui, push_event, NativeEvent, SharedRuntime};
+use crate::{gpui, push_event, InputKind, NativeEvent, SharedRuntime};
 use std::ops::Range;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -27,6 +27,29 @@ actions!(
         Cut
     ]
 );
+
+pub(crate) fn bind_input_keys(cx: &mut App) {
+    cx.bind_keys([
+        KeyBinding::new("backspace", Backspace, None),
+        KeyBinding::new("delete", Delete, None),
+        KeyBinding::new("left", Left, None),
+        KeyBinding::new("right", Right, None),
+        KeyBinding::new("shift-left", SelectLeft, None),
+        KeyBinding::new("shift-right", SelectRight, None),
+        KeyBinding::new("cmd-a", SelectAll, None),
+        KeyBinding::new("cmd-v", Paste, None),
+        KeyBinding::new("cmd-c", Copy, None),
+        KeyBinding::new("cmd-x", Cut, None),
+        KeyBinding::new("home", Home, None),
+        KeyBinding::new("end", End, None),
+    ]);
+}
+
+fn set_input_value(runtime: &SharedRuntime, input_id: &str, value: String) {
+    if let Ok(mut values) = runtime.input_values.lock() {
+        values.insert(input_id.to_string(), value);
+    }
+}
 
 pub(crate) struct NativeTextInput {
     id: String,
@@ -52,7 +75,7 @@ impl NativeTextInput {
         change: Option<String>,
         cx: &mut Context<Self>,
     ) -> Self {
-        initialize_input_value(&runtime, &id, &value);
+        set_input_value(&runtime, &id, value.clone());
         Self {
             id,
             runtime,
@@ -74,7 +97,14 @@ impl NativeTextInput {
         placeholder: Option<String>,
         change: Option<String>,
     ) {
-        initialize_input_value(&self.runtime, &self.id, &value);
+        if self.value() != value {
+            set_input_value(&self.runtime, &self.id, value.clone());
+            let cursor = Self::clamp(&value, self.cursor_offset());
+            self.selected_range = cursor..cursor;
+            self.selection_reversed = false;
+            self.marked_range = None;
+        }
+
         self.placeholder = placeholder.unwrap_or_default();
         self.change = change;
     }
@@ -93,7 +123,7 @@ impl NativeTextInput {
             let _ = push_event(
                 &self.runtime,
                 NativeEvent::Input {
-                    kind: "change".to_string(),
+                    kind: InputKind::Change,
                     window_id: self.window_id,
                     event: event.clone(),
                     value: Some(value),

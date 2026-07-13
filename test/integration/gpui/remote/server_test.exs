@@ -150,6 +150,15 @@ defmodule GPUI.Remote.ServerTest do
              GPUI.Remote.Client.snapshot(client)
   end
 
+  test "rejects malformed operation payloads without crashing the server" do
+    {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    {:ok, client} = start_client(port)
+
+    assert {:error, {:invalid_payload, :mount}} = SafeRPC.call(client, :mount, "invalid")
+    assert Process.alive?(server)
+  end
+
   test "requires hello independently for every connection" do
     {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
     {:ok, port} = GPUI.Remote.Server.port(server)

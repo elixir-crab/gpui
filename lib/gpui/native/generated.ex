@@ -37,10 +37,6 @@ defmodule GPUI.Native.Generated do
       def inject_event(_runtime, _event) do
         :erlang.nif_error(:nif_not_loaded)
       end
-
-      def validate_tree(_tree) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
     end
   end
 end

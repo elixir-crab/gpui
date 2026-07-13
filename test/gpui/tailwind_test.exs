@@ -58,6 +58,16 @@ defmodule GPUI.TailwindTest do
            ]
   end
 
+  test "every normalized style is supported by the native schema" do
+    classes =
+      "flex block grid hidden flex-col-reverse flex-wrap grow shrink-0 items-baseline " <>
+        "justify-evenly font-bold leading-normal opacity-50 p-2 px-3 mt-1 w-4 h-5 " <>
+        "min-w-6 max-h-8 border border-blue-500 rounded-lg bg-slate-900 text-white"
+
+    assert %{style: styles} = GPUI.Tailwind.normalize(classes)
+    assert Enum.all?(Keyword.keys(styles), &(&1 in GPUI.Schema.styles()))
+  end
+
   test "preserves unknown classes" do
     assert %{style: [display: :flex], unknown: ["hover:bg-blue-500"]} =
              GPUI.Tailwind.normalize("flex hover:bg-blue-500")

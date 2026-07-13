@@ -3,7 +3,8 @@ defmodule GPUI.Element do
   Serializable element tree produced by `GPUI.View` modules.
   """
 
-  @type child :: t() | String.t()
+  @type primitive :: String.t() | number() | atom()
+  @type child :: t() | primitive()
   @type t :: %__MODULE__{type: atom(), attrs: keyword(), children: [child()]}
 
   defstruct [:type, attrs: [], children: []]

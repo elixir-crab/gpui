@@ -14,6 +14,8 @@ defmodule GPUI.Remote.Client do
 
   @reconnect_errors [:closed, :timeout, :econnrefused, :enetunreach, :nxdomain]
 
+  def child_spec(opts), do: GPUI.Remote.child_spec(__MODULE__, opts)
+
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
   def mount(client, args \\ %{}), do: GenServer.call(client, {:mount, args})
   def event(client, event), do: GenServer.call(client, {:event, event})

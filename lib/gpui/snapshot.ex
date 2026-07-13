@@ -11,6 +11,6 @@ defmodule GPUI.Snapshot do
 
   @type t :: %__MODULE__{
           windows: [map()],
-          resources: %{optional(term()) => map()}
+          resources: %{optional(String.t()) => map()}
         }
 end
