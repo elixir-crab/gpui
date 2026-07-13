@@ -33,6 +33,7 @@ defmodule GPUI.Codegen.Native.Style do
   defp rust_style_type({:atom_eq, _expected}), do: T.path(:bool)
   defp rust_style_type(:atom_string), do: %AST.TypeOption{inner: T.path(:String)}
   defp rust_style_type(:rgb), do: %AST.TypeOption{inner: T.path(:u32)}
+  defp rust_style_type(:number), do: %AST.TypeOption{inner: T.path(:f32)}
   defp rust_style_type(:px), do: %AST.TypeOption{inner: T.path(:f32)}
   defp rust_style_type(:radius), do: %AST.TypeOption{inner: T.path(:f32)}
 
@@ -76,9 +77,28 @@ defmodule GPUI.Codegen.Native.Style do
     A.stmt(A.match_expr(A.method(style_value, :as_deref), arms))
   end
 
+  defp render_style_statement(%{field: field, render: {:enum_values, method, values}}) do
+    arms =
+      Enum.map(values, fn {value, path} ->
+        %AST.Arm{
+          pattern: P.some(P.lit(value)),
+          body: [
+            A.assign(A.var(:element), A.method(A.var(:element), method, [A.path(path)]))
+          ]
+        }
+      end) ++ [%AST.Arm{pattern: P.wildcard(), body: []}]
+
+    style_value = A.field(A.var(:style), field)
+    A.stmt(A.match_expr(A.method(style_value, :as_deref), arms))
+  end
+
   defp render_style_statement(%{field: field, render: {:option_method, method, unit}})
-       when unit in [:rgb, :px] do
-    rendered_value = A.path_call([:gpui, unit], [A.var(:value)])
+       when unit in [:rgb, :px, :f32] do
+    rendered_value =
+      case unit do
+        :f32 -> A.var(:value)
+        unit -> A.path_call([:gpui, unit], [A.var(:value)])
+      end
 
     A.if_let(
       P.some(P.var(:value)),
@@ -120,6 +140,7 @@ defmodule GPUI.Codegen.Native.Style do
 
   defp style_decode_call(:atom_string), do: A.call(:atom_string, [A.var(:value)])
   defp style_decode_call(:rgb), do: A.call(:rgb_value, [A.var(:value)])
+  defp style_decode_call(:number), do: A.call(:number_value, [A.var(:value)])
   defp style_decode_call(:px), do: A.call(:px_value, [A.var(:value)])
   defp style_decode_call(:radius), do: A.call(:radius_value, [A.var(:value)])
 

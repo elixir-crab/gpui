@@ -79,6 +79,17 @@ desktop environment or window manager is required.
 The Rust crate is named `gpui_nif` only to avoid Cargo ambiguity with upstream
 `gpui`; the Hex package and public API remain `gpui` / `GPUI.*`.
 
+## Supported UI surface
+
+Templates support `div`, `button`, `span`, `scroll`, `list`, `item`, `icon`,
+`input`, `img`, and `text`. Text and image nodes retain their own generated
+native styles rather than relying only on parent styles.
+
+The Tailwind-compatible normalizer covers display and flex layout, wrapping,
+alignment, growth and shrink, colors, typography, opacity, spacing, dimensions,
+minimum/maximum dimensions, borders, and radius. Unsupported classes remain in
+the serialized `class` attribute instead of being silently reinterpreted.
+
 ## Examples
 
 Build the native display:
@@ -99,10 +110,10 @@ Run a local native image using a runtime resource cache and `%GPUI.ResourceRef{}
 PATH="$HOME/.cargo/bin:$PATH" mix run examples/resource_ref_image.exs
 ```
 
-Run a remote smoke check over SSH/CI:
+Run native lifecycle and remote-display smoke checks over SSH/CI:
 
 ```sh
-ZED_HEADLESS=1 PATH="$HOME/.cargo/bin:$PATH" mix run examples/remote_check.exs
+./scripts/desktop-smoke
 ```
 
 Run the two-terminal remote app/display workflow:

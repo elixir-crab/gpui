@@ -18,5 +18,9 @@ defmodule GPUI.SchemaTest do
     assert :"phx-change" in GPUI.Schema.events()
     assert :raster in GPUI.Schema.resources()
     assert :border_radius in GPUI.Schema.styles()
+    assert :font_weight in GPUI.Schema.styles()
+    assert :flex_wrap in GPUI.Schema.styles()
+    assert :opacity in GPUI.Schema.styles()
+    assert :border_color in GPUI.Schema.styles()
   end
 end

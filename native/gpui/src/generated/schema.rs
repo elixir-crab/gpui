@@ -18,16 +18,39 @@ pub const GPUI_STYLE_ATTRS: &[&str] = &[
     "flex_direction",
     "align_items",
     "justify_content",
+    "flex_wrap",
+    "flex_grow",
+    "flex_shrink",
     "background",
     "color",
     "font_size",
+    "font_weight",
+    "line_height",
+    "opacity",
     "gap",
     "padding",
+    "padding_x",
+    "padding_y",
+    "padding_top",
+    "padding_right",
+    "padding_bottom",
+    "padding_left",
     "margin",
+    "margin_x",
+    "margin_y",
+    "margin_top",
+    "margin_right",
+    "margin_bottom",
+    "margin_left",
     "width",
     "height",
+    "min_width",
+    "max_width",
+    "min_height",
+    "max_height",
     "border_radius",
     "border_width",
+    "border_color",
 ];
 
 pub const GPUI_EVENT_ATTRS: &[&str] = &[
@@ -53,20 +76,43 @@ pub enum GeneratedComponentKind {
 #[derive(Clone, Debug, Default)]
 #[cfg(feature = "real-gpui")]
 pub(crate) struct StyleAttrs {
-    pub(crate) display_flex: bool,
+    pub(crate) display: Option<String>,
     pub(crate) flex_direction: Option<String>,
     pub(crate) align_items: Option<String>,
     pub(crate) justify_content: Option<String>,
+    pub(crate) flex_wrap: Option<String>,
+    pub(crate) flex_grow: Option<f32>,
+    pub(crate) flex_shrink: Option<f32>,
     pub(crate) background: Option<u32>,
     pub(crate) color: Option<u32>,
     pub(crate) font_size: Option<f32>,
+    pub(crate) font_weight: Option<String>,
+    pub(crate) line_height: Option<f32>,
+    pub(crate) opacity: Option<f32>,
     pub(crate) gap: Option<f32>,
     pub(crate) padding: Option<f32>,
+    pub(crate) padding_x: Option<f32>,
+    pub(crate) padding_y: Option<f32>,
+    pub(crate) padding_top: Option<f32>,
+    pub(crate) padding_right: Option<f32>,
+    pub(crate) padding_bottom: Option<f32>,
+    pub(crate) padding_left: Option<f32>,
     pub(crate) margin: Option<f32>,
+    pub(crate) margin_x: Option<f32>,
+    pub(crate) margin_y: Option<f32>,
+    pub(crate) margin_top: Option<f32>,
+    pub(crate) margin_right: Option<f32>,
+    pub(crate) margin_bottom: Option<f32>,
+    pub(crate) margin_left: Option<f32>,
     pub(crate) width: Option<f32>,
     pub(crate) height: Option<f32>,
+    pub(crate) min_width: Option<f32>,
+    pub(crate) max_width: Option<f32>,
+    pub(crate) min_height: Option<f32>,
+    pub(crate) max_height: Option<f32>,
     pub(crate) border_radius: Option<f32>,
     pub(crate) border_width: Option<f32>,
+    pub(crate) border_color: Option<u32>,
 }
 
 
@@ -79,7 +125,7 @@ pub(crate) fn apply_generated_style_attr(
 ) -> () {
     match key {
         "display" => {
-            attrs.display_flex = atom_eq(value, "flex");
+            attrs.display = atom_string(value);
         }
         "flex_direction" => {
             attrs.flex_direction = atom_string(value);
@@ -90,6 +136,15 @@ pub(crate) fn apply_generated_style_attr(
         "justify_content" => {
             attrs.justify_content = atom_string(value);
         }
+        "flex_wrap" => {
+            attrs.flex_wrap = atom_string(value);
+        }
+        "flex_grow" => {
+            attrs.flex_grow = number_value(value);
+        }
+        "flex_shrink" => {
+            attrs.flex_shrink = number_value(value);
+        }
         "background" => {
             attrs.background = rgb_value(value);
         }
@@ -99,14 +154,59 @@ pub(crate) fn apply_generated_style_attr(
         "font_size" => {
             attrs.font_size = px_value(value);
         }
+        "font_weight" => {
+            attrs.font_weight = atom_string(value);
+        }
+        "line_height" => {
+            attrs.line_height = px_value(value);
+        }
+        "opacity" => {
+            attrs.opacity = number_value(value);
+        }
         "gap" => {
             attrs.gap = px_value(value);
         }
         "padding" => {
             attrs.padding = px_value(value);
         }
+        "padding_x" => {
+            attrs.padding_x = px_value(value);
+        }
+        "padding_y" => {
+            attrs.padding_y = px_value(value);
+        }
+        "padding_top" => {
+            attrs.padding_top = px_value(value);
+        }
+        "padding_right" => {
+            attrs.padding_right = px_value(value);
+        }
+        "padding_bottom" => {
+            attrs.padding_bottom = px_value(value);
+        }
+        "padding_left" => {
+            attrs.padding_left = px_value(value);
+        }
         "margin" => {
             attrs.margin = px_value(value);
+        }
+        "margin_x" => {
+            attrs.margin_x = px_value(value);
+        }
+        "margin_y" => {
+            attrs.margin_y = px_value(value);
+        }
+        "margin_top" => {
+            attrs.margin_top = px_value(value);
+        }
+        "margin_right" => {
+            attrs.margin_right = px_value(value);
+        }
+        "margin_bottom" => {
+            attrs.margin_bottom = px_value(value);
+        }
+        "margin_left" => {
+            attrs.margin_left = px_value(value);
         }
         "width" => {
             attrs.width = px_value(value);
@@ -114,11 +214,26 @@ pub(crate) fn apply_generated_style_attr(
         "height" => {
             attrs.height = px_value(value);
         }
+        "min_width" => {
+            attrs.min_width = px_value(value);
+        }
+        "max_width" => {
+            attrs.max_width = px_value(value);
+        }
+        "min_height" => {
+            attrs.min_height = px_value(value);
+        }
+        "max_height" => {
+            attrs.max_height = px_value(value);
+        }
         "border_radius" => {
             attrs.border_radius = radius_value(value);
         }
         "border_width" => {
             attrs.border_width = px_value(value);
+        }
+        "border_color" => {
+            attrs.border_color = rgb_value(value);
         }
         _ => {}
     };
@@ -131,15 +246,33 @@ pub(crate) fn apply_generated_render_styles(
     style: StyleAttrs,
 ) -> gpui::Div {
     let mut element = element;
-    if style.display_flex {
-        element = element.flex();
-    }
+    match style.display.as_deref() {
+        Some("flex") => {
+            element = element.flex();
+        }
+        Some("block") => {
+            element = element.block();
+        }
+        Some("grid") => {
+            element = element.grid();
+        }
+        Some("none") => {
+            element = element.hidden();
+        }
+        _ => {}
+    };
     match style.flex_direction.as_deref() {
         Some("column") => {
             element = element.flex_col();
         }
+        Some("column_reverse") => {
+            element = element.flex_col_reverse();
+        }
         Some("row") => {
             element = element.flex_row();
+        }
+        Some("row_reverse") => {
+            element = element.flex_row_reverse();
         }
         _ => {}
     };
@@ -153,6 +286,12 @@ pub(crate) fn apply_generated_render_styles(
         Some("end") => {
             element = element.items_end();
         }
+        Some("baseline") => {
+            element = element.items_baseline();
+        }
+        Some("stretch") => {
+            element = element.items_stretch();
+        }
         _ => {}
     };
     match style.justify_content.as_deref() {
@@ -165,8 +304,35 @@ pub(crate) fn apply_generated_render_styles(
         Some("end") => {
             element = element.justify_end();
         }
+        Some("between") => {
+            element = element.justify_between();
+        }
+        Some("around") => {
+            element = element.justify_around();
+        }
+        Some("evenly") => {
+            element = element.justify_evenly();
+        }
         _ => {}
     };
+    match style.flex_wrap.as_deref() {
+        Some("wrap") => {
+            element = element.flex_wrap();
+        }
+        Some("wrap_reverse") => {
+            element = element.flex_wrap_reverse();
+        }
+        Some("nowrap") => {
+            element = element.flex_nowrap();
+        }
+        _ => {}
+    };
+    if let Some(value) = style.flex_grow {
+        element = element.flex_grow(value);
+    }
+    if let Some(value) = style.flex_shrink {
+        element = element.flex_shrink(value);
+    }
     if let Some(value) = style.background {
         element = element.bg(gpui::rgb(value));
     }
@@ -176,14 +342,74 @@ pub(crate) fn apply_generated_render_styles(
     if let Some(value) = style.font_size {
         element = element.text_size(gpui::px(value));
     }
+    match style.font_weight.as_deref() {
+        Some("light") => {
+            element = element.font_weight(gpui::FontWeight::LIGHT);
+        }
+        Some("normal") => {
+            element = element.font_weight(gpui::FontWeight::NORMAL);
+        }
+        Some("medium") => {
+            element = element.font_weight(gpui::FontWeight::MEDIUM);
+        }
+        Some("semibold") => {
+            element = element.font_weight(gpui::FontWeight::SEMIBOLD);
+        }
+        Some("bold") => {
+            element = element.font_weight(gpui::FontWeight::BOLD);
+        }
+        _ => {}
+    };
+    if let Some(value) = style.line_height {
+        element = element.line_height(gpui::px(value));
+    }
+    if let Some(value) = style.opacity {
+        element = element.opacity(value);
+    }
     if let Some(value) = style.gap {
         element = element.gap(gpui::px(value));
     }
     if let Some(value) = style.padding {
         element = element.p(gpui::px(value));
     }
+    if let Some(value) = style.padding_x {
+        element = element.px(gpui::px(value));
+    }
+    if let Some(value) = style.padding_y {
+        element = element.py(gpui::px(value));
+    }
+    if let Some(value) = style.padding_top {
+        element = element.pt(gpui::px(value));
+    }
+    if let Some(value) = style.padding_right {
+        element = element.pr(gpui::px(value));
+    }
+    if let Some(value) = style.padding_bottom {
+        element = element.pb(gpui::px(value));
+    }
+    if let Some(value) = style.padding_left {
+        element = element.pl(gpui::px(value));
+    }
     if let Some(value) = style.margin {
         element = element.m(gpui::px(value));
+    }
+    if let Some(value) = style.margin_x {
+        element = element.mx(gpui::px(value));
+    }
+    if let Some(value) = style.margin_y {
+        element = element.my(gpui::px(value));
+    }
+    if let Some(value) = style.margin_top {
+        element = element.mt(gpui::px(value));
+    }
+    if let Some(value) = style.margin_right {
+        element = element.mr(gpui::px(value));
+    }
+    if let Some(value) = style.margin_bottom {
+        element = element.mb(gpui::px(value));
+    }
+    if let Some(value) = style.margin_left {
+        element = element.ml(gpui::px(value));
     }
     if let Some(value) = style.width {
         element = element.w(gpui::px(value));
@@ -191,11 +417,26 @@ pub(crate) fn apply_generated_render_styles(
     if let Some(value) = style.height {
         element = element.h(gpui::px(value));
     }
+    if let Some(value) = style.min_width {
+        element = element.min_w(gpui::px(value));
+    }
+    if let Some(value) = style.max_width {
+        element = element.max_w(gpui::px(value));
+    }
+    if let Some(value) = style.min_height {
+        element = element.min_h(gpui::px(value));
+    }
+    if let Some(value) = style.max_height {
+        element = element.max_h(gpui::px(value));
+    }
     if let Some(value) = style.border_radius {
         element = element.rounded(gpui::px(value));
     }
     if let Some(value) = style.border_width {
         element = element.border(gpui::px(value));
+    }
+    if let Some(value) = style.border_color {
+        element = element.border_color(gpui::rgb(value));
     }
     element
 }

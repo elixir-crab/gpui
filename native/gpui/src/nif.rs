@@ -314,7 +314,10 @@ pub(crate) fn window_tree(window: Term) -> Option<ElementNode> {
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
     if let Ok(text) = term.decode::<String>() {
-        return Ok(ElementNode::Text(text));
+        return Ok(ElementNode::Text {
+            text,
+            style: StyleAttrs::default(),
+        });
     }
 
     let env = term.get_env();
@@ -327,8 +330,14 @@ pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
         GeneratedComponentKind::Container => decode_container(term, tag),
         GeneratedComponentKind::Input => decode_input(term),
         GeneratedComponentKind::Image => decode_image(term),
-        GeneratedComponentKind::Text => decode_text_children(term).map(ElementNode::Text),
-        GeneratedComponentKind::Unknown => Ok(ElementNode::Text(String::new())),
+        GeneratedComponentKind::Text => Ok(ElementNode::Text {
+            text: decode_text_children(term)?,
+            style: decode_style(term).unwrap_or_default(),
+        }),
+        GeneratedComponentKind::Unknown => Ok(ElementNode::Text {
+            text: String::new(),
+            style: StyleAttrs::default(),
+        }),
     }
 }
 
@@ -405,13 +414,19 @@ pub(crate) fn decode_image(term: Term) -> NifResult<ElementNode> {
             .atom_to_string()
             .is_ok_and(|value| value == "resource_ref")
         {
-            return decode_resource_ref(raster).map(|id| ElementNode::Image(ImageData::Ref(id)));
+            return decode_resource_ref(raster).map(|id| ElementNode::Image {
+                image: ImageData::Ref(id),
+                style: decode_style(term).unwrap_or_default(),
+            });
         }
     }
 
     let raster = decode_raster_resource(raster)?;
     raster.validate()?;
-    Ok(ElementNode::Image(ImageData::Raster(raster)))
+    Ok(ElementNode::Image {
+        image: ImageData::Raster(raster),
+        style: decode_style(term).unwrap_or_default(),
+    })
 }
 
 #[cfg(feature = "real-gpui")]
@@ -448,6 +463,14 @@ pub(crate) fn rgb_value(term: Term) -> Option<u32> {
     }
 
     values[1].decode::<u32>().ok()
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn number_value(term: Term) -> Option<f32> {
+    term.decode::<f64>()
+        .ok()
+        .map(|value| value as f32)
+        .or_else(|| term.decode::<i64>().ok().map(|value| value as f32))
 }
 
 #[cfg(feature = "real-gpui")]

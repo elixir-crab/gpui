@@ -120,9 +120,13 @@ defmodule GPUI.Template do
 
   defp tag_atom("button"), do: :button
   defp tag_atom("div"), do: :div
+  defp tag_atom("icon"), do: :icon
   defp tag_atom("img"), do: :img
   defp tag_atom("input"), do: :input
+  defp tag_atom("item"), do: :item
+  defp tag_atom("list"), do: :list
   defp tag_atom("scroll"), do: :scroll
+  defp tag_atom("span"), do: :span
   defp tag_atom("text"), do: :text
 
   defp tag_atom(name) do

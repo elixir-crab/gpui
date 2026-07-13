@@ -42,6 +42,50 @@ defmodule GPUI.TemplateTest do
     assert attrs[:class] == "unknown-class"
   end
 
+  test "supports every tag declared by the native component schema" do
+    assert %GPUI.Element{
+             type: :list,
+             children: [
+               %GPUI.Element{
+                 type: :item,
+                 children: [
+                   %GPUI.Element{type: :span},
+                   %GPUI.Element{type: :icon}
+                 ]
+               }
+             ]
+           } =
+             ~GPUI"""
+             <list>
+               <item>
+                 <span>Label</span>
+                 <icon>+</icon>
+               </item>
+             </list>
+             """
+  end
+
+  test "normalizes styles on text and image elements" do
+    assert %GPUI.Element{
+             type: :div,
+             children: [
+               %GPUI.Element{
+                 type: :text,
+                 attrs: [style: [color: {:rgb, 0xFFFFFF}, font_weight: :bold]]
+               },
+               %GPUI.Element{type: :img, attrs: image_attrs}
+             ]
+           } =
+             ~GPUI"""
+             <div>
+               <text class="text-white font-bold">Styled</text>
+               <img class="w-10 h-12" raster={%{}} />
+             </div>
+             """
+
+    assert image_attrs[:style] == [width: {:px, 40.0}, height: {:px, 48.0}]
+  end
+
   test "supports body interpolation" do
     name = "OTP"
 

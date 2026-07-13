@@ -23,6 +23,7 @@ defmodule DesktopLifecycleCheck do
     :ok = GPUI.Display.Native.sync(display_b, snapshot([window_b]))
     :ok = GPUI.Display.Native.sync(display_a, snapshot([window(1, "Runtime A", tree("A updated"))]))
     :ok = GPUI.Display.Native.sync(display_b, snapshot([window(1, "Runtime B", tree("B updated"))]))
+    :ok = GPUI.Display.Native.sync(display_b, snapshot([window(1, "Runtime B", expanded_style_tree())]))
 
     # Snapshot shrink must issue a real close command and wait for its acknowledgement.
     :ok = GPUI.Display.Native.sync(display_a, snapshot([]))
@@ -71,6 +72,45 @@ defmodule DesktopLifecycleCheck do
     }
   end
 
+  defp expanded_style_tree do
+    %{
+      type: :div,
+      attrs: %{
+        style: [
+          display: :grid,
+          flex_direction: :row_reverse,
+          align_items: :stretch,
+          justify_content: :between,
+          flex_wrap: :wrap,
+          flex_grow: 1.0,
+          flex_shrink: 0.0,
+          opacity: 0.9,
+          padding_x: {:px, 8.0},
+          padding_y: {:px, 4.0},
+          margin_bottom: {:px, 2.0},
+          min_width: {:px, 40.0},
+          max_height: {:px, 120.0},
+          border_width: {:px, 1.0},
+          border_color: {:rgb, 0x3B82F6}
+        ]
+      },
+      children: [
+        %{
+          type: :text,
+          attrs: %{
+            style: [
+              color: {:rgb, 0xFFFFFF},
+              font_size: {:px, 18.0},
+              font_weight: :bold,
+              line_height: {:px, 24.0}
+            ]
+          },
+          children: ["Expanded styles"]
+        }
+      ]
+    }
+  end
+
   defp resource_tree(id) do
     %{
       type: :div,
@@ -78,7 +118,10 @@ defmodule DesktopLifecycleCheck do
       children: [
         %{
           type: :img,
-          attrs: %{raster: %{__type__: :resource_ref, id: id, type: :raster}},
+          attrs: %{
+            raster: %{__type__: :resource_ref, id: id, type: :raster},
+            style: [width: {:px, 24.0}, height: {:px, 24.0}]
+          },
           children: []
         }
       ]

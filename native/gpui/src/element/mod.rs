@@ -21,8 +21,14 @@ pub(crate) enum ElementNode {
         keydown: Option<String>,
         keyup: Option<String>,
     },
-    Image(ImageData),
-    Text(String),
+    Image {
+        image: ImageData,
+        style: StyleAttrs,
+    },
+    Text {
+        text: String,
+        style: StyleAttrs,
+    },
 }
 
 #[cfg(feature = "real-gpui")]
@@ -46,9 +52,9 @@ impl ElementNode {
 
     pub(crate) fn render(self, context: &mut ElementRenderContext<'_, '_>) -> gpui::AnyElement {
         match self {
-            Self::Text(text) => render_text_primitive(text),
-            Self::Image(raster) => {
-                render_image_primitive(raster, context.runtime.clone(), context.window_id)
+            Self::Text { text, style } => render_text_primitive(text, style),
+            Self::Image { image, style } => {
+                render_image_primitive(image, style, context.runtime.clone(), context.window_id)
             }
             Self::Input {
                 style,
@@ -69,18 +75,24 @@ impl ElementNode {
 }
 
 #[cfg(feature = "real-gpui")]
-pub(crate) fn render_text_primitive(text: String) -> gpui::AnyElement {
-    use gpui::IntoElement;
-    text.into_any_element()
+pub(crate) fn render_text_primitive(text: String, style: StyleAttrs) -> gpui::AnyElement {
+    use gpui::{div, IntoElement, ParentElement};
+
+    apply_generated_render_styles(div(), style)
+        .child(text)
+        .into_any_element()
 }
 
 #[cfg(feature = "real-gpui")]
 pub(crate) fn render_image_primitive(
-    raster: ImageData,
+    image: ImageData,
+    style: StyleAttrs,
     runtime: ResourceArc<RuntimeResource>,
     window_id: u64,
 ) -> gpui::AnyElement {
-    match raster {
+    use gpui::{div, IntoElement, ParentElement};
+
+    let image = match image {
         ImageData::Raster(raster) => raster.render(),
         ImageData::Ref(resource_id) => {
             if let Some(raster) = runtime
@@ -102,7 +114,11 @@ pub(crate) fn render_image_primitive(
                 render_missing_resource_placeholder()
             }
         }
-    }
+    };
+
+    apply_generated_render_styles(div(), style)
+        .child(image)
+        .into_any_element()
 }
 
 #[cfg(feature = "real-gpui")]
