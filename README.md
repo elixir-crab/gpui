@@ -103,8 +103,9 @@ The Rust crate is named `gpui_nif` only to avoid Cargo ambiguity with upstream
 ## Precompiled release flow
 
 Pushing a version tag such as `v0.1.0-rc` runs
-`.github/workflows/precompiled-nif.yml`. It builds and attests the Linux NIF,
-attaches it to the GitHub release, then generates the mandatory
+`.github/workflows/precompiled-nif.yml` through the organization-standard
+`elixir-vibe/actions` Rustler release workflow. It builds and attests the Linux
+NIF, attaches it to the GitHub release, then generates the mandatory
 `checksum-Elixir.GPUI.Native.exs` manifest from those published bytes. Download
 that checksum into the repository root before building the Hex package; the
 package configuration includes it automatically. Hex publication remains a
