@@ -1,6 +1,6 @@
 # Ultra-minimal remote smoke check.
 #
-# Run inside a desktop session, or use `scripts/desktop-smoke` on a server.
+# Run inside a desktop session; use `mix test_e2e` for server-side native verification.
 # GPUI's headless platform cannot open windows.
 #
 # Expected output: GPUI remote check: PASS

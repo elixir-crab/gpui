@@ -28,17 +28,17 @@ def deps do
 end
 ```
 
-Version 0.1 builds its Rust NIF from source and is currently verified on Linux.
-Install a Rust toolchain plus the Linux desktop development libraries before
-compiling a consumer application:
+Version 0.1 provides a checksummed precompiled NIF for x86-64 GNU/Linux. Other
+targets fall back to the packaged Rust source and require a Rust toolchain plus
+the platform development libraries. Set `GPUI_BUILD_FROM_SOURCE=1` to force that
+path explicitly.
 
 ```bash
 sudo apt-get install libxkbcommon-dev libxkbcommon-x11-dev
 ```
 
-Set `RUST_FONTCONFIG_DLOPEN=1` when `fontconfig.pc` is unavailable. Precompiled
-NIF artifacts and verified macOS/Windows packaging are planned after the source
-release boundary stabilizes.
+Set `RUST_FONTCONFIG_DLOPEN=1` when `fontconfig.pc` is unavailable. macOS,
+Windows, Linux ARM, and musl artifacts remain pending platform validation.
 
 ## Development
 
@@ -67,8 +67,9 @@ mix rust.check
 mix rust.clippy
 mix rust.headless.clippy
 mix rust.core.clippy
+mix rust.e2e.clippy
 mix test_e2e
-./scripts/release-check
+mix gpui.release.check
 ```
 
 The test environment compiles the NIF without `real-gpui`, so pure session,
@@ -82,8 +83,8 @@ For real native-window verification on a server, install the minimal X11 build
 and virtual display dependencies, then run the checked-in smoke suite:
 
 ```bash
-sudo apt-get install xvfb xdotool python3-xlib libxkbcommon-dev libxkbcommon-x11-dev
-./scripts/desktop-smoke
+sudo apt-get install xvfb xdotool libxkbcommon-dev libxkbcommon-x11-dev
+mix test_e2e
 ```
 
 The suite runs the ExUnit tests in `test/e2e/**` against real GPUI windows under
@@ -91,11 +92,23 @@ Xvfb using Mesa's Lavapipe software renderer. It verifies process-global loop
 ownership, duplicate window IDs across runtimes, acknowledged lifecycle commands,
 snapshot shrink, runtime shutdown isolation, and native display operation through
 the TCP remote API. XTest-driven pointer and keyboard input additionally proves
-button hit testing, input focus, change/key events, rerendering, and user-requested
-window closure. No desktop environment or window manager is required.
+button hit testing, input focus, change/key events, rapid editing, backspace,
+selection, clipboard operations, controlled-value replacement, multiple input
+isolation, rerendering, and user-requested window closure. No desktop environment
+or window manager is required.
 
 The Rust crate is named `gpui_nif` only to avoid Cargo ambiguity with upstream
 `gpui`; the Hex package and public API remain `gpui` / `GPUI.*`.
+
+## Precompiled release flow
+
+Pushing a version tag such as `v0.1.0-rc` runs
+`.github/workflows/precompiled-nif.yml`. It builds and attests the Linux NIF,
+attaches it to the GitHub release, then generates the mandatory
+`checksum-Elixir.GPUI.Native.exs` manifest from those published bytes. Download
+that checksum into the repository root before building the Hex package; the
+package configuration includes it automatically. Hex publication remains a
+manual step after `mix gpui.release.check` passes.
 
 ## Supported UI surface
 

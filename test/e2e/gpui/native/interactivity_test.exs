@@ -12,12 +12,16 @@ defmodule GPUI.Native.InteractivityE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="flex flex-col w-[400px] h-[240px] p-4 gap-4 bg-slate-900">
+      <div class="flex flex-col w-[420px] h-[360px] p-4 gap-4 bg-slate-900">
         <button class="w-[160px] h-[48px] bg-blue-600 text-white" phx-click="increment">
           Increment
         </button>
-        <input class="w-[240px] h-[48px]" value={assigns.value} phx-change="change" phx-keydown="keydown" phx-keyup="keyup" />
-        <text class="text-white">Count: {assigns.count}; Value: {assigns.value}</text>
+        <input class="w-[240px] h-[48px]" value={assigns.primary} phx-change="change-primary" phx-keydown="keydown" phx-keyup="keyup" />
+        <input class="w-[240px] h-[48px]" value={assigns.secondary} phx-change="change-secondary" />
+        <button class="w-[160px] h-[48px] bg-green-600 text-white" phx-click="reset">
+          Reset
+        </button>
+        <text class="text-white">Count: {assigns.count}; Primary: {assigns.primary}; Secondary: {assigns.secondary}</text>
       </div>
       """
     end
@@ -26,8 +30,14 @@ defmodule GPUI.Native.InteractivityE2ETest do
     def handle_event("increment", _event, assigns),
       do: {:noreply, %{assigns | count: assigns.count + 1}}
 
-    def handle_event("change", %{value: value}, assigns),
-      do: {:noreply, %{assigns | value: value}}
+    def handle_event("change-primary", %{value: value}, assigns),
+      do: {:noreply, %{assigns | primary: value}}
+
+    def handle_event("change-secondary", %{value: value}, assigns),
+      do: {:noreply, %{assigns | secondary: value}}
+
+    def handle_event("reset", _event, assigns),
+      do: {:noreply, %{assigns | primary: "server"}}
 
     def handle_event("keydown", %{value: key}, assigns),
       do: {:noreply, %{assigns | keydowns: [key | assigns.keydowns]}}
@@ -44,8 +54,15 @@ defmodule GPUI.Native.InteractivityE2ETest do
       {:ok,
        [
          window title do
-           size(400, 240)
-           root(InteractiveView, count: 0, value: "", keydowns: [], keyups: [])
+           size(420, 360)
+
+           root(InteractiveView,
+             count: 0,
+             primary: "",
+             secondary: "",
+             keydowns: [],
+             keyups: []
+           )
          end
        ]}
     end
@@ -66,11 +83,36 @@ defmodule GPUI.Native.InteractivityE2ETest do
 
     Desktop.click!(window_id, 100, 100)
     Desktop.type!(window_id, "abc")
+    Desktop.key!(window_id, "BackSpace")
 
     Desktop.eventually(fn ->
-      assert %{value: "abc", keydowns: keydowns, keyups: keyups} = assigns(runtime)
+      assert %{primary: "ab", keydowns: keydowns, keyups: keyups} = assigns(runtime)
       assert [_, _, _ | _] = keydowns
       assert [_, _, _ | _] = keyups
+    end)
+
+    Desktop.key!(window_id, "super+a")
+    Desktop.key!(window_id, "super+c")
+    Desktop.click!(window_id, 100, 164)
+    Desktop.key!(window_id, "super+v")
+    Desktop.type!(window_id, "z")
+
+    Desktop.eventually(fn ->
+      assert %{primary: "ab", secondary: "abz"} = assigns(runtime)
+    end)
+
+    Desktop.click!(window_id, 80, 228)
+
+    Desktop.eventually(fn ->
+      assert %{primary: "server", secondary: "abz"} = assigns(runtime)
+    end)
+
+    Desktop.click!(window_id, 100, 100)
+    Desktop.key!(window_id, "End")
+    Desktop.type!(window_id, "!")
+
+    Desktop.eventually(fn ->
+      assert %{primary: "server!", secondary: "abz"} = assigns(runtime)
     end)
 
     Desktop.close_window!(window_id)

@@ -4,7 +4,7 @@ defmodule GPUITest.E2E.Desktop do
   import ExUnit.Assertions
 
   @eventually_timeout 3_000
-  @wm_delete_script Path.join(__DIR__, "send_wm_delete.py")
+  @driver_manifest Path.expand("../e2e_driver/Cargo.toml", __DIR__)
 
   def command!(arguments) do
     case System.cmd("xdotool", arguments, stderr_to_stdout: true) do
@@ -32,12 +32,23 @@ defmodule GPUITest.E2E.Desktop do
     command!(["click", "1"])
   end
 
-  def type!(window_id, text) do
-    command!(["type", "--window", window_id, "--delay", "30", text])
-  end
+  def type!(window_id, text),
+    do: command!(["type", "--window", window_id, "--delay", "30", text])
+
+  def key!(window_id, key), do: command!(["key", "--window", window_id, key])
 
   def close_window!(window_id) do
-    case System.cmd("python3", [@wm_delete_script, window_id], stderr_to_stdout: true) do
+    args = [
+      "run",
+      "--quiet",
+      "--manifest-path",
+      @driver_manifest,
+      "--",
+      "close-window",
+      window_id
+    ]
+
+    case System.cmd("cargo", args, stderr_to_stdout: true) do
       {_output, 0} -> :ok
       {output, status} -> flunk("sending WM_DELETE_WINDOW failed (#{status}): #{output}")
     end

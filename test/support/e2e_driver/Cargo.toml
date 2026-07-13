@@ -1,0 +1,8 @@
+[package]
+name = "gpui-e2e-driver"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+x11rb = "0.13.2"

@@ -21,7 +21,11 @@ erl_crash.dump
 
 # Ignore native Rust build artifacts.
 /native/*/target/
+/test/support/e2e_driver/target/
 /priv/native/
+
+# Precompiled checksums are generated from tagged release artifacts.
+checksum-*.exs
 
 # Ignore package tarball (built via "mix hex.build").
 gpui-*.tar
