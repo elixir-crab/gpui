@@ -1,10 +1,12 @@
 defmodule GPUI.MixProject do
   use Mix.Project
 
+  @version "0.1.0-rc"
+
   def project do
     [
       app: :gpui,
-      version: "0.1.0-rc",
+      version: @version,
       elixir: "~> 1.20",
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
