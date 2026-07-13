@@ -6,7 +6,7 @@ use crate::gpui::{
     Styled, TextAlign, TextRun, UTF16Selection, UnderlineStyle, Window,
 };
 use crate::{gpui, push_event, InputKind, NativeEvent, SharedRuntime};
-use std::ops::Range;
+use std::{collections::VecDeque, ops::Range};
 use unicode_segmentation::UnicodeSegmentation;
 
 #[cfg(feature = "real-gpui")]
@@ -61,6 +61,8 @@ pub(crate) struct NativeTextInput {
     selected_range: Range<usize>,
     selection_reversed: bool,
     marked_range: Option<Range<usize>>,
+    confirmed_value: String,
+    pending_values: VecDeque<String>,
     last_layout: Option<ShapedLine>,
     last_bounds: Option<Bounds<Pixels>>,
 }
@@ -86,6 +88,8 @@ impl NativeTextInput {
             selected_range: value.len()..value.len(),
             selection_reversed: false,
             marked_range: None,
+            confirmed_value: value,
+            pending_values: VecDeque::new(),
             last_layout: None,
             last_bounds: None,
         }
@@ -97,7 +101,9 @@ impl NativeTextInput {
         placeholder: Option<String>,
         change: Option<String>,
     ) {
-        if self.value() != value {
+        let apply_value = self.reconcile_value(&value);
+
+        if apply_value && self.value() != value {
             set_input_value(&self.runtime, &self.id, value.clone());
             let cursor = Self::clamp(&value, self.cursor_offset());
             self.selected_range = cursor..cursor;
@@ -118,9 +124,33 @@ impl NativeTextInput {
             .unwrap_or_default()
     }
 
-    fn emit_change(&self, value: String) {
+    // Key events can rerender the view before their associated change event is handled.
+    // Do not let those stale snapshots overwrite newer local edits.
+    fn reconcile_value(&mut self, value: &str) -> bool {
+        if let Some(index) = self
+            .pending_values
+            .iter()
+            .position(|pending| pending == value)
+        {
+            self.pending_values.drain(..=index);
+            self.confirmed_value = value.to_string();
+            return false;
+        }
+
+        if !self.pending_values.is_empty() && value == self.confirmed_value {
+            return false;
+        }
+
+        self.pending_values.clear();
+        self.confirmed_value = value.to_string();
+        true
+    }
+
+    fn emit_change(&mut self, value: String) {
         if let Some(event) = self.change.as_ref() {
-            let _ = push_event(
+            self.pending_values.push_back(value.clone());
+
+            if push_event(
                 &self.runtime,
                 NativeEvent::Input {
                     kind: InputKind::Change,
@@ -128,7 +158,11 @@ impl NativeTextInput {
                     event: event.clone(),
                     value: Some(value),
                 },
-            );
+            )
+            .is_err()
+            {
+                self.pending_values.pop_back();
+            }
         }
     }
 

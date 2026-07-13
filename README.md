@@ -47,12 +47,14 @@ mix deps.get
 mix test_unit
 mix test_integration
 mix ci
+mix test_e2e
 ```
 
 Tests are split by intent:
 
 - `test/gpui/**` contains unit-focused tests.
 - `test/integration/**` contains runtime, transport, and remote-flow integration tests.
+- `test/e2e/**` contains real native-window tests run under Xvfb.
 
 Useful verification gates:
 
@@ -65,6 +67,7 @@ mix rust.check
 mix rust.clippy
 mix rust.headless.clippy
 mix rust.core.clippy
+mix test_e2e
 ./scripts/release-check
 ```
 
@@ -79,15 +82,17 @@ For real native-window verification on a server, install the minimal X11 build
 and virtual display dependencies, then run the checked-in smoke suite:
 
 ```bash
-sudo apt-get install xvfb libxkbcommon-dev libxkbcommon-x11-dev
+sudo apt-get install xvfb xdotool python3-xlib libxkbcommon-dev libxkbcommon-x11-dev
 ./scripts/desktop-smoke
 ```
 
-The suite opens real GPUI windows under Xvfb using Mesa's Lavapipe software
-renderer. It verifies process-global loop ownership, duplicate window IDs across
-runtimes, acknowledged open/update/close commands, snapshot shrink, runtime
-shutdown isolation, and native display operation through the TCP remote API. No
-desktop environment or window manager is required.
+The suite runs the ExUnit tests in `test/e2e/**` against real GPUI windows under
+Xvfb using Mesa's Lavapipe software renderer. It verifies process-global loop
+ownership, duplicate window IDs across runtimes, acknowledged lifecycle commands,
+snapshot shrink, runtime shutdown isolation, and native display operation through
+the TCP remote API. XTest-driven pointer and keyboard input additionally proves
+button hit testing, input focus, change/key events, rerendering, and user-requested
+window closure. No desktop environment or window manager is required.
 
 The Rust crate is named `gpui_nif` only to avoid Cargo ambiguity with upstream
 `gpui`; the Hex package and public API remain `gpui` / `GPUI.*`.
@@ -121,12 +126,6 @@ Run a local native image using a runtime resource cache and `%GPUI.ResourceRef{}
 
 ```sh
 PATH="$HOME/.cargo/bin:$PATH" mix run examples/resource_ref_image.exs
-```
-
-Run native lifecycle and remote-display smoke checks over SSH/CI:
-
-```sh
-./scripts/desktop-smoke
 ```
 
 Run the two-terminal remote app/display workflow:

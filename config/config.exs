@@ -1,6 +1,11 @@
 import Config
 
 cond do
+  System.get_env("GPUI_E2E") == "1" ->
+    config :gpui, GPUI.Native,
+      default_features: true,
+      features: []
+
   config_env() == :test ->
     config :gpui, GPUI.Native,
       default_features: false,

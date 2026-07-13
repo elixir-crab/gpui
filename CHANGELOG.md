@@ -10,4 +10,4 @@ Initial release candidate.
 - HEEx-style templates and a constrained Tailwind-compatible style normalizer.
 - Native input, raster resources, resource references, and interactive events.
 - RustQ-generated Rustler exports, Elixir stubs, component metadata, and style dispatch.
-- Real native lifecycle and remote-display smoke coverage under Xvfb/Lavapipe.
+- Structured ExUnit E2E coverage under Xvfb/Lavapipe, including real pointer, keyboard, and window-close interaction.

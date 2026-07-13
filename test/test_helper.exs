@@ -1,6 +1,10 @@
-System.put_env("ZED_HEADLESS", "1")
+e2e? = System.get_env("GPUI_E2E") == "1"
 
 Code.require_file("../support/ssl_certs.exs", __DIR__)
 Code.require_file("../support/test_display.ex", __DIR__)
 
-ExUnit.start()
+if e2e? do
+  Code.require_file("support/e2e/desktop.ex", __DIR__)
+end
+
+ExUnit.start(exclude: if(e2e?, do: [], else: [:e2e]))

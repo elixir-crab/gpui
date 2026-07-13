@@ -13,3 +13,16 @@ mix ci
 - For Phoenix/web apps, keep Phoenix's generated guidance, but treat this VibeKit section as the final quality gate.
 - For non-web Elixir projects, VibeKit is the default project baseline.
 - Keep changes small, tested, and formatted.
+
+## Test structure
+
+- Put focused unit tests in `test/gpui/` and cross-process or transport tests in
+  `test/integration/`.
+- Put real platform-window and operating-system interaction tests in `test/e2e/`.
+  Keep environment setup in `scripts/` and reusable drivers in `test/support/`;
+  examples are documentation, not test runners.
+- Run native E2E coverage through `mix test_e2e`. It uses Xvfb/Lavapipe and must
+  not require a desktop environment or window manager.
+- Assert behavior and generated output. Do not enforce architecture with source
+  greps or policy-shaped ExUnit tests; use Reach, Credo, ExDNA, or schema-driven
+  behavioral coverage.

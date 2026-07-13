@@ -13,6 +13,8 @@ defmodule GPUI.MixProject do
       source_url: "https://github.com/dannote/gpui",
       homepage_url: "https://github.com/dannote/gpui",
       docs: docs(),
+      test_load_filters: [&load_test_file?/1],
+      test_ignore_filters: [&ignore_test_file?/1],
       dialyzer: [plt_add_apps: [:ex_unit]],
       aliases: aliases()
     ]
@@ -26,8 +28,24 @@ defmodule GPUI.MixProject do
 
   def cli do
     [
-      preferred_envs: [ci: :test, test_unit: :test, test_integration: :test, test_all: :test]
+      preferred_envs: [
+        ci: :test,
+        test_unit: :test,
+        test_integration: :test,
+        test_e2e: :test,
+        test_all: :test
+      ]
     ]
+  end
+
+  defp load_test_file?(path) do
+    String.ends_with?(path, "_test.exs") and
+      (System.get_env("GPUI_E2E") == "1" or not String.contains?(path, "e2e/"))
+  end
+
+  defp ignore_test_file?(path) do
+    String.contains?(path, "support/") or
+      (System.get_env("GPUI_E2E") != "1" and String.contains?(path, "e2e/"))
   end
 
   defp description do
@@ -57,7 +75,6 @@ defmodule GPUI.MixProject do
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
       {:ex_slop, "~> 0.4", only: [:dev, :test], runtime: false},
@@ -78,6 +95,7 @@ defmodule GPUI.MixProject do
     [
       test_unit: ["test test/gpui test/gpui_test.exs"],
       test_integration: ["test test/integration"],
+      test_e2e: &test_e2e/1,
       test_all: ["test"],
       ci: [
         "compile --warnings-as-errors",
@@ -103,6 +121,16 @@ defmodule GPUI.MixProject do
       "rust.core.clippy": &rust_core_clippy/1,
       "rust.test": &rust_test/1
     ]
+  end
+
+  defp test_e2e(_args) do
+    {_, status} =
+      System.cmd(Path.expand("scripts/desktop-smoke", __DIR__), [],
+        into: IO.stream(),
+        stderr_to_stdout: true
+      )
+
+    if status != 0, do: Mix.raise("desktop E2E suite failed")
   end
 
   defp rustq_check(_args) do
