@@ -6,14 +6,14 @@ defmodule GPUI.Remote.Transport.TCP do
   @behaviour SafeRPC.Transport
 
   defmodule Listener do
-    @moduledoc false
+    @moduledoc "Opaque TCP or SSL listener returned by `GPUI.Remote.Transport.TCP`."
     defstruct [:socket, :mode]
 
     @type t :: %__MODULE__{socket: port() | tuple(), mode: :tcp | :ssl}
   end
 
   defmodule Connection do
-    @moduledoc false
+    @moduledoc "Opaque TCP or SSL connection used by the remote transport."
     defstruct [:socket, :mode]
 
     @type t :: %__MODULE__{socket: port() | tuple(), mode: :tcp | :ssl}

@@ -15,8 +15,8 @@ desktop = ["real-gpui", "gpui_platform/font-kit", "gpui_platform/wayland", "gpui
 
 [dependencies]
 rustler = "0.38.0"
-zed_gpui = { git = "https://github.com/zed-industries/zed", package = "gpui", optional = true }
-gpui_platform = { git = "https://github.com/zed-industries/zed", package = "gpui_platform", optional = true }
+zed_gpui = { git = "https://github.com/zed-industries/zed", rev = "f16a46967b1f748003fa518609703f503e9d0d67", package = "gpui", optional = true }
+gpui_platform = { git = "https://github.com/zed-industries/zed", rev = "f16a46967b1f748003fa518609703f503e9d0d67", package = "gpui_platform", optional = true }
 image = { version = "0.25.10", optional = true }
 futures = { version = "0.3", optional = true }
 unicode-segmentation = { version = "1.12", optional = true }

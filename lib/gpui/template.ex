@@ -2,7 +2,7 @@ defmodule GPUI.Template do
   @moduledoc """
   HEEx-style template support for GPUI.
 
-  This module intentionally reuses `Phoenix.LiveView.TagEngine.Parser` for the
+  This module intentionally reuses Phoenix LiveView's tag parser for the
   HEEx-compatible tokenizer/tree builder, then compiles the parsed tree into
   `%GPUI.Element{}` values instead of `%Phoenix.LiveView.Rendered{}`.
   """

@@ -21,7 +21,7 @@ defmodule GPUI.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :ssl]
     ]
   end
 
@@ -41,14 +41,14 @@ defmodule GPUI.MixProject do
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/dannote/gpui"},
       files:
-        ~w(lib codegen config/config.exs native/gpui/Cargo.toml native/gpui/src mix.exs rustq.exs README.md LICENSE)
+        ~w(lib codegen config/config.exs native/gpui/Cargo.toml native/gpui/Cargo.lock native/gpui/src mix.exs rustq.exs README.md CHANGELOG.md LICENSE)
     ]
   end
 
   defp docs do
     [
       main: "readme",
-      extras: ["README.md"],
+      extras: ["README.md", "CHANGELOG.md"],
       groups_for_modules: [
         Core: [GPUI, GPUI.Application, GPUI.Session, GPUI.Snapshot, GPUI.Runtime, GPUI.View],
         Displays: [GPUI.Display, GPUI.Display.Native],
@@ -66,12 +66,12 @@ defmodule GPUI.MixProject do
       {:ex_dna, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:phoenix_live_view, "~> 1.2"},
+      {:ex_doc, "~> 0.40.3", only: :dev, runtime: false},
+      {:phoenix_live_view, "~> 1.2.6"},
       {:rustler, "~> 0.38.0", runtime: false},
-      {:rustq, "~> 0.9.6", only: [:dev, :test], runtime: false},
-      {:vibe_kit, "== 0.1.5"},
-      {:safe_rpc, "~> 0.1.3"},
-      {:igniter, "~> 0.6", only: [:dev, :test]}
+      {:rustq, "~> 0.9.8", only: [:dev, :test], runtime: false},
+      {:safe_rpc, "~> 0.1.14"},
+      {:igniter, "~> 0.8.2", only: [:dev, :test]}
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]

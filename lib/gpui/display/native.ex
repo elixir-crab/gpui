@@ -1,5 +1,10 @@
 defmodule GPUI.Display.Native do
-  @moduledoc false
+  @moduledoc """
+  Local display backed by the native Rust GPUI runtime.
+
+  A display owns one native runtime namespace while sharing the process-global
+  GPUI application loop with other native displays.
+  """
 
   use GenServer
 

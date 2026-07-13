@@ -28,6 +28,18 @@ def deps do
 end
 ```
 
+Version 0.1 builds its Rust NIF from source and is currently verified on Linux.
+Install a Rust toolchain plus the Linux desktop development libraries before
+compiling a consumer application:
+
+```bash
+sudo apt-get install libxkbcommon-dev libxkbcommon-x11-dev
+```
+
+Set `RUST_FONTCONFIG_DLOPEN=1` when `fontconfig.pc` is unavailable. Precompiled
+NIF artifacts and verified macOS/Windows packaging are planned after the source
+release boundary stabilizes.
+
 ## Development
 
 ```sh
@@ -53,6 +65,7 @@ mix rust.check
 mix rust.clippy
 mix rust.headless.clippy
 mix rust.core.clippy
+./scripts/release-check
 ```
 
 The test environment compiles the NIF without `real-gpui`, so pure session,

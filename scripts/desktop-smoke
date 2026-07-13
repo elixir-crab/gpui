@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 export RUST_FONTCONFIG_DLOPEN="${RUST_FONTCONFIG_DLOPEN:-1}"
 export VK_ICD_FILENAMES="${VK_ICD_FILENAMES:-/usr/share/vulkan/icd.d/lvp_icd.json}"
 
-mix compile
+mix compile --force --warnings-as-errors
 
 timeout 240s xvfb-run -a -s "-screen 0 1280x720x24" \
   dbus-run-session -- bash -c '
