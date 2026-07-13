@@ -50,11 +50,23 @@ defmodule GPUI.Display.Native do
   end
 
   def handle_call(:drain_events, _from, state) do
-    {:reply, GPUI.Native.drain_events(state.runtime), state}
+    case GPUI.Native.drain_events(state.runtime) do
+      {:ok, events} -> {:reply, {:ok, events}, forget_closed_windows(state, events)}
+      {:error, _reason} = error -> {:reply, error, state}
+    end
   end
 
   def handle_call({:inject_event, event}, _from, state) do
     {:reply, GPUI.Native.inject_event(state.runtime, event), state}
+  end
+
+  defp forget_closed_windows(state, events) do
+    closed_ids =
+      for %{type: :window_closed, window_id: window_id} <- events,
+          into: MapSet.new(),
+          do: window_id
+
+    %{state | windows: MapSet.difference(state.windows, closed_ids)}
   end
 
   defp sync_snapshot(state, %{windows: windows, resources: resources}) do

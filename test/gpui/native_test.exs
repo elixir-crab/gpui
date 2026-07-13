@@ -6,6 +6,21 @@ defmodule GPUI.NativeTest do
     assert {:ok, :ok} = GPUI.Native.stop_runtime(runtime)
   end
 
+  test "native events cross the boundary as structured maps" do
+    assert {:ok, runtime} = GPUI.Native.start_runtime()
+
+    assert {:ok, :ok} =
+             GPUI.Native.inject_event(runtime, %{type: :click, window_id: 7, event: "save"})
+
+    assert {:ok, [%{type: :click, window_id: 7, event: "save"}]} =
+             GPUI.Native.drain_events(runtime)
+
+    assert {:ok, :ok} =
+             GPUI.Native.inject_event(runtime, %{type: :window_closed, window_id: 7})
+
+    assert {:ok, [%{type: :window_closed, window_id: 7}]} = GPUI.Native.drain_events(runtime)
+  end
+
   test "exposes the complete generated native lifecycle boundary" do
     Code.ensure_loaded!(GPUI.Native)
 

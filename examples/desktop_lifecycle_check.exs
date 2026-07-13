@@ -51,6 +51,10 @@ defmodule DesktopLifecycleCheck do
 
     runtime_b = :sys.get_state(display_b).runtime
     {:ok, 1} = GPUI.Native.close_window(runtime_b, 1)
+
+    {:ok, [%{type: :window_closed, window_id: 1}]} =
+      GPUI.Display.Native.drain_events(display_b)
+
     {:error, "unknown_window"} = GPUI.Native.close_window(runtime_b, 1)
     :ok = GenServer.stop(display_b)
 

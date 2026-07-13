@@ -1,5 +1,5 @@
 use crate::event::NativeEvent;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 #[cfg(feature = "real-gpui")]
 use crate::{RasterData, WindowCommand};
@@ -9,7 +9,7 @@ use futures::channel::mpsc;
 use std::{
     collections::HashMap,
     sync::{
-        atomic::{AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         OnceLock,
     },
 };
@@ -19,16 +19,36 @@ static NEXT_RUNTIME_ID: AtomicU64 = AtomicU64::new(1);
 #[cfg(feature = "real-gpui")]
 static GPUI_COMMANDS: OnceLock<mpsc::UnboundedSender<WindowCommand>> = OnceLock::new();
 
-pub struct RuntimeResource {
+pub(crate) struct RuntimeState {
     pub(crate) events: Mutex<Vec<NativeEvent>>,
-    #[cfg(feature = "real-gpui")]
-    pub(crate) id: u64,
     #[cfg(feature = "real-gpui")]
     pub(crate) resources: Mutex<HashMap<String, RasterData>>,
     #[cfg(feature = "real-gpui")]
     pub(crate) input_values: Mutex<HashMap<String, String>>,
+}
+
+pub(crate) type SharedRuntime = Arc<RuntimeState>;
+
+impl RuntimeState {
+    fn new() -> Self {
+        Self {
+            events: Mutex::new(Vec::new()),
+            #[cfg(feature = "real-gpui")]
+            resources: Mutex::new(HashMap::new()),
+            #[cfg(feature = "real-gpui")]
+            input_values: Mutex::new(HashMap::new()),
+        }
+    }
+}
+
+pub struct RuntimeResource {
+    pub(crate) state: SharedRuntime,
+    #[cfg(feature = "real-gpui")]
+    pub(crate) id: u64,
     #[cfg(feature = "real-gpui")]
     pub(crate) command_tx: mpsc::UnboundedSender<WindowCommand>,
+    #[cfg(feature = "real-gpui")]
+    pub(crate) stopped: AtomicBool,
 }
 
 #[rustler::resource_impl]
@@ -38,18 +58,31 @@ impl RuntimeResource {
     #[cfg(feature = "real-gpui")]
     pub(crate) fn new() -> Result<Self, &'static str> {
         Ok(Self {
-            events: Mutex::new(Vec::new()),
+            state: Arc::new(RuntimeState::new()),
             id: NEXT_RUNTIME_ID.fetch_add(1, Ordering::Relaxed),
-            resources: Mutex::new(HashMap::new()),
-            input_values: Mutex::new(HashMap::new()),
             command_tx: gpui_command_sender()?,
+            stopped: AtomicBool::new(false),
         })
     }
 
     #[cfg(not(feature = "real-gpui"))]
     pub(crate) fn new() -> Self {
         Self {
-            events: Mutex::new(Vec::new()),
+            state: Arc::new(RuntimeState::new()),
+        }
+    }
+}
+
+#[cfg(feature = "real-gpui")]
+impl Drop for RuntimeResource {
+    fn drop(&mut self) {
+        if !self.stopped.swap(true, Ordering::AcqRel) {
+            let _ = self
+                .command_tx
+                .unbounded_send(WindowCommand::ShutdownRuntime {
+                    runtime_id: self.id,
+                    reply: None,
+                });
         }
     }
 }
@@ -64,9 +97,10 @@ fn gpui_command_sender() -> Result<mpsc::UnboundedSender<WindowCommand>, &'stati
 
     match GPUI_COMMANDS.set(sender.clone()) {
         Ok(()) => {
+            let runtime_sender = sender.clone();
             std::thread::Builder::new()
                 .name("gpui-application".to_string())
-                .spawn(move || crate::run_gpui(receiver))
+                .spawn(move || crate::run_gpui(receiver, runtime_sender))
                 .map_err(|_| "gpui_runtime_start_failed")?;
             Ok(sender)
         }
@@ -74,5 +108,34 @@ fn gpui_command_sender() -> Result<mpsc::UnboundedSender<WindowCommand>, &'stati
             .get()
             .cloned()
             .ok_or("gpui_runtime_start_failed"),
+    }
+}
+
+#[cfg(all(test, feature = "real-gpui"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dropping_runtime_requests_non_blocking_shutdown() {
+        let (command_tx, mut commands) = mpsc::unbounded();
+        let runtime = RuntimeResource {
+            state: Arc::new(RuntimeState::new()),
+            id: 42,
+            command_tx,
+            stopped: AtomicBool::new(false),
+        };
+
+        drop(runtime);
+
+        match commands
+            .try_recv()
+            .expect("shutdown command should be queued")
+        {
+            WindowCommand::ShutdownRuntime {
+                runtime_id: 42,
+                reply: None,
+            } => {}
+            _other => panic!("unexpected runtime drop command"),
+        }
     }
 }

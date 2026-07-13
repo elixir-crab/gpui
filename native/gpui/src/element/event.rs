@@ -4,7 +4,7 @@ use crate::*;
 pub(crate) fn apply_click_event(
     element: gpui::Div,
     event: Option<String>,
-    runtime: ResourceArc<RuntimeResource>,
+    runtime: SharedRuntime,
     window_id: u64,
 ) -> gpui::AnyElement {
     use gpui::{InteractiveElement, IntoElement, StatefulInteractiveElement};
@@ -37,7 +37,7 @@ pub(crate) fn apply_input_events(
     change: Option<String>,
     keydown: Option<String>,
     keyup: Option<String>,
-    runtime: ResourceArc<RuntimeResource>,
+    runtime: SharedRuntime,
     window_id: u64,
 ) -> gpui::AnyElement {
     use gpui::{InteractiveElement, IntoElement, StatefulInteractiveElement};
@@ -136,11 +136,7 @@ pub(crate) fn apply_input_events(
 }
 
 #[cfg(feature = "real-gpui")]
-pub(crate) fn initialize_input_value(
-    runtime: &ResourceArc<RuntimeResource>,
-    input_id: &str,
-    value: &str,
-) {
+pub(crate) fn initialize_input_value(runtime: &SharedRuntime, input_id: &str, value: &str) {
     if let Ok(mut values) = runtime.input_values.lock() {
         values
             .entry(input_id.to_string())
@@ -149,10 +145,7 @@ pub(crate) fn initialize_input_value(
 }
 
 #[cfg(feature = "real-gpui")]
-pub(crate) fn input_value(
-    runtime: &ResourceArc<RuntimeResource>,
-    input_id: &str,
-) -> Option<String> {
+pub(crate) fn input_value(runtime: &SharedRuntime, input_id: &str) -> Option<String> {
     runtime
         .input_values
         .lock()
@@ -162,7 +155,7 @@ pub(crate) fn input_value(
 
 #[cfg(feature = "real-gpui")]
 pub(crate) fn mutate_input_value(
-    runtime: &ResourceArc<RuntimeResource>,
+    runtime: &SharedRuntime,
     input_id: &str,
     keystroke: &gpui::Keystroke,
 ) -> Option<String> {

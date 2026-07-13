@@ -5,10 +5,7 @@ use crate::gpui::{
     MouseDownEvent, PaintQuad, ParentElement, Pixels, Render, ShapedLine, Style, Styled, TextAlign,
     TextRun, UTF16Selection, UnderlineStyle, Window,
 };
-use crate::{
-    element::event::initialize_input_value, gpui, push_event, NativeEvent, RuntimeResource,
-};
-use rustler::ResourceArc;
+use crate::{element::event::initialize_input_value, gpui, push_event, NativeEvent, SharedRuntime};
 use std::ops::Range;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -33,7 +30,7 @@ actions!(
 
 pub(crate) struct NativeTextInput {
     id: String,
-    runtime: ResourceArc<RuntimeResource>,
+    runtime: SharedRuntime,
     window_id: u64,
     change: Option<String>,
     placeholder: String,
@@ -48,7 +45,7 @@ pub(crate) struct NativeTextInput {
 impl NativeTextInput {
     pub(crate) fn new(
         id: String,
-        runtime: ResourceArc<RuntimeResource>,
+        runtime: SharedRuntime,
         window_id: u64,
         value: String,
         placeholder: Option<String>,

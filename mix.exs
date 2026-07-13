@@ -92,6 +92,7 @@ defmodule GPUI.MixProject do
         "rust.clippy",
         "rust.headless.clippy",
         "rust.core.clippy",
+        "rust.test",
         "test_all",
         "credo --strict",
         "dialyzer",
@@ -103,7 +104,8 @@ defmodule GPUI.MixProject do
       "rust.check": &rust_check/1,
       "rust.clippy": &rust_clippy/1,
       "rust.headless.clippy": &rust_headless_clippy/1,
-      "rust.core.clippy": &rust_core_clippy/1
+      "rust.core.clippy": &rust_core_clippy/1,
+      "rust.test": &rust_test/1
     ]
   end
 
@@ -128,6 +130,18 @@ defmodule GPUI.MixProject do
     do: run_rust_clippy(["--no-default-features", "--features", "real-gpui"])
 
   defp rust_core_clippy(_args), do: run_rust_clippy(["--no-default-features"])
+
+  defp rust_test(_args) do
+    rust_cmd([
+      "test",
+      "--manifest-path",
+      "native/gpui/Cargo.toml",
+      "--no-default-features",
+      "--features",
+      "real-gpui",
+      "--lib"
+    ])
+  end
 
   defp run_rust_clippy(feature_args) do
     rust_cmd(

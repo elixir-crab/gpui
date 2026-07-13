@@ -111,6 +111,11 @@ defmodule GPUI.Session do
     end
   end
 
+  defp handle_event(%{type: :window_closed, window_id: window_id} = native_event, state) do
+    windows = Enum.reject(state.windows, &(&1.id == window_id))
+    {native_event, %{state | windows: windows}}
+  end
+
   defp handle_event(
          %{type: type, window_id: window_id, event: event} = native_event,
          state

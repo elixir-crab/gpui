@@ -5,7 +5,7 @@ defmodule GPUI.Event do
 
   defstruct [:type, :window_id, :event, :value, attrs: %{}]
 
-  @type type :: :click | :change | :keydown | :keyup | atom()
+  @type type :: :click | :change | :keydown | :keyup | :window_closed | atom()
   @type t :: %__MODULE__{
           type: type(),
           window_id: pos_integer() | nil,

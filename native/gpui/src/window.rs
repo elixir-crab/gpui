@@ -11,7 +11,7 @@ pub(crate) type SharedWindow = Arc<WindowState>;
 #[cfg(feature = "real-gpui")]
 pub(crate) struct ElixirRoot {
     window_state: SharedWindow,
-    runtime: ResourceArc<RuntimeResource>,
+    runtime: SharedRuntime,
     window_id: u64,
     input_entities: HashMap<String, gpui::Entity<NativeTextInput>>,
 }
@@ -48,7 +48,7 @@ pub(crate) enum WindowCommand {
         title: String,
         window_id: u64,
         window_state: SharedWindow,
-        runtime: ResourceArc<RuntimeResource>,
+        runtime: SharedRuntime,
         reply: WindowCommandReply,
     },
     Update {
@@ -64,7 +64,10 @@ pub(crate) enum WindowCommand {
     },
     ShutdownRuntime {
         runtime_id: u64,
-        reply: WindowCommandReply,
+        reply: Option<WindowCommandReply>,
+    },
+    PlatformClosed {
+        platform_id: gpui::WindowId,
     },
 }
 
@@ -72,19 +75,28 @@ pub(crate) enum WindowCommand {
 struct ManagedWindow {
     handle: gpui::WindowHandle<ElixirRoot>,
     state: SharedWindow,
+    runtime: SharedRuntime,
 }
 
 #[cfg(feature = "real-gpui")]
 type WindowKey = (u64, u64);
 
 #[cfg(feature = "real-gpui")]
-pub(crate) fn run_gpui(mut commands: mpsc::UnboundedReceiver<WindowCommand>) {
+pub(crate) fn run_gpui(
+    mut commands: mpsc::UnboundedReceiver<WindowCommand>,
+    command_tx: mpsc::UnboundedSender<WindowCommand>,
+) {
     use gpui::App;
 
     gpui_platform::application()
         .with_quit_mode(gpui::QuitMode::Explicit)
         .run(move |cx: &mut App| {
+            let window_closed_subscription = cx.on_window_closed(move |_cx, platform_id| {
+                let _ = command_tx.unbounded_send(WindowCommand::PlatformClosed { platform_id });
+            });
+
             cx.spawn(async move |cx| {
+                let _window_closed_subscription = window_closed_subscription;
                 let mut windows = HashMap::<WindowKey, ManagedWindow>::new();
 
                 while let Some(command) = commands.next().await {
@@ -117,17 +129,19 @@ fn handle_window_command(
                 let _ = close_managed_window(window, cx);
             }
 
-            let result = open_gpui_window(title, window_id, window_state.clone(), runtime, cx).map(
-                |handle| {
-                    windows.insert(
-                        key,
-                        ManagedWindow {
-                            handle,
-                            state: window_state,
-                        },
-                    );
-                },
-            );
+            let result =
+                open_gpui_window(title, window_id, window_state.clone(), runtime.clone(), cx).map(
+                    |handle| {
+                        windows.insert(
+                            key,
+                            ManagedWindow {
+                                handle,
+                                state: window_state,
+                                runtime,
+                            },
+                        );
+                    },
+                );
             send_reply(reply, result);
         }
         WindowCommand::Update {
@@ -157,7 +171,32 @@ fn handle_window_command(
             let result = keys
                 .into_iter()
                 .try_for_each(|key| close_gpui_window(windows, key, cx));
-            send_reply(reply, result);
+
+            if let Some(reply) = reply {
+                send_reply(reply, result);
+            }
+        }
+        WindowCommand::PlatformClosed { platform_id } => {
+            handle_platform_window_closed(windows, platform_id);
+        }
+    }
+}
+
+#[cfg(feature = "real-gpui")]
+fn handle_platform_window_closed(
+    windows: &mut HashMap<WindowKey, ManagedWindow>,
+    platform_id: gpui::WindowId,
+) {
+    let key = windows
+        .iter()
+        .find_map(|(key, window)| (window.handle.window_id() == platform_id).then_some(*key));
+
+    if let Some(key) = key {
+        if let Some(window) = windows.remove(&key) {
+            let _ = push_event(
+                &window.runtime,
+                NativeEvent::WindowClosed { window_id: key.1 },
+            );
         }
     }
 }
@@ -201,7 +240,10 @@ fn close_gpui_window(
     let window = windows
         .remove(&key)
         .ok_or_else(|| "unknown_window".to_string())?;
-    close_managed_window(window, cx)
+    let runtime = window.runtime.clone();
+    close_managed_window(window, cx)?;
+    push_event(&runtime, NativeEvent::WindowClosed { window_id: key.1 })
+        .map_err(|_error| "runtime_lock_failed".to_string())
 }
 
 #[cfg(feature = "real-gpui")]
@@ -219,7 +261,7 @@ fn open_gpui_window(
     title: String,
     window_id: u64,
     window_state: SharedWindow,
-    runtime: ResourceArc<RuntimeResource>,
+    runtime: SharedRuntime,
     cx: &mut gpui::App,
 ) -> Result<gpui::WindowHandle<ElixirRoot>, String> {
     use gpui::{px, size, AppContext, Bounds, WindowBounds, WindowOptions};

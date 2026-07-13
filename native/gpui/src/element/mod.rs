@@ -33,7 +33,7 @@ pub(crate) enum ElementNode {
 
 #[cfg(feature = "real-gpui")]
 pub(crate) struct ElementRenderContext<'a, 'cx> {
-    pub(crate) runtime: ResourceArc<RuntimeResource>,
+    pub(crate) runtime: SharedRuntime,
     pub(crate) window_id: u64,
     pub(crate) input_entities: &'a mut HashMap<String, gpui::Entity<NativeTextInput>>,
     pub(crate) cx: &'a mut gpui::Context<'cx, ElixirRoot>,
@@ -87,7 +87,7 @@ pub(crate) fn render_text_primitive(text: String, style: StyleAttrs) -> gpui::An
 pub(crate) fn render_image_primitive(
     image: ImageData,
     style: StyleAttrs,
-    runtime: ResourceArc<RuntimeResource>,
+    runtime: SharedRuntime,
     window_id: u64,
 ) -> gpui::AnyElement {
     use gpui::{div, IntoElement, ParentElement};

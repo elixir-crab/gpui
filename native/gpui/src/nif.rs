@@ -31,7 +31,7 @@ pub(crate) fn open_window_impl<'a>(
         title: title.clone(),
         window_id,
         window_state: shared_window,
-        runtime: runtime.clone(),
+        runtime: runtime.state.clone(),
         reply,
     };
 
@@ -55,6 +55,7 @@ pub(crate) fn drain_events_impl<'a>(
     runtime: ResourceArc<RuntimeResource>,
 ) -> NifResult<Term<'a>> {
     let mut events = runtime
+        .state
         .events
         .lock()
         .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))?;
@@ -131,27 +132,38 @@ pub(crate) fn stop_runtime_impl<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,
 ) -> NifResult<Term<'a>> {
+    use std::sync::atomic::Ordering;
+
+    if runtime.stopped.swap(true, Ordering::AcqRel) {
+        return Ok((atoms::ok(), atoms::ok()).encode(env));
+    }
+
     let (reply, receiver) = std::sync::mpsc::sync_channel(1);
     let command = WindowCommand::ShutdownRuntime {
         runtime_id: runtime.id,
-        reply,
+        reply: Some(reply),
     };
 
     match execute_window_command(&runtime, command, receiver) {
         Ok(()) => {
             runtime
+                .state
                 .resources
                 .lock()
                 .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))?
                 .clear();
             runtime
+                .state
                 .input_values
                 .lock()
                 .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))?
                 .clear();
             Ok((atoms::ok(), atoms::ok()).encode(env))
         }
-        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+        Err(reason) => {
+            runtime.stopped.store(false, Ordering::Release);
+            Ok((atoms::error(), reason).encode(env))
+        }
     }
 }
 
@@ -193,6 +205,7 @@ pub(crate) fn put_resource_impl<'a>(
     let raster = decode_raster_resource(resource)?;
     raster.validate()?;
     runtime
+        .state
         .resources
         .lock()
         .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))?
@@ -217,6 +230,7 @@ pub(crate) fn drop_resource_impl<'a>(
     resource_id: String,
 ) -> NifResult<Term<'a>> {
     runtime
+        .state
         .resources
         .lock()
         .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))?
@@ -241,37 +255,42 @@ pub(crate) fn inject_event_impl<'a>(
     let window_id = event
         .map_get(Atom::from_bytes(env, b"window_id")?)?
         .decode::<u64>()?;
-    let event_name = event
-        .map_get(Atom::from_bytes(env, b"event")?)?
-        .decode::<String>()?;
     let event_type = event
         .map_get(Atom::from_bytes(env, b"type")?)
         .ok()
         .and_then(|term| term.atom_to_string().ok())
         .unwrap_or_else(|| "click".to_string());
-    let value = event
-        .map_get(Atom::from_bytes(env, b"value")?)
-        .ok()
-        .and_then(|term| term.decode::<String>().ok());
 
-    if event_type == "click" {
-        push_event(
-            &runtime,
-            NativeEvent::Click {
-                window_id,
-                event: event_name,
-            },
-        )?;
+    if event_type == "window_closed" {
+        push_event(&runtime.state, NativeEvent::WindowClosed { window_id })?;
     } else {
-        push_event(
-            &runtime,
-            NativeEvent::Input {
-                kind: event_type,
-                window_id,
-                event: event_name,
-                value,
-            },
-        )?;
+        let event_name = event
+            .map_get(Atom::from_bytes(env, b"event")?)?
+            .decode::<String>()?;
+        let value = event
+            .map_get(Atom::from_bytes(env, b"value")?)
+            .ok()
+            .and_then(|term| term.decode::<String>().ok());
+
+        if event_type == "click" {
+            push_event(
+                &runtime.state,
+                NativeEvent::Click {
+                    window_id,
+                    event: event_name,
+                },
+            )?;
+        } else {
+            push_event(
+                &runtime.state,
+                NativeEvent::Input {
+                    kind: event_type,
+                    window_id,
+                    event: event_name,
+                    value,
+                },
+            )?;
+        }
     }
     Ok((atoms::ok(), atoms::ok()).encode(env))
 }

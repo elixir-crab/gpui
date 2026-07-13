@@ -10,7 +10,7 @@ require_file "codegen/gpui/codegen/native/style.ex"
 require_file "codegen/gpui/codegen/native/schema.ex"
 
 rust "native/gpui/src/generated/atoms.rs" do
-  Rustler.atoms([:ok, :error, :invalid_tree, :click])
+  Rustler.atoms([:ok, :error, :invalid_tree, :click, :window_closed])
 end
 
 generate "native-schema", "native/gpui/src/generated/schema.rs" do

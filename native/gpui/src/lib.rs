@@ -23,7 +23,7 @@ use event::{encode_native_event, push_event, NativeEvent};
 use input::NativeTextInput;
 #[cfg(feature = "real-gpui")]
 use resource::{decode_raster_resource, decode_resource_ref, ImageData, RasterData};
-use runtime::RuntimeResource;
+use runtime::{RuntimeResource, SharedRuntime};
 
 include!("generated/atoms.rs");
 include!("generated/schema.rs");
