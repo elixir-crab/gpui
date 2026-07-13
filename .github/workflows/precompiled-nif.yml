@@ -22,7 +22,8 @@ jobs:
     with:
       project-name: gpui_nif
       project-dir: native/gpui
-      project-version-command: mix run --no-compile --no-deps-check -e 'IO.write(Mix.Project.config()[:version])'
+      project-version-command: >-
+        sed -n 's/.*version: "\([^"]*\)".*/\1/p' mix.exs | head -n1
       jobs: >-
         [
           {"target":"x86_64-unknown-linux-gnu","os":"ubuntu-22.04","use-cross":false}
