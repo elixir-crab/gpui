@@ -34,3 +34,4 @@ jobs:
       checksum-module: GPUI.Native
       checksum-file: checksum-Elixir.GPUI.Native.exs
       checksum-prepare-command: GPUI_BUILD_FROM_SOURCE=1 mix compile
+      timeout-minutes: 60

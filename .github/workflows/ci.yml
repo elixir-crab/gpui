@@ -14,53 +14,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality:
+  fast:
     uses: elixir-vibe/actions/.github/workflows/elixir-rustler-ci.yml@v1
     with:
       latest-elixir: "1.20.2"
       latest-otp: "29.0.2"
+      latest-command: mix ci_fast
       run-min: false
-      apt-packages: libxkbcommon-dev libxkbcommon-x11-dev
+      rust-components: ""
       extra-env: |
         RUST_FONTCONFIG_DLOPEN=1
-      rust-cache-workspaces: |
-        native/gpui -> target
-        test/support/e2e_driver -> target
+      rust-cache-workspaces: native/gpui -> target
+      restore-plt-cache: false
+      timeout-minutes: 15
 
-  native-e2e:
+  rustq-freshness:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     env:
-      MIX_ENV: test
-      RUST_FONTCONFIG_DLOPEN: "1"
-      VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+      MIX_ENV: dev
+      ERL_FLAGS: "+S 4:4"
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
       - uses: elixir-vibe/actions/setup-elixir@v1
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Install native E2E dependencies
-        run: >-
-          sudo apt-get update && sudo apt-get install -y --no-install-recommends
-          dbus-x11 libxkbcommon-dev libxkbcommon-x11-dev
-          mesa-vulkan-drivers xdotool xvfb
-      - run: mix test_e2e
-
-  release-check:
-    runs-on: ubuntu-24.04
-    env:
-      MIX_ENV: test
-      RUST_FONTCONFIG_DLOPEN: "1"
-    steps:
-      - uses: actions/checkout@v4
-      - uses: elixir-vibe/actions/setup-elixir@v1
+          cache-prefix: rustq-codegen
+          restore-plt-cache: "false"
+      - uses: Swatinem/rust-cache@v2
         with:
-          otp-version: "29.0.2"
-          elixir-version: "1.20.2"
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Install native dependencies
-        run: >-
-          sudo apt-get update && sudo apt-get install -y --no-install-recommends
-          libxkbcommon-dev libxkbcommon-x11-dev
-      - run: mix gpui.release.check
+          key: rustq-codegen
+          workspaces: deps/rustq/native/rustq_nif -> target
+      - run: mix rustq.gen --check

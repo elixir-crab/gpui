@@ -9,6 +9,7 @@ Initial release candidate.
 - One process-global GPUI application loop with acknowledged window lifecycle commands.
 - HEEx-style templates and a constrained Tailwind-compatible style normalizer.
 - Native input, raster resources, resource references, and interactive events.
-- RustQ-generated Rustler exports, Elixir stubs, component metadata, and style dispatch.
+- RustQ 0.11-generated Rustler exports, Elixir stubs, component metadata, and style dispatch.
 - Structured ExUnit E2E coverage under Xvfb/Lavapipe, including pointer, editing, clipboard, controlled-input, and window-close interaction.
+- Isolated fast, RustQ freshness, native E2E, and release validation environments.
 - Linux CI quality/release gates and an attested, checksummed x86-64 precompiled-NIF release pipeline.

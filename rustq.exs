@@ -1,14 +1,15 @@
 use RustQ.Config
 
-alias RustQ.Rustler
+alias RustQ.Rustler.Atom, as: RustlerAtom
+alias RustQ.Rustler.Nif
 
-require_file "lib/gpui/schema/component.ex"
-require_file "lib/gpui/schema/resource.ex"
-require_file "lib/gpui/schema/style.ex"
-require_file "lib/gpui/schema.ex"
-require_file "codegen/gpui/codegen/native/decoder.ex"
-require_file "codegen/gpui/codegen/native/style.ex"
-require_file "codegen/gpui/codegen/native/schema.ex"
+require_file("lib/gpui/schema/component.ex")
+require_file("lib/gpui/schema/resource.ex")
+require_file("lib/gpui/schema/style.ex")
+require_file("lib/gpui/schema.ex")
+require_file("codegen/gpui/codegen/native/decoder.ex")
+require_file("codegen/gpui/codegen/native/style.ex")
+require_file("codegen/gpui/codegen/native/schema.ex")
 
 fixed_atoms = [
   :ok,
@@ -58,11 +59,11 @@ schema_atoms =
   end)
 
 rust "native/gpui/src/generated/atoms.rs" do
-  Rustler.atoms(fixed_atoms ++ schema_atoms)
+  RustlerAtom.declaration(fixed_atoms ++ schema_atoms)
 end
 
 generate "native-schema", "native/gpui/src/generated/schema.rs" do
-  content GPUI.Codegen.Native.Schema.source()
+  content(GPUI.Codegen.Native.Schema.source())
 end
 
 nifs = [
@@ -78,9 +79,9 @@ nifs = [
 ]
 
 rust "native/gpui/src/generated/nifs.rs" do
-  Rustler.nif_exports_from_source("native/gpui/src/nif.rs", nifs, lifetime: :a)
+  Nif.wrappers_from_source("native/gpui/src/nif.rs", nifs)
 end
 
 generate "native-stubs", "lib/gpui/native/generated.ex" do
-  content Rustler.nif_stubs_from_source("native/gpui/src/nif.rs", nifs, GPUI.Native.Generated)
+  content(Nif.stubs_from_source("native/gpui/src/nif.rs", nifs, GPUI.Native.Generated))
 end

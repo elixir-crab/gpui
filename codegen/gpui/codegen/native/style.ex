@@ -42,8 +42,8 @@ defmodule GPUI.Codegen.Native.Style do
       name: :apply_generated_render_styles,
       vis: :crate,
       attrs: [A.attr(:cfg, feature: "real-gpui")],
-      args: [A.arg(:element, "gpui::Div"), A.arg(:style, "StyleAttrs")],
-      returns: "gpui::Div",
+      args: [A.arg(:element, T.path([:gpui, :Div])), A.arg(:style, T.path(:StyleAttrs))],
+      returns: T.path([:gpui, :Div]),
       body:
         [A.let_mut(:element, A.var(:element))] ++
           (style_specs
@@ -127,7 +127,11 @@ defmodule GPUI.Codegen.Native.Style do
       name: :apply_generated_style_attr,
       vis: :crate,
       attrs: [A.attr(:cfg, feature: "real-gpui")],
-      args: [A.arg(:attrs, "&mut StyleAttrs"), A.arg(:key, "Atom"), A.arg(:term, "Term")],
+      args: [
+        A.arg(:attrs, T.mut_ref(:StyleAttrs)),
+        A.arg(:key, T.path(:Atom)),
+        A.arg(:term, T.path(:Term))
+      ],
       returns: T.path(:bool),
       body: [A.return_stmt(A.match_expr(A.var(:key), arms))]
     }
@@ -143,5 +147,5 @@ defmodule GPUI.Codegen.Native.Style do
   defp style_decode_call(:px), do: A.call(:px_value, [A.var(:term)])
   defp style_decode_call(:radius), do: A.call(:radius_value, [A.var(:term)])
 
-  defp render_item(item), do: RustQ.Rust.AST.Render.render_item(item)
+  defp render_item(item), do: RustQ.Rust.render(item)
 end

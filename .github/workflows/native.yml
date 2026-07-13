@@ -1,0 +1,76 @@
+name: Native validation
+
+on:
+  push:
+    branches: [main, clean-architecture]
+    paths:
+      - "native/**"
+      - "codegen/**"
+      - "test/e2e/**"
+      - "test/support/e2e/**"
+      - "test/support/e2e_driver/**"
+      - "lib/gpui/native.ex"
+      - "lib/gpui/display/native.ex"
+      - "lib/gpui/runtime.ex"
+      - "lib/gpui/session.ex"
+      - "rustq.exs"
+      - "mix.exs"
+      - "mix.lock"
+      - ".github/workflows/native.yml"
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native-quality:
+    uses: elixir-vibe/actions/.github/workflows/elixir-rustler-ci.yml@v1
+    with:
+      latest-elixir: "1.20.2"
+      latest-otp: "29.0.2"
+      latest-command: mix ci_native
+      run-min: false
+      apt-packages: libxkbcommon-dev libxkbcommon-x11-dev
+      extra-env: |
+        RUST_FONTCONFIG_DLOPEN=1
+      rust-cache-workspaces: |
+        native/gpui -> target
+        test/support/e2e_driver -> target
+      timeout-minutes: 45
+
+  native-e2e:
+    needs: native-quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      MIX_ENV: e2e
+      GPUI_E2E: "1"
+      RUST_FONTCONFIG_DLOPEN: "1"
+      VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: elixir-vibe/actions/setup-elixir@v1
+        with:
+          otp-version: "29.0.2"
+          elixir-version: "1.20.2"
+          cache-prefix: native-e2e
+          restore-plt-cache: "false"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: native-e2e
+          workspaces: |
+            native/gpui -> target
+            test/support/e2e_driver -> target
+      - name: Install native E2E dependencies
+        run: >-
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends
+          dbus-x11 libxkbcommon-dev libxkbcommon-x11-dev
+          mesa-vulkan-drivers xdotool xvfb
+      - run: mix test_e2e

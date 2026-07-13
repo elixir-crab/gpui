@@ -31,12 +31,14 @@ defmodule GPUI.MixProject do
     [
       preferred_envs: [
         ci: :test,
+        ci_fast: :test,
+        ci_native: :test,
         test_unit: :test,
         test_integration: :test,
         test_e2e: :test,
         test_all: :test,
-        "gpui.release.check": :test,
-        "gpui.test.e2e": :test
+        "gpui.release.check": :release,
+        "gpui.test.e2e": :e2e
       ]
     ]
   end
@@ -51,7 +53,9 @@ defmodule GPUI.MixProject do
       (System.get_env("GPUI_E2E") != "1" and String.contains?(path, "e2e/"))
   end
 
-  defp elixirc_paths(env) when env in [:dev, :test], do: ["lib", "dev/mix/tasks"]
+  defp elixirc_paths(env) when env in [:dev, :test, :e2e, :release],
+    do: ["lib", "dev/mix/tasks"]
+
   defp elixirc_paths(_env), do: ["lib"]
 
   defp description do
@@ -98,11 +102,11 @@ defmodule GPUI.MixProject do
       {:ex_dna, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.40.3", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.40.3", only: [:dev, :release], runtime: false},
       {:phoenix_live_view, "~> 1.2.6"},
       {:rustler, "~> 0.38.0", runtime: false},
       {:rustler_precompiled, "~> 0.9"},
-      {:rustq, "~> 0.9.8", only: [:dev, :test], runtime: false},
+      {:rustq, "~> 0.11.0", only: :dev, runtime: false},
       {:safe_rpc, "~> 0.1.14"},
       {:igniter, "~> 0.8.2", only: [:dev, :test]}
     ]
@@ -114,6 +118,26 @@ defmodule GPUI.MixProject do
       test_integration: ["test test/integration"],
       test_e2e: ["gpui.test.e2e"],
       test_all: ["test"],
+      ci_fast: [
+        "compile --warnings-as-errors",
+        "format --check-formatted",
+        "test_all",
+        "credo --strict",
+        "ex_dna --max-clones 0",
+        "reach.check --arch --smells"
+      ],
+      ci_native: [
+        "compile --warnings-as-errors",
+        "rust.fmt --check",
+        "rust.check",
+        "rust.clippy",
+        "rust.headless.clippy",
+        "rust.core.clippy",
+        "rust.e2e.fmt --check",
+        "rust.e2e.clippy",
+        "rust.test",
+        "dialyzer"
+      ],
       ci: [
         "compile --warnings-as-errors",
         "rustq.check",
@@ -149,7 +173,7 @@ defmodule GPUI.MixProject do
       System.cmd("mix", ["rustq.gen", "--check"],
         into: IO.stream(),
         stderr_to_stdout: true,
-        env: [{"MIX_ENV", to_string(Mix.env())}]
+        env: [{"MIX_ENV", "dev"}]
       )
 
     if status != 0, do: Mix.raise("RustQ generated files are stale")

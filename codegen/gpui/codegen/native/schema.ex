@@ -7,6 +7,7 @@ defmodule GPUI.Codegen.Native.Schema do
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Rust.AST.PatternBuilder, as: P
   alias RustQ.Rust.AST.TypeBuilder, as: T
+  alias RustQ.Rust.Identifier
 
   @spec source() :: String.t()
   def source do
@@ -62,8 +63,8 @@ defmodule GPUI.Codegen.Native.Schema do
     %AST.Function{
       name: :generated_component_kind,
       vis: :pub,
-      args: [A.arg(:tag, "GeneratedElementTag")],
-      returns: "GeneratedComponentKind",
+      args: [A.arg(:tag, T.path(:GeneratedElementTag))],
+      returns: T.path(:GeneratedComponentKind),
       body: [A.return_stmt(A.match_expr(A.var(:tag), arms))]
     }
     |> render_item()
@@ -104,8 +105,8 @@ defmodule GPUI.Codegen.Native.Schema do
     |> render_item()
   end
 
-  defp render_item(item), do: RustQ.Rust.AST.Render.render_item(item)
+  defp render_item(item), do: RustQ.Rust.render(item)
 
   defp rust_variant(value),
-    do: value |> Atom.to_string() |> Macro.camelize() |> RustQ.Atom.identifier!()
+    do: value |> Atom.to_string() |> Macro.camelize() |> Identifier.atom!()
 end

@@ -9,7 +9,7 @@ defmodule Mix.Tasks.Gpui.Test.E2e do
 
     env = [
       {"GPUI_E2E", "1"},
-      {"MIX_ENV", "test"},
+      {"MIX_ENV", "e2e"},
       {"MIX_BUILD_PATH", Path.expand("_build/e2e")},
       {"RUST_FONTCONFIG_DLOPEN", System.get_env("RUST_FONTCONFIG_DLOPEN", "1")},
       {"VK_ICD_FILENAMES",

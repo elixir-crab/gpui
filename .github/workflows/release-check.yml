@@ -1,0 +1,36 @@
+name: Release validation
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      MIX_ENV: release
+      GPUI_BUILD_FROM_SOURCE: "1"
+      RUST_FONTCONFIG_DLOPEN: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: elixir-vibe/actions/setup-elixir@v1
+        with:
+          otp-version: "29.0.2"
+          elixir-version: "1.20.2"
+          cache-prefix: release-check
+          restore-plt-cache: "false"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-check
+          workspaces: native/gpui -> target
+      - name: Install native dependencies
+        run: >-
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends
+          libxkbcommon-dev libxkbcommon-x11-dev
+      - run: mix gpui.release.check
