@@ -1,5 +1,5 @@
 defmodule GPUI.Runtime.EventLoopTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   defmodule CounterView do
     use GPUI.View
@@ -15,66 +15,8 @@ defmodule GPUI.Runtime.EventLoopTest do
     end
 
     @impl GPUI.View
-    def handle_event("inc", _event, assigns) do
-      {:noreply, %{assigns | count: assigns.count + 1}}
-    end
-  end
-
-  defmodule ResourceImageView do
-    use GPUI.View
-
-    @impl GPUI.View
-    def render(assigns) do
-      ~GPUI"""
-      <img raster={assigns.logo} />
-      """
-    end
-  end
-
-  defmodule ResourceImageApp do
-    use GPUI.Application
-
-    @impl GPUI.Application
-    def mount(_args) do
-      {:ok, %{},
-       [
-         window("Resource Image",
-           do: root(ResourceImageView, logo: GPUI.ResourceRef.new("logo", :raster))
-         )
-       ]}
-    end
-  end
-
-  defmodule InputView do
-    use GPUI.View
-
-    @impl GPUI.View
-    def render(assigns) do
-      ~GPUI"""
-      <div>
-        <input value={assigns.name} phx-change="rename" />
-      </div>
-      """
-    end
-
-    @impl GPUI.View
-    def handle_event("rename", %{value: value}, assigns) do
-      {:noreply, %{assigns | name: value}}
-    end
-  end
-
-  defmodule InputApp do
-    use GPUI.Application
-
-    @impl GPUI.Application
-    def mount(_args) do
-      {:ok, %{},
-       [
-         window "Input" do
-           root(InputView, name: "old")
-         end
-       ]}
-    end
+    def handle_event("inc", _event, assigns),
+      do: {:noreply, %{assigns | count: assigns.count + 1}}
   end
 
   defmodule CounterApp do
@@ -82,134 +24,73 @@ defmodule GPUI.Runtime.EventLoopTest do
 
     @impl GPUI.Application
     def mount(_args) do
-      {:ok, %{},
-       [
-         window "Counter" do
-           size(300, 200)
-           root(CounterView, count: 0)
-         end
-       ]}
+      {:ok, [window("Counter", do: root(CounterView, count: 0))]}
     end
   end
 
-  test "native click events update view assigns and re-render" do
-    {:ok, pid} = GPUI.Runtime.start_link(app: CounterApp, backend: :native)
-    [window] = GPUI.Runtime.windows(pid)
+  test "display events update session state and synchronize a new snapshot" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(
+        app: CounterApp,
+        display: GPUITest.Display,
+        display_opts: [owner: self()],
+        poll_interval: nil
+      )
 
-    assert GPUI.Element.to_payload(CounterView.render(%{count: 0})).children
-           |> hd()
-           |> Map.fetch!(:children) == ["Count: ", 0]
-
-    {:ok, :ok} =
-      GPUI.Runtime.inject_event(pid, %{
-        window_id: window.id,
-        event: "inc"
-      })
-
-    handled = GPUI.Runtime.drain_events(pid)
-    assert %{type: :click, event: "inc", window_id: 1} in handled
-
-    [updated] = GPUI.Runtime.windows(pid)
-    assert {_module, %{count: 1}} = updated.root
-
-    payload = GPUI.Runtime.window_payload(updated)
-    assert get_in(payload, [:root, :tree, :children, Access.at(0), :children]) == ["Count: ", 1]
-    assert get_in(payload, [:root, :tree, :children, Access.at(1), :attrs, :"phx-click"]) == "inc"
-
-    assert %{op: :backend_event, payload: %{type: :window_updated, window_id: 1}} in GPUI.Runtime.backend_messages(
-             pid
-           )
-
-    GenServer.stop(pid)
-  end
-
-  test "native backend preserves resource refs for native-side resolution" do
-    {:ok, pid} = GPUI.Runtime.start_link(app: ResourceImageApp, backend: :native)
-
-    raster = %{__type__: :raster, width: 1, height: 1, format: :rgba8, data: <<255, 0, 0, 255>>}
-    assert :ok = GPUI.Runtime.put_resource(pid, "logo", raster)
-
-    {_event, [payload]} =
-      GPUI.Runtime.dispatch_event(pid, %{type: :noop, window_id: 1, event: "noop"})
-
-    assert get_in(payload, [:root, :tree, :attrs, :raster]) == %{
-             __type__: :resource_ref,
-             id: "logo",
-             type: :raster
-           }
-
-    GenServer.stop(pid)
-  end
-
-  test "native change events update view assigns" do
-    {:ok, pid} = GPUI.Runtime.start_link(app: InputApp, backend: :native)
-    [window] = GPUI.Runtime.windows(pid)
+    assert_receive {:display_snapshot, %{windows: [%{id: 1}]}}
 
     assert {:ok, :ok} =
-             GPUI.Runtime.inject_event(pid, %{
-               type: :change,
-               window_id: window.id,
-               event: "rename",
-               value: "new"
-             })
+             GPUI.Runtime.inject_event(runtime, %{type: :click, window_id: 1, event: "inc"})
 
-    handled = GPUI.Runtime.drain_events(pid)
-    assert %{type: :change, event: "rename", value: "new", window_id: 1} in handled
+    assert [%{type: :click, event: "inc", window_id: 1}] = GPUI.Runtime.drain_events(runtime)
 
-    [updated] = GPUI.Runtime.windows(pid)
-    assert {_module, %{name: "new"}} = updated.root
-
-    GenServer.stop(pid)
+    assert %{windows: [%{root: %{assigns: %{count: 1}}}]} = GPUI.Runtime.snapshot(runtime)
+    assert_receive {:display_snapshot, %{windows: [%{root: %{assigns: %{count: 1}}}]}}
   end
 
-  test "native events can be polled automatically" do
-    {:ok, pid} = GPUI.Runtime.start_link(app: CounterApp, backend: :native, poll_interval: 10)
-    [window] = GPUI.Runtime.windows(pid)
+  test "resources belong to the session snapshot and are synchronized to the display" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(app: CounterApp, display: GPUITest.Display, poll_interval: nil)
+
+    raster = %{__type__: :raster, width: 1, height: 1, format: :rgba8, data: <<255, 0, 0, 255>>}
+
+    assert :ok = GPUI.Runtime.put_resource(runtime, "logo", raster)
+    assert %{resources: %{"logo" => ^raster}} = GPUI.Runtime.snapshot(runtime)
+
+    assert :ok = GPUI.Runtime.drop_resource(runtime, "logo")
+    assert %{resources: %{}} = GPUI.Runtime.snapshot(runtime)
+  end
+
+  test "display events can be polled automatically" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(
+        app: CounterApp,
+        display: GPUITest.Display,
+        poll_interval: 10
+      )
 
     {:ok, :ok} =
-      GPUI.Runtime.inject_event(pid, %{
-        window_id: window.id,
-        event: "inc"
-      })
+      GPUI.Runtime.inject_event(runtime, %{type: :click, window_id: 1, event: "inc"})
 
     assert_eventually(fn ->
-      [updated] = GPUI.Runtime.windows(pid)
-      assert {_module, %{count: 1}} = updated.root
+      assert %{windows: [%{root: %{assigns: %{count: 1}}}]} = GPUI.Runtime.snapshot(runtime)
+      assert %{type: :click, event: "inc", window_id: 1} in GPUI.Runtime.events(runtime)
     end)
-
-    assert_eventually(fn ->
-      assert %{op: :backend_event, payload: %{type: :click, event: "inc", window_id: 1}} in GPUI.Runtime.backend_messages(
-               pid
-             )
-    end)
-
-    GenServer.stop(pid)
   end
 
   defp assert_eventually(fun) do
-    deadline = System.monotonic_time(:millisecond) + 1_000
-    assert_eventually(fun, deadline, nil)
+    assert_eventually(fun, System.monotonic_time(:millisecond) + 1_000)
   end
 
-  defp assert_eventually(fun, deadline, last_error) do
+  defp assert_eventually(fun, deadline) do
     fun.()
   rescue
-    error in [ExUnit.AssertionError] ->
-      if System.monotonic_time(:millisecond) > deadline do
+    error in ExUnit.AssertionError ->
+      if System.monotonic_time(:millisecond) >= deadline do
         reraise(error, __STACKTRACE__)
       else
         Process.sleep(10)
-        assert_eventually(fun, deadline, error)
-      end
-  else
-    result -> result
-  catch
-    kind, reason ->
-      if System.monotonic_time(:millisecond) > deadline do
-        :erlang.raise(kind, reason, __STACKTRACE__)
-      else
-        Process.sleep(10)
-        assert_eventually(fun, deadline, last_error)
+        assert_eventually(fun, deadline)
       end
   end
 end

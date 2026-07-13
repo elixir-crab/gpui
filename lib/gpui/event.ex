@@ -1,11 +1,11 @@
 defmodule GPUI.Event do
   @moduledoc """
-  Normalized UI event delivered from native/remote backends into `GPUI.Runtime`.
+  Normalized UI event delivered from a display into `GPUI.Session`.
   """
 
   defstruct [:type, :window_id, :event, :value, attrs: %{}]
 
-  @type type :: :click | :change | :keydown | :keyup | :window_updated | atom()
+  @type type :: :click | :change | :keydown | :keyup | atom()
   @type t :: %__MODULE__{
           type: type(),
           window_id: pos_integer() | nil,

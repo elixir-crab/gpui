@@ -24,7 +24,7 @@ defmodule CounterApp do
 
   @impl GPUI.Application
   def mount(_args) do
-    {:ok, %{},
+    {:ok,
      [
        window "GPUI Counter" do
          size(320, 240)

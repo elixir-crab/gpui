@@ -3,6 +3,8 @@ defmodule GPUI.Remote.Transport.TCP do
   Length-prefixed ETF transport over TCP, with optional SSL.
   """
 
+  @behaviour SafeRPC.Transport
+
   defmodule Listener do
     @moduledoc false
     defstruct [:socket, :mode]
@@ -24,6 +26,7 @@ defmodule GPUI.Remote.Transport.TCP do
           | {:ssl, false | keyword()}
           | {:timeout, timeout()}
 
+  @impl SafeRPC.Transport
   @spec listen([listen_option()]) :: {:ok, Listener.t()} | {:error, term()}
   def listen(opts \\ []) do
     port = Keyword.get(opts, :port, 0)
@@ -34,6 +37,7 @@ defmodule GPUI.Remote.Transport.TCP do
     end
   end
 
+  @impl SafeRPC.Transport
   @spec accept(Listener.t(), timeout()) :: {:ok, Connection.t()} | {:error, term()}
   def accept(listener, timeout \\ :infinity)
 
@@ -50,6 +54,7 @@ defmodule GPUI.Remote.Transport.TCP do
     end
   end
 
+  @impl SafeRPC.Transport
   @spec connect([connect_option()]) :: {:ok, Connection.t()} | {:error, term()}
   def connect(opts) do
     host = opts |> Keyword.fetch!(:host) |> normalize_host()
@@ -71,16 +76,17 @@ defmodule GPUI.Remote.Transport.TCP do
     with {:ok, {_addr, port}} <- :ssl.sockname(socket), do: {:ok, port}
   end
 
-  @doc false
-  def send(%Connection{socket: socket, mode: :tcp}, frame), do: :gen_tcp.send(socket, frame)
-  def send(%Connection{socket: socket, mode: :ssl}, frame), do: :ssl.send(socket, frame)
+  @impl SafeRPC.Transport
+  def send(connection, binary, _timeout) when is_binary(binary) do
+    raw_send(connection, <<byte_size(binary)::32-big, binary::binary>>)
+  end
 
-  @doc false
-  def recv(%Connection{socket: socket, mode: :tcp}, size, timeout),
-    do: :gen_tcp.recv(socket, size, timeout)
-
-  def recv(%Connection{socket: socket, mode: :ssl}, size, timeout),
-    do: :ssl.recv(socket, size, timeout)
+  @impl SafeRPC.Transport
+  def recv(connection, timeout) do
+    with {:ok, <<size::32-big>>} <- raw_recv(connection, 4, timeout) do
+      raw_recv(connection, size, timeout)
+    end
+  end
 
   @spec controlling_process(Connection.t(), pid()) :: :ok | {:error, term()}
   def controlling_process(%Connection{socket: socket, mode: :tcp}, pid),
@@ -89,11 +95,21 @@ defmodule GPUI.Remote.Transport.TCP do
   def controlling_process(%Connection{socket: socket, mode: :ssl}, pid),
     do: :ssl.controlling_process(socket, pid)
 
+  @impl SafeRPC.Transport
   @spec close(Connection.t() | Listener.t()) :: :ok
   def close(%Connection{socket: socket, mode: :tcp}), do: :gen_tcp.close(socket)
   def close(%Connection{socket: socket, mode: :ssl}), do: :ssl.close(socket)
   def close(%Listener{socket: socket, mode: :tcp}), do: :gen_tcp.close(socket)
   def close(%Listener{socket: socket, mode: :ssl}), do: :ssl.close(socket)
+
+  defp raw_send(%Connection{socket: socket, mode: :tcp}, frame), do: :gen_tcp.send(socket, frame)
+  defp raw_send(%Connection{socket: socket, mode: :ssl}, frame), do: :ssl.send(socket, frame)
+
+  defp raw_recv(%Connection{socket: socket, mode: :tcp}, size, timeout),
+    do: :gen_tcp.recv(socket, size, timeout)
+
+  defp raw_recv(%Connection{socket: socket, mode: :ssl}, size, timeout),
+    do: :ssl.recv(socket, size, timeout)
 
   defp ssl_handshake(client), do: :ssl.handshake(client)
 

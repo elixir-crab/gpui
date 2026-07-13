@@ -2,8 +2,8 @@ defmodule GPUI do
   @moduledoc """
   Elixir-facing DSL for GPUI applications and views.
 
-  The public API builds ordinary Elixir data. Runtime backends can then render
-  or transport that data through the Rustler NIF backend.
+  The public API builds ordinary Elixir data. Sessions render serializable
+  snapshots, and displays present those snapshots locally or remotely.
   """
 
   alias GPUI.Element

@@ -7,12 +7,13 @@ The package name is `gpui`, with public modules under `GPUI`.
 ## Current direction
 
 - Elixir views render serializable `%GPUI.Element{}` trees.
-- OTP owns lifecycle through `GPUI.Runtime`.
-- Rust/Rustler provides the local native GPUI backend.
+- `GPUI.Session` owns renderer-independent windows, view assigns, resources, and rendered snapshots.
+- `GPUI.Runtime` composes a session with a local `GPUI.Display`.
+- Rust/Rustler provides `GPUI.Display.Native`.
 - Native input uses GPUI `EntityInputHandler` with focus, cursor/selection paint, clipboard, IME hooks, and UTF-16/UTF-8 offset handling.
 - Remote app/display workflows use `SafeRPC` over framed TCP/SSL for safe ETF RPC, request IDs, timeouts, and capability checks.
-- GPUI owns the app operation contract in `GPUI.Remote.AppProtocol`.
-- Remote app servers require protocol `hello` before other operations and support app session TTL/GC.
+- GPUI owns the app operation contract in `GPUI.Remote.Protocol`.
+- `GPUI.Remote.Server` isolates every application session and requires protocol `hello` before other operations.
 - RustQ generates native NIF glue from project specs as the surface grows.
 
 ## Installation
@@ -47,17 +48,40 @@ Useful verification gates:
 mix test_unit
 mix test_integration
 mix rustq.gen --check
-PATH="$HOME/.cargo/bin:$PATH" mix compile --force --warnings-as-errors
+mix rust.fmt --check
+mix rust.check
+mix rust.clippy
+mix rust.headless.clippy
+mix rust.core.clippy
 ```
 
-The Rustler crate always compiles with upstream GPUI. Tests set `ZED_HEADLESS=1`
-so the native backend exercises real GPUI without requiring a desktop display.
+The test environment compiles the NIF without `real-gpui`, so pure session,
+runtime, and remote tests do not require desktop system libraries. Rust gates
+cover three configurations: core-only, headless real GPUI, and the desktop
+Wayland/X11 build. Setting `ZED_HEADLESS=1` selects the real-GPUI headless build
+without desktop linker dependencies. Headless GPUI can exercise application
+lifecycle but cannot open a platform window.
+
+For real native-window verification on a server, install the minimal X11 build
+and virtual display dependencies, then run the checked-in smoke suite:
+
+```bash
+sudo apt-get install xvfb libxkbcommon-dev libxkbcommon-x11-dev
+./scripts/desktop-smoke
+```
+
+The suite opens real GPUI windows under Xvfb using Mesa's Lavapipe software
+renderer. It verifies process-global loop ownership, duplicate window IDs across
+runtimes, acknowledged open/update/close commands, snapshot shrink, runtime
+shutdown isolation, and native display operation through the TCP remote API. No
+desktop environment or window manager is required.
+
 The Rust crate is named `gpui_nif` only to avoid Cargo ambiguity with upstream
 `gpui`; the Hex package and public API remain `gpui` / `GPUI.*`.
 
 ## Examples
 
-Build the native backend:
+Build the native display:
 
 ```sh
 PATH="$HOME/.cargo/bin:$PATH" mix compile

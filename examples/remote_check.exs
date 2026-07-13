@@ -1,11 +1,9 @@
 # Ultra-minimal remote smoke check.
 #
-# Run from the repo over SSH:
-#   PATH="$HOME/.cargo/bin:$PATH" mix compile
-#   ZED_HEADLESS=1 PATH="$HOME/.cargo/bin:$PATH" mix run examples/remote_check.exs
+# Run inside a desktop session, or use `scripts/desktop-smoke` on a server.
+# GPUI's headless platform cannot open windows.
 #
-# Expected output:
-#   GPUI remote check: PASS
+# Expected output: GPUI remote check: PASS
 
 defmodule RemoteCheckView do
   use GPUI.View
@@ -31,7 +29,7 @@ defmodule RemoteCheckApp do
 
   @impl GPUI.Application
   def mount(_args) do
-    {:ok, %{},
+    {:ok,
      [
        window "GPUI Remote Check" do
          size(240, 160)
@@ -42,7 +40,7 @@ defmodule RemoteCheckApp do
 end
 
 children = [
-  {RemoteCheckApp, backend: :native, poll_interval: 10}
+  {RemoteCheckApp, name: RemoteCheckApp, poll_interval: 10}
 ]
 
 {:ok, _supervisor} = Supervisor.start_link(children, strategy: :one_for_one)

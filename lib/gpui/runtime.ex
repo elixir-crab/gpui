@@ -1,321 +1,166 @@
 defmodule GPUI.Runtime do
   @moduledoc """
-  OTP owner for a GPUI application runtime.
+  Local composition of a renderer-independent `GPUI.Session` and a display.
 
-  The runtime owns application state and rendered window specs. Concrete IO is
-  delegated to the native GPUI backend. Remote workflows run through
-  `GPUI.Remote.AppServer` and `GPUI.Remote.DisplayClient`.
+  The runtime synchronizes session snapshots to the display and routes display
+  events back into the session. Remote application servers use `GPUI.Session`
+  directly and therefore never start a native display.
   """
 
   use GenServer
 
-  alias GPUI.WindowSpec
+  @call_timeout 5_000
 
   @type state :: %{
-          app: module(),
-          app_state: term(),
-          windows: [WindowSpec.t()],
-          backend: module(),
-          backend_state: GPUI.Backend.state(),
-          backend_messages: [map()],
-          poll_interval: pos_integer() | nil,
-          resources: %{optional(term()) => map()}
+          session: pid(),
+          display: pid(),
+          display_module: module(),
+          events: [map()],
+          poll_interval: pos_integer() | nil
         }
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
-    app = Keyword.fetch!(opts, :app)
-    GenServer.start_link(__MODULE__, opts, name: app)
+    GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
   end
+
+  @spec windows(GenServer.server()) :: [GPUI.WindowSpec.t()]
+  def windows(runtime), do: GenServer.call(runtime, :windows, @call_timeout)
+
+  @spec snapshot(GenServer.server()) :: GPUI.Snapshot.t()
+  def snapshot(runtime), do: GenServer.call(runtime, :snapshot, @call_timeout)
+
+  @spec events(GenServer.server()) :: [map()]
+  def events(runtime), do: GenServer.call(runtime, :events, @call_timeout)
+
+  @spec drain_events(GenServer.server()) :: [map()]
+  def drain_events(runtime), do: GenServer.call(runtime, :drain_events, @call_timeout)
+
+  @spec put_resource(GenServer.server(), term(), map()) :: :ok | {:error, term()}
+  def put_resource(runtime, id, resource),
+    do: GenServer.call(runtime, {:put_resource, id, resource}, @call_timeout)
+
+  @spec drop_resource(GenServer.server(), term()) :: :ok | {:error, term()}
+  def drop_resource(runtime, id),
+    do: GenServer.call(runtime, {:drop_resource, id}, @call_timeout)
+
+  @spec dispatch_event(GenServer.server(), map()) :: {map(), GPUI.Snapshot.t()}
+  def dispatch_event(runtime, event),
+    do: GenServer.call(runtime, {:dispatch_event, event}, @call_timeout)
+
+  @spec inject_event(GenServer.server(), map()) :: {:ok, term()} | {:error, term()}
+  def inject_event(runtime, event),
+    do: GenServer.call(runtime, {:inject_event, event}, @call_timeout)
 
   @impl GenServer
   def init(opts) do
-    app = Keyword.fetch!(opts, :app)
-    args = Keyword.get(opts, :args, [])
-    backend = opts |> Keyword.get(:backend, :native) |> GPUI.Backend.module_for()
+    display_module = Keyword.get(opts, :display, GPUI.Display.Native)
+    display_opts = Keyword.get(opts, :display_opts, [])
 
-    with {:ok, backend_state} <- backend.init(opts) do
-      case app.mount(args) do
-        {:ok, app_state} ->
-          state = initial_state(app, app_state, [], backend, backend_state, poll_interval(opts))
-          schedule_backend_poll(state)
-          {:ok, state}
+    with {:ok, session} <-
+           GPUI.Session.start_link(
+             app: Keyword.fetch!(opts, :app),
+             args: Keyword.get(opts, :args, [])
+           ),
+         {:ok, display} <- display_module.start_link(display_opts),
+         :ok <- display_module.sync(display, GPUI.Session.snapshot(session)) do
+      state = %{
+        session: session,
+        display: display,
+        display_module: display_module,
+        events: [],
+        poll_interval: poll_interval(opts)
+      }
 
-        {:ok, app_state, windows} when is_list(windows) ->
-          windows = assign_window_ids(windows)
-
-          state =
-            initial_state(app, app_state, windows, backend, backend_state, poll_interval(opts))
-
-          Enum.each(windows, &sync_window(state, &1))
-          schedule_backend_poll(state)
-          {:ok, state}
-      end
-    end
-  end
-
-  @doc "Returns declared windows for tests and future backend synchronization."
-  @spec windows(GenServer.server()) :: [WindowSpec.t()]
-  def windows(server), do: GenServer.call(server, :windows)
-
-  @doc "Returns replies/events received from the backend."
-  @spec backend_messages(GenServer.server()) :: [map()]
-  def backend_messages(server), do: GenServer.call(server, :backend_messages)
-
-  @doc "Drains backend events, applies view callbacks, and syncs updated views."
-  @spec drain_events(GenServer.server()) :: [map()]
-  def drain_events(server), do: GenServer.call(server, :drain_events)
-
-  @doc "Stores a display resource through the active backend."
-  @spec put_resource(GenServer.server(), term(), map()) :: :ok | {:error, term()}
-  def put_resource(server, resource_id, resource),
-    do: GenServer.call(server, {:put_resource, resource_id, resource})
-
-  @doc "Drops a display resource through the active backend."
-  @spec drop_resource(GenServer.server(), term()) :: :ok | {:error, term()}
-  def drop_resource(server, resource_id),
-    do: GenServer.call(server, {:drop_resource, resource_id})
-
-  @doc "Dispatches a normalized UI event directly into the runtime."
-  @spec dispatch_event(GenServer.server(), map()) :: {map(), [map()]}
-  def dispatch_event(server, event), do: GenServer.call(server, {:dispatch_event, event})
-
-  @doc "Injects a normalized backend event through the active backend."
-  @spec inject_event(GenServer.server(), map()) :: {:ok, term()} | {:error, term()}
-  def inject_event(server, event), do: GenServer.call(server, {:inject_event, event})
-
-  @impl GenServer
-  def handle_call(:windows, _from, state) do
-    {:reply, state.windows, state}
-  end
-
-  @impl GenServer
-  def handle_call(:backend_messages, _from, state) do
-    {:ok, events} = state.backend.drain_events(state.backend_state)
-
-    backend_messages =
-      Enum.map(events, &%{op: :backend_event, payload: normalize_backend_event(&1)})
-
-    {:reply, Enum.reverse(state.backend_messages, backend_messages), state}
-  end
-
-  @impl GenServer
-  def handle_call({:put_resource, resource_id, resource}, _from, state) do
-    case state.backend.put_resource(state.backend_state, resource_id, resource) do
-      :ok -> {:reply, :ok, put_in(state.resources[resource_id], resource)}
-      error -> {:reply, error, state}
+      schedule_poll(state)
+      {:ok, state}
     end
   end
 
   @impl GenServer
-  def handle_call({:drop_resource, resource_id}, _from, state) do
-    case state.backend.drop_resource(state.backend_state, resource_id) do
-      :ok -> {:reply, :ok, update_in(state.resources, &Map.delete(&1, resource_id))}
-      error -> {:reply, error, state}
-    end
+  def terminate(_reason, state) do
+    stop_child(state.display)
+    stop_child(state.session)
   end
 
   @impl GenServer
+  def handle_call(:windows, _from, state),
+    do: {:reply, GPUI.Session.windows(state.session), state}
+
+  def handle_call(:snapshot, _from, state),
+    do: {:reply, GPUI.Session.snapshot(state.session), state}
+
+  def handle_call(:events, _from, state), do: {:reply, Enum.reverse(state.events), state}
+
+  def handle_call({:put_resource, id, resource}, _from, state) do
+    :ok = GPUI.Session.put_resource(state.session, id, resource)
+    reply = sync_display(state)
+    {:reply, reply, state}
+  end
+
+  def handle_call({:drop_resource, id}, _from, state) do
+    :ok = GPUI.Session.drop_resource(state.session, id)
+    reply = sync_display(state)
+    {:reply, reply, state}
+  end
+
   def handle_call({:dispatch_event, event}, _from, state) do
-    event = normalize_backend_event(event)
-    {handled, state} = handle_backend_event(event, state)
-    {:reply, {handled, window_payloads(state)}, state}
+    {handled, snapshot} = GPUI.Session.dispatch_event(state.session, event)
+    :ok = state.display_module.sync(state.display, snapshot)
+    {:reply, {handled, snapshot}, state}
   end
 
-  @impl GenServer
   def handle_call(:drain_events, _from, state) do
-    {handled, state} = drain_backend_events(state)
+    {handled, state} = drain_display_events(state)
     {:reply, handled, state}
   end
 
-  @impl GenServer
   def handle_call({:inject_event, event}, _from, state) do
-    {:reply, state.backend.inject_event(state.backend_state, event), state}
+    {:reply, state.display_module.inject_event(state.display, event), state}
   end
 
   @impl GenServer
-  def handle_info(:poll_backend_events, state) do
-    {handled, state} = drain_backend_events(state)
-
-    state =
-      handled
-      |> Enum.map(&%{op: :backend_event, payload: &1})
-      |> prepend_backend_messages(state)
-
-    schedule_backend_poll(state)
+  def handle_info(:poll_display, state) do
+    {handled, state} = drain_display_events(state)
+    state = %{state | events: Enum.reverse(handled, state.events)}
+    schedule_poll(state)
     {:noreply, state}
   end
 
-  def handle_info(message, state) do
-    case state.backend.handle_info(state.backend_state, message) do
-      {:ok, %{type: type} = event} when type in [:click, :change, :keydown, :keyup] ->
-        {handled, state} = handle_backend_event(event, state)
-        {:noreply, prepend_backend_messages([%{op: :backend_event, payload: handled}], state)}
-
-      {:ok, event} ->
-        {:noreply, %{state | backend_messages: [event | state.backend_messages]}}
-
-      :unhandled ->
-        {:noreply, state}
-    end
+  defp stop_child(child) do
+    if Process.alive?(child), do: GenServer.stop(child)
+    :ok
+  catch
+    :exit, _reason -> :ok
   end
 
-  defp initial_state(app, app_state, windows, backend, backend_state, poll_interval) do
-    %{
-      app: app,
-      app_state: app_state,
-      windows: windows,
-      backend: backend,
-      backend_state: backend_state,
-      backend_messages: [],
-      poll_interval: poll_interval,
-      resources: %{}
-    }
+  defp drain_display_events(state) do
+    {:ok, events} = state.display_module.drain_events(state.display)
+
+    {handled, snapshot} =
+      Enum.map_reduce(events, GPUI.Session.snapshot(state.session), fn event, _snapshot ->
+        GPUI.Session.dispatch_event(state.session, GPUI.Event.normalize(event))
+      end)
+
+    if events != [], do: :ok = state.display_module.sync(state.display, snapshot)
+    {handled, state}
+  end
+
+  defp sync_display(state) do
+    state.display_module.sync(state.display, GPUI.Session.snapshot(state.session))
   end
 
   defp poll_interval(opts) do
-    case Keyword.get(opts, :poll_interval) do
+    case Keyword.get(opts, :poll_interval, 16) do
       interval when is_integer(interval) and interval > 0 -> interval
-      _interval -> nil
+      _other -> nil
     end
   end
 
-  defp schedule_backend_poll(%{poll_interval: nil}), do: :ok
+  defp schedule_poll(%{poll_interval: nil}), do: :ok
 
-  defp schedule_backend_poll(%{poll_interval: interval}) do
-    Process.send_after(self(), :poll_backend_events, interval)
+  defp schedule_poll(%{poll_interval: interval}) do
+    Process.send_after(self(), :poll_display, interval)
     :ok
-  end
-
-  defp assign_window_ids(windows) do
-    windows
-    |> Enum.with_index(1)
-    |> Enum.map(fn {%WindowSpec{} = window, id} -> %{window | id: id} end)
-  end
-
-  defp sync_window(state, %WindowSpec{} = window) do
-    :ok = state.backend.open_window(state.backend_state, window_payload(state, window))
-  end
-
-  defp window_payloads(state), do: Enum.map(state.windows, &window_payload(state, &1))
-
-  defp update_window(state, %WindowSpec{} = window) do
-    :ok =
-      state.backend.update_window(
-        state.backend_state,
-        window.id,
-        window_payload(state, window).root.tree
-      )
-  end
-
-  @doc false
-  @spec window_payload(WindowSpec.t()) :: map()
-  def window_payload(%WindowSpec{} = window) do
-    %{
-      id: window.id,
-      title: window.title,
-      size: Tuple.to_list(window.size || {800, 600}),
-      root: encode_root(window.root)
-    }
-  end
-
-  defp window_payload(%{backend: GPUI.Backend.Native}, %WindowSpec{} = window) do
-    window_payload(window)
-  end
-
-  defp window_payload(state, %WindowSpec{} = window) do
-    window
-    |> window_payload()
-    |> resolve_resource_refs(state.resources)
-  end
-
-  defp resolve_resource_refs(%GPUI.ResourceRef{} = ref, resources) do
-    resolve_resource_refs(GPUI.ResourceRef.to_payload(ref), resources)
-  end
-
-  defp resolve_resource_refs(%{__type__: :resource_ref, id: id}, resources) do
-    Map.get(resources, id, %{__type__: :missing_resource, id: id})
-  end
-
-  defp resolve_resource_refs(%{} = map, resources) do
-    Map.new(map, fn {key, value} -> {key, resolve_resource_refs(value, resources)} end)
-  end
-
-  defp resolve_resource_refs(values, resources) when is_list(values) do
-    Enum.map(values, &resolve_resource_refs(&1, resources))
-  end
-
-  defp resolve_resource_refs(value, _resources), do: value
-
-  defp encode_root(nil), do: nil
-
-  defp encode_root({module, assigns}) do
-    assigns = Map.new(assigns)
-
-    %{
-      module: inspect(module),
-      assigns: assigns,
-      tree: render_root(module, assigns)
-    }
-  end
-
-  defp render_root(module, assigns) do
-    if function_exported?(module, :render, 1) do
-      module.render(assigns)
-      |> GPUI.Element.to_payload()
-    else
-      nil
-    end
-  end
-
-  defp normalize_backend_event(event), do: GPUI.Event.normalize(event)
-
-  defp drain_backend_events(state) do
-    {:ok, events} = state.backend.drain_events(state.backend_state)
-
-    events
-    |> Enum.map(&normalize_backend_event/1)
-    |> Enum.map_reduce(state, &handle_backend_event/2)
-  end
-
-  defp handle_backend_event(
-         %{type: type, window_id: window_id, event: event} = backend_event,
-         state
-       )
-       when type in [:click, :change, :keydown, :keyup] do
-    case Enum.find(state.windows, &(&1.id == window_id)) do
-      %WindowSpec{root: {module, assigns}} = window ->
-        assigns = Map.new(assigns)
-
-        case module.handle_event(event, backend_event, assigns) do
-          {:noreply, new_assigns} ->
-            updated_window = %{window | root: {module, new_assigns}}
-            update_window(state, updated_window)
-            {backend_event, %{state | windows: replace_window(state.windows, updated_window)}}
-
-          {:reply, _reply, new_assigns} ->
-            updated_window = %{window | root: {module, new_assigns}}
-            update_window(state, updated_window)
-            {backend_event, %{state | windows: replace_window(state.windows, updated_window)}}
-        end
-
-      nil ->
-        {backend_event, state}
-    end
-  end
-
-  defp handle_backend_event(event, state), do: {event, state}
-
-  defp prepend_backend_messages([], state), do: state
-
-  defp prepend_backend_messages(messages, state) do
-    %{state | backend_messages: Enum.reverse(messages, state.backend_messages)}
-  end
-
-  defp replace_window(windows, updated_window) do
-    Enum.map(windows, fn
-      %WindowSpec{id: id} when id == updated_window.id -> updated_window
-      window -> window
-    end)
   end
 end

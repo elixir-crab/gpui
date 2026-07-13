@@ -4,20 +4,14 @@
 
 host = System.get_env("GPUI_APP_HOST", "127.0.0.1")
 port = System.get_env("GPUI_APP_PORT", "5050") |> String.to_integer()
-backend =
-  case System.get_env("GPUI_DISPLAY_BACKEND", "native") do
-    "native" -> :native
-    other -> raise ArgumentError, "unsupported GPUI_DISPLAY_BACKEND=#{inspect(other)}"
-  end
-
-{:ok, display} =
-  GPUI.Remote.DisplayClient.start_link(
+{:ok, client} =
+  GPUI.Remote.Client.start_link(
     host: host,
     port: port,
-    backend: backend
+    display: GPUI.Display.Native
   )
 
-{:ok, windows} = GPUI.Remote.DisplayClient.mount(display)
+{:ok, %{windows: windows}} = GPUI.Remote.Client.mount(client)
 IO.puts("GPUI local display connected to #{host}:#{port}; mounted #{length(windows)} window(s)")
 
 Process.sleep(:infinity)

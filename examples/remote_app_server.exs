@@ -6,7 +6,7 @@ Code.require_file("support/counter_app.exs", __DIR__)
 port = System.get_env("GPUI_APP_PORT", "5050") |> String.to_integer()
 
 {:ok, _server} =
-  GPUI.Remote.AppServer.start_link(
+  GPUI.Remote.Server.start_link(
     app: CounterApp,
     port: port
   )

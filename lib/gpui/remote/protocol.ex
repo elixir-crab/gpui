@@ -1,0 +1,47 @@
+defmodule GPUI.Remote.Protocol do
+  @moduledoc """
+  Transport-independent contract between a remote application session and display.
+
+  SafeRPC owns request mechanics and term safety. This module defines only the
+  versioned GPUI operations and capability negotiation.
+  """
+
+  @version 2
+  @capability :gpui_app
+  @required_peer_capabilities [:display_v1]
+  @server_capabilities [:app_server, :safe_rpc, :snapshot_v2]
+  @ops [:hello, :mount, :resume_session, :event, :snapshot]
+
+  @type op :: :hello | :mount | :resume_session | :event | :snapshot
+  @type message :: %{op: op(), payload: map()}
+
+  def version, do: @version
+  def capability, do: @capability
+  def required_peer_capabilities, do: @required_peer_capabilities
+  def server_capabilities, do: @server_capabilities
+  def ops, do: @ops
+  def known_op?(op), do: op in @ops
+
+  def hello(payload \\ %{}) when is_map(payload) do
+    payload =
+      Map.merge(%{role: :display_client, version: @version, capabilities: [:display_v1]}, payload)
+
+    message(:hello, payload)
+  end
+
+  def negotiate(payload) when is_map(payload) do
+    GPUI.Remote.ProtocolNegotiation.negotiate(
+      payload,
+      @version,
+      @required_peer_capabilities,
+      @server_capabilities
+    )
+  end
+
+  def mount(args \\ %{}) when is_map(args), do: message(:mount, args)
+  def resume_session(session_id), do: message(:resume_session, %{session_id: session_id})
+  def event(event) when is_map(event), do: message(:event, event)
+  def snapshot, do: message(:snapshot, %{})
+
+  defp message(op, payload), do: %{op: op, payload: payload}
+end

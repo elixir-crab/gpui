@@ -1,11 +1,15 @@
 defmodule GPUI.Application do
   @moduledoc """
   Behaviour and DSL for OTP-supervised GPUI applications.
+
+  `mount/1` declares a session's initial windows. Interactive state belongs to
+  each root view's assigns rather than an unused application-level state value.
   """
 
   alias GPUI.WindowSpec
 
-  @callback mount(term()) :: {:ok, term()} | {:ok, term(), [WindowSpec.t()]}
+  @doc "Builds the initial renderer-independent window set for a session."
+  @callback mount(term()) :: {:ok, [WindowSpec.t()]}
 
   defmacro __using__(_opts) do
     quote do

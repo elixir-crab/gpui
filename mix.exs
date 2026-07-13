@@ -41,7 +41,7 @@ defmodule GPUI.MixProject do
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/dannote/gpui"},
       files:
-        ~w(lib priv/rustq config/config.exs native/gpui/Cargo.toml native/gpui/src mix.exs README.md LICENSE)
+        ~w(lib codegen config/config.exs native/gpui/Cargo.toml native/gpui/src mix.exs rustq.exs README.md LICENSE)
     ]
   end
 
@@ -50,9 +50,10 @@ defmodule GPUI.MixProject do
       main: "readme",
       extras: ["README.md"],
       groups_for_modules: [
-        Core: [GPUI, GPUI.Application, GPUI.View, GPUI.Runtime],
+        Core: [GPUI, GPUI.Application, GPUI.Session, GPUI.Snapshot, GPUI.Runtime, GPUI.View],
+        Displays: [GPUI.Display, GPUI.Display.Native],
         Elements: [GPUI.Element, GPUI.Event, GPUI.Raster, GPUI.ResourceRef, GPUI.WindowSpec],
-        Remote: [GPUI.Remote.AppServer, GPUI.Remote.DisplayClient]
+        Remote: [GPUI.Remote.Server, GPUI.Remote.Client, GPUI.Remote.Protocol]
       ]
     ]
   end
@@ -67,8 +68,7 @@ defmodule GPUI.MixProject do
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:phoenix_live_view, "~> 1.2"},
       {:rustler, "~> 0.38.0", runtime: false},
-      {:rustq,
-       github: "dannote/rustq", branch: "defrust-meta-mvp", only: [:dev, :test], runtime: false},
+      {:rustq, "~> 0.9.6", only: [:dev, :test], runtime: false},
       {:vibe_kit, "== 0.1.5"},
       {:safe_rpc, "~> 0.1.3"},
       {:igniter, "~> 0.6", only: [:dev, :test]}
@@ -83,17 +83,63 @@ defmodule GPUI.MixProject do
       test_integration: ["test test/integration"],
       test_all: ["test"],
       ci: [
-        "format",
-        "rustq.gen --check",
         "compile --warnings-as-errors",
+        "format",
+        "rustq.check",
         "format --check-formatted",
-        "test_unit",
-        "test_integration",
+        "rust.fmt --check",
+        "rust.check",
+        "rust.clippy",
+        "rust.headless.clippy",
+        "rust.core.clippy",
+        "test_all",
         "credo --strict",
         "dialyzer",
         "ex_dna --max-clones 0",
         "reach.check --arch --smells"
-      ]
+      ],
+      "rustq.check": &rustq_check/1,
+      "rust.fmt": &rust_fmt/1,
+      "rust.check": &rust_check/1,
+      "rust.clippy": &rust_clippy/1,
+      "rust.headless.clippy": &rust_headless_clippy/1,
+      "rust.core.clippy": &rust_core_clippy/1
     ]
+  end
+
+  defp rustq_check(_args) do
+    {_, status} =
+      System.cmd("mix", ["rustq.gen", "--check"],
+        into: IO.stream(),
+        stderr_to_stdout: true,
+        env: [{"MIX_ENV", to_string(Mix.env())}]
+      )
+
+    if status != 0, do: Mix.raise("RustQ generated files are stale")
+  end
+
+  defp rust_fmt(args), do: rust_cmd(["fmt", "--manifest-path", "native/gpui/Cargo.toml"] ++ args)
+
+  defp rust_check(_args), do: rust_cmd(["check", "--manifest-path", "native/gpui/Cargo.toml"])
+
+  defp rust_clippy(_args), do: run_rust_clippy([])
+
+  defp rust_headless_clippy(_args),
+    do: run_rust_clippy(["--no-default-features", "--features", "real-gpui"])
+
+  defp rust_core_clippy(_args), do: run_rust_clippy(["--no-default-features"])
+
+  defp run_rust_clippy(feature_args) do
+    rust_cmd(
+      ["clippy", "--manifest-path", "native/gpui/Cargo.toml"] ++
+        feature_args ++ ["--", "-D", "warnings"]
+    )
+  end
+
+  defp rust_cmd(args) do
+    env = [{"RUST_FONTCONFIG_DLOPEN", System.get_env("RUST_FONTCONFIG_DLOPEN", "1")}]
+    {_, status} = System.cmd("cargo", args, into: IO.stream(), stderr_to_stdout: true, env: env)
+
+    if status != 0, do: Mix.raise("cargo #{Enum.join(args, " ")} failed")
   end
 end

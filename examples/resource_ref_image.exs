@@ -35,7 +35,7 @@ defmodule ResourceRefImageExample.App do
 
   @impl GPUI.Application
   def mount(_args) do
-    {:ok, %{},
+    {:ok,
      [
        window "Resource ref image" do
          root(ResourceRefImageExample.View, logo: GPUI.ResourceRef.new("logo", :raster))
@@ -44,7 +44,7 @@ defmodule ResourceRefImageExample.App do
   end
 end
 
-{:ok, runtime} = GPUI.Runtime.start_link(app: ResourceRefImageExample.App, backend: :native)
+{:ok, runtime} = GPUI.Runtime.start_link(app: ResourceRefImageExample.App)
 :ok = GPUI.Runtime.put_resource(runtime, "logo", GPUI.Raster.to_payload(raster))
 
 Process.sleep(:infinity)

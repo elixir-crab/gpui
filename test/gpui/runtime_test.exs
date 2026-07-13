@@ -1,5 +1,5 @@
 defmodule GPUI.RuntimeTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   defmodule HelloView do
     use GPUI.View
@@ -19,7 +19,7 @@ defmodule GPUI.RuntimeTest do
 
     @impl GPUI.Application
     def mount(_args) do
-      {:ok, %{},
+      {:ok,
        [
          window "GPUI + Elixir" do
            size(500, 500)
@@ -29,97 +29,65 @@ defmodule GPUI.RuntimeTest do
     end
   end
 
-  test "application modules can be started as OTP children" do
-    {:ok, pid} = start_supervised({DemoApp, backend: :native})
+  defmodule EmptyApp do
+    use GPUI.Application
 
-    assert [%GPUI.WindowSpec{title: "GPUI + Elixir", size: {500, 500}}] =
-             GPUI.Runtime.windows(pid)
+    @impl GPUI.Application
+    def mount(_args), do: {:ok, []}
   end
 
-  test "runtime keeps declarative windows with the native backend" do
-    {:ok, pid} = GPUI.Runtime.start_link(app: DemoApp, backend: :native)
+  test "application modules start renderer-independent sessions with a display" do
+    {:ok, runtime} =
+      start_supervised({DemoApp, display: GPUITest.Display, display_opts: [owner: self()]})
 
     assert [%GPUI.WindowSpec{title: "GPUI + Elixir", size: {500, 500}}] =
-             GPUI.Runtime.windows(pid)
+             GPUI.Runtime.windows(runtime)
 
-    GenServer.stop(pid)
+    assert_receive {:display_snapshot, %{windows: [%{id: 1}]}}
   end
 
-  test "runtime encodes rendered root trees for native payloads" do
-    {:ok, pid} = GPUI.Runtime.start_link(app: DemoApp, backend: :native)
-
-    payload =
-      pid
-      |> GPUI.Runtime.windows()
-      |> hd()
-      |> GPUI.Runtime.window_payload()
+  test "runtime snapshots contain rendered window trees" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(app: DemoApp, display: GPUITest.Display)
 
     assert %{
-             root: %{
-               module: module,
-               assigns: %{name: "OTP"},
-               tree: %{
-                 type: :div,
-                 attrs: %{
-                   style: [
-                     display: :flex,
-                     flex_direction: :column,
-                     align_items: :center,
-                     background: [:rgb, 4_210_752]
-                   ]
-                 },
-                 children: [%{type: :text, children: ["Hello ", "OTP"]}]
+             windows: [
+               %{
+                 root: %{
+                   module: module,
+                   assigns: %{name: "OTP"},
+                   tree: %{
+                     type: :div,
+                     attrs: %{
+                       style: [
+                         display: :flex,
+                         flex_direction: :column,
+                         align_items: :center,
+                         background: [:rgb, 4_210_752]
+                       ]
+                     },
+                     children: [%{type: :text, children: ["Hello ", "OTP"]}]
+                   }
+                 }
                }
-             }
-           } = payload
+             ],
+             resources: %{}
+           } = GPUI.Runtime.snapshot(runtime)
 
     assert module =~ "HelloView"
-
-    GenServer.stop(pid)
   end
 
-  test "runtime sends declared windows to native Rustler backend" do
-    {:ok, pid} = GPUI.Runtime.start_link(app: DemoApp, backend: :native)
+  test "applications can mount an empty window set without placeholder state" do
+    {:ok, session} = GPUI.Session.start_link(app: EmptyApp)
 
-    assert [%GPUI.WindowSpec{title: "GPUI + Elixir", size: {500, 500}}] =
-             GPUI.Runtime.windows(pid)
-
-    assert_receive_backend_message(pid, %{
-      op: :backend_event,
-      payload: "window_open_requested:GPUI + Elixir"
-    })
-
-    GenServer.stop(pid)
+    assert [] = GPUI.Session.windows(session)
+    assert %GPUI.Snapshot{windows: [], resources: %{}} = GPUI.Session.snapshot(session)
   end
 
-  defp assert_receive_backend_message(pid, expected) do
-    deadline = System.monotonic_time(:millisecond) + 1_000
-    assert_receive_backend_message(pid, expected, deadline)
+  test "sessions can run without any display" do
+    {:ok, session} = GPUI.Session.start_link(app: DemoApp)
+
+    assert [%GPUI.WindowSpec{title: "GPUI + Elixir"}] = GPUI.Session.windows(session)
+    assert %{windows: [%{id: 1}], resources: %{}} = GPUI.Session.snapshot(session)
   end
-
-  defp assert_receive_backend_message(pid, expected, deadline) do
-    messages = GPUI.Runtime.backend_messages(pid)
-
-    if Enum.any?(messages, &match_map?(expected, &1)) do
-      assert true
-    else
-      if System.monotonic_time(:millisecond) > deadline do
-        flunk("expected backend message #{inspect(expected)}, got #{inspect(messages)}")
-      else
-        Process.sleep(10)
-        assert_receive_backend_message(pid, expected, deadline)
-      end
-    end
-  end
-
-  defp match_map?(expected, actual) when is_map(expected) and is_map(actual) do
-    Enum.all?(expected, fn {key, value} -> match_value?(value, Map.get(actual, key)) end)
-  end
-
-  defp match_map?(_expected, _actual), do: false
-
-  defp match_value?(expected, actual) when is_map(expected) and is_map(actual),
-    do: match_map?(expected, actual)
-
-  defp match_value?(expected, actual), do: expected == actual
 end

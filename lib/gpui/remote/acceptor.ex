@@ -1,7 +1,7 @@
 defmodule GPUI.Remote.Acceptor do
   @moduledoc false
 
-  alias GPUI.Remote.Transport.SafeRPC.TCP, as: SafeRPCTCP
+  alias GPUI.Remote.Transport.TCP
   alias GPUI.Remote.Transport.TCP
 
   @spec start(TCP.Listener.t()) :: {:ok, pid()}
@@ -9,7 +9,7 @@ defmodule GPUI.Remote.Acceptor do
     owner = self()
 
     Task.start(fn ->
-      case SafeRPCTCP.accept(listener, :infinity) do
+      case TCP.accept(listener, :infinity) do
         {:ok, socket} ->
           :ok = TCP.controlling_process(socket, owner)
           send(owner, {:gpui_remote_accepted, socket})
