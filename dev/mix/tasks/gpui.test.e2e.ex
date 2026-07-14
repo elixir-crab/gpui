@@ -11,9 +11,7 @@ defmodule Mix.Tasks.Gpui.Test.E2e do
       {"GPUI_E2E", "1"},
       {"MIX_ENV", "e2e"},
       {"MIX_BUILD_PATH", Path.expand("_build/e2e")},
-      {"RUST_FONTCONFIG_DLOPEN", System.get_env("RUST_FONTCONFIG_DLOPEN", "1")},
-      {"VK_ICD_FILENAMES",
-       System.get_env("VK_ICD_FILENAMES", "/usr/share/vulkan/icd.d/lvp_icd.json")}
+      {"RUST_FONTCONFIG_DLOPEN", System.get_env("RUST_FONTCONFIG_DLOPEN", "1")}
     ]
 
     args = [

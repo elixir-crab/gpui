@@ -52,7 +52,8 @@ jobs:
       MIX_ENV: e2e
       GPUI_E2E: "1"
       RUST_FONTCONFIG_DLOPEN: "1"
-      VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      GALLIUM_DRIVER: llvmpipe
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -71,6 +72,8 @@ jobs:
       - name: Install native E2E dependencies
         run: >-
           sudo apt-get update && sudo apt-get install -y --no-install-recommends
-          dbus-x11 libxkbcommon-dev libxkbcommon-x11-dev
-          mesa-vulkan-drivers xdotool xvfb
+          dbus-x11 libvulkan1 libxkbcommon-dev libxkbcommon-x11-dev
+          mesa-vulkan-drivers vulkan-tools xdotool xvfb
+      - name: Verify Lavapipe under Xvfb
+        run: xvfb-run -a vulkaninfo --summary
       - run: mix test_e2e
