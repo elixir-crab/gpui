@@ -14,6 +14,15 @@ defmodule Mix.Tasks.Gpui.Test.E2e do
       {"RUST_FONTCONFIG_DLOPEN", System.get_env("RUST_FONTCONFIG_DLOPEN", "1")}
     ]
 
+    {_output, compile_status} =
+      System.cmd("mix", ["compile", "--force"],
+        env: env,
+        into: IO.stream(),
+        stderr_to_stdout: true
+      )
+
+    if compile_status != 0, do: Mix.raise("native E2E compilation failed")
+
     args = [
       "-a",
       "-s",

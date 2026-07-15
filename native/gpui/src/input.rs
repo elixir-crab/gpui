@@ -5,7 +5,7 @@ use crate::gpui::{
     MouseButton, MouseDownEvent, PaintQuad, ParentElement, Pixels, Render, ShapedLine, Style,
     Styled, TextAlign, TextRun, UTF16Selection, UnderlineStyle, Window,
 };
-use crate::{gpui, push_event, InputKind, NativeEvent, SharedRuntime};
+use crate::{gpui, push_event, EventValue, InputKind, NativeEvent, SharedRuntime};
 use std::{collections::VecDeque, ops::Range};
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -156,7 +156,7 @@ impl NativeTextInput {
                     kind: InputKind::Change,
                     window_id: self.window_id,
                     event: event.clone(),
-                    value: Some(value),
+                    value: Some(EventValue::String(value)),
                 },
             )
             .is_err()

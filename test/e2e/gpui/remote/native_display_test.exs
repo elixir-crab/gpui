@@ -11,11 +11,9 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="flex flex-col items-center justify-center bg-slate-900 text-white text-2xl p-4 gap-2">
+      <div class="flex flex-col items-start w-full h-full bg-slate-900 text-white text-2xl p-4 gap-2">
         <text>Count: {assigns.count}</text>
-        <button phx-click="inc" class="bg-blue-600 text-white text-xl p-2 rounded-md">
-          +
-        </button>
+        <GPUI.UI.button id="remote-increment" label="Increment" variant="primary" phx-click="inc" />
       </div>
       """
     end
@@ -58,10 +56,13 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
     assert {:ok, %{windows: [window]}} = GPUI.Remote.Client.mount(client)
     assert 0 = get_in(window, [:root, :assigns, :count])
 
-    assert {:ok, %{windows: [updated]}} =
-             GPUI.Remote.Client.event(client, %{window_id: window.id, event: "inc"})
+    window_id = Desktop.window_id!("GPUI Remote E2E")
+    Desktop.click!(window_id, 64, 68)
 
-    assert 1 = get_in(updated, [:root, :assigns, :count])
+    Desktop.eventually(fn ->
+      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
+      assert 1 = get_in(updated, [:root, :assigns, :count])
+    end)
   end
 
   defp available_port do

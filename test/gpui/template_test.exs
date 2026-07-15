@@ -131,4 +131,44 @@ defmodule GPUI.TemplateTest do
              </.card>
              """
   end
+
+  test "builds namespaced native UI components" do
+    checked = true
+
+    assert %GPUI.Element{
+             type: :div,
+             children: [
+               %GPUI.Element{
+                 type: :ui_button,
+                 attrs: button_attrs,
+                 children: ["Save"]
+               },
+               %GPUI.Element{type: :ui_checkbox, attrs: checkbox_attrs}
+             ]
+           } =
+             ~GPUI"""
+             <div>
+               <GPUI.UI.button id="save" variant="primary" phx-click="save">Save</GPUI.UI.button>
+               <GPUI.UI.checkbox
+                 id="remember"
+                 label="Remember me"
+                 checked={checked}
+                 phx-change="remember"
+               />
+             </div>
+             """
+
+    assert button_attrs[:id] == "save"
+    assert button_attrs[:variant] == "primary"
+    assert button_attrs[:"phx-click"] == "save"
+    assert checkbox_attrs[:id] == "remember"
+    assert checkbox_attrs[:checked]
+    assert checkbox_attrs[:"phx-change"] == "remember"
+  end
+
+  test "native UI components require stable ids" do
+    assert_raise ArgumentError, ~r/requires a non-empty string id/, fn ->
+      GPUI.UI.button(%{children: []})
+    end
+  end
 end

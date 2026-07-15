@@ -50,7 +50,8 @@ pub(crate) fn apply_input_events(
                 .keystroke
                 .key_char
                 .clone()
-                .or_else(|| Some(key_event.keystroke.key.clone()));
+                .or_else(|| Some(key_event.keystroke.key.clone()))
+                .map(EventValue::String);
 
             let _ = push_event(
                 &runtime,
@@ -70,7 +71,8 @@ pub(crate) fn apply_input_events(
                 .keystroke
                 .key_char
                 .clone()
-                .or_else(|| Some(key_event.keystroke.key.clone()));
+                .or_else(|| Some(key_event.keystroke.key.clone()))
+                .map(EventValue::String);
 
             let _ = push_event(
                 &runtime,

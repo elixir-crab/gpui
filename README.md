@@ -11,6 +11,7 @@ The package name is `gpui`, with public modules under `GPUI`.
 - `GPUI.Runtime` composes a session with a local `GPUI.Display`.
 - Rust/Rustler provides `GPUI.Display.Native`.
 - Native input uses GPUI `EntityInputHandler` with focus, cursor/selection paint, clipboard, IME hooks, and UTF-16/UTF-8 offset handling.
+- `GPUI.UI` exposes controlled native controls backed by Longbridge's `gpui-component`.
 - Remote app/display workflows use `SafeRPC` over framed TCP/SSL for safe ETF RPC, request IDs, timeouts, and capability checks.
 - GPUI owns the app operation contract in `GPUI.Remote.Protocol`.
 - `GPUI.Remote.Server` isolates every application session and requires protocol `hello` before other operations.
@@ -116,6 +117,34 @@ manual step after `mix gpui.release.check` passes.
 Templates support `div`, `button`, `span`, `scroll`, `list`, `item`, `icon`,
 `input`, `img`, and `text`. Text and image nodes retain their own generated
 native styles rather than relying only on parent styles.
+
+`GPUI.UI.button/1` and `GPUI.UI.checkbox/1` render real
+[`gpui-component`](https://github.com/longbridge/gpui-component) controls. They
+are controlled by Elixir assigns and require stable string IDs:
+
+```elixir
+~GPUI"""
+<div class="flex flex-col gap-4">
+  <GPUI.UI.button
+    id="save"
+    label="Save"
+    variant="primary"
+    loading={assigns.saving}
+    phx-click="save"
+  />
+  <GPUI.UI.checkbox
+    id="remember"
+    label="Remember me"
+    checked={assigns.remember}
+    phx-change="remember"
+  />
+</div>
+"""
+```
+
+Checkbox change events carry a boolean `:value`. Button variants are `default`,
+`primary`, `secondary`, `danger`, `warning`, `success`, `info`, `ghost`, `link`,
+and `text`; component sizes are `xs`, `sm`, `md`, and `lg`.
 
 The Tailwind-compatible normalizer covers display and flex layout, wrapping,
 alignment, growth and shrink, colors, typography, opacity, spacing, dimensions,

@@ -1,7 +1,9 @@
 use crate::*;
 
+pub(crate) mod component;
 pub(crate) mod event;
 
+use component::{render_button_component, render_checkbox_component};
 use event::{apply_click_event, apply_input_events};
 
 #[cfg(feature = "real-gpui")]
@@ -14,6 +16,8 @@ pub(crate) enum ElementNode {
         click: Option<String>,
     },
     Input(InputNode),
+    ButtonComponent(ButtonComponentNode),
+    CheckboxComponent(CheckboxComponentNode),
     Image {
         image: ImageData,
         style: StyleAttrs,
@@ -33,6 +37,38 @@ pub(crate) struct InputNode {
     pub(crate) change: Option<String>,
     pub(crate) keydown: Option<String>,
     pub(crate) keyup: Option<String>,
+}
+
+#[cfg(feature = "real-gpui")]
+#[cfg_attr(not(feature = "components"), allow(dead_code))]
+#[derive(Clone, Debug)]
+pub(crate) struct ButtonComponentNode {
+    pub(crate) id: String,
+    pub(crate) style: StyleAttrs,
+    pub(crate) label: Option<String>,
+    pub(crate) variant: Option<String>,
+    pub(crate) size: Option<String>,
+    pub(crate) disabled: bool,
+    pub(crate) selected: bool,
+    pub(crate) loading: bool,
+    pub(crate) outline: bool,
+    pub(crate) compact: bool,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) click: Option<String>,
+}
+
+#[cfg(feature = "real-gpui")]
+#[cfg_attr(not(feature = "components"), allow(dead_code))]
+#[derive(Clone, Debug)]
+pub(crate) struct CheckboxComponentNode {
+    pub(crate) id: String,
+    pub(crate) style: StyleAttrs,
+    pub(crate) label: Option<String>,
+    pub(crate) size: Option<String>,
+    pub(crate) checked: bool,
+    pub(crate) disabled: bool,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) change: Option<String>,
 }
 
 #[cfg(feature = "real-gpui")]
@@ -74,6 +110,8 @@ impl ElementNode {
                 render_image_primitive(image, style, context.runtime.clone(), context.window_id)
             }
             Self::Input(input) => render_input_primitive(element_id, input, context),
+            Self::ButtonComponent(button) => render_button_component(button, context),
+            Self::CheckboxComponent(checkbox) => render_checkbox_component(checkbox, context),
             Self::Div {
                 tag,
                 style,

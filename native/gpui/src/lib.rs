@@ -20,7 +20,7 @@ mod input;
 #[cfg(feature = "real-gpui")]
 mod resource;
 mod runtime;
-use event::{encode_native_event, push_event, InputKind, NativeEvent};
+use event::{encode_native_event, push_event, EventValue, InputKind, NativeEvent};
 #[cfg(feature = "real-gpui")]
 use input::{bind_input_keys, NativeTextInput};
 #[cfg(feature = "real-gpui")]

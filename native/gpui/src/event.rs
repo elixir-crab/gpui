@@ -1,6 +1,21 @@
 use crate::{atoms, SharedRuntime};
 use rustler::{Atom, Encoder, Env, NifResult, Term};
 
+#[derive(Clone, Debug)]
+pub(crate) enum EventValue {
+    String(String),
+    Boolean(bool),
+}
+
+impl EventValue {
+    fn encode<'a>(self, env: Env<'a>) -> Term<'a> {
+        match self {
+            Self::String(value) => value.encode(env),
+            Self::Boolean(value) => value.encode(env),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum InputKind {
     Change,
@@ -28,7 +43,7 @@ pub(crate) enum NativeEvent {
         kind: InputKind,
         window_id: u64,
         event: String,
-        value: Option<String>,
+        value: Option<EventValue>,
     },
     WindowClosed {
         window_id: u64,

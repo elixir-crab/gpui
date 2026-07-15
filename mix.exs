@@ -91,7 +91,14 @@ defmodule GPUI.MixProject do
       groups_for_modules: [
         Core: [GPUI, GPUI.Application, GPUI.Session, GPUI.Snapshot, GPUI.Runtime, GPUI.View],
         Displays: [GPUI.Display, GPUI.Display.Native],
-        Elements: [GPUI.Element, GPUI.Event, GPUI.Raster, GPUI.ResourceRef, GPUI.WindowSpec],
+        Elements: [
+          GPUI.UI,
+          GPUI.Element,
+          GPUI.Event,
+          GPUI.Raster,
+          GPUI.ResourceRef,
+          GPUI.WindowSpec
+        ],
         Remote: [GPUI.Remote.Server, GPUI.Remote.Client, GPUI.Remote.Protocol]
       ]
     ]

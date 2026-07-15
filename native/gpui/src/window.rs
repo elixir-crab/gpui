@@ -87,9 +87,16 @@ pub(crate) enum WindowCommand {
     },
 }
 
+#[cfg(all(feature = "real-gpui", feature = "components"))]
+type NativeWindowRoot = gpui_component::Root;
+
+#[cfg(all(feature = "real-gpui", not(feature = "components")))]
+type NativeWindowRoot = ElixirRoot;
+
 #[cfg(feature = "real-gpui")]
 struct ManagedWindow {
-    handle: gpui::WindowHandle<ElixirRoot>,
+    handle: gpui::WindowHandle<NativeWindowRoot>,
+    view: gpui::Entity<ElixirRoot>,
     state: SharedWindow,
     runtime: SharedRuntime,
 }
@@ -104,27 +111,33 @@ pub(crate) fn run_gpui(
 ) {
     use gpui::App;
 
-    gpui_platform::application()
-        .with_quit_mode(gpui::QuitMode::Explicit)
-        .run(move |cx: &mut App| {
-            bind_input_keys(cx);
+    let application = gpui_platform::application().with_quit_mode(gpui::QuitMode::Explicit);
 
-            let window_closed_subscription = cx.on_window_closed(move |_cx, platform_id| {
-                let _ = command_tx.unbounded_send(WindowCommand::PlatformClosed { platform_id });
-            });
+    #[cfg(feature = "components")]
+    let application = application.with_assets(gpui_component_assets::Assets);
 
-            cx.spawn(async move |cx| {
-                let _window_closed_subscription = window_closed_subscription;
-                let mut windows = HashMap::<WindowKey, ManagedWindow>::new();
+    application.run(move |cx: &mut App| {
+        #[cfg(feature = "components")]
+        gpui_component::init(cx);
 
-                while let Some(command) = commands.next().await {
-                    cx.update(|cx| handle_window_command(command, &mut windows, cx));
-                }
-            })
-            .detach();
+        bind_input_keys(cx);
 
-            cx.activate(true);
+        let window_closed_subscription = cx.on_window_closed(move |_cx, platform_id| {
+            let _ = command_tx.unbounded_send(WindowCommand::PlatformClosed { platform_id });
         });
+
+        cx.spawn(async move |cx| {
+            let _window_closed_subscription = window_closed_subscription;
+            let mut windows = HashMap::<WindowKey, ManagedWindow>::new();
+
+            while let Some(command) = commands.next().await {
+                cx.update(|cx| handle_window_command(command, &mut windows, cx));
+            }
+        })
+        .detach();
+
+        cx.activate(true);
+    });
 }
 
 #[cfg(feature = "real-gpui")]
@@ -158,11 +171,12 @@ fn handle_window_command(
                 runtime.clone(),
                 cx,
             )
-            .map(|handle| {
+            .map(|(handle, view)| {
                 windows.insert(
                     key,
                     ManagedWindow {
                         handle,
+                        view,
                         state: window_state,
                         runtime,
                     },
@@ -248,10 +262,12 @@ fn update_gpui_window(
         .lock()
         .map_err(|_| "runtime_lock_failed".to_string())? = tree;
 
+    let view = window.view.clone();
+
     window
         .handle
         .update(cx, |_root, native_window, cx| {
-            cx.notify();
+            view.update(cx, |_view, cx| cx.notify());
             native_window.refresh();
         })
         .map_err(|error| error.to_string())
@@ -291,27 +307,56 @@ fn open_gpui_window(
     window_state: SharedWindow,
     runtime: SharedRuntime,
     cx: &mut gpui::App,
-) -> Result<gpui::WindowHandle<ElixirRoot>, String> {
+) -> Result<
+    (
+        gpui::WindowHandle<NativeWindowRoot>,
+        gpui::Entity<ElixirRoot>,
+    ),
+    String,
+> {
     use gpui::{px, size, AppContext, Bounds, WindowBounds, WindowOptions};
 
     let bounds = Bounds::centered(None, size(px(width), px(height)), cx);
-    let window_state_for_view = window_state.clone();
-    let runtime_for_view = runtime.clone();
+    let view = cx.new(|_cx| ElixirRoot {
+        window_state,
+        runtime,
+        window_id,
+        input_entities: HashMap::new(),
+    });
+    let view_for_root = view.clone();
 
-    cx.open_window(
-        WindowOptions {
-            window_bounds: Some(WindowBounds::Windowed(bounds)),
-            ..Default::default()
-        },
-        |native_window, cx| {
-            native_window.set_window_title(&title);
-            cx.new(|_cx| ElixirRoot {
-                window_state: window_state_for_view.clone(),
-                runtime: runtime_for_view.clone(),
-                window_id,
-                input_entities: HashMap::new(),
-            })
-        },
-    )
-    .map_err(|error| error.to_string())
+    let handle = cx
+        .open_window(
+            WindowOptions {
+                window_bounds: Some(WindowBounds::Windowed(bounds)),
+                ..Default::default()
+            },
+            |native_window, cx| {
+                native_window.set_window_title(&title);
+                native_window_root(view_for_root.clone(), native_window, cx)
+            },
+        )
+        .map_err(|error| error.to_string())?;
+
+    Ok((handle, view))
+}
+
+#[cfg(feature = "components")]
+fn native_window_root(
+    view: gpui::Entity<ElixirRoot>,
+    native_window: &mut gpui::Window,
+    cx: &mut gpui::App,
+) -> gpui::Entity<NativeWindowRoot> {
+    use gpui::AppContext;
+
+    cx.new(|cx| gpui_component::Root::new(view, native_window, cx))
+}
+
+#[cfg(not(feature = "components"))]
+fn native_window_root(
+    view: gpui::Entity<ElixirRoot>,
+    _native_window: &mut gpui::Window,
+    _cx: &mut gpui::App,
+) -> gpui::Entity<NativeWindowRoot> {
+    view
 }

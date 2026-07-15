@@ -3,6 +3,8 @@
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GeneratedComponentKind {
     Container,
+    ButtonComponent,
+    CheckboxComponent,
     Text,
     Input,
     Image,
@@ -506,6 +508,8 @@ pub(crate) fn apply_generated_render_styles(
 pub enum GeneratedElementTag {
     Div,
     Button,
+    UiButton,
+    UiCheckbox,
     Span,
     Scroll,
     List,
@@ -522,6 +526,8 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
     match tag {
         "div" => GeneratedElementTag::Div,
         "button" => GeneratedElementTag::Button,
+        "ui_button" => GeneratedElementTag::UiButton,
+        "ui_checkbox" => GeneratedElementTag::UiCheckbox,
         "span" => GeneratedElementTag::Span,
         "scroll" => GeneratedElementTag::Scroll,
         "list" => GeneratedElementTag::List,
@@ -539,6 +545,8 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
     match tag {
         GeneratedElementTag::Div => GeneratedComponentKind::Container,
         GeneratedElementTag::Button => GeneratedComponentKind::Container,
+        GeneratedElementTag::UiButton => GeneratedComponentKind::ButtonComponent,
+        GeneratedElementTag::UiCheckbox => GeneratedComponentKind::CheckboxComponent,
         GeneratedElementTag::Span => GeneratedComponentKind::Container,
         GeneratedElementTag::Scroll => GeneratedComponentKind::Container,
         GeneratedElementTag::List => GeneratedComponentKind::Container,

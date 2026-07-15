@@ -8,6 +8,35 @@ defmodule GPUI.Schema do
   @components [
     %Component{tag: :div, kind: :container, events: [click: :"phx-click"]},
     %Component{tag: :button, kind: :container, events: [click: :"phx-click"]},
+    %Component{
+      tag: :ui_button,
+      kind: :button_component,
+      events: [click: :"phx-click"],
+      attrs: [
+        id: :string,
+        label: :string,
+        variant:
+          {:enum, ~w(default primary secondary danger warning success info ghost link text)},
+        size: {:enum, ~w(xs sm md lg)},
+        disabled: :boolean,
+        selected: :boolean,
+        loading: :boolean,
+        outline: :boolean,
+        compact: :boolean
+      ]
+    },
+    %Component{
+      tag: :ui_checkbox,
+      kind: :checkbox_component,
+      events: [change: :"phx-change"],
+      attrs: [
+        id: :string,
+        label: :string,
+        size: {:enum, ~w(xs sm md lg)},
+        checked: :boolean,
+        disabled: :boolean
+      ]
+    },
     %Component{tag: :span, kind: :container, events: [click: :"phx-click"]},
     %Component{tag: :scroll, kind: :container, events: [click: :"phx-click"]},
     %Component{tag: :list, kind: :container, events: [click: :"phx-click"]},

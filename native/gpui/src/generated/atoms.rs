@@ -4,23 +4,25 @@ mod atoms {
     rustler::atoms! {
         ok, error, window_closed, missing_resource, type_atom = "type", window_id, event,
         resource_type, size, title, root, tree, children, attrs, __type__, style, click =
-        "click", phx_click = "phx-click", value = "value", placeholder = "placeholder",
-        change = "change", keydown = "keydown", keyup = "keyup", phx_change =
-        "phx-change", phx_keydown = "phx-keydown", phx_keyup = "phx-keyup", raster =
-        "raster", width = "width", height = "height", format = "format", stride =
-        "stride", data = "data", resource_ref = "resource_ref", id = "id", display =
-        "display", flex_direction = "flex_direction", align_items = "align_items",
-        justify_content = "justify_content", flex_wrap = "flex_wrap", flex_grow =
-        "flex_grow", flex_shrink = "flex_shrink", background = "background", color =
-        "color", font_size = "font_size", font_weight = "font_weight", line_height =
-        "line_height", opacity = "opacity", gap = "gap", padding = "padding", padding_x =
-        "padding_x", padding_y = "padding_y", padding_top = "padding_top", padding_right
-        = "padding_right", padding_bottom = "padding_bottom", padding_left =
-        "padding_left", margin = "margin", margin_x = "margin_x", margin_y = "margin_y",
-        margin_top = "margin_top", margin_right = "margin_right", margin_bottom =
-        "margin_bottom", margin_left = "margin_left", min_width = "min_width", max_width
-        = "max_width", min_height = "min_height", max_height = "max_height",
-        border_radius = "border_radius", border_width = "border_width", border_color =
-        "border_color"
+        "click", phx_click = "phx-click", id = "id", label = "label", variant =
+        "variant", disabled = "disabled", selected = "selected", loading = "loading",
+        outline = "outline", compact = "compact", checked = "checked", change = "change",
+        phx_change = "phx-change", value = "value", placeholder = "placeholder", keydown
+        = "keydown", keyup = "keyup", phx_keydown = "phx-keydown", phx_keyup =
+        "phx-keyup", raster = "raster", width = "width", height = "height", format =
+        "format", stride = "stride", data = "data", resource_ref = "resource_ref",
+        display = "display", flex_direction = "flex_direction", align_items =
+        "align_items", justify_content = "justify_content", flex_wrap = "flex_wrap",
+        flex_grow = "flex_grow", flex_shrink = "flex_shrink", background = "background",
+        color = "color", font_size = "font_size", font_weight = "font_weight",
+        line_height = "line_height", opacity = "opacity", gap = "gap", padding =
+        "padding", padding_x = "padding_x", padding_y = "padding_y", padding_top =
+        "padding_top", padding_right = "padding_right", padding_bottom =
+        "padding_bottom", padding_left = "padding_left", margin = "margin", margin_x =
+        "margin_x", margin_y = "margin_y", margin_top = "margin_top", margin_right =
+        "margin_right", margin_bottom = "margin_bottom", margin_left = "margin_left",
+        min_width = "min_width", max_width = "max_width", min_height = "min_height",
+        max_height = "max_height", border_radius = "border_radius", border_width =
+        "border_width", border_color = "border_color"
     }
 }
