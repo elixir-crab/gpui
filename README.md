@@ -24,7 +24,7 @@ After publication:
 ```elixir
 def deps do
   [
-    {:gpui, "0.1.0-rc.1"}
+    {:gpui, "0.1.0"}
   ]
 end
 ```

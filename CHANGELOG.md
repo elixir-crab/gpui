@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0-rc.1
+## 0.1.0
 
 - Added controlled `GPUI.UI` button and checkbox controls backed by `gpui-component`.
 - Added application-wide component assets, initialization, root wrapping, and theme defaults.
