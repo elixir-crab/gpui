@@ -120,7 +120,10 @@ defmodule GPUI.Native.ComponentsE2ETest do
           id="component-volume"
           class="w-full h-full"
           value={assigns.volume}
-          step={5}
+          min={assigns.min}
+          max={assigns.max}
+          step={assigns.step}
+          scale={assigns.scale}
           disabled={assigns.disabled}
           phx-change="volume_changed"
           phx-release="volume_released"
@@ -133,8 +136,20 @@ defmodule GPUI.Native.ComponentsE2ETest do
     def handle_event("volume_changed", %{value: volume}, assigns),
       do: {:noreply, %{assigns | volume: volume}}
 
-    def handle_event("volume_released", %{value: volume}, assigns),
-      do: {:noreply, %{assigns | released_volume: volume, disabled: true}}
+    def handle_event("volume_released", %{value: volume}, assigns) do
+      {:noreply,
+       %{
+         assigns
+         | released_volume: volume,
+           min: 10.0,
+           max: 1000.0,
+           step: 10.0,
+           scale: "logarithmic"
+       }}
+    end
+
+    def handle_event("disable_slider", _event, assigns),
+      do: {:noreply, %{assigns | disabled: true}}
   end
 
   defmodule SliderApp do
@@ -146,7 +161,16 @@ defmodule GPUI.Native.ComponentsE2ETest do
        [
          window title do
            size(360, 100)
-           root(SliderView, volume: 25.0, released_volume: nil, disabled: false)
+
+           root(SliderView,
+             volume: 25.0,
+             released_volume: nil,
+             min: 0.0,
+             max: 100.0,
+             step: 5.0,
+             scale: "linear",
+             disabled: false
+           )
          end
        ]}
     end
@@ -162,11 +186,12 @@ defmodule GPUI.Native.ComponentsE2ETest do
         <GPUI.UI.accordion
           id="component-accordion"
           expanded={assigns.expanded}
+          multiple={true}
           disabled={assigns.disabled}
           phx-change="details_changed"
         >
           <GPUI.UI.accordion_item id="account" title="Account">
-            <text>Account details</text>
+            <GPUI.UI.button id="nested-action" label="Nested action" phx-click="nested_click" />
           </GPUI.UI.accordion_item>
           <GPUI.UI.accordion_item id="security" title="Security">
             <text>Security details</text>
@@ -178,7 +203,13 @@ defmodule GPUI.Native.ComponentsE2ETest do
 
     @impl GPUI.View
     def handle_event("details_changed", %{value: expanded}, assigns),
-      do: {:noreply, %{assigns | expanded: expanded, disabled: true}}
+      do: {:noreply, %{assigns | expanded: expanded}}
+
+    def handle_event("nested_click", _event, assigns),
+      do: {:noreply, %{assigns | nested_clicks: assigns.nested_clicks + 1}}
+
+    def handle_event("disable_accordion", _event, assigns),
+      do: {:noreply, %{assigns | disabled: true}}
   end
 
   defmodule AccordionApp do
@@ -190,7 +221,7 @@ defmodule GPUI.Native.ComponentsE2ETest do
        [
          window title do
            size(360, 160)
-           root(AccordionView, expanded: [], disabled: false)
+           root(AccordionView, expanded: ["account"], nested_clicks: 0, disabled: false)
          end
        ]}
     end
@@ -355,15 +386,31 @@ defmodule GPUI.Native.ComponentsE2ETest do
     on_exit(fn -> Desktop.stop_process(runtime) end)
 
     window_id = Desktop.window_id!(title)
-    Desktop.click!(window_id, 100, 78)
+    Desktop.click!(window_id, 100, 68)
 
     Desktop.eventually(fn ->
-      assert %{expanded: ["security"], disabled: true} = assigns(runtime)
+      assert %{expanded: ["account"], nested_clicks: 1} = assigns(runtime)
     end)
 
+    Desktop.click!(window_id, 100, 140)
+
+    Desktop.eventually(fn ->
+      assert %{expanded: ["account", "security"]} = assigns(runtime)
+    end)
+
+    %{windows: [window]} = GPUI.Runtime.snapshot(runtime)
+
+    GPUI.Runtime.dispatch_event(runtime, %{
+      type: :click,
+      window_id: window.id,
+      event: "disable_accordion"
+    })
+
+    Desktop.eventually(fn -> assert %{disabled: true} = assigns(runtime) end)
+    Process.sleep(200)
     Desktop.click!(window_id, 100, 32)
     Process.sleep(100)
-    assert %{expanded: ["security"]} = assigns(runtime)
+    assert %{expanded: ["account", "security"]} = assigns(runtime)
   end
 
   test "native tabs emit controlled selections and respect disabled state" do
@@ -392,12 +439,35 @@ defmodule GPUI.Native.ComponentsE2ETest do
     Desktop.click!(window_id, 278, 20)
 
     Desktop.eventually(fn ->
-      assert %{volume: 80.0, released_volume: 80.0, disabled: true} = assigns(runtime)
+      assert %{
+               volume: 80.0,
+               released_volume: 80.0,
+               min: 10.0,
+               max: 1000.0,
+               step: 10.0,
+               scale: "logarithmic"
+             } = assigns(runtime)
     end)
 
-    Desktop.click!(window_id, 80, 20)
+    Desktop.click!(window_id, 180, 20)
+
+    Desktop.eventually(fn ->
+      assert %{volume: 100.0, released_volume: 100.0} = assigns(runtime)
+    end)
+
+    %{windows: [window]} = GPUI.Runtime.snapshot(runtime)
+
+    GPUI.Runtime.dispatch_event(runtime, %{
+      type: :click,
+      window_id: window.id,
+      event: "disable_slider"
+    })
+
+    Desktop.eventually(fn -> assert %{disabled: true} = assigns(runtime) end)
+    Process.sleep(200)
+    Desktop.click!(window_id, 278, 20)
     Process.sleep(100)
-    assert %{volume: 80.0, released_volume: 80.0} = assigns(runtime)
+    assert %{volume: 100.0, released_volume: 100.0} = assigns(runtime)
   end
 
   defp assigns(runtime) do

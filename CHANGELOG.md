@@ -13,6 +13,7 @@
 - Added controlled `GPUI.UI.slider/1` with generated numeric contracts, change/release events, persistent reconciliation, and native coverage.
 - Added controlled `GPUI.UI.tabs/1` backed directly by `gpui-component` tab bars.
 - Added controlled `GPUI.UI.accordion/1` and `accordion_item/1` with arbitrary nested GPUI content.
+- Split advanced native component renderers by responsibility and expanded local/remote lifecycle coverage.
 
 ## 0.1.0
 
