@@ -293,6 +293,40 @@ defmodule GPUI.TemplateTest do
     assert slider_attrs[:"phx-release"] == "volume_released"
   end
 
+  test "tooltip compiles aliased named slots into a textual native contract" do
+    assert %GPUI.Element{
+             type: :ui_tooltip,
+             attrs: attrs,
+             children: [%GPUI.Element{type: :ui_tooltip_trigger, children: [trigger]}]
+           } =
+             ~GPUI"""
+             <Overlay.tooltip id="save-help" delay={250}>
+               <:trigger><UI.button id="save" label="Save" /></:trigger>
+               <:content>Save the current document</:content>
+             </Overlay.tooltip>
+             """
+
+    assert attrs[:id] == "save-help"
+    assert attrs[:text] == "Save the current document"
+    assert attrs[:delay] == 250.0
+    refute attrs[:hoverable]
+    assert %GPUI.Element{type: :ui_button} = trigger
+  end
+
+  test "tooltip requires textual content" do
+    trigger = %GPUI.Component.Slot{children: ["Open"]}
+    content = %GPUI.Component.Slot{children: [%GPUI.Element{type: :div}]}
+
+    assert_raise ArgumentError, ~r/must be textual/, fn ->
+      Overlay.tooltip(%{
+        id: "help",
+        trigger: [trigger],
+        content: [content],
+        children: []
+      })
+    end
+  end
+
   test "popover uses explicit trigger and content slots" do
     assert %GPUI.Element{
              type: :ui_popover,

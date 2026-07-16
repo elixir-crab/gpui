@@ -21,7 +21,7 @@ use super::{
     ButtonComponentNode, CheckboxComponentNode, ComboboxComponentNode, ElementRenderContext,
     InputComponentNode, PopoverComponentNode, PopoverContentComponentNode,
     PopoverTriggerComponentNode, RadioGroupComponentNode, SelectComponentNode, SliderComponentNode,
-    SwitchComponentNode, TabsComponentNode,
+    SwitchComponentNode, TabsComponentNode, TooltipComponentNode, TooltipTriggerComponentNode,
 };
 use crate::gpui;
 #[cfg(feature = "components")]
@@ -573,6 +573,20 @@ pub(crate) fn render_combobox_component(
     };
 
     apply_component_styles(element, node.style).into_any_element()
+}
+
+pub(crate) fn render_tooltip_component(
+    node: TooltipComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    overlay::render_tooltip(node, context)
+}
+
+pub(crate) fn render_tooltip_trigger_component(
+    node: TooltipTriggerComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    overlay::render_tooltip_trigger(node, context)
 }
 
 pub(crate) fn render_popover_component(

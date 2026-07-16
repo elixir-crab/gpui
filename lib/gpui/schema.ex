@@ -44,6 +44,18 @@ defmodule GPUI.Schema do
     %Component{tag: :ui_popover_trigger, kind: :popover_trigger_component, children: true},
     %Component{tag: :ui_popover_content, kind: :popover_content_component, children: true},
     %Component{
+      tag: :ui_tooltip,
+      kind: :tooltip_component,
+      children: true,
+      attrs: [
+        id: :string,
+        text: {:default, :string},
+        delay: {:default, :number, 500.0},
+        hoverable: :boolean
+      ]
+    },
+    %Component{tag: :ui_tooltip_trigger, kind: :tooltip_trigger_component, children: true},
+    %Component{
       tag: :ui_checkbox,
       kind: :checkbox_component,
       events: [change: :"phx-change"],

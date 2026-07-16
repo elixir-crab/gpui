@@ -11,7 +11,8 @@ use component::{
     render_checkbox_component, render_combobox_component, render_input_component,
     render_popover_component, render_popover_content_component, render_popover_trigger_component,
     render_radio_group_component, render_select_component, render_slider_component,
-    render_switch_component, render_tabs_component,
+    render_switch_component, render_tabs_component, render_tooltip_component,
+    render_tooltip_trigger_component,
 };
 use event::{apply_click_event, apply_input_events};
 
@@ -29,6 +30,8 @@ pub(crate) enum ElementNode {
     PopoverComponent(PopoverComponentNode),
     PopoverTriggerComponent(PopoverTriggerComponentNode),
     PopoverContentComponent(PopoverContentComponentNode),
+    TooltipComponent(TooltipComponentNode),
+    TooltipTriggerComponent(TooltipTriggerComponentNode),
     CheckboxComponent(CheckboxComponentNode),
     InputComponent(InputComponentNode),
     SelectComponent(SelectComponentNode),
@@ -110,6 +113,10 @@ impl ElementNode {
             }
             Self::PopoverContentComponent(content) => {
                 render_popover_content_component(content, context)
+            }
+            Self::TooltipComponent(tooltip) => render_tooltip_component(tooltip, context),
+            Self::TooltipTriggerComponent(trigger) => {
+                render_tooltip_trigger_component(trigger, context)
             }
             Self::CheckboxComponent(checkbox) => render_checkbox_component(checkbox, context),
             Self::InputComponent(input) => render_input_component(element_id, input, context),

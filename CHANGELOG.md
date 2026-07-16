@@ -4,6 +4,7 @@
 
 - Upgraded generation to RustQ `1.0.0-rc.1` and migrated compiled `defrust` access to the documented `RustQ.Meta.AST` API.
 - Added alias-aware component tags, HEEx named slots, and controlled `GPUI.UI.Overlay.popover/1` with keyboard and dismissal focus behavior.
+- Added `GPUI.UI.Overlay.tooltip/1` with textual named-slot content, configurable native show delay, and hoverable lifecycle support.
 - Added process-global light and dark component theme switching across native displays.
 - Added controlled `GPUI.UI.input/1` with stable native entity reconciliation.
 - Added native coverage for input editing, rerendering, and theme changes.

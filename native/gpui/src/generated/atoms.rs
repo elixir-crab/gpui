@@ -8,13 +8,14 @@ mod atoms {
         "label", variant = "variant", disabled = "disabled", selected = "selected",
         loading = "loading", outline = "outline", compact = "compact", open = "open",
         anchor = "anchor", appearance = "appearance", closable = "closable", change =
-        "change", phx_change = "phx-change", checked = "checked", value = "value",
-        placeholder = "placeholder", cleanable = "cleanable", masked = "masked", options
-        = "options", search_placeholder = "search_placeholder", search = "search",
-        phx_search = "phx-search", orientation = "orientation", expanded = "expanded",
-        multiple = "multiple", bordered = "bordered", menu = "menu", min = "min", max =
-        "max", step = "step", scale = "scale", reverse = "reverse", release = "release",
-        phx_release = "phx-release", keydown = "keydown", keyup = "keyup", phx_keydown =
+        "change", phx_change = "phx-change", text = "text", delay = "delay", hoverable =
+        "hoverable", checked = "checked", value = "value", placeholder = "placeholder",
+        cleanable = "cleanable", masked = "masked", options = "options",
+        search_placeholder = "search_placeholder", search = "search", phx_search =
+        "phx-search", orientation = "orientation", expanded = "expanded", multiple =
+        "multiple", bordered = "bordered", menu = "menu", min = "min", max = "max", step
+        = "step", scale = "scale", reverse = "reverse", release = "release", phx_release
+        = "phx-release", keydown = "keydown", keyup = "keyup", phx_keydown =
         "phx-keydown", phx_keyup = "phx-keyup", raster = "raster", width = "width",
         height = "height", format = "format", stride = "stride", data = "data",
         resource_ref = "resource_ref", display = "display", flex_direction =

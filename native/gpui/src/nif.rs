@@ -424,6 +424,13 @@ pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
             decode_generated_popover_content_component(term)
                 .map(ElementNode::PopoverContentComponent)
         }
+        GeneratedComponentKind::TooltipComponent => {
+            decode_generated_tooltip_component(term).map(ElementNode::TooltipComponent)
+        }
+        GeneratedComponentKind::TooltipTriggerComponent => {
+            decode_generated_tooltip_trigger_component(term)
+                .map(ElementNode::TooltipTriggerComponent)
+        }
         GeneratedComponentKind::CheckboxComponent => {
             decode_generated_checkbox_component(term).map(ElementNode::CheckboxComponent)
         }

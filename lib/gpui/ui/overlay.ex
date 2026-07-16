@@ -13,6 +13,50 @@ defmodule GPUI.UI.Overlay do
   @anchors ~w(top_left top_center top_right bottom_left bottom_center bottom_right left_center right_center)
 
   @doc """
+  Builds a native tooltip with one `:trigger` and one textual `:content` slot.
+
+  `delay` is the show delay in milliseconds from `0` through `60_000`. Set `hoverable` when
+  the pointer may move into the tooltip without dismissing it.
+  """
+  @spec tooltip(map()) :: Element.t()
+  def tooltip(assigns) when is_map(assigns) do
+    assigns =
+      assigns
+      |> Map.put_new(:delay, 500.0)
+      |> Map.put_new(:hoverable, false)
+
+    trigger = one_slot!(assigns, :trigger, :tooltip)
+    content = one_slot!(assigns, :content, :tooltip)
+    text = tooltip_text!(content.children)
+
+    unless Map.get(assigns, :children, []) == [] do
+      raise ArgumentError, "tooltip content must use :trigger and :content named slots"
+    end
+
+    unless is_number(assigns.delay) and assigns.delay >= 0 and assigns.delay <= 60_000 and
+             is_boolean(assigns.hoverable) do
+      raise ArgumentError,
+            "tooltip delay must be between 0 and 60_000 and hoverable must be a boolean"
+    end
+
+    id = component_id!(assigns, :ui_tooltip)
+
+    %Element{
+      type: :ui_tooltip,
+      attrs:
+        assigns
+        |> Map.drop([:children, :trigger, :content])
+        |> Map.put(:id, id)
+        |> Map.put(:text, text)
+        |> Map.put(:delay, assigns.delay / 1)
+        |> Map.to_list(),
+      children: [
+        %Element{type: :ui_tooltip_trigger, attrs: trigger.attrs, children: trigger.children}
+      ]
+    }
+  end
+
+  @doc """
   Builds a controlled popover with one `:trigger` and one `:content` slot.
 
   Changes to `open` are emitted through `phx-change`. Escape and, by default,
@@ -27,8 +71,8 @@ defmodule GPUI.UI.Overlay do
       |> Map.put_new(:appearance, true)
       |> Map.put_new(:closable, true)
 
-    trigger = one_slot!(assigns, :trigger)
-    content = one_slot!(assigns, :content)
+    trigger = one_slot!(assigns, :trigger, :popover)
+    content = one_slot!(assigns, :content, :popover)
 
     unless Map.get(assigns, :children, []) == [] do
       raise ArgumentError, "popover content must use :trigger and :content named slots"
@@ -44,17 +88,14 @@ defmodule GPUI.UI.Overlay do
             "popover anchor must be one of #{Enum.map_join(@anchors, ", ", &inspect/1)}"
     end
 
-    id = Map.get(assigns, :id)
-
-    unless is_binary(id) and id != "" do
-      raise ArgumentError, "ui_popover requires a non-empty string id"
-    end
+    id = component_id!(assigns, :ui_popover)
 
     %Element{
       type: :ui_popover,
       attrs:
         assigns
         |> Map.drop([:children, :trigger, :content])
+        |> Map.put(:id, id)
         |> Map.to_list(),
       children: [
         %Element{type: :ui_popover_trigger, attrs: trigger.attrs, children: trigger.children},
@@ -63,10 +104,35 @@ defmodule GPUI.UI.Overlay do
     }
   end
 
-  defp one_slot!(assigns, name) do
+  defp tooltip_text!(children) do
+    text = Enum.map_join(children, &tooltip_fragment!/1)
+
+    if text == "", do: raise(ArgumentError, "tooltip :content must contain text"), else: text
+  end
+
+  defp tooltip_fragment!(%Element{type: :text, children: children}),
+    do: Enum.map_join(children, &tooltip_fragment!/1)
+
+  defp tooltip_fragment!(value) when is_binary(value), do: value
+  defp tooltip_fragment!(value) when is_number(value) or is_atom(value), do: to_string(value)
+
+  defp tooltip_fragment!(value),
+    do: raise(ArgumentError, "tooltip :content must be textual, got: #{inspect(value)}")
+
+  defp component_id!(assigns, type) do
+    id = Map.get(assigns, :id)
+
+    if is_binary(id) and id != "" do
+      id
+    else
+      raise ArgumentError, "#{type} requires a non-empty string id"
+    end
+  end
+
+  defp one_slot!(assigns, name, component) do
     case Map.get(assigns, name, []) do
       [%Slot{} = slot] -> slot
-      _other -> raise ArgumentError, "popover requires exactly one :#{name} slot"
+      _other -> raise ArgumentError, "#{component} requires exactly one :#{name} slot"
     end
   end
 end

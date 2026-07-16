@@ -9,6 +9,8 @@ defmodule GPUI.SchemaTest do
              :ui_popover,
              :ui_popover_trigger,
              :ui_popover_content,
+             :ui_tooltip,
+             :ui_tooltip_trigger,
              :ui_checkbox,
              :ui_input,
              :ui_select,
@@ -34,6 +36,7 @@ defmodule GPUI.SchemaTest do
     assert :"phx-release" in GPUI.Schema.events()
     assert :ui_select in GPUI.Schema.identified_tags()
     assert :ui_popover in GPUI.Schema.identified_tags()
+    assert :ui_tooltip in GPUI.Schema.identified_tags()
     assert :raster in GPUI.Schema.resources()
     assert :border_radius in GPUI.Schema.styles()
     assert :font_weight in GPUI.Schema.styles()

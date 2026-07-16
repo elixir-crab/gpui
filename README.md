@@ -148,10 +148,12 @@ native styles rather than relying only on parent styles.
 `GPUI.UI.button/1`, `GPUI.UI.checkbox/1`, `GPUI.UI.input/1`,
 `GPUI.UI.select/1`, `GPUI.UI.combobox/1`, `GPUI.UI.switch/1`,
 `GPUI.UI.radio_group/1`, `GPUI.UI.accordion/1`, `GPUI.UI.tabs/1`,
-`GPUI.UI.slider/1`, and `GPUI.UI.Overlay.popover/1` render real
-[`gpui-component`](https://github.com/longbridge/gpui-component) controls. They
-are controlled by Elixir assigns and require stable string IDs. Stateful
-component entities are reconciled by kind and ID so focus, selection, open
+`GPUI.UI.slider/1`, `GPUI.UI.Overlay.tooltip/1`, and
+`GPUI.UI.Overlay.popover/1` render real
+[`gpui-component`](https://github.com/longbridge/gpui-component) controls.
+Interactive values are controlled by Elixir assigns, and native components
+require stable string IDs. Stateful component entities are reconciled by kind
+and ID so focus, selection, open
 state, and editing state survive rerenders. Duplicate IDs are rejected before a
 snapshot crosses the display boundary:
 
@@ -242,19 +244,28 @@ alias GPUI.UI
 alias GPUI.UI.Overlay
 
 ~GPUI"""
-<Overlay.popover id="account-menu" open={assigns.menu_open} phx-change="menu_changed">
-  <:trigger>
-    <UI.button id="account-trigger" label="Account" />
-  </:trigger>
-  <:content>
-    <text>Account settings</text>
-  </:content>
-</Overlay.popover>
+<div class="flex flex-col gap-4">
+  <Overlay.tooltip id="save-help" delay={250}>
+    <:trigger><UI.button id="save" label="Save" /></:trigger>
+    <:content>Save the current document</:content>
+  </Overlay.tooltip>
+
+  <Overlay.popover id="account-menu" open={assigns.menu_open} phx-change="menu_changed">
+    <:trigger>
+      <UI.button id="account-trigger" label="Account" />
+    </:trigger>
+    <:content>
+      <text>Account settings</text>
+    </:content>
+  </Overlay.popover>
+</div>
 """
 ```
 
-Popover triggers support pointer and Enter/Space activation. Escape and outside
-clicks request closure, and focus returns to the prior trigger. Set
+Tooltip content is textual and uses the upstream native tooltip lifecycle;
+`delay` is expressed in milliseconds. Popover triggers support pointer and
+Enter/Space activation. Escape and outside clicks request closure, and focus
+returns to the prior trigger. Set
 `closable={false}` to disable outside-click dismissal.
 
 Checkbox and switch change events carry a boolean `:value`; input, select,

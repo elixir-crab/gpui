@@ -7,6 +7,8 @@ pub enum GeneratedComponentKind {
     PopoverComponent,
     PopoverTriggerComponent,
     PopoverContentComponent,
+    TooltipComponent,
+    TooltipTriggerComponent,
     CheckboxComponent,
     InputComponent,
     SelectComponent,
@@ -676,6 +678,54 @@ pub(crate) fn decode_generated_popover_content_component(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct TooltipComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) text: String,
+    pub(crate) delay: f64,
+    pub(crate) hoverable: bool,
+    pub(crate) children: Vec<ElementNode>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_tooltip_component(
+    term: Term,
+) -> NifResult<TooltipComponentNode> {
+    Ok(TooltipComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        text: component_string_attr(term, atoms::text())?.unwrap_or_default(),
+        delay: component_number_attr(term, atoms::delay())?.unwrap_or(500.0),
+        hoverable: component_bool_attr(term, atoms::hoverable())?.unwrap_or(false),
+        children: decode_children(term)?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct TooltipTriggerComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) children: Vec<ElementNode>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_tooltip_trigger_component(
+    term: Term,
+) -> NifResult<TooltipTriggerComponentNode> {
+    Ok(TooltipTriggerComponentNode {
+        style: decode_style(term)?,
+        children: decode_children(term)?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct CheckboxComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -1033,6 +1083,8 @@ pub enum GeneratedElementTag {
     UiPopover,
     UiPopoverTrigger,
     UiPopoverContent,
+    UiTooltip,
+    UiTooltipTrigger,
     UiCheckbox,
     UiInput,
     UiSelect,
@@ -1063,6 +1115,8 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_popover" => GeneratedElementTag::UiPopover,
         "ui_popover_trigger" => GeneratedElementTag::UiPopoverTrigger,
         "ui_popover_content" => GeneratedElementTag::UiPopoverContent,
+        "ui_tooltip" => GeneratedElementTag::UiTooltip,
+        "ui_tooltip_trigger" => GeneratedElementTag::UiTooltipTrigger,
         "ui_checkbox" => GeneratedElementTag::UiCheckbox,
         "ui_input" => GeneratedElementTag::UiInput,
         "ui_select" => GeneratedElementTag::UiSelect,
@@ -1097,6 +1151,10 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         }
         GeneratedElementTag::UiPopoverContent => {
             GeneratedComponentKind::PopoverContentComponent
+        }
+        GeneratedElementTag::UiTooltip => GeneratedComponentKind::TooltipComponent,
+        GeneratedElementTag::UiTooltipTrigger => {
+            GeneratedComponentKind::TooltipTriggerComponent
         }
         GeneratedElementTag::UiCheckbox => GeneratedComponentKind::CheckboxComponent,
         GeneratedElementTag::UiInput => GeneratedComponentKind::InputComponent,
