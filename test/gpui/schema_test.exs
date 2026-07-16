@@ -8,6 +8,7 @@ defmodule GPUI.SchemaTest do
              :ui_button,
              :ui_checkbox,
              :ui_input,
+             :ui_select,
              :span,
              :scroll,
              :list,
@@ -19,6 +20,7 @@ defmodule GPUI.SchemaTest do
            ]
 
     assert :"phx-change" in GPUI.Schema.events()
+    assert :ui_select in GPUI.Schema.identified_tags()
     assert :raster in GPUI.Schema.resources()
     assert :border_radius in GPUI.Schema.styles()
     assert :font_weight in GPUI.Schema.styles()

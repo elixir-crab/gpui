@@ -9,6 +9,8 @@ defmodule GPUI.Element do
 
   defstruct [:type, attrs: [], children: []]
 
+  @identified_tags MapSet.new(GPUI.Schema.identified_tags())
+
   @doc false
   @spec append_child(t(), child()) :: t()
   def append_child(%__MODULE__{} = element, child) do
@@ -26,15 +28,51 @@ defmodule GPUI.Element do
   @doc "Converts an element tree into plain serializable maps/lists."
   @spec to_payload(t() | child()) :: map() | String.t()
   def to_payload(%__MODULE__{} = element) do
-    %{
-      type: element.type,
-      attrs: attrs_to_payload(element.attrs),
-      children: Enum.map(element.children, &to_payload/1)
-    }
+    validate_component_ids!(element)
+    payload(element)
   end
 
   def to_payload(text) when is_binary(text), do: text
   def to_payload(value) when is_integer(value) or is_float(value) or is_atom(value), do: value
+
+  defp payload(%__MODULE__{} = element) do
+    %{
+      type: element.type,
+      attrs: attrs_to_payload(element.attrs),
+      children: Enum.map(element.children, &payload/1)
+    }
+  end
+
+  defp payload(value), do: to_payload(value)
+
+  defp validate_component_ids!(element) do
+    element
+    |> collect_component_ids(MapSet.new())
+    |> then(fn _ids -> :ok end)
+  end
+
+  defp collect_component_ids(%__MODULE__{} = element, ids) do
+    ids =
+      if MapSet.member?(@identified_tags, element.type) do
+        id = Keyword.get(element.attrs, :id)
+
+        unless is_binary(id) and id != "" do
+          raise ArgumentError, "#{element.type} requires a non-empty string id"
+        end
+
+        if MapSet.member?(ids, id) do
+          raise ArgumentError, "duplicate GPUI component id #{inspect(id)}"
+        end
+
+        MapSet.put(ids, id)
+      else
+        ids
+      end
+
+    Enum.reduce(element.children, ids, &collect_component_ids/2)
+  end
+
+  defp collect_component_ids(_primitive, ids), do: ids
 
   defp attrs_to_payload(attrs) do
     attrs

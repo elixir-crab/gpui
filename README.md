@@ -72,7 +72,8 @@ defmodule CounterTest do
     assert %{count: 1} = assigns(runtime)
 
     change(runtime, "name_changed", "Ada")
-    assert %{name: "Ada"} = assigns(runtime)
+    select(runtime, "language_changed", "elixir")
+    assert %{name: "Ada", language: "elixir"} = assigns(runtime)
     assert %{type: :ui_input} = runtime |> tree() |> find!(id: "name")
   end
 end
@@ -142,10 +143,13 @@ Templates support `div`, `button`, `span`, `scroll`, `list`, `item`, `icon`,
 `input`, `img`, and `text`. Text and image nodes retain their own generated
 native styles rather than relying only on parent styles.
 
-`GPUI.UI.button/1`, `GPUI.UI.checkbox/1`, and `GPUI.UI.input/1` render real
+`GPUI.UI.button/1`, `GPUI.UI.checkbox/1`, `GPUI.UI.input/1`, and
+`GPUI.UI.select/1` render real
 [`gpui-component`](https://github.com/longbridge/gpui-component) controls. They
-are controlled by Elixir assigns and require stable string IDs. Input entities
-are reconciled by ID so focus, selection, and editing state survive rerenders:
+are controlled by Elixir assigns and require stable string IDs. Stateful
+component entities are reconciled by kind and ID so focus, selection, open
+state, and editing state survive rerenders. Duplicate IDs are rejected before a
+snapshot crosses the display boundary:
 
 ```elixir
 ~GPUI"""
@@ -170,13 +174,21 @@ are reconciled by ID so focus, selection, and editing state survive rerenders:
     cleanable={true}
     phx-change="name_changed"
   />
+  <GPUI.UI.select
+    id="language"
+    value={assigns.language}
+    options={[{"Rust", "rust"}, {"Elixir", "elixir"}]}
+    phx-change="language_changed"
+  />
 </div>
 """
 ```
 
-Checkbox change events carry a boolean `:value`; input change events carry a
-string `:value`. Button variants are `default`, `primary`, `secondary`, `danger`,
-`warning`, `success`, `info`, `ghost`, `link`, and `text`; component sizes are
+Checkbox change events carry a boolean `:value`; input and select change events
+carry their controlled `:value`. Select options accept strings, `{label, value}`
+tuples, or `%{label: label, value: value}` maps. Button variants are `default`,
+`primary`, `secondary`, `danger`, `warning`, `success`, `info`, `ghost`, `link`,
+and `text`; component sizes are
 `xs`, `sm`, `md`, and `lg`.
 
 Native component themes are process-global and refresh every native window:

@@ -130,6 +130,10 @@ defmodule GPUI.Test do
     snapshot
   end
 
+  @doc "Selects a controlled component option and returns the updated snapshot."
+  @spec select(GenServer.server(), String.t(), String.t() | nil, keyword()) :: Snapshot.t()
+  def select(runtime, event, value, opts \\ []), do: change(runtime, event, value, opts)
+
   @doc "Returns every element in a tree matching the given attributes."
   @spec all(Element.t() | map(), keyword()) :: [Element.t() | map()]
   def all(tree, selector) when is_list(selector) do

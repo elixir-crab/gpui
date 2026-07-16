@@ -134,6 +134,7 @@ defmodule GPUI.TemplateTest do
 
   test "builds namespaced native UI components" do
     checked = true
+    options = [{"Rust", "rust"}, %{label: "Elixir", value: "elixir"}]
 
     assert %GPUI.Element{
              type: :div,
@@ -144,7 +145,8 @@ defmodule GPUI.TemplateTest do
                  children: ["Save"]
                },
                %GPUI.Element{type: :ui_checkbox, attrs: checkbox_attrs},
-               %GPUI.Element{type: :ui_input, attrs: input_attrs}
+               %GPUI.Element{type: :ui_input, attrs: input_attrs},
+               %GPUI.Element{type: :ui_select, attrs: select_attrs}
              ]
            } =
              ~GPUI"""
@@ -163,6 +165,12 @@ defmodule GPUI.TemplateTest do
                  cleanable={true}
                  phx-change="name_changed"
                />
+               <GPUI.UI.select
+                 id="language"
+                 value="rust"
+                 options={options}
+                 phx-change="language_changed"
+               />
              </div>
              """
 
@@ -176,11 +184,44 @@ defmodule GPUI.TemplateTest do
     assert input_attrs[:value] == "Ada"
     assert input_attrs[:cleanable]
     assert input_attrs[:"phx-change"] == "name_changed"
+    assert select_attrs[:id] == "language"
+    assert select_attrs[:value] == "rust"
+
+    assert select_attrs[:options] == [
+             %{label: "Rust", value: "rust"},
+             %{label: "Elixir", value: "elixir"}
+           ]
+
+    assert select_attrs[:"phx-change"] == "language_changed"
   end
 
   test "native UI components require stable ids" do
     assert_raise ArgumentError, ~r/requires a non-empty string id/, fn ->
       GPUI.UI.button(%{children: []})
+    end
+  end
+
+  test "select validates options and controlled values" do
+    assert_raise ArgumentError, ~r/option values must be unique/, fn ->
+      GPUI.UI.select(%{id: "language", options: ["Rust", "Rust"]})
+    end
+
+    assert_raise ArgumentError, ~r/is not present in options/, fn ->
+      GPUI.UI.select(%{id: "language", value: "zig", options: ["Rust"]})
+    end
+  end
+
+  test "serialized component trees reject duplicate stable ids" do
+    tree =
+      ~GPUI"""
+      <div>
+        <GPUI.UI.button id="duplicate" label="One" />
+        <GPUI.UI.input id="duplicate" value="" />
+      </div>
+      """
+
+    assert_raise ArgumentError, ~r/duplicate GPUI component id "duplicate"/, fn ->
+      GPUI.Element.to_payload(tree)
     end
   end
 end

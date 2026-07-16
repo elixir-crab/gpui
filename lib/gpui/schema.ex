@@ -52,6 +52,20 @@ defmodule GPUI.Schema do
         loading: :boolean
       ]
     },
+    %Component{
+      tag: :ui_select,
+      kind: :select_component,
+      events: [change: :"phx-change"],
+      attrs: [
+        id: :string,
+        value: :string,
+        options: :select_options,
+        placeholder: :string,
+        size: {:enum, ~w(xs sm md lg)},
+        disabled: :boolean,
+        cleanable: :boolean
+      ]
+    },
     %Component{tag: :span, kind: :container, events: [click: :"phx-click"]},
     %Component{tag: :scroll, kind: :container, events: [click: :"phx-click"]},
     %Component{tag: :list, kind: :container, events: [click: :"phx-click"]},
@@ -276,6 +290,12 @@ defmodule GPUI.Schema do
   def resources, do: Enum.map(@resources, & &1.name)
   def resource_specs, do: @resources
   def tags, do: Enum.map(@components, & &1.tag)
+
+  def identified_tags do
+    for %Component{tag: tag, attrs: attrs} <- @components,
+        Keyword.has_key?(attrs, :id),
+        do: tag
+  end
 
   def events do
     @components

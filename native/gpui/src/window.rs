@@ -15,7 +15,7 @@ pub(crate) struct ElixirRoot {
     window_id: u64,
     input_entities: HashMap<String, gpui::Entity<NativeTextInput>>,
     #[cfg(feature = "components")]
-    component_inputs: HashMap<String, crate::element::component::ComponentInput>,
+    components: crate::element::component_registry::ComponentRegistry,
 }
 
 #[cfg(feature = "real-gpui")]
@@ -33,7 +33,7 @@ impl gpui::Render for ElixirRoot {
             .unwrap_or_else(|_| ElementNode::empty_root());
         let mut active_input_ids = HashSet::new();
         #[cfg(feature = "components")]
-        let mut active_component_input_ids = HashSet::new();
+        self.components.begin_render();
         let element = tree.render(&mut ElementRenderContext {
             runtime: self.runtime.clone(),
             window_id: self.window_id,
@@ -41,9 +41,7 @@ impl gpui::Render for ElixirRoot {
             active_input_ids: &mut active_input_ids,
             input_entities: &mut self.input_entities,
             #[cfg(feature = "components")]
-            active_component_input_ids: &mut active_component_input_ids,
-            #[cfg(feature = "components")]
-            component_inputs: &mut self.component_inputs,
+            components: &mut self.components,
             #[cfg(feature = "components")]
             window: _window,
             cx,
@@ -51,8 +49,7 @@ impl gpui::Render for ElixirRoot {
         self.input_entities
             .retain(|input_id, _entity| active_input_ids.contains(input_id));
         #[cfg(feature = "components")]
-        self.component_inputs
-            .retain(|input_id, _input| active_component_input_ids.contains(input_id));
+        self.components.finish_render();
 
         let input_prefix = format!("gpui-elixir-input-{}-", self.window_id);
         if let Ok(mut input_values) = self.runtime.input_values.lock() {
@@ -380,7 +377,7 @@ fn open_gpui_window(
         window_id,
         input_entities: HashMap::new(),
         #[cfg(feature = "components")]
-        component_inputs: HashMap::new(),
+        components: crate::element::component_registry::ComponentRegistry::default(),
     });
     let view_for_root = view.clone();
 

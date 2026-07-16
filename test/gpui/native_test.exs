@@ -19,6 +19,17 @@ defmodule GPUI.NativeTest do
              GPUI.Native.inject_event(runtime, %{type: :window_closed, window_id: 7})
 
     assert {:ok, [%{type: :window_closed, window_id: 7}]} = GPUI.Native.drain_events(runtime)
+
+    assert {:ok, :ok} =
+             GPUI.Native.inject_event(runtime, %{
+               type: :change,
+               window_id: 7,
+               event: "language_changed",
+               value: nil
+             })
+
+    assert {:ok, [%{type: :change, window_id: 7, event: "language_changed", value: nil}]} =
+             GPUI.Native.drain_events(runtime)
   end
 
   test "rejects unsupported native component themes" do

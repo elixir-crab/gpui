@@ -1,9 +1,15 @@
 use crate::*;
 
 pub(crate) mod component;
+#[cfg(feature = "components")]
+pub(crate) mod component_registry;
+pub(crate) mod controlled;
 pub(crate) mod event;
 
-use component::{render_button_component, render_checkbox_component, render_input_component};
+use component::{
+    render_button_component, render_checkbox_component, render_input_component,
+    render_select_component,
+};
 use event::{apply_click_event, apply_input_events};
 
 #[cfg(feature = "real-gpui")]
@@ -19,6 +25,7 @@ pub(crate) enum ElementNode {
     ButtonComponent(ButtonComponentNode),
     CheckboxComponent(CheckboxComponentNode),
     InputComponent(InputComponentNode),
+    SelectComponent(SelectComponentNode),
     Image {
         image: ImageData,
         style: StyleAttrs,
@@ -89,6 +96,28 @@ pub(crate) struct InputComponentNode {
 }
 
 #[cfg(feature = "real-gpui")]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct SelectOptionNode {
+    pub(crate) label: String,
+    pub(crate) value: String,
+}
+
+#[cfg(feature = "real-gpui")]
+#[cfg_attr(not(feature = "components"), allow(dead_code))]
+#[derive(Clone, Debug)]
+pub(crate) struct SelectComponentNode {
+    pub(crate) id: String,
+    pub(crate) style: StyleAttrs,
+    pub(crate) value: Option<String>,
+    pub(crate) options: Vec<SelectOptionNode>,
+    pub(crate) placeholder: Option<String>,
+    pub(crate) size: Option<String>,
+    pub(crate) disabled: bool,
+    pub(crate) cleanable: bool,
+    pub(crate) change: Option<String>,
+}
+
+#[cfg(feature = "real-gpui")]
 pub(crate) struct ElementRenderContext<'a, 'cx> {
     pub(crate) runtime: SharedRuntime,
     pub(crate) window_id: u64,
@@ -96,9 +125,7 @@ pub(crate) struct ElementRenderContext<'a, 'cx> {
     pub(crate) active_input_ids: &'a mut HashSet<String>,
     pub(crate) input_entities: &'a mut HashMap<String, gpui::Entity<NativeTextInput>>,
     #[cfg(feature = "components")]
-    pub(crate) active_component_input_ids: &'a mut HashSet<String>,
-    #[cfg(feature = "components")]
-    pub(crate) component_inputs: &'a mut HashMap<String, component::ComponentInput>,
+    pub(crate) components: &'a mut component_registry::ComponentRegistry,
     #[cfg(feature = "components")]
     pub(crate) window: &'a mut gpui::Window,
     pub(crate) cx: &'a mut gpui::Context<'cx, ElixirRoot>,
@@ -136,6 +163,7 @@ impl ElementNode {
             Self::ButtonComponent(button) => render_button_component(button, context),
             Self::CheckboxComponent(checkbox) => render_checkbox_component(checkbox, context),
             Self::InputComponent(input) => render_input_component(element_id, input, context),
+            Self::SelectComponent(select) => render_select_component(select, context),
             Self::Div {
                 tag,
                 style,

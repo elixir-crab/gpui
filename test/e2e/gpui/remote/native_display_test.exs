@@ -20,6 +20,12 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
           placeholder="Name"
           phx-change="name_changed"
         />
+        <GPUI.UI.select
+          id="remote-language"
+          value={assigns.language}
+          options={[{"Rust", "rust"}, {"Elixir", "elixir"}]}
+          phx-change="language_changed"
+        />
       </div>
       """
     end
@@ -30,6 +36,9 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
 
     def handle_event("name_changed", %{value: name}, assigns),
       do: {:noreply, %{assigns | name: name}}
+
+    def handle_event("language_changed", %{value: language}, assigns),
+      do: {:noreply, %{assigns | language: language}}
   end
 
   defmodule CounterApp do
@@ -41,7 +50,7 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
        [
          window "GPUI Remote E2E" do
            size(320, 240)
-           root(CounterView, count: 0, name: "")
+           root(CounterView, count: 0, name: "", language: "rust")
          end
        ]}
     end
@@ -65,6 +74,7 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
     assert {:ok, %{windows: [window]}} = GPUI.Remote.Client.mount(client)
     assert 0 = get_in(window, [:root, :assigns, :count])
     assert "" = get_in(window, [:root, :assigns, :name])
+    assert "rust" = get_in(window, [:root, :assigns, :language])
 
     window_id = Desktop.window_id!("GPUI Remote E2E")
     Desktop.click!(window_id, 64, 68)
@@ -80,6 +90,14 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
     Desktop.eventually(fn ->
       assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
       assert "remote" = get_in(updated, [:root, :assigns, :name])
+    end)
+
+    Desktop.click!(window_id, 80, 150)
+    Desktop.click!(window_id, 80, 223)
+
+    Desktop.eventually(fn ->
+      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
+      assert "elixir" = get_in(updated, [:root, :assigns, :language])
     end)
   end
 

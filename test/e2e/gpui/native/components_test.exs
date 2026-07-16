@@ -12,7 +12,7 @@ defmodule GPUI.Native.ComponentsE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="flex flex-col w-[360px] h-[280px] p-4 gap-4 bg-slate-900">
+      <div class="flex flex-col w-[360px] h-[340px] p-4 gap-4 bg-slate-900">
         <GPUI.UI.button
           id="component-button"
           label="Increment"
@@ -32,7 +32,13 @@ defmodule GPUI.Native.ComponentsE2ETest do
           cleanable={true}
           phx-change="name_changed"
         />
-        <text class="text-white">Count: {assigns.count}; Enabled: {assigns.enabled}; Name: {assigns.name}</text>
+        <GPUI.UI.select
+          id="component-language"
+          value={assigns.language}
+          options={[{"Rust", "rust"}, {"Elixir", "elixir"}, {"Zig", "zig"}]}
+          phx-change="language_changed"
+        />
+        <text class="text-white">Count: {assigns.count}; Enabled: {assigns.enabled}; Name: {assigns.name}; Language: {assigns.language}</text>
       </div>
       """
     end
@@ -52,6 +58,9 @@ defmodule GPUI.Native.ComponentsE2ETest do
 
     def handle_event("clear_name", _event, assigns),
       do: {:noreply, %{assigns | name: ""}}
+
+    def handle_event("language_changed", %{value: language}, assigns),
+      do: {:noreply, %{assigns | language: language}}
   end
 
   defmodule ComponentsApp do
@@ -62,8 +71,8 @@ defmodule GPUI.Native.ComponentsE2ETest do
       {:ok,
        [
          window title do
-           size(360, 280)
-           root(ComponentsView, count: 0, enabled: false, name: "")
+           size(360, 340)
+           root(ComponentsView, count: 0, enabled: false, name: "", language: "rust")
          end
        ]}
     end
@@ -148,6 +157,13 @@ defmodule GPUI.Native.ComponentsE2ETest do
 
     Desktop.eventually(fn ->
       assert %{name: "server!"} = assigns(runtime)
+    end)
+
+    Desktop.click!(window_id, 80, 160)
+    Desktop.click!(window_id, 80, 230)
+
+    Desktop.eventually(fn ->
+      assert %{language: "elixir"} = assigns(runtime)
     end)
   end
 

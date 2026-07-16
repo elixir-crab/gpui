@@ -320,6 +320,15 @@ pub(crate) fn inject_event_impl<'a>(
                 term.decode::<String>()
                     .map(EventValue::String)
                     .or_else(|_| term.decode::<bool>().map(EventValue::Boolean))
+                    .or_else(|_| {
+                        term.decode::<Atom>().and_then(|atom| {
+                            if atom == atoms::nil() {
+                                Ok(EventValue::Nil)
+                            } else {
+                                Err(rustler::Error::BadArg)
+                            }
+                        })
+                    })
                     .ok()
             });
             let kind = match event_type.as_str() {
@@ -396,6 +405,7 @@ pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
         GeneratedComponentKind::ButtonComponent => decode_button_component(term),
         GeneratedComponentKind::CheckboxComponent => decode_checkbox_component(term),
         GeneratedComponentKind::InputComponent => decode_input_component(term),
+        GeneratedComponentKind::SelectComponent => decode_select_component(term),
         GeneratedComponentKind::Input => decode_input(term),
         GeneratedComponentKind::Image => decode_image(term),
         GeneratedComponentKind::Text => Ok(ElementNode::Text {
@@ -477,6 +487,40 @@ fn decode_input_component(term: Term) -> NifResult<ElementNode> {
         loading: component_bool_attr(term, atoms::loading())?.unwrap_or(false),
         change: string_attr(term, atoms::phx_change()),
     }))
+}
+
+#[cfg(feature = "real-gpui")]
+fn decode_select_component(term: Term) -> NifResult<ElementNode> {
+    Ok(ElementNode::SelectComponent(SelectComponentNode {
+        id: component_id(term)?,
+        style: decode_style(term)?,
+        value: component_string_attr(term, atoms::value())?,
+        options: decode_select_options(term)?,
+        placeholder: component_string_attr(term, atoms::placeholder())?,
+        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        cleanable: component_bool_attr(term, atoms::cleanable())?.unwrap_or(false),
+        change: string_attr(term, atoms::phx_change()),
+    }))
+}
+
+#[cfg(feature = "real-gpui")]
+fn decode_select_options(term: Term) -> NifResult<Vec<SelectOptionNode>> {
+    let attrs = term.map_get(atoms::attrs())?;
+    let options = attrs.map_get(atoms::options())?.decode::<Vec<Term>>()?;
+    let mut values = HashSet::new();
+
+    options
+        .into_iter()
+        .map(|option| {
+            let label = option.map_get(atoms::label())?.decode::<String>()?;
+            let value = option.map_get(atoms::value())?.decode::<String>()?;
+            if label.is_empty() || value.is_empty() || !values.insert(value.clone()) {
+                return Err(rustler::Error::BadArg);
+            }
+            Ok(SelectOptionNode { label, value })
+        })
+        .collect()
 }
 
 #[cfg(feature = "real-gpui")]

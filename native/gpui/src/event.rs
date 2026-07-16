@@ -5,6 +5,8 @@ use rustler::{Atom, Encoder, Env, NifResult, Term};
 pub(crate) enum EventValue {
     String(String),
     Boolean(bool),
+    #[cfg_attr(not(feature = "components"), allow(dead_code))]
+    Nil,
 }
 
 impl EventValue {
@@ -12,6 +14,7 @@ impl EventValue {
         match self {
             Self::String(value) => value.encode(env),
             Self::Boolean(value) => value.encode(env),
+            Self::Nil => atoms::nil().encode(env),
         }
     }
 }

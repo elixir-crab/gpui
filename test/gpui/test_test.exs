@@ -11,6 +11,12 @@ defmodule GPUI.TestTest do
         <text>Count: {assigns.count}</text>
         <GPUI.UI.button id="increment" label="Increment" phx-click="increment" />
         <GPUI.UI.input id="name" value={assigns.name} phx-change="name_changed" />
+        <GPUI.UI.select
+          id="language"
+          value={assigns.language}
+          options={[{"Rust", "rust"}, {"Elixir", "elixir"}]}
+          phx-change="language_changed"
+        />
       </div>
       """
     end
@@ -21,6 +27,9 @@ defmodule GPUI.TestTest do
 
     def handle_event("name_changed", %{value: name}, assigns),
       do: {:noreply, %{assigns | name: name}}
+
+    def handle_event("language_changed", %{value: language}, assigns),
+      do: {:noreply, %{assigns | language: language}}
   end
 
   defmodule TestApp do
@@ -31,14 +40,14 @@ defmodule GPUI.TestTest do
       {:ok,
        [
          window "Primary" do
-           root(TestView, count: 0, name: "")
+           root(TestView, count: 0, name: "", language: "rust")
          end
        ]}
     end
   end
 
   test "renders and queries view trees directly" do
-    tree = render(TestView, count: 2, name: "Ada")
+    tree = render(TestView, count: 2, name: "Ada", language: "rust")
 
     assert %GPUI.Element{type: :ui_button} = find!(tree, id: "increment")
     assert %GPUI.Element{type: :ui_input} = find!(tree, type: :ui_input)
@@ -48,7 +57,7 @@ defmodule GPUI.TestTest do
   test "starts deterministic runtimes and dispatches user events" do
     runtime = start_gpui!(TestApp)
 
-    assert %{count: 0, name: ""} = assigns(runtime)
+    assert %{count: 0, name: "", language: "rust"} = assigns(runtime)
     assert %{title: "Primary"} = window_snapshot(runtime, "Primary")
     assert %{type: :ui_input} = runtime |> tree() |> find!(id: "name")
 
@@ -56,7 +65,11 @@ defmodule GPUI.TestTest do
     assert %{count: 1} = assigns(runtime)
 
     change(runtime, "name_changed", "Ada")
-    assert %{count: 1, name: "Ada"} = assigns(runtime)
+    select(runtime, "language_changed", "elixir")
+    assert %{count: 1, name: "Ada", language: "elixir"} = assigns(runtime)
+
+    select(runtime, "language_changed", nil)
+    assert %{language: nil} = assigns(runtime)
   end
 
   test "public test display records snapshots chronologically" do

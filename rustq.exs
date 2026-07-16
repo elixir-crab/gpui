@@ -14,6 +14,7 @@ require_file("codegen/gpui/codegen/native/schema.ex")
 fixed_atoms = [
   :ok,
   :error,
+  nil,
   :window_closed,
   :missing_resource,
   :light,
