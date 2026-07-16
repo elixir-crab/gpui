@@ -1,5 +1,7 @@
 mod accordion;
+mod radio;
 mod slider;
+mod switch;
 mod tabs;
 
 #[cfg(feature = "components")]
@@ -16,7 +18,8 @@ use super::SelectOptionNode;
 use super::{
     apply_generated_render_styles, AccordionComponentNode, AccordionItemComponentNode,
     ButtonComponentNode, CheckboxComponentNode, ComboboxComponentNode, ElementRenderContext,
-    InputComponentNode, SelectComponentNode, SliderComponentNode, TabsComponentNode,
+    InputComponentNode, RadioGroupComponentNode, SelectComponentNode, SliderComponentNode,
+    SwitchComponentNode, TabsComponentNode,
 };
 use crate::gpui;
 #[cfg(feature = "components")]
@@ -568,6 +571,38 @@ pub(crate) fn render_combobox_component(
     };
 
     apply_component_styles(element, node.style).into_any_element()
+}
+
+#[cfg(feature = "components")]
+pub(crate) fn render_switch_component(
+    node: SwitchComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    switch::render(node, context)
+}
+
+#[cfg(not(feature = "components"))]
+pub(crate) fn render_switch_component(
+    node: SwitchComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    switch::render(node, context)
+}
+
+#[cfg(feature = "components")]
+pub(crate) fn render_radio_group_component(
+    node: RadioGroupComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    radio::render(node, context)
+}
+
+#[cfg(not(feature = "components"))]
+pub(crate) fn render_radio_group_component(
+    node: RadioGroupComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    radio::render(node, context)
 }
 
 #[cfg(feature = "components")]

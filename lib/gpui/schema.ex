@@ -85,6 +85,32 @@ defmodule GPUI.Schema do
       ]
     },
     %Component{
+      tag: :ui_switch,
+      kind: :switch_component,
+      events: [change: :"phx-change"],
+      attrs: [
+        id: :string,
+        checked: :boolean,
+        label: :string,
+        size: {:enum, ~w(xs sm md lg)},
+        disabled: :boolean,
+        loading: :boolean
+      ]
+    },
+    %Component{
+      tag: :ui_radio_group,
+      kind: :radio_group_component,
+      events: [change: :"phx-change"],
+      attrs: [
+        id: :string,
+        value: :string,
+        options: :radio_options,
+        orientation: {:enum, ~w(horizontal vertical)},
+        size: {:enum, ~w(xs sm md lg)},
+        disabled: :boolean
+      ]
+    },
+    %Component{
       tag: :ui_accordion,
       kind: :accordion_component,
       events: [change: :"phx-change"],

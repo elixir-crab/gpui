@@ -9,7 +9,8 @@ pub(crate) mod event;
 use component::{
     render_accordion_component, render_accordion_item_component, render_button_component,
     render_checkbox_component, render_combobox_component, render_input_component,
-    render_select_component, render_slider_component, render_tabs_component,
+    render_radio_group_component, render_select_component, render_slider_component,
+    render_switch_component, render_tabs_component,
 };
 use event::{apply_click_event, apply_input_events};
 
@@ -28,6 +29,8 @@ pub(crate) enum ElementNode {
     InputComponent(InputComponentNode),
     SelectComponent(SelectComponentNode),
     ComboboxComponent(ComboboxComponentNode),
+    SwitchComponent(SwitchComponentNode),
+    RadioGroupComponent(RadioGroupComponentNode),
     SliderComponent(SliderComponentNode),
     TabsComponent(TabsComponentNode),
     AccordionComponent(AccordionComponentNode),
@@ -101,6 +104,8 @@ impl ElementNode {
             Self::InputComponent(input) => render_input_component(element_id, input, context),
             Self::SelectComponent(select) => render_select_component(select, context),
             Self::ComboboxComponent(combobox) => render_combobox_component(combobox, context),
+            Self::SwitchComponent(switch) => render_switch_component(switch, context),
+            Self::RadioGroupComponent(radio) => render_radio_group_component(radio, context),
             Self::SliderComponent(slider) => render_slider_component(slider, context),
             Self::TabsComponent(tabs) => render_tabs_component(tabs, context),
             Self::AccordionComponent(accordion) => render_accordion_component(accordion, context),

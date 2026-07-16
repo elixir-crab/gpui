@@ -47,12 +47,18 @@ defmodule GPUI.Codegen.Native.Schema do
   defp generated_component_contracts(components) do
     components = Enum.filter(components, &component_contract?/1)
 
-    option_struct =
-      if Enum.any?(components, &uses_select_options?/1) do
-        generated_select_option_struct()
-      end
+    option_structs =
+      [
+        if(Enum.any?(components, &uses_select_options?/1),
+          do: generated_select_option_struct()
+        ),
+        if(Enum.any?(components, &uses_radio_options?/1),
+          do: generated_radio_option_struct()
+        )
+      ]
+      |> Enum.reject(&is_nil/1)
 
-    ([option_struct] ++
+    (option_structs ++
        Enum.flat_map(components, fn component ->
          [generated_component_struct(component), generated_component_decoder(component)]
        end))
@@ -63,6 +69,9 @@ defmodule GPUI.Codegen.Native.Schema do
   defp uses_select_options?(component),
     do: Enum.any?(component.attrs, fn {_name, type} -> type == :select_options end)
 
+  defp uses_radio_options?(component),
+    do: Enum.any?(component.attrs, fn {_name, type} -> type == :radio_options end)
+
   defp generated_select_option_struct do
     %AST.Struct{
       name: :SelectOptionNode,
@@ -72,6 +81,21 @@ defmodule GPUI.Codegen.Native.Schema do
       fields: [
         %AST.StructField{name: :label, type: T.path(:String), vis: :crate},
         %AST.StructField{name: :value, type: T.path(:String), vis: :crate}
+      ]
+    }
+    |> render_item()
+  end
+
+  defp generated_radio_option_struct do
+    %AST.Struct{
+      name: :RadioOptionNode,
+      vis: :crate,
+      derive: [:Clone, :Debug, :Eq, :PartialEq],
+      attrs: [A.attr(:cfg, feature: "real-gpui")],
+      fields: [
+        %AST.StructField{name: :label, type: T.path(:String), vis: :crate},
+        %AST.StructField{name: :value, type: T.path(:String), vis: :crate},
+        %AST.StructField{name: :disabled, type: T.path(:bool), vis: :crate}
       ]
     }
     |> render_item()
@@ -143,6 +167,7 @@ defmodule GPUI.Codegen.Native.Schema do
   defp component_field_type(_name, :string_list), do: T.vec(:String)
   defp component_field_type(_name, {:enum, _values}), do: T.option(:String)
   defp component_field_type(_name, :select_options), do: T.vec(:SelectOptionNode)
+  defp component_field_type(_name, :radio_options), do: T.vec(:RadioOptionNode)
 
   defp component_decoder_expr(:id, :string),
     do: A.try(A.call(:component_id, [:term]))
@@ -193,6 +218,9 @@ defmodule GPUI.Codegen.Native.Schema do
 
   defp component_decoder_expr(_name, :select_options),
     do: A.try(A.call(:decode_select_options, [:term]))
+
+  defp component_decoder_expr(_name, :radio_options),
+    do: A.try(A.call(:decode_radio_options, [:term]))
 
   defp component_attr_call(helper, name),
     do: A.call(helper, [:term, A.path_call([:atoms, rust_atom_name(name)])])

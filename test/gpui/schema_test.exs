@@ -10,6 +10,8 @@ defmodule GPUI.SchemaTest do
              :ui_input,
              :ui_select,
              :ui_combobox,
+             :ui_switch,
+             :ui_radio_group,
              :ui_accordion,
              :ui_accordion_item,
              :ui_tabs,

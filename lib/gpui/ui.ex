@@ -39,6 +39,53 @@ defmodule GPUI.UI do
   def combobox(assigns),
     do: component(:ui_combobox, normalize_options_assigns!(:ui_combobox, assigns))
 
+  @doc "Builds a controlled boolean GPUI Component switch."
+  @spec switch(map()) :: Element.t()
+  def switch(assigns), do: component(:ui_switch, assigns)
+
+  @doc """
+  Builds a controlled GPUI Component radio group.
+
+  Options accept the same forms as `select/1`. Map options may additionally set
+  `disabled: true`.
+  """
+  @spec radio_group(map()) :: Element.t()
+  def radio_group(%{options: options} = assigns) when is_list(options) do
+    options = Enum.map(options, &normalize_radio_option!/1)
+    values = Enum.map(options, & &1.value)
+
+    if length(values) != MapSet.size(MapSet.new(values)) do
+      raise ArgumentError, "ui_radio_group option values must be unique"
+    end
+
+    value = Map.get(assigns, :value)
+
+    if is_nil(value) or value not in values do
+      raise ArgumentError,
+            "ui_radio_group value #{inspect(value)} is not present in options"
+    end
+
+    component(:ui_radio_group, Map.put(assigns, :options, options))
+  end
+
+  def radio_group(_assigns),
+    do: raise(ArgumentError, "ui_radio_group requires an options list")
+
+  defp normalize_radio_option!(%{disabled: disabled} = option) when is_boolean(disabled) do
+    option
+    |> Map.delete(:disabled)
+    |> then(&normalize_options!(:ui_radio_group, [&1]))
+    |> hd()
+    |> Map.put(:disabled, disabled)
+  end
+
+  defp normalize_radio_option!(option) do
+    :ui_radio_group
+    |> normalize_options!([option])
+    |> hd()
+    |> Map.put(:disabled, false)
+  end
+
   @doc """
   Builds a controlled GPUI Component accordion from `accordion_item/1` children.
 

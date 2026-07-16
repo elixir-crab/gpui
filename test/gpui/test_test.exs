@@ -24,6 +24,17 @@ defmodule GPUI.TestTest do
           phx-change="framework_changed"
           phx-search="framework_searched"
         />
+        <GPUI.UI.switch
+          id="notifications"
+          checked={assigns.notifications}
+          phx-change="notifications_changed"
+        />
+        <GPUI.UI.radio_group
+          id="plan"
+          value={assigns.plan}
+          options={[{"Free", "free"}, {"Pro", "pro"}]}
+          phx-change="plan_changed"
+        />
         <GPUI.UI.accordion
           id="details"
           expanded={assigns.expanded}
@@ -65,6 +76,12 @@ defmodule GPUI.TestTest do
     def handle_event("framework_searched", %{value: query}, assigns),
       do: {:noreply, %{assigns | query: query}}
 
+    def handle_event("notifications_changed", %{value: notifications}, assigns),
+      do: {:noreply, %{assigns | notifications: notifications}}
+
+    def handle_event("plan_changed", %{value: plan}, assigns),
+      do: {:noreply, %{assigns | plan: plan}}
+
     def handle_event("details_changed", %{value: expanded}, assigns),
       do: {:noreply, %{assigns | expanded: expanded}}
 
@@ -92,6 +109,8 @@ defmodule GPUI.TestTest do
              language: "rust",
              framework: nil,
              query: "",
+             notifications: false,
+             plan: "free",
              expanded: [],
              section: "general",
              volume: 25.0,
@@ -110,6 +129,8 @@ defmodule GPUI.TestTest do
         language: "rust",
         framework: nil,
         query: "",
+        notifications: false,
+        plan: "free",
         expanded: [],
         section: "general",
         volume: 25.0,
@@ -130,6 +151,8 @@ defmodule GPUI.TestTest do
              language: "rust",
              framework: nil,
              query: "",
+             notifications: false,
+             plan: "free",
              expanded: [],
              section: "general",
              volume: 25.0,
@@ -149,6 +172,8 @@ defmodule GPUI.TestTest do
     select(runtime, "language_changed", nil)
     search(runtime, "framework_searched", "live")
     select(runtime, "framework_changed", "LiveView")
+    toggle(runtime, "notifications_changed", true)
+    select(runtime, "plan_changed", "pro")
     expand(runtime, "details_changed", ["security"])
     select(runtime, "section_changed", "advanced")
     slide(runtime, "volume_changed", 40.0)
@@ -158,6 +183,8 @@ defmodule GPUI.TestTest do
              language: nil,
              query: "live",
              framework: "LiveView",
+             notifications: true,
+             plan: "pro",
              expanded: ["security"],
              section: "advanced",
              volume: 40.0,

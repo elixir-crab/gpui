@@ -8,6 +8,8 @@ pub enum GeneratedComponentKind {
     InputComponent,
     SelectComponent,
     ComboboxComponent,
+    SwitchComponent,
+    RadioGroupComponent,
     AccordionComponent,
     AccordionItemComponent,
     TabsComponent,
@@ -519,6 +521,15 @@ pub(crate) struct SelectOptionNode {
 }
 
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct RadioOptionNode {
+    pub(crate) label: String,
+    pub(crate) value: String,
+    pub(crate) disabled: bool,
+}
+
+
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -719,6 +730,74 @@ pub(crate) fn decode_generated_combobox_component(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct SwitchComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) checked: bool,
+    pub(crate) label: Option<String>,
+    pub(crate) size: Option<String>,
+    pub(crate) disabled: bool,
+    pub(crate) loading: bool,
+    pub(crate) change: Option<String>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_switch_component(
+    term: Term,
+) -> NifResult<SwitchComponentNode> {
+    Ok(SwitchComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        checked: component_bool_attr(term, atoms::checked())?.unwrap_or(false),
+        label: component_string_attr(term, atoms::label())?,
+        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        loading: component_bool_attr(term, atoms::loading())?.unwrap_or(false),
+        change: component_string_attr(term, atoms::phx_change())?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct RadioGroupComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) value: Option<String>,
+    pub(crate) options: Vec<RadioOptionNode>,
+    pub(crate) orientation: Option<String>,
+    pub(crate) size: Option<String>,
+    pub(crate) disabled: bool,
+    pub(crate) change: Option<String>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_radio_group_component(
+    term: Term,
+) -> NifResult<RadioGroupComponentNode> {
+    Ok(RadioGroupComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        value: component_string_attr(term, atoms::value())?,
+        options: decode_radio_options(term)?,
+        orientation: component_enum_attr(
+            term,
+            atoms::orientation(),
+            &["horizontal", "vertical"],
+        )?,
+        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        change: component_string_attr(term, atoms::phx_change())?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct AccordionComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -867,6 +946,8 @@ pub enum GeneratedElementTag {
     UiInput,
     UiSelect,
     UiCombobox,
+    UiSwitch,
+    UiRadioGroup,
     UiAccordion,
     UiAccordionItem,
     UiTabs,
@@ -892,6 +973,8 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_input" => GeneratedElementTag::UiInput,
         "ui_select" => GeneratedElementTag::UiSelect,
         "ui_combobox" => GeneratedElementTag::UiCombobox,
+        "ui_switch" => GeneratedElementTag::UiSwitch,
+        "ui_radio_group" => GeneratedElementTag::UiRadioGroup,
         "ui_accordion" => GeneratedElementTag::UiAccordion,
         "ui_accordion_item" => GeneratedElementTag::UiAccordionItem,
         "ui_tabs" => GeneratedElementTag::UiTabs,
@@ -918,6 +1001,8 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::UiInput => GeneratedComponentKind::InputComponent,
         GeneratedElementTag::UiSelect => GeneratedComponentKind::SelectComponent,
         GeneratedElementTag::UiCombobox => GeneratedComponentKind::ComboboxComponent,
+        GeneratedElementTag::UiSwitch => GeneratedComponentKind::SwitchComponent,
+        GeneratedElementTag::UiRadioGroup => GeneratedComponentKind::RadioGroupComponent,
         GeneratedElementTag::UiAccordion => GeneratedComponentKind::AccordionComponent,
         GeneratedElementTag::UiAccordionItem => {
             GeneratedComponentKind::AccordionItemComponent

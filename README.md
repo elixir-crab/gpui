@@ -146,8 +146,9 @@ Templates support `div`, `button`, `span`, `scroll`, `list`, `item`, `icon`,
 native styles rather than relying only on parent styles.
 
 `GPUI.UI.button/1`, `GPUI.UI.checkbox/1`, `GPUI.UI.input/1`,
-`GPUI.UI.select/1`, `GPUI.UI.combobox/1`, `GPUI.UI.accordion/1`,
-`GPUI.UI.tabs/1`, and `GPUI.UI.slider/1` render real
+`GPUI.UI.select/1`, `GPUI.UI.combobox/1`, `GPUI.UI.switch/1`,
+`GPUI.UI.radio_group/1`, `GPUI.UI.accordion/1`, `GPUI.UI.tabs/1`, and
+`GPUI.UI.slider/1` render real
 [`gpui-component`](https://github.com/longbridge/gpui-component) controls. They
 are controlled by Elixir assigns and require stable string IDs. Stateful
 component entities are reconciled by kind and ID so focus, selection, open
@@ -190,6 +191,21 @@ snapshot crosses the display boundary:
     phx-change="framework_changed"
     phx-search="framework_searched"
   />
+  <GPUI.UI.switch
+    id="notifications"
+    label="Notifications"
+    checked={assigns.notifications}
+    phx-change="notifications_changed"
+  />
+  <GPUI.UI.radio_group
+    id="plan"
+    value={assigns.plan}
+    options={[
+      {"Free", "free"},
+      %{label: "Pro", value: "pro", disabled: true}
+    ]}
+    phx-change="plan_changed"
+  />
   <GPUI.UI.accordion
     id="details"
     expanded={assigns.expanded}
@@ -218,13 +234,14 @@ snapshot crosses the display boundary:
 """
 ```
 
-Checkbox change events carry a boolean `:value`; input, select, and combobox
-change events carry their controlled `:value`. Combobox search events carry the
+Checkbox and switch change events carry a boolean `:value`; input, select,
+radio-group, and combobox change events carry their controlled `:value`. Combobox search events carry the
 current query. Tab changes carry the selected string value, while accordion
 changes carry the ordered list of expanded item IDs. Slider change events are
 continuous and release events fire once pointer interaction ends. Select,
-combobox, and tab options accept strings, `{label, value}` tuples, or
-`%{label: label, value: value}` maps. Button variants are `default`,
+combobox, radio-group, and tab options accept strings, `{label, value}` tuples, or
+`%{label: label, value: value}` maps; radio maps may also set `disabled`.
+Button variants are `default`,
 `primary`, `secondary`, `danger`, `warning`, `success`, `info`, `ghost`, `link`,
 and `text`; component sizes are
 `xs`, `sm`, `md`, and `lg`.

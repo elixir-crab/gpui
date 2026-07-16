@@ -14,6 +14,7 @@
 - Added controlled `GPUI.UI.tabs/1` backed directly by `gpui-component` tab bars.
 - Added controlled `GPUI.UI.accordion/1` and `accordion_item/1` with arbitrary nested GPUI content.
 - Split advanced native component renderers by responsibility and expanded local/remote lifecycle coverage.
+- Added controlled `GPUI.UI.switch/1` and `radio_group/1` with disabled radio options and local/remote native coverage.
 
 ## 0.1.0
 

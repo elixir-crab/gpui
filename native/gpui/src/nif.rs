@@ -431,6 +431,12 @@ pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
         GeneratedComponentKind::TabsComponent => {
             decode_generated_tabs_component(term).map(ElementNode::TabsComponent)
         }
+        GeneratedComponentKind::SwitchComponent => {
+            decode_generated_switch_component(term).map(ElementNode::SwitchComponent)
+        }
+        GeneratedComponentKind::RadioGroupComponent => {
+            decode_generated_radio_group_component(term).map(ElementNode::RadioGroupComponent)
+        }
         GeneratedComponentKind::AccordionComponent => {
             decode_generated_accordion_component(term).map(ElementNode::AccordionComponent)
         }
@@ -472,6 +478,34 @@ pub(crate) fn decode_select_options(term: Term) -> NifResult<Vec<SelectOptionNod
                 return Err(rustler::Error::BadArg);
             }
             Ok(SelectOptionNode { label, value })
+        })
+        .collect()
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_radio_options(term: Term) -> NifResult<Vec<RadioOptionNode>> {
+    let attrs = term.map_get(atoms::attrs())?;
+    let options = attrs.map_get(atoms::options())?.decode::<Vec<Term>>()?;
+    let mut values = HashSet::new();
+
+    options
+        .into_iter()
+        .map(|option| {
+            let label = option.map_get(atoms::label())?.decode::<String>()?;
+            let value = option.map_get(atoms::value())?.decode::<String>()?;
+            let disabled = option
+                .map_get(atoms::disabled())
+                .ok()
+                .and_then(|term| term.decode::<bool>().ok())
+                .unwrap_or(false);
+            if label.is_empty() || value.is_empty() || !values.insert(value.clone()) {
+                return Err(rustler::Error::BadArg);
+            }
+            Ok(RadioOptionNode {
+                label,
+                value,
+                disabled,
+            })
         })
         .collect()
 }

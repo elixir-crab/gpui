@@ -148,6 +148,8 @@ defmodule GPUI.TemplateTest do
                %GPUI.Element{type: :ui_input, attrs: input_attrs},
                %GPUI.Element{type: :ui_select, attrs: select_attrs},
                %GPUI.Element{type: :ui_combobox, attrs: combobox_attrs},
+               %GPUI.Element{type: :ui_switch, attrs: switch_attrs},
+               %GPUI.Element{type: :ui_radio_group, attrs: radio_attrs},
                %GPUI.Element{
                  type: :ui_accordion,
                  attrs: accordion_attrs,
@@ -187,6 +189,22 @@ defmodule GPUI.TemplateTest do
                  search_placeholder="Search frameworks"
                  phx-change="framework_changed"
                  phx-search="framework_searched"
+               />
+               <GPUI.UI.switch
+                 id="notifications"
+                 label="Notifications"
+                 checked={true}
+                 phx-change="notifications_changed"
+               />
+               <GPUI.UI.radio_group
+                 id="plan"
+                 value="pro"
+                 options={[
+                   %{label: "Free", value: "free"},
+                   %{label: "Pro", value: "pro", disabled: true}
+                 ]}
+                 orientation="horizontal"
+                 phx-change="plan_changed"
                />
                <GPUI.UI.accordion
                  id="details"
@@ -245,6 +263,14 @@ defmodule GPUI.TemplateTest do
     assert combobox_attrs[:search_placeholder] == "Search frameworks"
     assert combobox_attrs[:"phx-change"] == "framework_changed"
     assert combobox_attrs[:"phx-search"] == "framework_searched"
+    assert switch_attrs[:id] == "notifications"
+    assert switch_attrs[:checked]
+    assert switch_attrs[:"phx-change"] == "notifications_changed"
+    assert radio_attrs[:id] == "plan"
+    assert radio_attrs[:value] == "pro"
+    assert radio_attrs[:orientation] == "horizontal"
+    assert Enum.at(radio_attrs[:options], 1).disabled
+    assert radio_attrs[:"phx-change"] == "plan_changed"
     assert accordion_attrs[:id] == "details"
     assert accordion_attrs[:expanded] == ["account"]
     assert accordion_attrs[:bordered]
@@ -281,6 +307,21 @@ defmodule GPUI.TemplateTest do
 
     combobox = GPUI.UI.combobox(%{id: "framework", value: "LiveView", options: []})
     assert combobox.attrs[:value] == "LiveView"
+  end
+
+  test "radio groups validate controlled values and disabled options" do
+    assert_raise ArgumentError, ~r/is not present in options/, fn ->
+      GPUI.UI.radio_group(%{id: "plan", value: "missing", options: ["Free"]})
+    end
+
+    radio =
+      GPUI.UI.radio_group(%{
+        id: "plan",
+        value: "pro",
+        options: [%{label: "Pro", value: "pro", disabled: true}]
+      })
+
+    assert [%{disabled: true}] = radio.attrs[:options]
   end
 
   test "accordion validates controlled expanded item IDs" do
