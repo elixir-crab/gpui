@@ -32,12 +32,12 @@ defmodule GPUI.Runtime.EventLoopTest do
     {:ok, runtime} =
       GPUI.Runtime.start_link(
         app: CounterApp,
-        display: GPUITest.Display,
+        display: GPUI.Test.Display,
         display_opts: [owner: self()],
         poll_interval: nil
       )
 
-    assert_receive {:display_snapshot, %{windows: [%{id: 1}]}}
+    assert_receive {:gpui_snapshot, %{windows: [%{id: 1}]}}
 
     assert {:ok, :ok} =
              GPUI.Runtime.inject_event(runtime, %{type: :click, window_id: 1, event: "inc"})
@@ -45,31 +45,31 @@ defmodule GPUI.Runtime.EventLoopTest do
     assert [%{type: :click, event: "inc", window_id: 1}] = GPUI.Runtime.drain_events(runtime)
 
     assert %{windows: [%{root: %{assigns: %{count: 1}}}]} = GPUI.Runtime.snapshot(runtime)
-    assert_receive {:display_snapshot, %{windows: [%{root: %{assigns: %{count: 1}}}]}}
+    assert_receive {:gpui_snapshot, %{windows: [%{root: %{assigns: %{count: 1}}}]}}
   end
 
   test "native window closure removes the window from its session" do
     {:ok, runtime} =
       GPUI.Runtime.start_link(
         app: CounterApp,
-        display: GPUITest.Display,
+        display: GPUI.Test.Display,
         display_opts: [owner: self()],
         poll_interval: nil
       )
 
-    assert_receive {:display_snapshot, %{windows: [%{id: 1}]}}
+    assert_receive {:gpui_snapshot, %{windows: [%{id: 1}]}}
 
     assert {:ok, :ok} =
              GPUI.Runtime.inject_event(runtime, %{type: :window_closed, window_id: 1})
 
     assert [%{type: :window_closed, window_id: 1}] = GPUI.Runtime.drain_events(runtime)
     assert %{windows: []} = GPUI.Runtime.snapshot(runtime)
-    assert_receive {:display_snapshot, %{windows: []}}
+    assert_receive {:gpui_snapshot, %{windows: []}}
   end
 
   test "resources belong to the session snapshot and are synchronized to the display" do
     {:ok, runtime} =
-      GPUI.Runtime.start_link(app: CounterApp, display: GPUITest.Display, poll_interval: nil)
+      GPUI.Runtime.start_link(app: CounterApp, display: GPUI.Test.Display, poll_interval: nil)
 
     raster = %{__type__: :raster, width: 1, height: 1, format: :rgba8, data: <<255, 0, 0, 255>>}
 
@@ -84,7 +84,7 @@ defmodule GPUI.Runtime.EventLoopTest do
     {:ok, runtime} =
       GPUI.Runtime.start_link(
         app: CounterApp,
-        display: GPUITest.Display,
+        display: GPUI.Test.Display,
         poll_interval: 10
       )
 

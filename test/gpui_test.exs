@@ -1,4 +1,4 @@
-defmodule GPUI.Test do
+defmodule GPUI.DSLTest do
   use ExUnit.Case, async: true
 
   import Kernel, except: [div: 2]

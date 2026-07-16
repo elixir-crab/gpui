@@ -5,6 +5,7 @@
 - Added process-global light and dark component theme switching across native displays.
 - Added controlled `GPUI.UI.input/1` with stable native entity reconciliation.
 - Added native coverage for input editing, rerendering, and theme changes.
+- Added packaged `GPUI.Test` ExUnit helpers and `GPUI.Test.Display` for consumer tests.
 
 ## 0.1.0
 

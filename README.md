@@ -57,6 +57,30 @@ Tests are split by intent:
 - `test/integration/**` contains runtime, transport, and remote-flow integration tests.
 - `test/e2e/**` contains real native-window tests run under Xvfb.
 
+Applications can use the packaged ExUnit helpers for deterministic tests without
+native libraries or a display server:
+
+```elixir
+defmodule CounterTest do
+  use GPUI.Test, async: true
+
+  test "increments" do
+    runtime = start_gpui!(CounterApp)
+
+    assert %{count: 0} = assigns(runtime)
+    click(runtime, "increment")
+    assert %{count: 1} = assigns(runtime)
+
+    change(runtime, "name_changed", "Ada")
+    assert %{name: "Ada"} = assigns(runtime)
+    assert %{type: :ui_input} = runtime |> tree() |> find!(id: "name")
+  end
+end
+```
+
+`GPUI.Test.Display` is also public for tests that need direct control over the
+display boundary or synchronized snapshot history.
+
 Useful verification gates:
 
 ```sh

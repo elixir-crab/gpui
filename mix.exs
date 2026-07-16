@@ -99,7 +99,8 @@ defmodule GPUI.MixProject do
           GPUI.ResourceRef,
           GPUI.WindowSpec
         ],
-        Remote: [GPUI.Remote.Server, GPUI.Remote.Client, GPUI.Remote.Protocol]
+        Remote: [GPUI.Remote.Server, GPUI.Remote.Client, GPUI.Remote.Protocol],
+        Testing: [GPUI.Test, GPUI.Test.Display]
       ]
     ]
   end

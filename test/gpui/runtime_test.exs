@@ -38,17 +38,17 @@ defmodule GPUI.RuntimeTest do
 
   test "application modules start renderer-independent sessions with a display" do
     {:ok, runtime} =
-      start_supervised({DemoApp, display: GPUITest.Display, display_opts: [owner: self()]})
+      start_supervised({DemoApp, display: GPUI.Test.Display, display_opts: [owner: self()]})
 
     assert [%GPUI.WindowSpec{title: "GPUI + Elixir", size: {500, 500}}] =
              GPUI.Runtime.windows(runtime)
 
-    assert_receive {:display_snapshot, %{windows: [%{id: 1}]}}
+    assert_receive {:gpui_snapshot, %{windows: [%{id: 1}]}}
   end
 
   test "runtime snapshots contain rendered window trees" do
     {:ok, runtime} =
-      GPUI.Runtime.start_link(app: DemoApp, display: GPUITest.Display)
+      GPUI.Runtime.start_link(app: DemoApp, display: GPUI.Test.Display)
 
     assert %{
              windows: [

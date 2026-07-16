@@ -73,12 +73,12 @@ defmodule GPUI.Remote.ServerTest do
       GPUI.Remote.Client.start_link(
         host: "127.0.0.1",
         port: port,
-        display: GPUITest.Display,
+        display: GPUI.Test.Display,
         display_opts: [owner: self()]
       )
 
     assert {:ok, %{windows: [%{id: 1}]}} = GPUI.Remote.Client.mount(client, %{name: "old"})
-    assert_receive {:display_snapshot, %{windows: [%{id: 1}]}}
+    assert_receive {:gpui_snapshot, %{windows: [%{id: 1}]}}
 
     assert {:ok, %{windows: [%{root: %{assigns: %{name: "client"}}}]}} =
              GPUI.Remote.Client.event(client, %{
@@ -98,7 +98,7 @@ defmodule GPUI.Remote.ServerTest do
       GPUI.Remote.Client.start_link(
         host: "127.0.0.1",
         port: port,
-        display: GPUITest.Display,
+        display: GPUI.Test.Display,
         display_opts: [name: display_name],
         poll_interval: 10
       )
@@ -106,7 +106,7 @@ defmodule GPUI.Remote.ServerTest do
     assert {:ok, _snapshot} = GPUI.Remote.Client.mount(client, %{name: "old"})
 
     assert {:ok, :ok} =
-             GPUITest.Display.inject_event(display_name, %{
+             GPUI.Test.Display.inject_event(display_name, %{
                type: :change,
                window_id: 1,
                event: "rename",
@@ -128,16 +128,16 @@ defmodule GPUI.Remote.ServerTest do
       GPUI.Remote.Client.start_link(
         host: "127.0.0.1",
         port: port,
-        display: GPUITest.Display,
+        display: GPUI.Test.Display,
         display_opts: [name: display_name],
         poll_interval: 10
       )
 
     assert {:ok, _snapshot} = GPUI.Remote.Client.mount(client, %{name: "unchanged"})
-    assert {:ok, :ok} = GPUITest.Display.inject_event(display_name, "native diagnostic")
+    assert {:ok, :ok} = GPUI.Test.Display.inject_event(display_name, "native diagnostic")
 
     assert {:ok, :ok} =
-             GPUITest.Display.inject_event(display_name, %{
+             GPUI.Test.Display.inject_event(display_name, %{
                type: :missing_resource,
                window_id: 1,
                id: "missing"
