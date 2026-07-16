@@ -149,7 +149,8 @@ native styles rather than relying only on parent styles.
 `GPUI.UI.select/1`, `GPUI.UI.combobox/1`, `GPUI.UI.switch/1`,
 `GPUI.UI.radio_group/1`, `GPUI.UI.accordion/1`, `GPUI.UI.tabs/1`,
 `GPUI.UI.slider/1`, `GPUI.UI.Overlay.tooltip/1`,
-`GPUI.UI.Overlay.popover/1`, and `GPUI.UI.Overlay.dialog/1` render real
+`GPUI.UI.Overlay.popover/1`, `GPUI.UI.Overlay.dialog/1`, and
+`GPUI.UI.Overlay.dropdown_menu/1` render real
 [`gpui-component`](https://github.com/longbridge/gpui-component) controls.
 Interactive values are controlled by Elixir assigns, and native components
 require stable string IDs. Stateful component entities are reconciled by kind
@@ -269,6 +270,17 @@ alias GPUI.UI.Overlay
     <:trigger><UI.button id="settings-trigger" label="Settings" /></:trigger>
     <:content><UI.input id="display-name" value={assigns.name} /></:content>
   </Overlay.dialog>
+
+  <Overlay.dropdown_menu
+    id="file-menu"
+    open={assigns.file_menu_open}
+    phx-change="file_menu_open_changed"
+    phx-select="file_menu_selected"
+  >
+    <:trigger><UI.button id="file-trigger" label="File" /></:trigger>
+    <:item value="new">New file</:item>
+    <:item value="delete" disabled={true}>Delete</:item>
+  </Overlay.dropdown_menu>
 </div>
 """
 ```
@@ -279,7 +291,10 @@ Enter/Space activation. Escape and outside clicks request closure, and focus
 returns to the prior trigger. Set `closable={false}` to disable outside-click
 dismissal. Dialogs use the same controlled `open` contract, trap focus, restore
 prior focus, and accept arbitrary GPUI content; their `:trigger` slot is optional
-for programmatically opened dialogs.
+for programmatically opened dialogs. Dropdown menus use upstream popup-menu
+roles and keyboard behavior, accept textual `:item` slots with unique values,
+and emit selected values through `phx-select`; `phx-change` carries controlled
+open-state changes.
 
 Checkbox and switch change events carry a boolean `:value`; input, select,
 radio-group, and combobox change events carry their controlled `:value`. Combobox search events carry the

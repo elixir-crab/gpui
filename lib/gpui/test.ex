@@ -129,9 +129,14 @@ defmodule GPUI.Test do
   @spec open(GenServer.server(), String.t(), boolean(), keyword()) :: Snapshot.t()
   def open(runtime, event, open, opts \\ []), do: change(runtime, event, open, opts)
 
-  @doc "Selects a controlled component option and returns the updated snapshot."
+  @doc "Selects a controlled form component option and returns the updated snapshot."
   @spec select(GenServer.server(), String.t(), String.t() | nil, keyword()) :: Snapshot.t()
   def select(runtime, event, value, opts \\ []), do: change(runtime, event, value, opts)
+
+  @doc "Selects a dropdown-menu item and returns the updated snapshot."
+  @spec menu_select(GenServer.server(), String.t(), String.t(), keyword()) :: Snapshot.t()
+  def menu_select(runtime, event, value, opts \\ []),
+    do: dispatch_value(runtime, :select, event, value, opts)
 
   @doc "Changes the expanded IDs of a controlled accordion."
   @spec expand(GenServer.server(), String.t(), [String.t()], keyword()) :: Snapshot.t()

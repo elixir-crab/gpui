@@ -363,6 +363,61 @@ defmodule GPUI.TemplateTest do
     end
   end
 
+  test "dropdown menus compile repeated textual item slots" do
+    assert %GPUI.Element{
+             type: :ui_dropdown_menu,
+             attrs: attrs,
+             children: [
+               %GPUI.Element{type: :ui_dropdown_menu_trigger, children: [trigger]},
+               %GPUI.Element{type: :ui_dropdown_menu_item, attrs: first_attrs},
+               %GPUI.Element{type: :ui_dropdown_menu_item, attrs: second_attrs}
+             ]
+           } =
+             ~GPUI"""
+             <Overlay.dropdown_menu
+               id="file-menu"
+               open={true}
+               phx-change="menu_open_changed"
+               phx-select="menu_selected"
+             >
+               <:trigger><UI.button id="file-trigger" label="File" /></:trigger>
+               <:item value="new">New file</:item>
+               <:item value="delete" disabled={true} checked={true}>Delete</:item>
+             </Overlay.dropdown_menu>
+             """
+
+    assert attrs[:id] == "file-menu"
+    assert attrs[:open]
+    assert attrs[:"phx-change"] == "menu_open_changed"
+    assert attrs[:"phx-select"] == "menu_selected"
+    assert %GPUI.Element{type: :ui_button} = trigger
+    assert first_attrs[:value] == "new"
+    assert first_attrs[:label] == "New file"
+    refute first_attrs[:disabled]
+    assert second_attrs[:value] == "delete"
+    assert second_attrs[:label] == "Delete"
+    assert second_attrs[:disabled]
+    assert second_attrs[:checked]
+  end
+
+  test "dropdown menus validate items" do
+    trigger = %GPUI.Component.Slot{children: ["Open"]}
+    duplicate = %GPUI.Component.Slot{attrs: [value: "same"], children: ["Item"]}
+
+    assert_raise ArgumentError, ~r/at least one :item/, fn ->
+      Overlay.dropdown_menu(%{id: "menu", trigger: [trigger], children: []})
+    end
+
+    assert_raise ArgumentError, ~r/values must be unique/, fn ->
+      Overlay.dropdown_menu(%{
+        id: "menu",
+        trigger: [trigger],
+        item: [duplicate, duplicate],
+        children: []
+      })
+    end
+  end
+
   test "popover uses explicit trigger and content slots" do
     assert %GPUI.Element{
              type: :ui_popover,

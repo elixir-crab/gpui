@@ -1,3 +1,5 @@
+mod dropdown;
+
 use crate::{
     gpui, DialogComponentNode, DialogContentComponentNode, DialogTriggerComponentNode,
     ElementRenderContext, PopoverComponentNode, PopoverContentComponentNode,
@@ -676,6 +678,31 @@ pub(super) fn render_content(
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     render_slot(node.style, node.children, context)
+}
+
+pub(super) fn render_dropdown_menu(
+    node: crate::DropdownMenuComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    dropdown::render(node, context)
+}
+
+pub(super) fn render_dropdown_menu_trigger(
+    node: crate::DropdownMenuTriggerComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    render_slot(node.style, node.children, context)
+}
+
+pub(super) fn render_dropdown_menu_item(
+    node: crate::DropdownMenuItemComponentNode,
+    _context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    use gpui::{IntoElement, ParentElement};
+
+    crate::apply_generated_render_styles(gpui::div(), node.style)
+        .child(node.label)
+        .into_any_element()
 }
 
 fn render_slot(

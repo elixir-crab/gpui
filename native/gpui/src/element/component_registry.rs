@@ -3,6 +3,7 @@ use crate::{gpui, push_event, EventValue, InputKind, NativeEvent, SharedRuntime}
 use gpui_component::{
     combobox::ComboboxState,
     input::InputState,
+    menu::PopupMenu,
     searchable_list::{SearchableListDelegate, SearchableListItem},
     select::SelectState,
     slider::SliderState,
@@ -227,6 +228,22 @@ pub(crate) struct ComponentDialog {
 pub(crate) struct ComponentPopover {
     pub(crate) overlay: ComponentOverlayState,
     pub(crate) previous_focus: Option<gpui::FocusHandle>,
+    pub(crate) rendered_open: bool,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct DropdownMenuItemConfig {
+    pub(crate) value: String,
+    pub(crate) label: String,
+    pub(crate) disabled: bool,
+    pub(crate) checked: bool,
+}
+
+pub(crate) struct ComponentDropdownMenu {
+    pub(crate) overlay: ComponentOverlayState,
+    pub(crate) menu: gpui::Entity<PopupMenu>,
+    pub(crate) items: Vec<DropdownMenuItemConfig>,
+    pub(crate) select_event: SharedEvent,
     pub(crate) rendered_open: bool,
 }
 

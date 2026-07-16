@@ -12,6 +12,9 @@ pub enum GeneratedComponentKind {
     DialogComponent,
     DialogTriggerComponent,
     DialogContentComponent,
+    DropdownMenuComponent,
+    DropdownMenuTriggerComponent,
+    DropdownMenuItemComponent,
     CheckboxComponent,
     InputComponent,
     SelectComponent,
@@ -807,6 +810,97 @@ pub(crate) fn decode_generated_dialog_content_component(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct DropdownMenuComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) open: bool,
+    pub(crate) anchor: Option<String>,
+    pub(crate) disabled: bool,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) change: Option<String>,
+    pub(crate) select: Option<String>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_dropdown_menu_component(
+    term: Term,
+) -> NifResult<DropdownMenuComponentNode> {
+    Ok(DropdownMenuComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        open: component_bool_attr(term, atoms::open())?.unwrap_or(false),
+        anchor: component_enum_attr(
+            term,
+            atoms::anchor(),
+            &[
+                "top_left",
+                "top_center",
+                "top_right",
+                "bottom_left",
+                "bottom_center",
+                "bottom_right",
+                "left_center",
+                "right_center",
+            ],
+        )?,
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        children: decode_children(term)?,
+        change: component_string_attr(term, atoms::phx_change())?,
+        select: component_string_attr(term, atoms::phx_select())?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct DropdownMenuTriggerComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) children: Vec<ElementNode>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_dropdown_menu_trigger_component(
+    term: Term,
+) -> NifResult<DropdownMenuTriggerComponentNode> {
+    Ok(DropdownMenuTriggerComponentNode {
+        style: decode_style(term)?,
+        children: decode_children(term)?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct DropdownMenuItemComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) value: String,
+    pub(crate) label: String,
+    pub(crate) disabled: bool,
+    pub(crate) checked: bool,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_dropdown_menu_item_component(
+    term: Term,
+) -> NifResult<DropdownMenuItemComponentNode> {
+    Ok(DropdownMenuItemComponentNode {
+        style: decode_style(term)?,
+        value: component_string_attr(term, atoms::value())?.unwrap_or_default(),
+        label: component_string_attr(term, atoms::label())?.unwrap_or_default(),
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        checked: component_bool_attr(term, atoms::checked())?.unwrap_or(false),
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct CheckboxComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -1170,6 +1264,9 @@ pub(crate) enum ElementNode {
     DialogComponent(DialogComponentNode),
     DialogTriggerComponent(DialogTriggerComponentNode),
     DialogContentComponent(DialogContentComponentNode),
+    DropdownMenuComponent(DropdownMenuComponentNode),
+    DropdownMenuTriggerComponent(DropdownMenuTriggerComponentNode),
+    DropdownMenuItemComponent(DropdownMenuItemComponentNode),
     CheckboxComponent(CheckboxComponentNode),
     InputComponent(InputComponentNode),
     SelectComponent(SelectComponentNode),
@@ -1198,6 +1295,9 @@ pub enum GeneratedElementTag {
     UiDialog,
     UiDialogTrigger,
     UiDialogContent,
+    UiDropdownMenu,
+    UiDropdownMenuTrigger,
+    UiDropdownMenuItem,
     UiCheckbox,
     UiInput,
     UiSelect,
@@ -1233,6 +1333,9 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_dialog" => GeneratedElementTag::UiDialog,
         "ui_dialog_trigger" => GeneratedElementTag::UiDialogTrigger,
         "ui_dialog_content" => GeneratedElementTag::UiDialogContent,
+        "ui_dropdown_menu" => GeneratedElementTag::UiDropdownMenu,
+        "ui_dropdown_menu_trigger" => GeneratedElementTag::UiDropdownMenuTrigger,
+        "ui_dropdown_menu_item" => GeneratedElementTag::UiDropdownMenuItem,
         "ui_checkbox" => GeneratedElementTag::UiCheckbox,
         "ui_input" => GeneratedElementTag::UiInput,
         "ui_select" => GeneratedElementTag::UiSelect,
@@ -1278,6 +1381,15 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         }
         GeneratedElementTag::UiDialogContent => {
             GeneratedComponentKind::DialogContentComponent
+        }
+        GeneratedElementTag::UiDropdownMenu => {
+            GeneratedComponentKind::DropdownMenuComponent
+        }
+        GeneratedElementTag::UiDropdownMenuTrigger => {
+            GeneratedComponentKind::DropdownMenuTriggerComponent
+        }
+        GeneratedElementTag::UiDropdownMenuItem => {
+            GeneratedComponentKind::DropdownMenuItemComponent
         }
         GeneratedElementTag::UiCheckbox => GeneratedComponentKind::CheckboxComponent,
         GeneratedElementTag::UiInput => GeneratedComponentKind::InputComponent,
@@ -1342,6 +1454,18 @@ pub(crate) fn decode_generated_element_node(
         GeneratedComponentKind::DialogContentComponent => {
             decode_generated_dialog_content_component(term)
                 .map(ElementNode::DialogContentComponent)
+        }
+        GeneratedComponentKind::DropdownMenuComponent => {
+            decode_generated_dropdown_menu_component(term)
+                .map(ElementNode::DropdownMenuComponent)
+        }
+        GeneratedComponentKind::DropdownMenuTriggerComponent => {
+            decode_generated_dropdown_menu_trigger_component(term)
+                .map(ElementNode::DropdownMenuTriggerComponent)
+        }
+        GeneratedComponentKind::DropdownMenuItemComponent => {
+            decode_generated_dropdown_menu_item_component(term)
+                .map(ElementNode::DropdownMenuItemComponent)
         }
         GeneratedComponentKind::CheckboxComponent => {
             decode_generated_checkbox_component(term).map(ElementNode::CheckboxComponent)
@@ -1417,6 +1541,15 @@ pub(crate) fn render_generated_component_node(
         }
         ElementNode::DialogContentComponent(node) => {
             element::component::render_dialog_content_component(node, context)
+        }
+        ElementNode::DropdownMenuComponent(node) => {
+            element::component::render_dropdown_menu_component(node, context)
+        }
+        ElementNode::DropdownMenuTriggerComponent(node) => {
+            element::component::render_dropdown_menu_trigger_component(node, context)
+        }
+        ElementNode::DropdownMenuItemComponent(node) => {
+            element::component::render_dropdown_menu_item_component(node, context)
         }
         ElementNode::CheckboxComponent(node) => {
             element::component::render_checkbox_component(node, context)

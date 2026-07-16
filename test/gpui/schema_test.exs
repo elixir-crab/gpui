@@ -14,6 +14,9 @@ defmodule GPUI.SchemaTest do
              :ui_dialog,
              :ui_dialog_trigger,
              :ui_dialog_content,
+             :ui_dropdown_menu,
+             :ui_dropdown_menu_trigger,
+             :ui_dropdown_menu_item,
              :ui_checkbox,
              :ui_input,
              :ui_select,
@@ -37,14 +40,17 @@ defmodule GPUI.SchemaTest do
     assert :"phx-change" in GPUI.Schema.events()
     assert :"phx-search" in GPUI.Schema.events()
     assert :"phx-release" in GPUI.Schema.events()
+    assert :"phx-select" in GPUI.Schema.events()
     assert :ui_select in GPUI.Schema.identified_tags()
     assert :ui_popover in GPUI.Schema.identified_tags()
     assert :ui_tooltip in GPUI.Schema.identified_tags()
     assert :ui_dialog in GPUI.Schema.identified_tags()
+    assert :ui_dropdown_menu in GPUI.Schema.identified_tags()
 
     assert Enum.map(GPUI.Schema.stateful_components(), & &1.kind) == [
              :popover_component,
              :dialog_component,
+             :dropdown_menu_component,
              :input_component,
              :select_component,
              :combobox_component,

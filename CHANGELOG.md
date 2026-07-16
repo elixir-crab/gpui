@@ -6,6 +6,7 @@
 - Added alias-aware component tags, HEEx named slots, and controlled `GPUI.UI.Overlay.popover/1` with keyboard and dismissal focus behavior.
 - Added `GPUI.UI.Overlay.tooltip/1` with textual named-slot content, configurable native show delay, and hoverable lifecycle support.
 - Added controlled `GPUI.UI.Overlay.dialog/1` with arbitrary GPUI content, optional triggers, focus trapping/restoration, keyboard and overlay dismissal, and local/remote native coverage.
+- Added controlled `GPUI.UI.Overlay.dropdown_menu/1` with named items, native popup-menu selection, disabled and checked states, controlled dismissal, and local/remote coverage.
 - Added process-global light and dark component theme switching across native displays.
 - Added controlled `GPUI.UI.input/1` with stable native entity reconciliation.
 - Added native coverage for input editing, rerendering, and theme changes.

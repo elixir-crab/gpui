@@ -66,6 +66,16 @@ defmodule GPUI.TestTest do
           <:trigger>Account</:trigger>
           <:content>Profile</:content>
         </Overlay.popover>
+        <Overlay.dropdown_menu
+          id="file-menu"
+          open={assigns.menu_open}
+          phx-change="menu_open_changed"
+          phx-select="menu_selected"
+        >
+          <:trigger>File</:trigger>
+          <:item value="new">New</:item>
+          <:item value="open">Open</:item>
+        </Overlay.dropdown_menu>
       </div>
       """
     end
@@ -106,6 +116,12 @@ defmodule GPUI.TestTest do
 
     def handle_event("overlay_changed", %{value: open}, assigns),
       do: {:noreply, %{assigns | overlay_open: open}}
+
+    def handle_event("menu_open_changed", %{value: open}, assigns),
+      do: {:noreply, %{assigns | menu_open: open}}
+
+    def handle_event("menu_selected", %{value: value}, assigns),
+      do: {:noreply, %{assigns | menu_selection: value}}
   end
 
   defmodule TestApp do
@@ -128,7 +144,9 @@ defmodule GPUI.TestTest do
              section: "general",
              volume: 25.0,
              released_volume: nil,
-             overlay_open: false
+             overlay_open: false,
+             menu_open: false,
+             menu_selection: nil
            )
          end
        ]}
@@ -149,7 +167,9 @@ defmodule GPUI.TestTest do
         section: "general",
         volume: 25.0,
         released_volume: nil,
-        overlay_open: false
+        overlay_open: false,
+        menu_open: false,
+        menu_selection: nil
       )
 
     assert %GPUI.Element{type: :ui_button} = find!(tree, id: "increment")
@@ -172,7 +192,9 @@ defmodule GPUI.TestTest do
              section: "general",
              volume: 25.0,
              released_volume: nil,
-             overlay_open: false
+             overlay_open: false,
+             menu_open: false,
+             menu_selection: nil
            } = assigns(runtime)
 
     assert %{title: "Primary"} = window_snapshot(runtime, "Primary")
@@ -195,6 +217,8 @@ defmodule GPUI.TestTest do
     slide(runtime, "volume_changed", 40.0)
     release(runtime, "volume_released", 40.0)
     open(runtime, "overlay_changed", true)
+    open(runtime, "menu_open_changed", true)
+    menu_select(runtime, "menu_selected", "open")
 
     assert %{
              language: nil,
@@ -206,7 +230,9 @@ defmodule GPUI.TestTest do
              section: "advanced",
              volume: 40.0,
              released_volume: 40.0,
-             overlay_open: true
+             overlay_open: true,
+             menu_open: true,
+             menu_selection: "open"
            } = assigns(runtime)
   end
 

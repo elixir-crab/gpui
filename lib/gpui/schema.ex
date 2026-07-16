@@ -76,6 +76,36 @@ defmodule GPUI.Schema do
     %Component{tag: :ui_dialog_trigger, kind: :dialog_trigger_component, children: true},
     %Component{tag: :ui_dialog_content, kind: :dialog_content_component, children: true},
     %Component{
+      tag: :ui_dropdown_menu,
+      kind: :dropdown_menu_component,
+      stateful: true,
+      events: [change: :"phx-change", select: :"phx-select"],
+      children: true,
+      attrs: [
+        id: :string,
+        open: :boolean,
+        anchor:
+          {:enum,
+           ~w(top_left top_center top_right bottom_left bottom_center bottom_right left_center right_center)},
+        disabled: :boolean
+      ]
+    },
+    %Component{
+      tag: :ui_dropdown_menu_trigger,
+      kind: :dropdown_menu_trigger_component,
+      children: true
+    },
+    %Component{
+      tag: :ui_dropdown_menu_item,
+      kind: :dropdown_menu_item_component,
+      attrs: [
+        value: {:default, :string},
+        label: {:default, :string},
+        disabled: :boolean,
+        checked: :boolean
+      ]
+    },
+    %Component{
       tag: :ui_checkbox,
       kind: :checkbox_component,
       events: [change: :"phx-change"],

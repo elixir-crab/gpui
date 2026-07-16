@@ -4,6 +4,7 @@
 enum ComponentKind {
     Popover,
     Dialog,
+    DropdownMenu,
     Input,
     Select,
     Combobox,
@@ -14,6 +15,7 @@ enum ComponentKind {
 enum StatefulComponent {
     Popover(ComponentPopover),
     Dialog(ComponentDialog),
+    DropdownMenu(ComponentDropdownMenu),
     Input(ComponentInput),
     Select(ComponentSelect),
     Combobox(ComponentCombobox),
@@ -55,6 +57,26 @@ impl ComponentRegistry {
         let key = ComponentKey::new(ComponentKind::Dialog, id);
         self.active.insert(key.clone());
         self.entries.insert(key, StatefulComponent::Dialog(component)).is_none()
+    }
+    pub(crate) fn dropdown_menu_mut(
+        &mut self,
+        id: &str,
+    ) -> Option<&mut ComponentDropdownMenu> {
+        let key = ComponentKey::new(ComponentKind::DropdownMenu, id);
+        self.active.insert(key.clone());
+        match self.entries.get_mut(&key) {
+            Some(StatefulComponent::DropdownMenu(component)) => Some(component),
+            _ => None,
+        }
+    }
+    pub(crate) fn insert_dropdown_menu(
+        &mut self,
+        id: &str,
+        component: ComponentDropdownMenu,
+    ) -> bool {
+        let key = ComponentKey::new(ComponentKind::DropdownMenu, id);
+        self.active.insert(key.clone());
+        self.entries.insert(key, StatefulComponent::DropdownMenu(component)).is_none()
     }
     pub(crate) fn input_mut(&mut self, id: &str) -> Option<&mut ComponentInput> {
         let key = ComponentKey::new(ComponentKind::Input, id);

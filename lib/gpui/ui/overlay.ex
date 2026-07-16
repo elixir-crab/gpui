@@ -100,6 +100,48 @@ defmodule GPUI.UI.Overlay do
   end
 
   @doc """
+  Builds a controlled dropdown menu with one `:trigger` and one or more `:item` slots.
+
+  `phx-change` receives controlled open-state changes and `phx-select` receives
+  the selected item value. Popup-menu keyboard navigation, dismissal, and focus
+  restoration are provided by GPUI Component.
+  """
+  @spec dropdown_menu(map()) :: Element.t()
+  def dropdown_menu(assigns) when is_map(assigns) do
+    assigns =
+      assigns
+      |> Map.put_new(:open, false)
+      |> Map.put_new(:anchor, "top_left")
+      |> Map.put_new(:disabled, false)
+
+    trigger = one_slot!(assigns, :trigger, :dropdown_menu)
+    items = Map.get(assigns, :item, [])
+
+    validate_dropdown_menu!(assigns, items)
+    id = component_id!(assigns, :ui_dropdown_menu)
+
+    children =
+      [
+        %Element{
+          type: :ui_dropdown_menu_trigger,
+          attrs: trigger.attrs,
+          children: trigger.children
+        }
+      ] ++
+        Enum.map(items, &dropdown_menu_item!/1)
+
+    %Element{
+      type: :ui_dropdown_menu,
+      attrs:
+        assigns
+        |> Map.drop([:children, :trigger, :item])
+        |> Map.put(:id, id)
+        |> Map.to_list(),
+      children: children
+    }
+  end
+
+  @doc """
   Builds a controlled popover with one `:trigger` and one `:content` slot.
 
   Changes to `open` are emitted through `phx-change`. Escape and, by default,
@@ -147,6 +189,61 @@ defmodule GPUI.UI.Overlay do
     }
   end
 
+  defp validate_dropdown_menu!(assigns, items) do
+    unless Map.get(assigns, :children, []) == [] do
+      raise ArgumentError, "dropdown_menu content must use :trigger and :item named slots"
+    end
+
+    unless is_boolean(assigns.open) and is_boolean(assigns.disabled) do
+      raise ArgumentError, "dropdown_menu open and disabled must be booleans"
+    end
+
+    unless assigns.anchor in @anchors do
+      raise ArgumentError,
+            "dropdown_menu anchor must be one of #{Enum.map_join(@anchors, ", ", &inspect/1)}"
+    end
+
+    if items == [], do: raise(ArgumentError, "dropdown_menu requires at least one :item slot")
+
+    values = Enum.map(items, &dropdown_menu_item_value!/1)
+
+    if Enum.uniq(values) != values do
+      raise ArgumentError, "dropdown_menu item values must be unique"
+    end
+  end
+
+  defp dropdown_menu_item!(%Slot{} = slot) do
+    attrs = Map.new(slot.attrs)
+    value = dropdown_menu_item_value!(slot)
+    disabled = Map.get(attrs, :disabled, false)
+    checked = Map.get(attrs, :checked, false)
+
+    unless is_boolean(disabled) and is_boolean(checked) do
+      raise ArgumentError, "dropdown_menu item disabled and checked must be booleans"
+    end
+
+    label = textual_slot!(slot.children, "dropdown_menu :item")
+
+    %Element{
+      type: :ui_dropdown_menu_item,
+      attrs:
+        attrs
+        |> Map.put(:value, value)
+        |> Map.put(:label, label)
+        |> Map.put(:disabled, disabled)
+        |> Map.put(:checked, checked)
+        |> Map.to_list(),
+      children: []
+    }
+  end
+
+  defp dropdown_menu_item_value!(%Slot{attrs: attrs}) do
+    case Keyword.get(attrs, :value) do
+      value when is_binary(value) and value != "" -> value
+      _other -> raise ArgumentError, "dropdown_menu :item requires a non-empty string value"
+    end
+  end
+
   defp validate_dialog!(assigns) do
     unless Map.get(assigns, :children, []) == [] do
       raise ArgumentError, "dialog content must use :trigger and :content named slots"
@@ -164,20 +261,24 @@ defmodule GPUI.UI.Overlay do
     end
   end
 
-  defp tooltip_text!(children) do
-    text = Enum.map_join(children, &tooltip_fragment!/1)
+  defp tooltip_text!(children), do: textual_slot!(children, "tooltip :content")
 
-    if text == "", do: raise(ArgumentError, "tooltip :content must contain text"), else: text
+  defp textual_slot!(children, description) do
+    text = Enum.map_join(children, &textual_fragment!(&1, description))
+
+    if text == "", do: raise(ArgumentError, "#{description} must contain text"), else: text
   end
 
-  defp tooltip_fragment!(%Element{type: :text, children: children}),
-    do: Enum.map_join(children, &tooltip_fragment!/1)
+  defp textual_fragment!(%Element{type: :text, children: children}, description),
+    do: Enum.map_join(children, &textual_fragment!(&1, description))
 
-  defp tooltip_fragment!(value) when is_binary(value), do: value
-  defp tooltip_fragment!(value) when is_number(value) or is_atom(value), do: to_string(value)
+  defp textual_fragment!(value, _description) when is_binary(value), do: value
 
-  defp tooltip_fragment!(value),
-    do: raise(ArgumentError, "tooltip :content must be textual, got: #{inspect(value)}")
+  defp textual_fragment!(value, _description) when is_number(value) or is_atom(value),
+    do: to_string(value)
+
+  defp textual_fragment!(value, description),
+    do: raise(ArgumentError, "#{description} must be textual, got: #{inspect(value)}")
 
   defp component_id!(assigns, type) do
     id = Map.get(assigns, :id)

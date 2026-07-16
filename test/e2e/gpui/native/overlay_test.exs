@@ -15,7 +15,7 @@ defmodule GPUI.Native.OverlayE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="flex flex-col w-[420px] h-[240px] p-4 gap-4 bg-slate-900">
+      <div class="flex flex-col w-[420px] h-[300px] p-4 gap-4 bg-slate-900">
         <Overlay.popover
           id="account-popover"
           open={assigns.open}
@@ -46,6 +46,16 @@ defmodule GPUI.Native.OverlayE2ETest do
           <:trigger><UI.button id="dialog-trigger" label="Settings" /></:trigger>
           <:content><UI.button id="dialog-action" label="Dialog action" /></:content>
         </Overlay.dialog>
+        <Overlay.dropdown_menu
+          id="file-menu"
+          open={assigns.menu_open}
+          phx-change="menu_open_changed"
+          phx-select="menu_selected"
+        >
+          <:trigger><UI.button id="file-trigger" label="File" /></:trigger>
+          <:item value="new">New file</:item>
+          <:item value="disabled" disabled={true}>Disabled item</:item>
+        </Overlay.dropdown_menu>
       </div>
       """
     end
@@ -59,6 +69,12 @@ defmodule GPUI.Native.OverlayE2ETest do
 
     def handle_event("dialog_changed", %{value: open}, assigns),
       do: {:noreply, %{assigns | dialog_open: open}}
+
+    def handle_event("menu_open_changed", %{value: open}, assigns),
+      do: {:noreply, %{assigns | menu_open: open}}
+
+    def handle_event("menu_selected", %{value: value}, assigns),
+      do: {:noreply, %{assigns | menu_open: false, menu_selection: value}}
   end
 
   defmodule OverlayApp do
@@ -69,14 +85,21 @@ defmodule GPUI.Native.OverlayE2ETest do
       {:ok,
        [
          window title do
-           size(420, 240)
-           root(OverlayView, open: false, tooltip_clicked: false, dialog_open: false)
+           size(420, 300)
+
+           root(OverlayView,
+             open: false,
+             tooltip_clicked: false,
+             dialog_open: false,
+             menu_open: false,
+             menu_selection: nil
+           )
          end
        ]}
     end
   end
 
-  test "controlled popovers dismiss with Escape and outside clicks" do
+  test "controlled overlays dismiss and dropdown items select" do
     title = "GPUI Overlay E2E #{System.unique_integer([:positive])}"
     {:ok, runtime} = GPUI.Runtime.start_link(app: OverlayApp, args: %{title: title})
     on_exit(fn -> Desktop.stop_process(runtime) end)
@@ -115,8 +138,17 @@ defmodule GPUI.Native.OverlayE2ETest do
     Desktop.key!(window_id, "space")
     Desktop.eventually(fn -> assert %{dialog_open: true} = assigns(runtime) end)
     Process.sleep(150)
-    Desktop.click!(window_id, 400, 210)
+    Desktop.click!(window_id, 400, 270)
     Desktop.eventually(fn -> assert %{dialog_open: false} = assigns(runtime) end)
+
+    Desktop.click!(window_id, 55, 160)
+    Desktop.eventually(fn -> assert %{menu_open: true} = assigns(runtime) end)
+    Process.sleep(150)
+    Desktop.click!(window_id, 70, 212)
+
+    Desktop.eventually(fn ->
+      assert %{menu_open: false, menu_selection: "new"} = assigns(runtime)
+    end)
   end
 
   defp assigns(runtime) do

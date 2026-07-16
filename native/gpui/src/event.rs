@@ -26,6 +26,8 @@ impl EventValue {
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum InputKind {
     Change,
+    #[cfg_attr(not(feature = "components"), allow(dead_code))]
+    Select,
     Release,
     Search,
     KeyDown,
@@ -36,6 +38,7 @@ impl InputKind {
     fn atom(self) -> Atom {
         match self {
             Self::Change => atoms::change(),
+            Self::Select => atoms::select(),
             Self::Release => atoms::release(),
             Self::Search => atoms::search(),
             Self::KeyDown => atoms::keydown(),

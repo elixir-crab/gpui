@@ -14,7 +14,7 @@ defmodule GPUI.Remote.FormControlsE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="flex flex-col w-[360px] h-[280px] p-4 gap-4 bg-slate-900">
+      <div class="flex flex-col w-[360px] h-[340px] p-4 gap-4 bg-slate-900">
         <GPUI.UI.switch
           id="remote-switch"
           label="Notifications"
@@ -48,6 +48,16 @@ defmodule GPUI.Remote.FormControlsE2ETest do
           <:trigger><UI.button id="remote-dialog-trigger" label="Settings" /></:trigger>
           <:content><UI.button id="remote-dialog-action" label="Dialog action" /></:content>
         </Overlay.dialog>
+        <Overlay.dropdown_menu
+          id="remote-menu"
+          open={assigns.menu_open}
+          phx-change="menu_open_changed"
+          phx-select="menu_selected"
+        >
+          <:trigger><UI.button id="remote-menu-trigger" label="File" /></:trigger>
+          <:item value="open">Open file</:item>
+          <:item value="disabled" disabled={true}>Disabled item</:item>
+        </Overlay.dropdown_menu>
       </div>
       """
     end
@@ -64,6 +74,12 @@ defmodule GPUI.Remote.FormControlsE2ETest do
 
     def handle_event("dialog_changed", %{value: open}, assigns),
       do: {:noreply, %{assigns | dialog_open: open}}
+
+    def handle_event("menu_open_changed", %{value: open}, assigns),
+      do: {:noreply, %{assigns | menu_open: open}}
+
+    def handle_event("menu_selected", %{value: value}, assigns),
+      do: {:noreply, %{assigns | menu_open: false, menu_selection: value}}
   end
 
   defmodule FormApp do
@@ -74,20 +90,22 @@ defmodule GPUI.Remote.FormControlsE2ETest do
       {:ok,
        [
          window "GPUI Remote Form E2E" do
-           size(360, 280)
+           size(360, 340)
 
            root(FormView,
              notifications: false,
              plan: "free",
              overlay_open: false,
-             dialog_open: false
+             dialog_open: false,
+             menu_open: false,
+             menu_selection: nil
            )
          end
        ]}
     end
   end
 
-  test "switch and radio events cross the remote native boundary" do
+  test "form and overlay events cross the remote native boundary" do
     port = available_port()
     {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: port)
 
@@ -153,6 +171,22 @@ defmodule GPUI.Remote.FormControlsE2ETest do
     Desktop.eventually(fn ->
       assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
       assert false == get_in(updated, [:root, :assigns, :dialog_open])
+    end)
+
+    Process.sleep(150)
+    Desktop.click!(window_id, 55, 208)
+
+    Desktop.eventually(fn ->
+      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
+      assert true == get_in(updated, [:root, :assigns, :menu_open])
+    end)
+
+    Process.sleep(150)
+    Desktop.key!(window_id, "Escape")
+
+    Desktop.eventually(fn ->
+      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
+      assert false == get_in(updated, [:root, :assigns, :menu_open])
     end)
   end
 

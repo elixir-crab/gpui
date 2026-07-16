@@ -19,7 +19,8 @@ use super::SelectOptionNode;
 use super::{
     apply_generated_render_styles, AccordionComponentNode, AccordionItemComponentNode,
     ButtonComponentNode, CheckboxComponentNode, ComboboxComponentNode, DialogComponentNode,
-    DialogContentComponentNode, DialogTriggerComponentNode, ElementRenderContext,
+    DialogContentComponentNode, DialogTriggerComponentNode, DropdownMenuComponentNode,
+    DropdownMenuItemComponentNode, DropdownMenuTriggerComponentNode, ElementRenderContext,
     InputComponentNode, PopoverComponentNode, PopoverContentComponentNode,
     PopoverTriggerComponentNode, RadioGroupComponentNode, SelectComponentNode, SliderComponentNode,
     SwitchComponentNode, TabsComponentNode, TooltipComponentNode, TooltipTriggerComponentNode,
@@ -574,6 +575,27 @@ pub(crate) fn render_combobox_component(
     };
 
     apply_component_styles(element, node.style).into_any_element()
+}
+
+pub(crate) fn render_dropdown_menu_component(
+    node: DropdownMenuComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    overlay::render_dropdown_menu(node, context)
+}
+
+pub(crate) fn render_dropdown_menu_trigger_component(
+    node: DropdownMenuTriggerComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    overlay::render_dropdown_menu_trigger(node, context)
+}
+
+pub(crate) fn render_dropdown_menu_item_component(
+    node: DropdownMenuItemComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    overlay::render_dropdown_menu_item(node, context)
 }
 
 pub(crate) fn render_dialog_component(
