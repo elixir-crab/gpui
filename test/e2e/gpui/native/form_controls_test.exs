@@ -33,7 +33,10 @@ defmodule GPUI.Native.FormControlsE2ETest do
 
     @impl GPUI.View
     def handle_event("notifications_changed", %{value: notifications}, assigns),
-      do: {:noreply, %{assigns | notifications: notifications, switch_loading: true}}
+      do: {:noreply, %{assigns | notifications: notifications}}
+
+    def handle_event("load_switch", _event, assigns),
+      do: {:noreply, %{assigns | switch_loading: true}}
 
     def handle_event("plan_changed", %{value: plan}, assigns) do
       options = [
@@ -80,19 +83,35 @@ defmodule GPUI.Native.FormControlsE2ETest do
     Desktop.click!(window_id, 30, 26)
 
     Desktop.eventually(fn ->
-      assert %{notifications: true, switch_loading: true} = assigns(runtime)
+      assert %{notifications: true} = assigns(runtime)
     end)
 
+    Desktop.key!(window_id, "space")
+
+    Desktop.eventually(fn ->
+      assert %{notifications: false} = assigns(runtime)
+    end)
+
+    %{windows: [window]} = GPUI.Runtime.snapshot(runtime)
+
+    GPUI.Runtime.dispatch_event(runtime, %{
+      type: :click,
+      window_id: window.id,
+      event: "load_switch"
+    })
+
+    Desktop.eventually(fn -> assert %{switch_loading: true} = assigns(runtime) end)
     Process.sleep(200)
-    Desktop.click!(window_id, 30, 26)
+    Desktop.key!(window_id, "space")
     Process.sleep(100)
-    assert %{notifications: true} = assigns(runtime)
+    assert %{notifications: false} = assigns(runtime)
 
     Desktop.click!(window_id, 100, 60)
     Process.sleep(100)
     assert %{plan: "free"} = assigns(runtime)
 
-    Desktop.click!(window_id, 175, 60)
+    Desktop.key!(window_id, "Tab")
+    Desktop.key!(window_id, "Right")
 
     Desktop.eventually(fn ->
       assert %{plan: "team"} = assigns(runtime)

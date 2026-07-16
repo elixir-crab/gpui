@@ -241,6 +241,8 @@ changes carry the ordered list of expanded item IDs. Slider change events are
 continuous and release events fire once pointer interaction ends. Select,
 combobox, radio-group, and tab options accept strings, `{label, value}` tuples, or
 `%{label: label, value: value}` maps; radio maps may also set `disabled`.
+Switches activate with Enter or Space. Radio groups use a roving tab stop and
+Left/Up/Right/Down navigation, skipping disabled options.
 Button variants are `default`,
 `primary`, `secondary`, `danger`, `warning`, `success`, `info`, `ghost`, `link`,
 and `text`; component sizes are

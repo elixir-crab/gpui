@@ -15,6 +15,7 @@
 - Added controlled `GPUI.UI.accordion/1` and `accordion_item/1` with arbitrary nested GPUI content.
 - Split advanced native component renderers by responsibility and expanded local/remote lifecycle coverage.
 - Added controlled `GPUI.UI.switch/1` and `radio_group/1` with disabled radio options and local/remote native coverage.
+- Added Switch Enter/Space activation, Radio Group arrow navigation with disabled-option skipping, roving tab stops, and visual Switch loading feedback.
 
 ## 0.1.0
 

@@ -9,7 +9,6 @@ pub(super) fn render(
     node: RadioGroupComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
-    use crate::{push_event, EventValue, InputKind, NativeEvent};
     use gpui::{
         InteractiveElement, IntoElement, ParentElement, Role, StatefulInteractiveElement, Styled,
     };
@@ -22,31 +21,54 @@ pub(super) fn render(
     let runtime = context.runtime.clone();
     let window_id = context.window_id;
     let change_event = node.change.clone();
-    let radios = node.options.into_iter().map(|option| {
+    let key_options = node
+        .options
+        .iter()
+        .map(|option| {
+            (
+                option.value.clone(),
+                format!("{group_id}-{}", option.value),
+                disabled || option.disabled,
+            )
+        })
+        .collect::<Vec<_>>();
+    let focus_handles = key_options
+        .iter()
+        .map(|(_value, id, _disabled)| {
+            context
+                .window
+                .use_keyed_state(id.clone(), context.cx, |_, cx| cx.focus_handle())
+                .read(context.cx)
+                .clone()
+        })
+        .collect::<Vec<_>>();
+    let selected_index = key_options
+        .iter()
+        .position(|(value, _id, _disabled)| Some(value) == selected.as_ref());
+    let tab_index = selected_index
+        .filter(|index| !key_options[*index].2)
+        .or_else(|| {
+            key_options
+                .iter()
+                .position(|(_value, _id, disabled)| !disabled)
+        });
+
+    let radios = node.options.into_iter().enumerate().map(|(index, option)| {
         let value = option.value;
         let checked = selected.as_ref() == Some(&value);
+        let option_disabled = disabled || option.disabled;
         let event = change_event.clone();
         let event_runtime = runtime.clone();
         let mut radio = Radio::new(format!("{group_id}-{value}"))
             .label(option.label)
             .checked(checked)
-            .disabled(disabled || option.disabled)
+            .disabled(option_disabled)
+            .tab_stop(tab_index == Some(index))
+            .tab_index(if tab_index == Some(index) { 0 } else { -1 })
             .on_click(move |new_checked, _window, _cx| {
-                if !*new_checked {
-                    return;
+                if *new_checked {
+                    emit_change(&event_runtime, window_id, event.as_ref(), &value);
                 }
-                let Some(event) = event.as_ref() else {
-                    return;
-                };
-                let _ = push_event(
-                    &event_runtime,
-                    NativeEvent::Input {
-                        kind: InputKind::Change,
-                        window_id,
-                        event: event.clone(),
-                        value: Some(EventValue::String(value.clone())),
-                    },
-                );
             });
         radio = match size.as_deref() {
             Some("xs") => radio.xsmall(),
@@ -63,12 +85,90 @@ pub(super) fn render(
     }
     .gap_3()
     .children(radios);
+    let key_runtime = runtime.clone();
+    let key_event = change_event.clone();
+    let key_focus_handles = focus_handles.clone();
     let element = crate::apply_generated_render_styles(gpui::div(), node.style)
         .id(node.id)
         .role(Role::RadioGroup)
+        .on_key_down(move |event, window, cx| {
+            let focused_index = key_focus_handles
+                .iter()
+                .position(|handle| handle.is_focused(window));
+            let current = focused_index.or(selected_index).or(tab_index);
+            let target = match event.keystroke.key.as_str() {
+                "left" | "up" => previous_enabled(&key_options, current),
+                "right" | "down" => next_enabled(&key_options, current),
+                "enter" | "space" => current.filter(|index| !key_options[*index].2),
+                _other => None,
+            };
+            let Some(target) = target else {
+                return;
+            };
+            let (value, _id, _disabled) = &key_options[target];
+            key_focus_handles[target].focus(window, cx);
+            emit_change(&key_runtime, window_id, key_event.as_ref(), value);
+            cx.stop_propagation();
+        })
         .child(group);
 
     element.into_any_element()
+}
+
+#[cfg(feature = "components")]
+fn next_enabled(options: &[(String, String, bool)], current: Option<usize>) -> Option<usize> {
+    enabled_from(
+        options,
+        current.unwrap_or(options.len().saturating_sub(1)),
+        1,
+    )
+}
+
+#[cfg(feature = "components")]
+fn previous_enabled(options: &[(String, String, bool)], current: Option<usize>) -> Option<usize> {
+    enabled_from(
+        options,
+        current.unwrap_or(0),
+        options.len().saturating_sub(1),
+    )
+}
+
+#[cfg(feature = "components")]
+fn enabled_from(
+    options: &[(String, String, bool)],
+    current: usize,
+    increment: usize,
+) -> Option<usize> {
+    if options.is_empty() {
+        return None;
+    }
+
+    (1..=options.len())
+        .map(|offset| (current + offset * increment) % options.len())
+        .find(|index| !options[*index].2)
+}
+
+#[cfg(feature = "components")]
+fn emit_change(
+    runtime: &crate::SharedRuntime,
+    window_id: u64,
+    event: Option<&String>,
+    value: &str,
+) {
+    use crate::{push_event, EventValue, InputKind, NativeEvent};
+
+    let Some(event) = event else {
+        return;
+    };
+    let _ = push_event(
+        runtime,
+        NativeEvent::Input {
+            kind: InputKind::Change,
+            window_id,
+            event: event.clone(),
+            value: Some(EventValue::String(value.to_string())),
+        },
+    );
 }
 
 #[cfg(not(feature = "components"))]

@@ -76,7 +76,15 @@ defmodule GPUI.Remote.FormControlsE2ETest do
       assert true == get_in(updated, [:root, :assigns, :notifications])
     end)
 
-    Desktop.click!(window_id, 110, 60)
+    Desktop.key!(window_id, "space")
+
+    Desktop.eventually(fn ->
+      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
+      assert false == get_in(updated, [:root, :assigns, :notifications])
+    end)
+
+    Desktop.key!(window_id, "Tab")
+    Desktop.key!(window_id, "Right")
 
     Desktop.eventually(fn ->
       assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
