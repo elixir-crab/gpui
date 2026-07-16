@@ -24,7 +24,7 @@ After publication:
 ```elixir
 def deps do
   [
-    {:gpui, "0.1.0"}
+    {:gpui, "0.1.1"}
   ]
 end
 ```
@@ -103,7 +103,7 @@ The Rust crate is named `gpui_nif` only to avoid Cargo ambiguity with upstream
 
 ## Precompiled release flow
 
-Pushing a version tag such as `v0.1.0-rc` runs
+Pushing a version tag such as `v0.1.0` runs
 `.github/workflows/precompiled-nif.yml` through the organization-standard
 `elixir-vibe/actions` Rustler release workflow. It builds and attests the Linux
 NIF, attaches it to the GitHub release, then generates the mandatory
@@ -118,9 +118,10 @@ Templates support `div`, `button`, `span`, `scroll`, `list`, `item`, `icon`,
 `input`, `img`, and `text`. Text and image nodes retain their own generated
 native styles rather than relying only on parent styles.
 
-`GPUI.UI.button/1` and `GPUI.UI.checkbox/1` render real
+`GPUI.UI.button/1`, `GPUI.UI.checkbox/1`, and `GPUI.UI.input/1` render real
 [`gpui-component`](https://github.com/longbridge/gpui-component) controls. They
-are controlled by Elixir assigns and require stable string IDs:
+are controlled by Elixir assigns and require stable string IDs. Input entities
+are reconciled by ID so focus, selection, and editing state survive rerenders:
 
 ```elixir
 ~GPUI"""
@@ -138,13 +139,28 @@ are controlled by Elixir assigns and require stable string IDs:
     checked={assigns.remember}
     phx-change="remember"
   />
+  <GPUI.UI.input
+    id="name"
+    value={assigns.name}
+    placeholder="Name"
+    cleanable={true}
+    phx-change="name_changed"
+  />
 </div>
 """
 ```
 
-Checkbox change events carry a boolean `:value`. Button variants are `default`,
-`primary`, `secondary`, `danger`, `warning`, `success`, `info`, `ghost`, `link`,
-and `text`; component sizes are `xs`, `sm`, `md`, and `lg`.
+Checkbox change events carry a boolean `:value`; input change events carry a
+string `:value`. Button variants are `default`, `primary`, `secondary`, `danger`,
+`warning`, `success`, `info`, `ghost`, `link`, and `text`; component sizes are
+`xs`, `sm`, `md`, and `lg`.
+
+Native component themes are process-global and refresh every native window:
+
+```elixir
+{:ok, display} = GPUI.Display.Native.start_link(theme: :dark)
+:ok = GPUI.Display.Native.set_theme(display, :light)
+```
 
 The Tailwind-compatible normalizer covers display and flex layout, wrapping,
 alignment, growth and shrink, colors, typography, opacity, spacing, dimensions,

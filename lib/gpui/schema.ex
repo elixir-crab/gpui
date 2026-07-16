@@ -37,6 +37,21 @@ defmodule GPUI.Schema do
         disabled: :boolean
       ]
     },
+    %Component{
+      tag: :ui_input,
+      kind: :input_component,
+      events: [change: :"phx-change"],
+      attrs: [
+        id: :string,
+        value: :string,
+        placeholder: :string,
+        size: {:enum, ~w(xs sm md lg)},
+        disabled: :boolean,
+        cleanable: :boolean,
+        masked: :boolean,
+        loading: :boolean
+      ]
+    },
     %Component{tag: :span, kind: :container, events: [click: :"phx-click"]},
     %Component{tag: :scroll, kind: :container, events: [click: :"phx-click"]},
     %Component{tag: :list, kind: :container, events: [click: :"phx-click"]},

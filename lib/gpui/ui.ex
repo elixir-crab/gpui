@@ -16,6 +16,10 @@ defmodule GPUI.UI do
   @spec checkbox(map()) :: Element.t()
   def checkbox(assigns), do: component(:ui_checkbox, assigns)
 
+  @doc "Builds a persistent native GPUI Component input."
+  @spec input(map()) :: Element.t()
+  def input(assigns), do: component(:ui_input, assigns)
+
   defp component(type, %{id: id} = assigns) when is_binary(id) and id != "" do
     %Element{
       type: type,

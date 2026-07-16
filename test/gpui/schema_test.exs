@@ -7,6 +7,7 @@ defmodule GPUI.SchemaTest do
              :button,
              :ui_button,
              :ui_checkbox,
+             :ui_input,
              :span,
              :scroll,
              :list,

@@ -21,6 +21,13 @@ defmodule GPUI.NativeTest do
     assert {:ok, [%{type: :window_closed, window_id: 7}]} = GPUI.Native.drain_events(runtime)
   end
 
+  test "rejects unsupported native component themes" do
+    Process.flag(:trap_exit, true)
+
+    assert {:error, {:invalid_theme, :system}} =
+             GPUI.Display.Native.start_link(theme: :system)
+  end
+
   test "exposes the complete generated native lifecycle boundary" do
     Code.ensure_loaded!(GPUI.Native)
 
@@ -28,5 +35,6 @@ defmodule GPUI.NativeTest do
     assert function_exported?(GPUI.Native, :update_window, 3)
     assert function_exported?(GPUI.Native, :close_window, 2)
     assert function_exported?(GPUI.Native, :stop_runtime, 1)
+    assert function_exported?(GPUI.Native, :set_theme, 2)
   end
 end

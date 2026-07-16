@@ -3,7 +3,7 @@ use crate::*;
 pub(crate) mod component;
 pub(crate) mod event;
 
-use component::{render_button_component, render_checkbox_component};
+use component::{render_button_component, render_checkbox_component, render_input_component};
 use event::{apply_click_event, apply_input_events};
 
 #[cfg(feature = "real-gpui")]
@@ -18,6 +18,7 @@ pub(crate) enum ElementNode {
     Input(InputNode),
     ButtonComponent(ButtonComponentNode),
     CheckboxComponent(CheckboxComponentNode),
+    InputComponent(InputComponentNode),
     Image {
         image: ImageData,
         style: StyleAttrs,
@@ -72,12 +73,34 @@ pub(crate) struct CheckboxComponentNode {
 }
 
 #[cfg(feature = "real-gpui")]
+#[cfg_attr(not(feature = "components"), allow(dead_code))]
+#[derive(Clone, Debug)]
+pub(crate) struct InputComponentNode {
+    pub(crate) id: String,
+    pub(crate) style: StyleAttrs,
+    pub(crate) value: String,
+    pub(crate) placeholder: Option<String>,
+    pub(crate) size: Option<String>,
+    pub(crate) disabled: bool,
+    pub(crate) cleanable: bool,
+    pub(crate) masked: bool,
+    pub(crate) loading: bool,
+    pub(crate) change: Option<String>,
+}
+
+#[cfg(feature = "real-gpui")]
 pub(crate) struct ElementRenderContext<'a, 'cx> {
     pub(crate) runtime: SharedRuntime,
     pub(crate) window_id: u64,
     pub(crate) next_element_id: usize,
     pub(crate) active_input_ids: &'a mut HashSet<String>,
     pub(crate) input_entities: &'a mut HashMap<String, gpui::Entity<NativeTextInput>>,
+    #[cfg(feature = "components")]
+    pub(crate) active_component_input_ids: &'a mut HashSet<String>,
+    #[cfg(feature = "components")]
+    pub(crate) component_inputs: &'a mut HashMap<String, component::ComponentInput>,
+    #[cfg(feature = "components")]
+    pub(crate) window: &'a mut gpui::Window,
     pub(crate) cx: &'a mut gpui::Context<'cx, ElixirRoot>,
 }
 
@@ -112,6 +135,7 @@ impl ElementNode {
             Self::Input(input) => render_input_primitive(element_id, input, context),
             Self::ButtonComponent(button) => render_button_component(button, context),
             Self::CheckboxComponent(checkbox) => render_checkbox_component(checkbox, context),
+            Self::InputComponent(input) => render_input_component(element_id, input, context),
             Self::Div {
                 tag,
                 style,

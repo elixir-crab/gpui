@@ -37,6 +37,14 @@ fn stop_runtime<'a>(
     stop_runtime_impl(env, runtime)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
+fn set_theme<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    mode: Atom,
+) -> NifResult<Term<'a>> {
+    set_theme_impl(env, runtime, mode)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
 fn put_resource<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,

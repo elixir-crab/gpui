@@ -177,6 +177,40 @@ pub(crate) fn stop_runtime_impl<'a>(
 }
 
 #[cfg(feature = "real-gpui")]
+pub(crate) fn set_theme_impl<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    mode: Atom,
+) -> NifResult<Term<'a>> {
+    let native_mode = if mode == atoms::light() {
+        NativeThemeMode::Light
+    } else if mode == atoms::dark() {
+        NativeThemeMode::Dark
+    } else {
+        return Err(rustler::Error::BadArg);
+    };
+    let (reply, receiver) = std::sync::mpsc::sync_channel(1);
+    let command = WindowCommand::SetTheme {
+        mode: native_mode,
+        reply,
+    };
+
+    match execute_window_command(&runtime, command, receiver) {
+        Ok(()) => Ok((atoms::ok(), mode).encode(env)),
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+    }
+}
+
+#[cfg(not(feature = "real-gpui"))]
+pub(crate) fn set_theme_impl<'a>(
+    _env: Env<'a>,
+    _runtime: ResourceArc<RuntimeResource>,
+    _mode: Atom,
+) -> NifResult<Term<'a>> {
+    Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
+}
+
+#[cfg(feature = "real-gpui")]
 fn execute_window_command(
     runtime: &ResourceArc<RuntimeResource>,
     command: WindowCommand,
@@ -361,6 +395,7 @@ pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
         GeneratedComponentKind::Container => decode_container(term, tag),
         GeneratedComponentKind::ButtonComponent => decode_button_component(term),
         GeneratedComponentKind::CheckboxComponent => decode_checkbox_component(term),
+        GeneratedComponentKind::InputComponent => decode_input_component(term),
         GeneratedComponentKind::Input => decode_input(term),
         GeneratedComponentKind::Image => decode_image(term),
         GeneratedComponentKind::Text => Ok(ElementNode::Text {
@@ -424,6 +459,22 @@ fn decode_checkbox_component(term: Term) -> NifResult<ElementNode> {
         checked: component_bool_attr(term, atoms::checked())?.unwrap_or(false),
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         children: decode_children(term)?,
+        change: string_attr(term, atoms::phx_change()),
+    }))
+}
+
+#[cfg(feature = "real-gpui")]
+fn decode_input_component(term: Term) -> NifResult<ElementNode> {
+    Ok(ElementNode::InputComponent(InputComponentNode {
+        id: component_id(term)?,
+        style: decode_style(term)?,
+        value: component_string_attr(term, atoms::value())?.unwrap_or_default(),
+        placeholder: component_string_attr(term, atoms::placeholder())?,
+        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        cleanable: component_bool_attr(term, atoms::cleanable())?.unwrap_or(false),
+        masked: component_bool_attr(term, atoms::masked())?.unwrap_or(false),
+        loading: component_bool_attr(term, atoms::loading())?.unwrap_or(false),
         change: string_attr(term, atoms::phx_change()),
     }))
 }

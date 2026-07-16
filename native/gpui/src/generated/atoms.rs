@@ -2,12 +2,13 @@
 
 mod atoms {
     rustler::atoms! {
-        ok, error, window_closed, missing_resource, type_atom = "type", window_id, event,
-        resource_type, size, title, root, tree, children, attrs, __type__, style, click =
-        "click", phx_click = "phx-click", id = "id", label = "label", variant =
-        "variant", disabled = "disabled", selected = "selected", loading = "loading",
-        outline = "outline", compact = "compact", checked = "checked", change = "change",
-        phx_change = "phx-change", value = "value", placeholder = "placeholder", keydown
+        ok, error, window_closed, missing_resource, light, dark, type_atom = "type",
+        window_id, event, resource_type, size, title, root, tree, children, attrs,
+        __type__, style, click = "click", phx_click = "phx-click", id = "id", label =
+        "label", variant = "variant", disabled = "disabled", selected = "selected",
+        loading = "loading", outline = "outline", compact = "compact", checked =
+        "checked", change = "change", phx_change = "phx-change", value = "value",
+        placeholder = "placeholder", cleanable = "cleanable", masked = "masked", keydown
         = "keydown", keyup = "keyup", phx_keydown = "phx-keydown", phx_keyup =
         "phx-keyup", raster = "raster", width = "width", height = "height", format =
         "format", stride = "stride", data = "data", resource_ref = "resource_ref",

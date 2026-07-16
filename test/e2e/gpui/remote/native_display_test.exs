@@ -14,6 +14,12 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
       <div class="flex flex-col items-start w-full h-full bg-slate-900 text-white text-2xl p-4 gap-2">
         <text>Count: {assigns.count}</text>
         <GPUI.UI.button id="remote-increment" label="Increment" variant="primary" phx-click="inc" />
+        <GPUI.UI.input
+          id="remote-name"
+          value={assigns.name}
+          placeholder="Name"
+          phx-change="name_changed"
+        />
       </div>
       """
     end
@@ -21,6 +27,9 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
     @impl GPUI.View
     def handle_event("inc", _event, assigns),
       do: {:noreply, %{assigns | count: assigns.count + 1}}
+
+    def handle_event("name_changed", %{value: name}, assigns),
+      do: {:noreply, %{assigns | name: name}}
   end
 
   defmodule CounterApp do
@@ -32,7 +41,7 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
        [
          window "GPUI Remote E2E" do
            size(320, 240)
-           root(CounterView, count: 0)
+           root(CounterView, count: 0, name: "")
          end
        ]}
     end
@@ -55,6 +64,7 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
 
     assert {:ok, %{windows: [window]}} = GPUI.Remote.Client.mount(client)
     assert 0 = get_in(window, [:root, :assigns, :count])
+    assert "" = get_in(window, [:root, :assigns, :name])
 
     window_id = Desktop.window_id!("GPUI Remote E2E")
     Desktop.click!(window_id, 64, 68)
@@ -62,6 +72,14 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
     Desktop.eventually(fn ->
       assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
       assert 1 = get_in(updated, [:root, :assigns, :count])
+    end)
+
+    Desktop.click!(window_id, 80, 110)
+    Desktop.type!(window_id, "remote")
+
+    Desktop.eventually(fn ->
+      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
+      assert "remote" = get_in(updated, [:root, :assigns, :name])
     end)
   end
 

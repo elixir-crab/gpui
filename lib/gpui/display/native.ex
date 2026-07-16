@@ -24,10 +24,17 @@ defmodule GPUI.Display.Native do
   @impl GPUI.Display
   def inject_event(display, event), do: GenServer.call(display, {:inject_event, event})
 
+  @doc "Changes the process-global native component theme and refreshes every window."
+  @spec set_theme(GenServer.server(), :light | :dark) :: :ok | {:error, term()}
+  def set_theme(display, mode) when mode in [:light, :dark],
+    do: GenServer.call(display, {:set_theme, mode})
+
   @impl GenServer
-  def init(_opts) do
-    case GPUI.Native.start_runtime() do
-      {:ok, runtime} -> {:ok, %{runtime: runtime, windows: MapSet.new(), resources: %{}}}
+  def init(opts) do
+    with {:ok, runtime} <- GPUI.Native.start_runtime(),
+         :ok <- initialize_theme(runtime, Keyword.get(opts, :theme)) do
+      {:ok, %{runtime: runtime, windows: MapSet.new(), resources: %{}}}
+    else
       {:error, reason} -> {:stop, reason}
     end
   end
@@ -59,6 +66,27 @@ defmodule GPUI.Display.Native do
   def handle_call({:inject_event, event}, _from, state) do
     {:reply, GPUI.Native.inject_event(state.runtime, event), state}
   end
+
+  def handle_call({:set_theme, mode}, _from, state) do
+    reply =
+      case GPUI.Native.set_theme(state.runtime, mode) do
+        {:ok, ^mode} -> :ok
+        {:error, reason} -> {:error, reason}
+      end
+
+    {:reply, reply, state}
+  end
+
+  defp initialize_theme(_runtime, nil), do: :ok
+
+  defp initialize_theme(runtime, mode) when mode in [:light, :dark] do
+    case GPUI.Native.set_theme(runtime, mode) do
+      {:ok, ^mode} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp initialize_theme(_runtime, mode), do: {:error, {:invalid_theme, mode}}
 
   defp forget_closed_windows(state, events) do
     closed_ids =

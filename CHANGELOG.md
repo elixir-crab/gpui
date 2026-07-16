@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1
+
+- Added process-global light and dark component theme switching across native displays.
+- Added controlled `GPUI.UI.input/1` with stable native entity reconciliation.
+- Added native coverage for input editing, rerendering, and theme changes.
+
 ## 0.1.0
 
 - Added controlled `GPUI.UI` button and checkbox controls backed by `gpui-component`.

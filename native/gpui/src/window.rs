@@ -14,6 +14,8 @@ pub(crate) struct ElixirRoot {
     runtime: SharedRuntime,
     window_id: u64,
     input_entities: HashMap<String, gpui::Entity<NativeTextInput>>,
+    #[cfg(feature = "components")]
+    component_inputs: HashMap<String, crate::element::component::ComponentInput>,
 }
 
 #[cfg(feature = "real-gpui")]
@@ -30,16 +32,27 @@ impl gpui::Render for ElixirRoot {
             .map(|tree| tree.clone())
             .unwrap_or_else(|_| ElementNode::empty_root());
         let mut active_input_ids = HashSet::new();
+        #[cfg(feature = "components")]
+        let mut active_component_input_ids = HashSet::new();
         let element = tree.render(&mut ElementRenderContext {
             runtime: self.runtime.clone(),
             window_id: self.window_id,
             next_element_id: 0,
             active_input_ids: &mut active_input_ids,
             input_entities: &mut self.input_entities,
+            #[cfg(feature = "components")]
+            active_component_input_ids: &mut active_component_input_ids,
+            #[cfg(feature = "components")]
+            component_inputs: &mut self.component_inputs,
+            #[cfg(feature = "components")]
+            window: _window,
             cx,
         });
         self.input_entities
             .retain(|input_id, _entity| active_input_ids.contains(input_id));
+        #[cfg(feature = "components")]
+        self.component_inputs
+            .retain(|input_id, _input| active_component_input_ids.contains(input_id));
 
         let input_prefix = format!("gpui-elixir-input-{}-", self.window_id);
         if let Ok(mut input_values) = self.runtime.input_values.lock() {
@@ -54,6 +67,13 @@ impl gpui::Render for ElixirRoot {
 
 #[cfg(feature = "real-gpui")]
 pub(crate) type WindowCommandReply = std::sync::mpsc::SyncSender<Result<(), String>>;
+
+#[cfg(feature = "real-gpui")]
+#[derive(Clone, Copy)]
+pub(crate) enum NativeThemeMode {
+    Light,
+    Dark,
+}
 
 #[cfg(feature = "real-gpui")]
 pub(crate) enum WindowCommand {
@@ -81,6 +101,10 @@ pub(crate) enum WindowCommand {
     ShutdownRuntime {
         runtime_id: u64,
         reply: Option<WindowCommandReply>,
+    },
+    SetTheme {
+        mode: NativeThemeMode,
+        reply: WindowCommandReply,
     },
     PlatformClosed {
         platform_id: gpui::WindowId,
@@ -216,10 +240,43 @@ fn handle_window_command(
                 send_reply(reply, result);
             }
         }
+        WindowCommand::SetTheme { mode, reply } => {
+            let result = set_component_theme(mode, windows, cx);
+            send_reply(reply, result);
+        }
         WindowCommand::PlatformClosed { platform_id } => {
             handle_platform_window_closed(windows, platform_id);
         }
     }
+}
+
+#[cfg(feature = "components")]
+fn set_component_theme(
+    mode: NativeThemeMode,
+    windows: &mut HashMap<WindowKey, ManagedWindow>,
+    cx: &mut gpui::App,
+) -> Result<(), String> {
+    let mode = match mode {
+        NativeThemeMode::Light => gpui_component::ThemeMode::Light,
+        NativeThemeMode::Dark => gpui_component::ThemeMode::Dark,
+    };
+    gpui_component::Theme::change(mode, None, cx);
+
+    windows.values().try_for_each(|window| {
+        window
+            .handle
+            .update(cx, |_root, native_window, _cx| native_window.refresh())
+            .map_err(|error| error.to_string())
+    })
+}
+
+#[cfg(all(feature = "real-gpui", not(feature = "components")))]
+fn set_component_theme(
+    _mode: NativeThemeMode,
+    _windows: &mut HashMap<WindowKey, ManagedWindow>,
+    _cx: &mut gpui::App,
+) -> Result<(), String> {
+    Err("components_disabled".to_string())
 }
 
 #[cfg(feature = "real-gpui")]
@@ -322,6 +379,8 @@ fn open_gpui_window(
         runtime,
         window_id,
         input_entities: HashMap::new(),
+        #[cfg(feature = "components")]
+        component_inputs: HashMap::new(),
     });
     let view_for_root = view.clone();
 

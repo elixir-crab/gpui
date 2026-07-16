@@ -143,7 +143,8 @@ defmodule GPUI.TemplateTest do
                  attrs: button_attrs,
                  children: ["Save"]
                },
-               %GPUI.Element{type: :ui_checkbox, attrs: checkbox_attrs}
+               %GPUI.Element{type: :ui_checkbox, attrs: checkbox_attrs},
+               %GPUI.Element{type: :ui_input, attrs: input_attrs}
              ]
            } =
              ~GPUI"""
@@ -155,6 +156,13 @@ defmodule GPUI.TemplateTest do
                  checked={checked}
                  phx-change="remember"
                />
+               <GPUI.UI.input
+                 id="name"
+                 value="Ada"
+                 placeholder="Name"
+                 cleanable={true}
+                 phx-change="name_changed"
+               />
              </div>
              """
 
@@ -164,6 +172,10 @@ defmodule GPUI.TemplateTest do
     assert checkbox_attrs[:id] == "remember"
     assert checkbox_attrs[:checked]
     assert checkbox_attrs[:"phx-change"] == "remember"
+    assert input_attrs[:id] == "name"
+    assert input_attrs[:value] == "Ada"
+    assert input_attrs[:cleanable]
+    assert input_attrs[:"phx-change"] == "name_changed"
   end
 
   test "native UI components require stable ids" do

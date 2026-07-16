@@ -1,6 +1,4 @@
-#[cfg(feature = "real-gpui")]
-use rustler::Atom;
-use rustler::{Encoder, Env, NifResult, ResourceArc, Term};
+use rustler::{Atom, Encoder, Env, NifResult, ResourceArc, Term};
 
 #[cfg(feature = "real-gpui")]
 use futures::{channel::mpsc, StreamExt};
