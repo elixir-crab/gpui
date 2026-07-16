@@ -12,6 +12,7 @@ defmodule GPUI.Schema do
       tag: :ui_button,
       kind: :button_component,
       events: [click: :"phx-click"],
+      children: true,
       attrs: [
         id: :string,
         label: :string,
@@ -29,6 +30,7 @@ defmodule GPUI.Schema do
       tag: :ui_checkbox,
       kind: :checkbox_component,
       events: [change: :"phx-change"],
+      children: true,
       attrs: [
         id: :string,
         label: :string,
@@ -43,7 +45,7 @@ defmodule GPUI.Schema do
       events: [change: :"phx-change"],
       attrs: [
         id: :string,
-        value: :string,
+        value: {:default, :string},
         placeholder: :string,
         size: {:enum, ~w(xs sm md lg)},
         disabled: :boolean,
@@ -64,6 +66,22 @@ defmodule GPUI.Schema do
         size: {:enum, ~w(xs sm md lg)},
         disabled: :boolean,
         cleanable: :boolean
+      ]
+    },
+    %Component{
+      tag: :ui_combobox,
+      kind: :combobox_component,
+      events: [change: :"phx-change", search: :"phx-search"],
+      attrs: [
+        id: :string,
+        value: :string,
+        options: :select_options,
+        placeholder: :string,
+        search_placeholder: :string,
+        size: {:enum, ~w(xs sm md lg)},
+        disabled: :boolean,
+        cleanable: :boolean,
+        loading: :boolean
       ]
     },
     %Component{tag: :span, kind: :container, events: [click: :"phx-click"]},

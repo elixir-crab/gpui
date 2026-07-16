@@ -13,6 +13,13 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
       ~GPUI"""
       <div class="flex flex-col items-start w-full h-full bg-slate-900 text-white text-2xl p-4 gap-2">
         <text>Count: {assigns.count}</text>
+        <GPUI.UI.combobox
+          id="remote-framework"
+          value={assigns.framework}
+          options={assigns.framework_options}
+          phx-change="framework_changed"
+          phx-search="framework_searched"
+        />
         <GPUI.UI.button id="remote-increment" label="Increment" variant="primary" phx-click="inc" />
         <GPUI.UI.input
           id="remote-name"
@@ -39,6 +46,17 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
 
     def handle_event("language_changed", %{value: language}, assigns),
       do: {:noreply, %{assigns | language: language}}
+
+    def handle_event("framework_changed", %{value: framework}, assigns),
+      do: {:noreply, %{assigns | framework: framework}}
+
+    def handle_event("framework_searched", %{value: query}, assigns) do
+      options = Enum.filter(["Phoenix", "LiveView"], &contains?(&1, query))
+      {:noreply, %{assigns | query: query, framework_options: options}}
+    end
+
+    defp contains?(label, query),
+      do: String.contains?(String.downcase(label), String.downcase(query))
   end
 
   defmodule CounterApp do
@@ -49,8 +67,16 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
       {:ok,
        [
          window "GPUI Remote E2E" do
-           size(320, 240)
-           root(CounterView, count: 0, name: "", language: "rust")
+           size(320, 320)
+
+           root(CounterView,
+             count: 0,
+             name: "",
+             language: "rust",
+             framework: nil,
+             query: "",
+             framework_options: ["Phoenix", "LiveView"]
+           )
          end
        ]}
     end
@@ -75,16 +101,25 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
     assert 0 = get_in(window, [:root, :assigns, :count])
     assert "" = get_in(window, [:root, :assigns, :name])
     assert "rust" = get_in(window, [:root, :assigns, :language])
+    assert nil == get_in(window, [:root, :assigns, :framework])
 
     window_id = Desktop.window_id!("GPUI Remote E2E")
-    Desktop.click!(window_id, 64, 68)
+    Desktop.click!(window_id, 80, 68)
+    Desktop.click!(window_id, 80, 173)
+
+    Desktop.eventually(fn ->
+      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
+      assert "LiveView" = get_in(updated, [:root, :assigns, :framework])
+    end)
+
+    Desktop.click!(window_id, 80, 110)
 
     Desktop.eventually(fn ->
       assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
       assert 1 = get_in(updated, [:root, :assigns, :count])
     end)
 
-    Desktop.click!(window_id, 80, 110)
+    Desktop.click!(window_id, 80, 150)
     Desktop.type!(window_id, "remote")
 
     Desktop.eventually(fn ->
@@ -92,8 +127,8 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
       assert "remote" = get_in(updated, [:root, :assigns, :name])
     end)
 
-    Desktop.click!(window_id, 80, 150)
-    Desktop.click!(window_id, 80, 223)
+    Desktop.click!(window_id, 80, 190)
+    Desktop.click!(window_id, 80, 263)
 
     Desktop.eventually(fn ->
       assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)

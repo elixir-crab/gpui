@@ -314,7 +314,7 @@ pub(crate) fn inject_event_impl<'a>(
                 },
             )?;
         }
-        "change" | "keydown" | "keyup" => {
+        "change" | "search" | "keydown" | "keyup" => {
             let event_name = event.map_get(atoms::event())?.decode::<String>()?;
             let value = event.map_get(atoms::value()).ok().and_then(|term| {
                 term.decode::<String>()
@@ -333,6 +333,7 @@ pub(crate) fn inject_event_impl<'a>(
             });
             let kind = match event_type.as_str() {
                 "change" => InputKind::Change,
+                "search" => InputKind::Search,
                 "keydown" => InputKind::KeyDown,
                 "keyup" => InputKind::KeyUp,
                 _other => return Err(rustler::Error::BadArg),
@@ -402,10 +403,21 @@ pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
 
     match generated_component_kind(tag) {
         GeneratedComponentKind::Container => decode_container(term, tag),
-        GeneratedComponentKind::ButtonComponent => decode_button_component(term),
-        GeneratedComponentKind::CheckboxComponent => decode_checkbox_component(term),
-        GeneratedComponentKind::InputComponent => decode_input_component(term),
-        GeneratedComponentKind::SelectComponent => decode_select_component(term),
+        GeneratedComponentKind::ButtonComponent => {
+            decode_generated_button_component(term).map(ElementNode::ButtonComponent)
+        }
+        GeneratedComponentKind::CheckboxComponent => {
+            decode_generated_checkbox_component(term).map(ElementNode::CheckboxComponent)
+        }
+        GeneratedComponentKind::InputComponent => {
+            decode_generated_input_component(term).map(ElementNode::InputComponent)
+        }
+        GeneratedComponentKind::SelectComponent => {
+            decode_generated_select_component(term).map(ElementNode::SelectComponent)
+        }
+        GeneratedComponentKind::ComboboxComponent => {
+            decode_generated_combobox_component(term).map(ElementNode::ComboboxComponent)
+        }
         GeneratedComponentKind::Input => decode_input(term),
         GeneratedComponentKind::Image => decode_image(term),
         GeneratedComponentKind::Text => Ok(ElementNode::Text {
@@ -427,85 +439,7 @@ fn decode_container(term: Term, tag: GeneratedElementTag) -> NifResult<ElementNo
 }
 
 #[cfg(feature = "real-gpui")]
-fn decode_button_component(term: Term) -> NifResult<ElementNode> {
-    Ok(ElementNode::ButtonComponent(ButtonComponentNode {
-        id: component_id(term)?,
-        style: decode_style(term)?,
-        label: component_string_attr(term, atoms::label())?,
-        variant: component_enum_attr(
-            term,
-            atoms::variant(),
-            &[
-                "default",
-                "primary",
-                "secondary",
-                "danger",
-                "warning",
-                "success",
-                "info",
-                "ghost",
-                "link",
-                "text",
-            ],
-        )?,
-        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
-        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
-        selected: component_bool_attr(term, atoms::selected())?.unwrap_or(false),
-        loading: component_bool_attr(term, atoms::loading())?.unwrap_or(false),
-        outline: component_bool_attr(term, atoms::outline())?.unwrap_or(false),
-        compact: component_bool_attr(term, atoms::compact())?.unwrap_or(false),
-        children: decode_children(term)?,
-        click: string_attr(term, atoms::phx_click()),
-    }))
-}
-
-#[cfg(feature = "real-gpui")]
-fn decode_checkbox_component(term: Term) -> NifResult<ElementNode> {
-    Ok(ElementNode::CheckboxComponent(CheckboxComponentNode {
-        id: component_id(term)?,
-        style: decode_style(term)?,
-        label: component_string_attr(term, atoms::label())?,
-        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
-        checked: component_bool_attr(term, atoms::checked())?.unwrap_or(false),
-        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
-        children: decode_children(term)?,
-        change: string_attr(term, atoms::phx_change()),
-    }))
-}
-
-#[cfg(feature = "real-gpui")]
-fn decode_input_component(term: Term) -> NifResult<ElementNode> {
-    Ok(ElementNode::InputComponent(InputComponentNode {
-        id: component_id(term)?,
-        style: decode_style(term)?,
-        value: component_string_attr(term, atoms::value())?.unwrap_or_default(),
-        placeholder: component_string_attr(term, atoms::placeholder())?,
-        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
-        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
-        cleanable: component_bool_attr(term, atoms::cleanable())?.unwrap_or(false),
-        masked: component_bool_attr(term, atoms::masked())?.unwrap_or(false),
-        loading: component_bool_attr(term, atoms::loading())?.unwrap_or(false),
-        change: string_attr(term, atoms::phx_change()),
-    }))
-}
-
-#[cfg(feature = "real-gpui")]
-fn decode_select_component(term: Term) -> NifResult<ElementNode> {
-    Ok(ElementNode::SelectComponent(SelectComponentNode {
-        id: component_id(term)?,
-        style: decode_style(term)?,
-        value: component_string_attr(term, atoms::value())?,
-        options: decode_select_options(term)?,
-        placeholder: component_string_attr(term, atoms::placeholder())?,
-        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
-        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
-        cleanable: component_bool_attr(term, atoms::cleanable())?.unwrap_or(false),
-        change: string_attr(term, atoms::phx_change()),
-    }))
-}
-
-#[cfg(feature = "real-gpui")]
-fn decode_select_options(term: Term) -> NifResult<Vec<SelectOptionNode>> {
+pub(crate) fn decode_select_options(term: Term) -> NifResult<Vec<SelectOptionNode>> {
     let attrs = term.map_get(atoms::attrs())?;
     let options = attrs.map_get(atoms::options())?.decode::<Vec<Term>>()?;
     let mut values = HashSet::new();
@@ -562,7 +496,7 @@ pub(crate) fn string_attr(term: Term, attr: Atom) -> Option<String> {
 }
 
 #[cfg(feature = "real-gpui")]
-fn component_id(term: Term) -> NifResult<String> {
+pub(crate) fn component_id(term: Term) -> NifResult<String> {
     match component_string_attr(term, atoms::id())? {
         Some(id) if !id.is_empty() => Ok(id),
         _other => Err(rustler::Error::BadArg),
@@ -570,7 +504,7 @@ fn component_id(term: Term) -> NifResult<String> {
 }
 
 #[cfg(feature = "real-gpui")]
-fn component_string_attr(term: Term, attr: Atom) -> NifResult<Option<String>> {
+pub(crate) fn component_string_attr(term: Term, attr: Atom) -> NifResult<Option<String>> {
     let attrs = term.map_get(atoms::attrs())?;
     match attrs.map_get(attr) {
         Ok(value) => value.decode::<String>().map(Some),
@@ -579,7 +513,7 @@ fn component_string_attr(term: Term, attr: Atom) -> NifResult<Option<String>> {
 }
 
 #[cfg(feature = "real-gpui")]
-fn component_bool_attr(term: Term, attr: Atom) -> NifResult<Option<bool>> {
+pub(crate) fn component_bool_attr(term: Term, attr: Atom) -> NifResult<Option<bool>> {
     let attrs = term.map_get(atoms::attrs())?;
     match attrs.map_get(attr) {
         Ok(value) => value.decode::<bool>().map(Some),
@@ -588,7 +522,11 @@ fn component_bool_attr(term: Term, attr: Atom) -> NifResult<Option<bool>> {
 }
 
 #[cfg(feature = "real-gpui")]
-fn component_enum_attr(term: Term, attr: Atom, allowed: &[&str]) -> NifResult<Option<String>> {
+pub(crate) fn component_enum_attr(
+    term: Term,
+    attr: Atom,
+    allowed: &[&str],
+) -> NifResult<Option<String>> {
     match component_string_attr(term, attr)? {
         Some(value) if allowed.contains(&value.as_str()) => Ok(Some(value)),
         Some(_invalid) => Err(rustler::Error::BadArg),

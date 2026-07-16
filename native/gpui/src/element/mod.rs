@@ -7,8 +7,8 @@ pub(crate) mod controlled;
 pub(crate) mod event;
 
 use component::{
-    render_button_component, render_checkbox_component, render_input_component,
-    render_select_component,
+    render_button_component, render_checkbox_component, render_combobox_component,
+    render_input_component, render_select_component,
 };
 use event::{apply_click_event, apply_input_events};
 
@@ -26,6 +26,7 @@ pub(crate) enum ElementNode {
     CheckboxComponent(CheckboxComponentNode),
     InputComponent(InputComponentNode),
     SelectComponent(SelectComponentNode),
+    ComboboxComponent(ComboboxComponentNode),
     Image {
         image: ImageData,
         style: StyleAttrs,
@@ -45,76 +46,6 @@ pub(crate) struct InputNode {
     pub(crate) change: Option<String>,
     pub(crate) keydown: Option<String>,
     pub(crate) keyup: Option<String>,
-}
-
-#[cfg(feature = "real-gpui")]
-#[cfg_attr(not(feature = "components"), allow(dead_code))]
-#[derive(Clone, Debug)]
-pub(crate) struct ButtonComponentNode {
-    pub(crate) id: String,
-    pub(crate) style: StyleAttrs,
-    pub(crate) label: Option<String>,
-    pub(crate) variant: Option<String>,
-    pub(crate) size: Option<String>,
-    pub(crate) disabled: bool,
-    pub(crate) selected: bool,
-    pub(crate) loading: bool,
-    pub(crate) outline: bool,
-    pub(crate) compact: bool,
-    pub(crate) children: Vec<ElementNode>,
-    pub(crate) click: Option<String>,
-}
-
-#[cfg(feature = "real-gpui")]
-#[cfg_attr(not(feature = "components"), allow(dead_code))]
-#[derive(Clone, Debug)]
-pub(crate) struct CheckboxComponentNode {
-    pub(crate) id: String,
-    pub(crate) style: StyleAttrs,
-    pub(crate) label: Option<String>,
-    pub(crate) size: Option<String>,
-    pub(crate) checked: bool,
-    pub(crate) disabled: bool,
-    pub(crate) children: Vec<ElementNode>,
-    pub(crate) change: Option<String>,
-}
-
-#[cfg(feature = "real-gpui")]
-#[cfg_attr(not(feature = "components"), allow(dead_code))]
-#[derive(Clone, Debug)]
-pub(crate) struct InputComponentNode {
-    pub(crate) id: String,
-    pub(crate) style: StyleAttrs,
-    pub(crate) value: String,
-    pub(crate) placeholder: Option<String>,
-    pub(crate) size: Option<String>,
-    pub(crate) disabled: bool,
-    pub(crate) cleanable: bool,
-    pub(crate) masked: bool,
-    pub(crate) loading: bool,
-    pub(crate) change: Option<String>,
-}
-
-#[cfg(feature = "real-gpui")]
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct SelectOptionNode {
-    pub(crate) label: String,
-    pub(crate) value: String,
-}
-
-#[cfg(feature = "real-gpui")]
-#[cfg_attr(not(feature = "components"), allow(dead_code))]
-#[derive(Clone, Debug)]
-pub(crate) struct SelectComponentNode {
-    pub(crate) id: String,
-    pub(crate) style: StyleAttrs,
-    pub(crate) value: Option<String>,
-    pub(crate) options: Vec<SelectOptionNode>,
-    pub(crate) placeholder: Option<String>,
-    pub(crate) size: Option<String>,
-    pub(crate) disabled: bool,
-    pub(crate) cleanable: bool,
-    pub(crate) change: Option<String>,
 }
 
 #[cfg(feature = "real-gpui")]
@@ -164,6 +95,7 @@ impl ElementNode {
             Self::CheckboxComponent(checkbox) => render_checkbox_component(checkbox, context),
             Self::InputComponent(input) => render_input_component(element_id, input, context),
             Self::SelectComponent(select) => render_select_component(select, context),
+            Self::ComboboxComponent(combobox) => render_combobox_component(combobox, context),
             Self::Div {
                 tag,
                 style,

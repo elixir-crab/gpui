@@ -134,6 +134,20 @@ defmodule GPUI.Test do
   @spec select(GenServer.server(), String.t(), String.t() | nil, keyword()) :: Snapshot.t()
   def select(runtime, event, value, opts \\ []), do: change(runtime, event, value, opts)
 
+  @doc "Dispatches a combobox search event and returns the updated snapshot."
+  @spec search(GenServer.server(), String.t(), String.t(), keyword()) :: Snapshot.t()
+  def search(runtime, event, query, opts \\ []) do
+    {_handled, snapshot} =
+      dispatch(runtime, %{
+        type: :search,
+        window_id: event_window_id(runtime, opts),
+        event: event,
+        value: query
+      })
+
+    snapshot
+  end
+
   @doc "Returns every element in a tree matching the given attributes."
   @spec all(Element.t() | map(), keyword()) :: [Element.t() | map()]
   def all(tree, selector) when is_list(selector) do

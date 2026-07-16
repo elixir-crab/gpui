@@ -27,33 +27,43 @@ defmodule GPUI.UI do
   and `:value` fields.
   """
   @spec select(map()) :: Element.t()
-  def select(%{options: options} = assigns) when is_list(options) do
-    options = normalize_select_options!(options)
+  def select(assigns), do: component(:ui_select, normalize_options_assigns!(:ui_select, assigns))
+
+  @doc """
+  Builds a persistent searchable GPUI Component combobox.
+
+  Selection changes use `phx-change`; search text changes use `phx-search`.
+  Options use the same format as `select/1`.
+  """
+  @spec combobox(map()) :: Element.t()
+  def combobox(assigns),
+    do: component(:ui_combobox, normalize_options_assigns!(:ui_combobox, assigns))
+
+  defp normalize_options_assigns!(type, %{options: options} = assigns) when is_list(options) do
+    options = normalize_options!(type, options)
     values = Enum.map(options, & &1.value)
 
     if length(values) != MapSet.size(MapSet.new(values)) do
-      raise ArgumentError, "ui_select option values must be unique"
+      raise ArgumentError, "#{type} option values must be unique"
     end
 
     value = Map.get(assigns, :value)
 
-    if not is_nil(value) and value not in values do
-      raise ArgumentError, "ui_select value #{inspect(value)} is not present in options"
+    if type == :ui_select and not is_nil(value) and value not in values do
+      raise ArgumentError, "#{type} value #{inspect(value)} is not present in options"
     end
 
-    assigns =
-      assigns
-      |> Map.put(:options, options)
-      |> then(fn assigns ->
-        if is_nil(Map.get(assigns, :value)), do: Map.delete(assigns, :value), else: assigns
-      end)
-
-    component(:ui_select, assigns)
+    assigns
+    |> Map.put(:options, options)
+    |> then(fn assigns ->
+      if is_nil(Map.get(assigns, :value)), do: Map.delete(assigns, :value), else: assigns
+    end)
   end
 
-  def select(_assigns), do: raise(ArgumentError, "ui_select requires an options list")
+  defp normalize_options_assigns!(type, _assigns),
+    do: raise(ArgumentError, "#{type} requires an options list")
 
-  defp normalize_select_options!(options) do
+  defp normalize_options!(type, options) do
     Enum.map(options, fn
       option when is_binary(option) and option != "" ->
         %{label: option, value: option}
@@ -67,7 +77,7 @@ defmodule GPUI.UI do
 
       invalid ->
         raise ArgumentError,
-              "invalid ui_select option #{inspect(invalid)}; expected a string, " <>
+              "invalid #{type} option #{inspect(invalid)}; expected a string, " <>
                 "{label, value}, or %{label: label, value: value}"
     end)
   end

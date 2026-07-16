@@ -20,6 +20,7 @@ defmodule GPUI.Codegen.Native.Schema do
       generated_component_specs(components),
       generated_decoder_helpers(),
       Style.source(style_specs),
+      generated_component_contracts(components),
       generated_enum_decl(:GeneratedElementTag, elements ++ [:Unknown]),
       generated_string_enum_decoder(
         :decode_generated_element_tag,
@@ -41,6 +42,159 @@ defmodule GPUI.Codegen.Native.Schema do
   defp generated_component_specs(components) do
     kinds = components |> Enum.map(& &1.kind) |> Enum.uniq()
     generated_enum_decl(:GeneratedComponentKind, kinds ++ [:Unknown])
+  end
+
+  defp generated_component_contracts(components) do
+    components = Enum.filter(components, &component_contract?/1)
+
+    option_struct =
+      if Enum.any?(components, &uses_select_options?/1) do
+        generated_select_option_struct()
+      end
+
+    ([option_struct] ++
+       Enum.flat_map(components, fn component ->
+         [generated_component_struct(component), generated_component_decoder(component)]
+       end))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join("\n\n")
+  end
+
+  defp uses_select_options?(component),
+    do: Enum.any?(component.attrs, fn {_name, type} -> type == :select_options end)
+
+  defp generated_select_option_struct do
+    %AST.Struct{
+      name: :SelectOptionNode,
+      vis: :crate,
+      derive: [:Clone, :Debug, :Eq, :PartialEq],
+      attrs: [A.attr(:cfg, feature: "real-gpui")],
+      fields: [
+        %AST.StructField{name: :label, type: T.path(:String), vis: :crate},
+        %AST.StructField{name: :value, type: T.path(:String), vis: :crate}
+      ]
+    }
+    |> render_item()
+  end
+
+  defp generated_component_struct(component) do
+    fields =
+      [%AST.StructField{name: :style, type: T.path(:StyleAttrs), vis: :crate}] ++
+        Enum.map(component.attrs, fn {name, type} ->
+          %AST.StructField{name: name, type: component_field_type(name, type), vis: :crate}
+        end) ++
+        if(component.children,
+          do: [%AST.StructField{name: :children, type: T.vec(:ElementNode), vis: :crate}],
+          else: []
+        ) ++
+        Enum.map(component.events, fn {name, _attr} ->
+          %AST.StructField{name: name, type: T.option(:String), vis: :crate}
+        end)
+
+    %AST.Struct{
+      name: component_node_name(component),
+      vis: :crate,
+      derive: [:Clone, :Debug],
+      attrs: [A.attr(:cfg, feature: "real-gpui"), A.attr(:allow, [:dead_code])],
+      fields: fields
+    }
+    |> render_item()
+  end
+
+  defp generated_component_decoder(component) do
+    fields =
+      [style: A.try(A.call(:decode_style, [:term]))] ++
+        Enum.map(component.attrs, fn {name, type} ->
+          {name, component_decoder_expr(name, type)}
+        end) ++
+        if(component.children,
+          do: [children: A.try(A.call(:decode_children, [:term]))],
+          else: []
+        ) ++
+        Enum.map(component.events, fn {name, attr} ->
+          {name,
+           A.try(
+             A.call(:component_string_attr, [
+               :term,
+               A.path_call([:atoms, rust_atom_name(attr)])
+             ])
+           )}
+        end)
+
+    %AST.Function{
+      name: decoder_name(component),
+      vis: :crate,
+      attrs: [A.attr(:cfg, feature: "real-gpui")],
+      args: [A.arg(:term, T.path(:Term))],
+      returns: T.nif_result(component_node_name(component)),
+      body: [
+        A.return_stmt(A.ok(A.struct_expr(component_node_name(component), fields)))
+      ]
+    }
+    |> render_item()
+  end
+
+  defp component_field_type(:id, :string), do: T.path(:String)
+  defp component_field_type(_name, :string), do: T.option(:String)
+  defp component_field_type(_name, {:default, :string}), do: T.path(:String)
+  defp component_field_type(_name, :boolean), do: T.path(:bool)
+  defp component_field_type(_name, {:enum, _values}), do: T.option(:String)
+  defp component_field_type(_name, :select_options), do: T.vec(:SelectOptionNode)
+
+  defp component_decoder_expr(:id, :string),
+    do: A.try(A.call(:component_id, [:term]))
+
+  defp component_decoder_expr(name, :string),
+    do: A.try(component_attr_call(:component_string_attr, name))
+
+  defp component_decoder_expr(name, {:default, :string}) do
+    :component_string_attr
+    |> component_attr_call(name)
+    |> A.try()
+    |> A.method(:unwrap_or_default)
+  end
+
+  defp component_decoder_expr(name, :boolean) do
+    :component_bool_attr
+    |> component_attr_call(name)
+    |> A.try()
+    |> A.method(:unwrap_or, [false])
+  end
+
+  defp component_decoder_expr(name, {:enum, values}) do
+    A.try(
+      A.call(:component_enum_attr, [
+        :term,
+        A.path_call([:atoms, rust_atom_name(name)]),
+        A.slice(Enum.map(values, &A.lit/1))
+      ])
+    )
+  end
+
+  defp component_decoder_expr(_name, :select_options),
+    do: A.try(A.call(:decode_select_options, [:term]))
+
+  defp component_attr_call(helper, name),
+    do: A.call(helper, [:term, A.path_call([:atoms, rust_atom_name(name)])])
+
+  defp component_contract?(component),
+    do: component.kind |> Atom.to_string() |> String.ends_with?("_component")
+
+  defp component_node_name(component),
+    do:
+      component.kind
+      |> Atom.to_string()
+      |> Macro.camelize()
+      |> Kernel.<>("Node")
+      |> String.to_atom()
+
+  defp decoder_name(component), do: String.to_atom("decode_generated_#{component.kind}")
+
+  defp rust_atom_name(atom) do
+    atom
+    |> Atom.to_string()
+    |> String.replace(~r/[^a-zA-Z0-9_]/, "_")
+    |> String.to_atom()
   end
 
   defp generated_component_kind_function(components) do

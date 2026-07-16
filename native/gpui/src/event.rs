@@ -22,6 +22,7 @@ impl EventValue {
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum InputKind {
     Change,
+    Search,
     KeyDown,
     KeyUp,
 }
@@ -30,6 +31,7 @@ impl InputKind {
     fn atom(self) -> Atom {
         match self {
             Self::Change => atoms::change(),
+            Self::Search => atoms::search(),
             Self::KeyDown => atoms::keydown(),
             Self::KeyUp => atoms::keyup(),
         }

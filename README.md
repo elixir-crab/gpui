@@ -73,7 +73,8 @@ defmodule CounterTest do
 
     change(runtime, "name_changed", "Ada")
     select(runtime, "language_changed", "elixir")
-    assert %{name: "Ada", language: "elixir"} = assigns(runtime)
+    search(runtime, "framework_searched", "live")
+    assert %{name: "Ada", language: "elixir", query: "live"} = assigns(runtime)
     assert %{type: :ui_input} = runtime |> tree() |> find!(id: "name")
   end
 end
@@ -143,8 +144,8 @@ Templates support `div`, `button`, `span`, `scroll`, `list`, `item`, `icon`,
 `input`, `img`, and `text`. Text and image nodes retain their own generated
 native styles rather than relying only on parent styles.
 
-`GPUI.UI.button/1`, `GPUI.UI.checkbox/1`, `GPUI.UI.input/1`, and
-`GPUI.UI.select/1` render real
+`GPUI.UI.button/1`, `GPUI.UI.checkbox/1`, `GPUI.UI.input/1`,
+`GPUI.UI.select/1`, and `GPUI.UI.combobox/1` render real
 [`gpui-component`](https://github.com/longbridge/gpui-component) controls. They
 are controlled by Elixir assigns and require stable string IDs. Stateful
 component entities are reconciled by kind and ID so focus, selection, open
@@ -180,12 +181,20 @@ snapshot crosses the display boundary:
     options={[{"Rust", "rust"}, {"Elixir", "elixir"}]}
     phx-change="language_changed"
   />
+  <GPUI.UI.combobox
+    id="framework"
+    value={assigns.framework}
+    options={assigns.framework_options}
+    phx-change="framework_changed"
+    phx-search="framework_searched"
+  />
 </div>
 """
 ```
 
-Checkbox change events carry a boolean `:value`; input and select change events
-carry their controlled `:value`. Select options accept strings, `{label, value}`
+Checkbox change events carry a boolean `:value`; input, select, and combobox
+change events carry their controlled `:value`. Combobox search events carry the
+current query. Select and combobox options accept strings, `{label, value}`
 tuples, or `%{label: label, value: value}` maps. Button variants are `default`,
 `primary`, `secondary`, `danger`, `warning`, `success`, `info`, `ghost`, `link`,
 and `text`; component sizes are

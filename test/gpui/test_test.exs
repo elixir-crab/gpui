@@ -17,6 +17,13 @@ defmodule GPUI.TestTest do
           options={[{"Rust", "rust"}, {"Elixir", "elixir"}]}
           phx-change="language_changed"
         />
+        <GPUI.UI.combobox
+          id="framework"
+          value={assigns.framework}
+          options={["Phoenix", "LiveView"]}
+          phx-change="framework_changed"
+          phx-search="framework_searched"
+        />
       </div>
       """
     end
@@ -30,6 +37,12 @@ defmodule GPUI.TestTest do
 
     def handle_event("language_changed", %{value: language}, assigns),
       do: {:noreply, %{assigns | language: language}}
+
+    def handle_event("framework_changed", %{value: framework}, assigns),
+      do: {:noreply, %{assigns | framework: framework}}
+
+    def handle_event("framework_searched", %{value: query}, assigns),
+      do: {:noreply, %{assigns | query: query}}
   end
 
   defmodule TestApp do
@@ -40,14 +53,27 @@ defmodule GPUI.TestTest do
       {:ok,
        [
          window "Primary" do
-           root(TestView, count: 0, name: "", language: "rust")
+           root(TestView,
+             count: 0,
+             name: "",
+             language: "rust",
+             framework: nil,
+             query: ""
+           )
          end
        ]}
     end
   end
 
   test "renders and queries view trees directly" do
-    tree = render(TestView, count: 2, name: "Ada", language: "rust")
+    tree =
+      render(TestView,
+        count: 2,
+        name: "Ada",
+        language: "rust",
+        framework: nil,
+        query: ""
+      )
 
     assert %GPUI.Element{type: :ui_button} = find!(tree, id: "increment")
     assert %GPUI.Element{type: :ui_input} = find!(tree, type: :ui_input)
@@ -57,7 +83,14 @@ defmodule GPUI.TestTest do
   test "starts deterministic runtimes and dispatches user events" do
     runtime = start_gpui!(TestApp)
 
-    assert %{count: 0, name: "", language: "rust"} = assigns(runtime)
+    assert %{
+             count: 0,
+             name: "",
+             language: "rust",
+             framework: nil,
+             query: ""
+           } = assigns(runtime)
+
     assert %{title: "Primary"} = window_snapshot(runtime, "Primary")
     assert %{type: :ui_input} = runtime |> tree() |> find!(id: "name")
 
@@ -69,7 +102,9 @@ defmodule GPUI.TestTest do
     assert %{count: 1, name: "Ada", language: "elixir"} = assigns(runtime)
 
     select(runtime, "language_changed", nil)
-    assert %{language: nil} = assigns(runtime)
+    search(runtime, "framework_searched", "live")
+    select(runtime, "framework_changed", "LiveView")
+    assert %{language: nil, query: "live", framework: "LiveView"} = assigns(runtime)
   end
 
   test "public test display records snapshots chronologically" do

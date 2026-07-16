@@ -146,7 +146,8 @@ defmodule GPUI.TemplateTest do
                },
                %GPUI.Element{type: :ui_checkbox, attrs: checkbox_attrs},
                %GPUI.Element{type: :ui_input, attrs: input_attrs},
-               %GPUI.Element{type: :ui_select, attrs: select_attrs}
+               %GPUI.Element{type: :ui_select, attrs: select_attrs},
+               %GPUI.Element{type: :ui_combobox, attrs: combobox_attrs}
              ]
            } =
              ~GPUI"""
@@ -171,6 +172,13 @@ defmodule GPUI.TemplateTest do
                  options={options}
                  phx-change="language_changed"
                />
+               <GPUI.UI.combobox
+                 id="framework"
+                 options={["Phoenix", "LiveView"]}
+                 search_placeholder="Search frameworks"
+                 phx-change="framework_changed"
+                 phx-search="framework_searched"
+               />
              </div>
              """
 
@@ -193,6 +201,16 @@ defmodule GPUI.TemplateTest do
            ]
 
     assert select_attrs[:"phx-change"] == "language_changed"
+    assert combobox_attrs[:id] == "framework"
+
+    assert combobox_attrs[:options] == [
+             %{label: "Phoenix", value: "Phoenix"},
+             %{label: "LiveView", value: "LiveView"}
+           ]
+
+    assert combobox_attrs[:search_placeholder] == "Search frameworks"
+    assert combobox_attrs[:"phx-change"] == "framework_changed"
+    assert combobox_attrs[:"phx-search"] == "framework_searched"
   end
 
   test "native UI components require stable ids" do
@@ -201,7 +219,7 @@ defmodule GPUI.TemplateTest do
     end
   end
 
-  test "select validates options and controlled values" do
+  test "option components validate values while allowing asynchronous combobox options" do
     assert_raise ArgumentError, ~r/option values must be unique/, fn ->
       GPUI.UI.select(%{id: "language", options: ["Rust", "Rust"]})
     end
@@ -209,6 +227,9 @@ defmodule GPUI.TemplateTest do
     assert_raise ArgumentError, ~r/is not present in options/, fn ->
       GPUI.UI.select(%{id: "language", value: "zig", options: ["Rust"]})
     end
+
+    combobox = GPUI.UI.combobox(%{id: "framework", value: "LiveView", options: []})
+    assert combobox.attrs[:value] == "LiveView"
   end
 
   test "serialized component trees reject duplicate stable ids" do

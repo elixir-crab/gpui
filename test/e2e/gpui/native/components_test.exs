@@ -12,7 +12,7 @@ defmodule GPUI.Native.ComponentsE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="flex flex-col w-[360px] h-[340px] p-4 gap-4 bg-slate-900">
+      <div class="flex flex-col w-[360px] h-[420px] p-4 gap-4 bg-slate-900">
         <GPUI.UI.button
           id="component-button"
           label="Increment"
@@ -38,7 +38,16 @@ defmodule GPUI.Native.ComponentsE2ETest do
           options={[{"Rust", "rust"}, {"Elixir", "elixir"}, {"Zig", "zig"}]}
           phx-change="language_changed"
         />
-        <text class="text-white">Count: {assigns.count}; Enabled: {assigns.enabled}; Name: {assigns.name}; Language: {assigns.language}</text>
+        <GPUI.UI.combobox
+          id="component-framework"
+          value={assigns.framework}
+          options={assigns.framework_options}
+          search_placeholder="Search frameworks"
+          cleanable={true}
+          phx-change="framework_changed"
+          phx-search="framework_searched"
+        />
+        <text class="text-white">Count: {assigns.count}; Enabled: {assigns.enabled}; Name: {assigns.name}; Language: {assigns.language}; Framework: {assigns.framework}</text>
       </div>
       """
     end
@@ -61,6 +70,17 @@ defmodule GPUI.Native.ComponentsE2ETest do
 
     def handle_event("language_changed", %{value: language}, assigns),
       do: {:noreply, %{assigns | language: language}}
+
+    def handle_event("framework_changed", %{value: framework}, assigns),
+      do: {:noreply, %{assigns | framework: framework}}
+
+    def handle_event("framework_searched", %{value: query}, assigns) do
+      options = Enum.filter(["Phoenix", "LiveView", "Surface"], &contains?(&1, query))
+      {:noreply, %{assigns | framework_query: query, framework_options: options}}
+    end
+
+    defp contains?(label, query),
+      do: String.contains?(String.downcase(label), String.downcase(query))
   end
 
   defmodule ComponentsApp do
@@ -71,8 +91,17 @@ defmodule GPUI.Native.ComponentsE2ETest do
       {:ok,
        [
          window title do
-           size(360, 340)
-           root(ComponentsView, count: 0, enabled: false, name: "", language: "rust")
+           size(360, 420)
+
+           root(ComponentsView,
+             count: 0,
+             enabled: false,
+             name: "",
+             language: "rust",
+             framework: nil,
+             framework_query: "",
+             framework_options: ["Phoenix", "LiveView", "Surface"]
+           )
          end
        ]}
     end
@@ -164,6 +193,21 @@ defmodule GPUI.Native.ComponentsE2ETest do
 
     Desktop.eventually(fn ->
       assert %{language: "elixir"} = assigns(runtime)
+    end)
+
+    Desktop.key!(window_id, "Tab")
+    Desktop.key!(window_id, "Return")
+    Desktop.type!(window_id, "live")
+
+    Desktop.eventually(fn ->
+      assert %{framework_query: "live"} = assigns(runtime)
+    end)
+
+    Desktop.key!(window_id, "Down")
+    Desktop.key!(window_id, "Return")
+
+    Desktop.eventually(fn ->
+      assert %{framework: "LiveView"} = assigns(runtime)
     end)
   end
 

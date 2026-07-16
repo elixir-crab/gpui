@@ -7,6 +7,7 @@ pub enum GeneratedComponentKind {
     CheckboxComponent,
     InputComponent,
     SelectComponent,
+    ComboboxComponent,
     Text,
     Input,
     Image,
@@ -506,6 +507,211 @@ pub(crate) fn apply_generated_render_styles(
 }
 
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct SelectOptionNode {
+    pub(crate) label: String,
+    pub(crate) value: String,
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct ButtonComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) label: Option<String>,
+    pub(crate) variant: Option<String>,
+    pub(crate) size: Option<String>,
+    pub(crate) disabled: bool,
+    pub(crate) selected: bool,
+    pub(crate) loading: bool,
+    pub(crate) outline: bool,
+    pub(crate) compact: bool,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) click: Option<String>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_button_component(
+    term: Term,
+) -> NifResult<ButtonComponentNode> {
+    Ok(ButtonComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        label: component_string_attr(term, atoms::label())?,
+        variant: component_enum_attr(
+            term,
+            atoms::variant(),
+            &[
+                "default",
+                "primary",
+                "secondary",
+                "danger",
+                "warning",
+                "success",
+                "info",
+                "ghost",
+                "link",
+                "text",
+            ],
+        )?,
+        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        selected: component_bool_attr(term, atoms::selected())?.unwrap_or(false),
+        loading: component_bool_attr(term, atoms::loading())?.unwrap_or(false),
+        outline: component_bool_attr(term, atoms::outline())?.unwrap_or(false),
+        compact: component_bool_attr(term, atoms::compact())?.unwrap_or(false),
+        children: decode_children(term)?,
+        click: component_string_attr(term, atoms::phx_click())?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct CheckboxComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) label: Option<String>,
+    pub(crate) size: Option<String>,
+    pub(crate) checked: bool,
+    pub(crate) disabled: bool,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) change: Option<String>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_checkbox_component(
+    term: Term,
+) -> NifResult<CheckboxComponentNode> {
+    Ok(CheckboxComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        label: component_string_attr(term, atoms::label())?,
+        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        checked: component_bool_attr(term, atoms::checked())?.unwrap_or(false),
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        children: decode_children(term)?,
+        change: component_string_attr(term, atoms::phx_change())?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct InputComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) value: String,
+    pub(crate) placeholder: Option<String>,
+    pub(crate) size: Option<String>,
+    pub(crate) disabled: bool,
+    pub(crate) cleanable: bool,
+    pub(crate) masked: bool,
+    pub(crate) loading: bool,
+    pub(crate) change: Option<String>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_input_component(
+    term: Term,
+) -> NifResult<InputComponentNode> {
+    Ok(InputComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        value: component_string_attr(term, atoms::value())?.unwrap_or_default(),
+        placeholder: component_string_attr(term, atoms::placeholder())?,
+        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        cleanable: component_bool_attr(term, atoms::cleanable())?.unwrap_or(false),
+        masked: component_bool_attr(term, atoms::masked())?.unwrap_or(false),
+        loading: component_bool_attr(term, atoms::loading())?.unwrap_or(false),
+        change: component_string_attr(term, atoms::phx_change())?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct SelectComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) value: Option<String>,
+    pub(crate) options: Vec<SelectOptionNode>,
+    pub(crate) placeholder: Option<String>,
+    pub(crate) size: Option<String>,
+    pub(crate) disabled: bool,
+    pub(crate) cleanable: bool,
+    pub(crate) change: Option<String>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_select_component(
+    term: Term,
+) -> NifResult<SelectComponentNode> {
+    Ok(SelectComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        value: component_string_attr(term, atoms::value())?,
+        options: decode_select_options(term)?,
+        placeholder: component_string_attr(term, atoms::placeholder())?,
+        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        cleanable: component_bool_attr(term, atoms::cleanable())?.unwrap_or(false),
+        change: component_string_attr(term, atoms::phx_change())?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct ComboboxComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) value: Option<String>,
+    pub(crate) options: Vec<SelectOptionNode>,
+    pub(crate) placeholder: Option<String>,
+    pub(crate) search_placeholder: Option<String>,
+    pub(crate) size: Option<String>,
+    pub(crate) disabled: bool,
+    pub(crate) cleanable: bool,
+    pub(crate) loading: bool,
+    pub(crate) change: Option<String>,
+    pub(crate) search: Option<String>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_combobox_component(
+    term: Term,
+) -> NifResult<ComboboxComponentNode> {
+    Ok(ComboboxComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        value: component_string_attr(term, atoms::value())?,
+        options: decode_select_options(term)?,
+        placeholder: component_string_attr(term, atoms::placeholder())?,
+        search_placeholder: component_string_attr(term, atoms::search_placeholder())?,
+        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        cleanable: component_bool_attr(term, atoms::cleanable())?.unwrap_or(false),
+        loading: component_bool_attr(term, atoms::loading())?.unwrap_or(false),
+        change: component_string_attr(term, atoms::phx_change())?,
+        search: component_string_attr(term, atoms::phx_search())?,
+    })
+}
+
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GeneratedElementTag {
     Div,
@@ -514,6 +720,7 @@ pub enum GeneratedElementTag {
     UiCheckbox,
     UiInput,
     UiSelect,
+    UiCombobox,
     Span,
     Scroll,
     List,
@@ -534,6 +741,7 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_checkbox" => GeneratedElementTag::UiCheckbox,
         "ui_input" => GeneratedElementTag::UiInput,
         "ui_select" => GeneratedElementTag::UiSelect,
+        "ui_combobox" => GeneratedElementTag::UiCombobox,
         "span" => GeneratedElementTag::Span,
         "scroll" => GeneratedElementTag::Scroll,
         "list" => GeneratedElementTag::List,
@@ -555,6 +763,7 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::UiCheckbox => GeneratedComponentKind::CheckboxComponent,
         GeneratedElementTag::UiInput => GeneratedComponentKind::InputComponent,
         GeneratedElementTag::UiSelect => GeneratedComponentKind::SelectComponent,
+        GeneratedElementTag::UiCombobox => GeneratedComponentKind::ComboboxComponent,
         GeneratedElementTag::Span => GeneratedComponentKind::Container,
         GeneratedElementTag::Scroll => GeneratedComponentKind::Container,
         GeneratedElementTag::List => GeneratedComponentKind::Container,
