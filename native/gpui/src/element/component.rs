@@ -18,7 +18,8 @@ use super::InputNode;
 use super::SelectOptionNode;
 use super::{
     apply_generated_render_styles, AccordionComponentNode, AccordionItemComponentNode,
-    ButtonComponentNode, CheckboxComponentNode, ComboboxComponentNode, ElementRenderContext,
+    ButtonComponentNode, CheckboxComponentNode, ComboboxComponentNode, DialogComponentNode,
+    DialogContentComponentNode, DialogTriggerComponentNode, ElementRenderContext,
     InputComponentNode, PopoverComponentNode, PopoverContentComponentNode,
     PopoverTriggerComponentNode, RadioGroupComponentNode, SelectComponentNode, SliderComponentNode,
     SwitchComponentNode, TabsComponentNode, TooltipComponentNode, TooltipTriggerComponentNode,
@@ -573,6 +574,27 @@ pub(crate) fn render_combobox_component(
     };
 
     apply_component_styles(element, node.style).into_any_element()
+}
+
+pub(crate) fn render_dialog_component(
+    node: DialogComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    overlay::render_dialog(node, context)
+}
+
+pub(crate) fn render_dialog_trigger_component(
+    node: DialogTriggerComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    overlay::render_dialog_trigger(node, context)
+}
+
+pub(crate) fn render_dialog_content_component(
+    node: DialogContentComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    overlay::render_dialog_content(node, context)
 }
 
 pub(crate) fn render_tooltip_component(

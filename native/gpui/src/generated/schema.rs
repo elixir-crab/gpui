@@ -9,6 +9,9 @@ pub enum GeneratedComponentKind {
     PopoverContentComponent,
     TooltipComponent,
     TooltipTriggerComponent,
+    DialogComponent,
+    DialogTriggerComponent,
+    DialogContentComponent,
     CheckboxComponent,
     InputComponent,
     SelectComponent,
@@ -726,6 +729,84 @@ pub(crate) fn decode_generated_tooltip_trigger_component(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct DialogComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) open: bool,
+    pub(crate) title: Option<String>,
+    pub(crate) width: f64,
+    pub(crate) overlay: bool,
+    pub(crate) closable: bool,
+    pub(crate) keyboard: bool,
+    pub(crate) close_button: bool,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) change: Option<String>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_dialog_component(
+    term: Term,
+) -> NifResult<DialogComponentNode> {
+    Ok(DialogComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        open: component_bool_attr(term, atoms::open())?.unwrap_or(false),
+        title: component_string_attr(term, atoms::title())?,
+        width: component_number_attr(term, atoms::width())?.unwrap_or(448.0),
+        overlay: component_bool_attr(term, atoms::overlay())?.unwrap_or(true),
+        closable: component_bool_attr(term, atoms::closable())?.unwrap_or(true),
+        keyboard: component_bool_attr(term, atoms::keyboard())?.unwrap_or(true),
+        close_button: component_bool_attr(term, atoms::close_button())?.unwrap_or(true),
+        children: decode_children(term)?,
+        change: component_string_attr(term, atoms::phx_change())?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct DialogTriggerComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) children: Vec<ElementNode>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_dialog_trigger_component(
+    term: Term,
+) -> NifResult<DialogTriggerComponentNode> {
+    Ok(DialogTriggerComponentNode {
+        style: decode_style(term)?,
+        children: decode_children(term)?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct DialogContentComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) children: Vec<ElementNode>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_dialog_content_component(
+    term: Term,
+) -> NifResult<DialogContentComponentNode> {
+    Ok(DialogContentComponentNode {
+        style: decode_style(term)?,
+        children: decode_children(term)?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct CheckboxComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -1085,6 +1166,9 @@ pub enum GeneratedElementTag {
     UiPopoverContent,
     UiTooltip,
     UiTooltipTrigger,
+    UiDialog,
+    UiDialogTrigger,
+    UiDialogContent,
     UiCheckbox,
     UiInput,
     UiSelect,
@@ -1117,6 +1201,9 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_popover_content" => GeneratedElementTag::UiPopoverContent,
         "ui_tooltip" => GeneratedElementTag::UiTooltip,
         "ui_tooltip_trigger" => GeneratedElementTag::UiTooltipTrigger,
+        "ui_dialog" => GeneratedElementTag::UiDialog,
+        "ui_dialog_trigger" => GeneratedElementTag::UiDialogTrigger,
+        "ui_dialog_content" => GeneratedElementTag::UiDialogContent,
         "ui_checkbox" => GeneratedElementTag::UiCheckbox,
         "ui_input" => GeneratedElementTag::UiInput,
         "ui_select" => GeneratedElementTag::UiSelect,
@@ -1155,6 +1242,13 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::UiTooltip => GeneratedComponentKind::TooltipComponent,
         GeneratedElementTag::UiTooltipTrigger => {
             GeneratedComponentKind::TooltipTriggerComponent
+        }
+        GeneratedElementTag::UiDialog => GeneratedComponentKind::DialogComponent,
+        GeneratedElementTag::UiDialogTrigger => {
+            GeneratedComponentKind::DialogTriggerComponent
+        }
+        GeneratedElementTag::UiDialogContent => {
+            GeneratedComponentKind::DialogContentComponent
         }
         GeneratedElementTag::UiCheckbox => GeneratedComponentKind::CheckboxComponent,
         GeneratedElementTag::UiInput => GeneratedComponentKind::InputComponent,

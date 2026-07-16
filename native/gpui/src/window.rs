@@ -8,6 +8,9 @@ pub(crate) struct WindowState {
 #[cfg(feature = "real-gpui")]
 pub(crate) type SharedWindow = Arc<WindowState>;
 
+#[cfg(all(feature = "real-gpui", feature = "components"))]
+type DialogKeyHandler = Arc<dyn Fn(&gpui::KeyDownEvent, &mut gpui::Window, &mut gpui::App)>;
+
 #[cfg(feature = "real-gpui")]
 pub(crate) struct ElixirRoot {
     window_state: SharedWindow,
@@ -16,6 +19,47 @@ pub(crate) struct ElixirRoot {
     input_entities: HashMap<String, gpui::Entity<NativeTextInput>>,
     #[cfg(feature = "components")]
     components: crate::element::component_registry::ComponentRegistry,
+    #[cfg(feature = "components")]
+    render_dialog_layer: bool,
+    #[cfg(feature = "components")]
+    dialog_focus: Option<gpui::FocusHandle>,
+    #[cfg(feature = "components")]
+    dialog_key_handler: Option<DialogKeyHandler>,
+}
+
+#[cfg(feature = "real-gpui")]
+impl ElixirRoot {
+    pub(crate) fn new(window_state: SharedWindow, runtime: SharedRuntime, window_id: u64) -> Self {
+        Self {
+            window_state,
+            runtime,
+            window_id,
+            input_entities: HashMap::new(),
+            #[cfg(feature = "components")]
+            components: crate::element::component_registry::ComponentRegistry::default(),
+            #[cfg(feature = "components")]
+            render_dialog_layer: true,
+            #[cfg(feature = "components")]
+            dialog_focus: None,
+            #[cfg(feature = "components")]
+            dialog_key_handler: None,
+        }
+    }
+
+    #[cfg(feature = "components")]
+    pub(crate) fn new_dialog(
+        window_state: SharedWindow,
+        runtime: SharedRuntime,
+        window_id: u64,
+        focus: gpui::FocusHandle,
+        key_handler: DialogKeyHandler,
+    ) -> Self {
+        let mut root = Self::new(window_state, runtime, window_id);
+        root.render_dialog_layer = false;
+        root.dialog_focus = Some(focus);
+        root.dialog_key_handler = Some(key_handler);
+        root
+    }
 }
 
 #[cfg(feature = "real-gpui")]
@@ -49,13 +93,37 @@ impl gpui::Render for ElixirRoot {
         self.input_entities
             .retain(|input_id, _entity| active_input_ids.contains(input_id));
         #[cfg(feature = "components")]
-        self.components.finish_render();
+        self.components.finish_render(_window, cx);
 
         let input_prefix = format!("gpui-elixir-input-{}-", self.window_id);
         if let Ok(mut input_values) = self.runtime.input_values.lock() {
             input_values.retain(|input_id, _value| {
                 !input_id.starts_with(&input_prefix) || active_input_ids.contains(input_id)
             });
+        }
+
+        #[cfg(feature = "components")]
+        if self.render_dialog_layer {
+            use gpui::{IntoElement, ParentElement};
+
+            return gpui::div()
+                .child(element)
+                .children(gpui_component::Root::render_dialog_layer(_window, cx))
+                .into_any_element();
+        }
+
+        #[cfg(feature = "components")]
+        if let (Some(focus), Some(key_handler)) =
+            (self.dialog_focus.clone(), self.dialog_key_handler.clone())
+        {
+            use gpui::{InteractiveElement, IntoElement, ParentElement};
+
+            return gpui::div()
+                .id("gpui-elixir-dialog-content")
+                .track_focus(&focus.tab_stop(true))
+                .on_key_down(move |event, window, cx| key_handler(event, window, cx))
+                .child(element)
+                .into_any_element();
         }
 
         element
@@ -371,14 +439,7 @@ fn open_gpui_window(
     use gpui::{px, size, AppContext, Bounds, WindowBounds, WindowOptions};
 
     let bounds = Bounds::centered(None, size(px(width), px(height)), cx);
-    let view = cx.new(|_cx| ElixirRoot {
-        window_state,
-        runtime,
-        window_id,
-        input_entities: HashMap::new(),
-        #[cfg(feature = "components")]
-        components: crate::element::component_registry::ComponentRegistry::default(),
-    });
+    let view = cx.new(|_cx| ElixirRoot::new(window_state, runtime, window_id));
     let view_for_root = view.clone();
 
     let handle = cx

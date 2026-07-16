@@ -14,7 +14,7 @@ defmodule GPUI.Remote.FormControlsE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="flex flex-col w-[360px] h-[220px] p-4 gap-4 bg-slate-900">
+      <div class="flex flex-col w-[360px] h-[280px] p-4 gap-4 bg-slate-900">
         <GPUI.UI.switch
           id="remote-switch"
           label="Notifications"
@@ -38,6 +38,16 @@ defmodule GPUI.Remote.FormControlsE2ETest do
           </:trigger>
           <:content><text>Remote account</text></:content>
         </Overlay.popover>
+        <Overlay.dialog
+          id="remote-dialog"
+          open={assigns.dialog_open}
+          title="Remote dialog"
+          width={280}
+          phx-change="dialog_changed"
+        >
+          <:trigger><UI.button id="remote-dialog-trigger" label="Settings" /></:trigger>
+          <:content><UI.button id="remote-dialog-action" label="Dialog action" /></:content>
+        </Overlay.dialog>
       </div>
       """
     end
@@ -51,6 +61,9 @@ defmodule GPUI.Remote.FormControlsE2ETest do
 
     def handle_event("overlay_changed", %{value: open}, assigns),
       do: {:noreply, %{assigns | overlay_open: open}}
+
+    def handle_event("dialog_changed", %{value: open}, assigns),
+      do: {:noreply, %{assigns | dialog_open: open}}
   end
 
   defmodule FormApp do
@@ -61,8 +74,14 @@ defmodule GPUI.Remote.FormControlsE2ETest do
       {:ok,
        [
          window "GPUI Remote Form E2E" do
-           size(360, 220)
-           root(FormView, notifications: false, plan: "free", overlay_open: false)
+           size(360, 280)
+
+           root(FormView,
+             notifications: false,
+             plan: "free",
+             overlay_open: false,
+             dialog_open: false
+           )
          end
        ]}
     end
@@ -119,6 +138,21 @@ defmodule GPUI.Remote.FormControlsE2ETest do
     Desktop.eventually(fn ->
       assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
       assert false == get_in(updated, [:root, :assigns, :overlay_open])
+    end)
+
+    Desktop.click!(window_id, 55, 160)
+
+    Desktop.eventually(fn ->
+      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
+      assert true == get_in(updated, [:root, :assigns, :dialog_open])
+    end)
+
+    Process.sleep(150)
+    Desktop.key!(window_id, "Escape")
+
+    Desktop.eventually(fn ->
+      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
+      assert false == get_in(updated, [:root, :assigns, :dialog_open])
     end)
   end
 

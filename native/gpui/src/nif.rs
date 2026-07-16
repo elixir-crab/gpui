@@ -431,6 +431,15 @@ pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
             decode_generated_tooltip_trigger_component(term)
                 .map(ElementNode::TooltipTriggerComponent)
         }
+        GeneratedComponentKind::DialogComponent => {
+            decode_generated_dialog_component(term).map(ElementNode::DialogComponent)
+        }
+        GeneratedComponentKind::DialogTriggerComponent => {
+            decode_generated_dialog_trigger_component(term).map(ElementNode::DialogTriggerComponent)
+        }
+        GeneratedComponentKind::DialogContentComponent => {
+            decode_generated_dialog_content_component(term).map(ElementNode::DialogContentComponent)
+        }
         GeneratedComponentKind::CheckboxComponent => {
             decode_generated_checkbox_component(term).map(ElementNode::CheckboxComponent)
         }

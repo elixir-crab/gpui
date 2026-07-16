@@ -148,8 +148,8 @@ native styles rather than relying only on parent styles.
 `GPUI.UI.button/1`, `GPUI.UI.checkbox/1`, `GPUI.UI.input/1`,
 `GPUI.UI.select/1`, `GPUI.UI.combobox/1`, `GPUI.UI.switch/1`,
 `GPUI.UI.radio_group/1`, `GPUI.UI.accordion/1`, `GPUI.UI.tabs/1`,
-`GPUI.UI.slider/1`, `GPUI.UI.Overlay.tooltip/1`, and
-`GPUI.UI.Overlay.popover/1` render real
+`GPUI.UI.slider/1`, `GPUI.UI.Overlay.tooltip/1`,
+`GPUI.UI.Overlay.popover/1`, and `GPUI.UI.Overlay.dialog/1` render real
 [`gpui-component`](https://github.com/longbridge/gpui-component) controls.
 Interactive values are controlled by Elixir assigns, and native components
 require stable string IDs. Stateful component entities are reconciled by kind
@@ -258,6 +258,17 @@ alias GPUI.UI.Overlay
       <text>Account settings</text>
     </:content>
   </Overlay.popover>
+
+  <Overlay.dialog
+    id="settings-dialog"
+    open={assigns.dialog_open}
+    title="Settings"
+    width={520}
+    phx-change="dialog_changed"
+  >
+    <:trigger><UI.button id="settings-trigger" label="Settings" /></:trigger>
+    <:content><UI.input id="display-name" value={assigns.name} /></:content>
+  </Overlay.dialog>
 </div>
 """
 ```
@@ -265,8 +276,10 @@ alias GPUI.UI.Overlay
 Tooltip content is textual and uses the upstream native tooltip lifecycle;
 `delay` is expressed in milliseconds. Popover triggers support pointer and
 Enter/Space activation. Escape and outside clicks request closure, and focus
-returns to the prior trigger. Set
-`closable={false}` to disable outside-click dismissal.
+returns to the prior trigger. Set `closable={false}` to disable outside-click
+dismissal. Dialogs use the same controlled `open` contract, trap focus, restore
+prior focus, and accept arbitrary GPUI content; their `:trigger` slot is optional
+for programmatically opened dialogs.
 
 Checkbox and switch change events carry a boolean `:value`; input, select,
 radio-group, and combobox change events carry their controlled `:value`. Combobox search events carry the

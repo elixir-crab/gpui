@@ -57,6 +57,49 @@ defmodule GPUI.UI.Overlay do
   end
 
   @doc """
+  Builds a controlled modal dialog with an optional `:trigger` and one `:content` slot.
+
+  Changes to `open` are emitted through `phx-change`. The native dialog traps
+  focus while open and restores the previous focus when it closes. Escape and
+  overlay clicks request closure when enabled.
+  """
+  @spec dialog(map()) :: Element.t()
+  def dialog(assigns) when is_map(assigns) do
+    assigns =
+      assigns
+      |> Map.put_new(:open, false)
+      |> Map.put_new(:width, 448.0)
+      |> Map.put_new(:overlay, true)
+      |> Map.put_new(:closable, true)
+      |> Map.put_new(:keyboard, true)
+      |> Map.put_new(:close_button, true)
+
+    trigger = optional_slot!(assigns, :trigger, :dialog)
+    content = one_slot!(assigns, :content, :dialog)
+
+    validate_dialog!(assigns)
+    id = component_id!(assigns, :ui_dialog)
+
+    children =
+      List.wrap(
+        trigger &&
+          %Element{type: :ui_dialog_trigger, attrs: trigger.attrs, children: trigger.children}
+      ) ++
+        [%Element{type: :ui_dialog_content, attrs: content.attrs, children: content.children}]
+
+    %Element{
+      type: :ui_dialog,
+      attrs:
+        assigns
+        |> Map.drop([:children, :trigger, :content])
+        |> Map.put(:id, id)
+        |> Map.put(:width, assigns.width / 1)
+        |> Map.to_list(),
+      children: children
+    }
+  end
+
+  @doc """
   Builds a controlled popover with one `:trigger` and one `:content` slot.
 
   Changes to `open` are emitted through `phx-change`. Escape and, by default,
@@ -104,6 +147,23 @@ defmodule GPUI.UI.Overlay do
     }
   end
 
+  defp validate_dialog!(assigns) do
+    unless Map.get(assigns, :children, []) == [] do
+      raise ArgumentError, "dialog content must use :trigger and :content named slots"
+    end
+
+    boolean_attrs = Enum.map([:open, :overlay, :closable, :keyboard, :close_button], &assigns[&1])
+
+    unless Enum.all?(boolean_attrs, &is_boolean/1) do
+      raise ArgumentError,
+            "dialog open, overlay, closable, keyboard, and close_button must be booleans"
+    end
+
+    unless is_number(assigns.width) and assigns.width > 0 and assigns.width <= 4096 do
+      raise ArgumentError, "dialog width must be greater than 0 and at most 4096"
+    end
+  end
+
   defp tooltip_text!(children) do
     text = Enum.map_join(children, &tooltip_fragment!/1)
 
@@ -126,6 +186,14 @@ defmodule GPUI.UI.Overlay do
       id
     else
       raise ArgumentError, "#{type} requires a non-empty string id"
+    end
+  end
+
+  defp optional_slot!(assigns, name, component) do
+    case Map.get(assigns, name, []) do
+      [] -> nil
+      [%Slot{} = slot] -> slot
+      _other -> raise ArgumentError, "#{component} accepts at most one :#{name} slot"
     end
   end
 

@@ -327,6 +327,42 @@ defmodule GPUI.TemplateTest do
     end
   end
 
+  test "dialog compiles optional trigger and arbitrary content slots" do
+    assert %GPUI.Element{
+             type: :ui_dialog,
+             attrs: attrs,
+             children: [
+               %GPUI.Element{type: :ui_dialog_trigger},
+               %GPUI.Element{type: :ui_dialog_content, children: [content]}
+             ]
+           } =
+             ~GPUI"""
+             <Overlay.dialog
+               id="settings-dialog"
+               open={true}
+               title="Settings"
+               width={520}
+               phx-change="dialog_changed"
+             >
+               <:trigger><UI.button id="settings" label="Settings" /></:trigger>
+               <:content><UI.input id="display-name" value="Ada" /></:content>
+             </Overlay.dialog>
+             """
+
+    assert attrs[:id] == "settings-dialog"
+    assert attrs[:open]
+    assert attrs[:title] == "Settings"
+    assert attrs[:width] == 520.0
+    assert attrs[:"phx-change"] == "dialog_changed"
+    assert %GPUI.Element{type: :ui_input} = content
+  end
+
+  test "dialog requires one content slot" do
+    assert_raise ArgumentError, ~r/exactly one :content slot/, fn ->
+      Overlay.dialog(%{id: "dialog", children: []})
+    end
+  end
+
   test "popover uses explicit trigger and content slots" do
     assert %GPUI.Element{
              type: :ui_popover,

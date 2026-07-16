@@ -36,6 +36,16 @@ defmodule GPUI.Native.OverlayE2ETest do
           </:trigger>
           <:content>Open account help</:content>
         </Overlay.tooltip>
+        <Overlay.dialog
+          id="settings-dialog"
+          open={assigns.dialog_open}
+          title="Settings"
+          width={300}
+          phx-change="dialog_changed"
+        >
+          <:trigger><UI.button id="dialog-trigger" label="Settings" /></:trigger>
+          <:content><UI.button id="dialog-action" label="Dialog action" /></:content>
+        </Overlay.dialog>
       </div>
       """
     end
@@ -46,6 +56,9 @@ defmodule GPUI.Native.OverlayE2ETest do
 
     def handle_event("tooltip_clicked", _event, assigns),
       do: {:noreply, %{assigns | tooltip_clicked: true}}
+
+    def handle_event("dialog_changed", %{value: open}, assigns),
+      do: {:noreply, %{assigns | dialog_open: open}}
   end
 
   defmodule OverlayApp do
@@ -57,7 +70,7 @@ defmodule GPUI.Native.OverlayE2ETest do
        [
          window title do
            size(420, 240)
-           root(OverlayView, open: false, tooltip_clicked: false)
+           root(OverlayView, open: false, tooltip_clicked: false, dialog_open: false)
          end
        ]}
     end
@@ -92,6 +105,18 @@ defmodule GPUI.Native.OverlayE2ETest do
     Desktop.command!(["mousemove", "--sync", "--window", window_id, "360", "190"])
     Desktop.click!(window_id, 50, 72)
     Desktop.eventually(fn -> assert %{tooltip_clicked: true} = assigns(runtime) end)
+
+    Desktop.click!(window_id, 55, 116)
+    Desktop.eventually(fn -> assert %{dialog_open: true} = assigns(runtime) end)
+    Process.sleep(150)
+    Desktop.key!(window_id, "Escape")
+    Desktop.eventually(fn -> assert %{dialog_open: false} = assigns(runtime) end)
+
+    Desktop.key!(window_id, "space")
+    Desktop.eventually(fn -> assert %{dialog_open: true} = assigns(runtime) end)
+    Process.sleep(150)
+    Desktop.click!(window_id, 400, 210)
+    Desktop.eventually(fn -> assert %{dialog_open: false} = assigns(runtime) end)
   end
 
   defp assigns(runtime) do

@@ -56,6 +56,24 @@ defmodule GPUI.Schema do
     },
     %Component{tag: :ui_tooltip_trigger, kind: :tooltip_trigger_component, children: true},
     %Component{
+      tag: :ui_dialog,
+      kind: :dialog_component,
+      events: [change: :"phx-change"],
+      children: true,
+      attrs: [
+        id: :string,
+        open: :boolean,
+        title: :string,
+        width: {:default, :number, 448.0},
+        overlay: {:default, :boolean, true},
+        closable: {:default, :boolean, true},
+        keyboard: {:default, :boolean, true},
+        close_button: {:default, :boolean, true}
+      ]
+    },
+    %Component{tag: :ui_dialog_trigger, kind: :dialog_trigger_component, children: true},
+    %Component{tag: :ui_dialog_content, kind: :dialog_content_component, children: true},
+    %Component{
       tag: :ui_checkbox,
       kind: :checkbox_component,
       events: [change: :"phx-change"],

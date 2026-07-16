@@ -197,6 +197,29 @@ pub(crate) struct ComponentSlider {
     pub(crate) _subscription: gpui::Subscription,
 }
 
+#[derive(Clone)]
+pub(crate) struct DialogConfig {
+    pub(crate) title: Option<String>,
+    pub(crate) width: f32,
+    pub(crate) overlay: bool,
+    pub(crate) closable: bool,
+    pub(crate) keyboard: bool,
+    pub(crate) close_button: bool,
+    pub(crate) style: crate::StyleAttrs,
+}
+
+pub(crate) struct ComponentDialog {
+    pub(crate) binding: SharedBinding<bool>,
+    pub(crate) effective_open: Arc<Mutex<bool>>,
+    pub(crate) opened: Arc<Mutex<bool>>,
+    pub(crate) keyboard: Arc<Mutex<bool>>,
+    pub(crate) config: Arc<Mutex<DialogConfig>>,
+    pub(crate) trigger_focus: gpui::FocusHandle,
+    pub(crate) content_focus: gpui::FocusHandle,
+    pub(crate) content: gpui::Entity<crate::ElixirRoot>,
+    pub(crate) content_state: crate::SharedWindow,
+}
+
 pub(crate) struct ComponentPopover {
     pub(crate) binding: SharedBinding<bool>,
     pub(crate) effective_open: Arc<Mutex<bool>>,
@@ -208,6 +231,7 @@ pub(crate) struct ComponentPopover {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 enum ComponentKind {
+    Dialog,
     Input,
     Popover,
     Select,
@@ -231,6 +255,7 @@ impl ComponentKey {
 }
 
 enum StatefulComponent {
+    Dialog(ComponentDialog),
     Input(ComponentInput),
     Popover(ComponentPopover),
     Select(ComponentSelect),
@@ -249,9 +274,41 @@ impl ComponentRegistry {
         self.active.clear();
     }
 
-    pub(crate) fn finish_render(&mut self) {
+    pub(crate) fn finish_render(&mut self, window: &mut gpui::Window, cx: &mut gpui::App) {
+        use gpui_component::WindowExt;
+
+        let mut close_dialog = false;
+        for (key, component) in &self.entries {
+            if !self.active.contains(key) {
+                if let StatefulComponent::Dialog(dialog) = component {
+                    if let Ok(mut opened) = dialog.opened.lock() {
+                        close_dialog |= *opened;
+                        *opened = false;
+                    }
+                }
+            }
+        }
         self.entries
             .retain(|key, _component| self.active.contains(key));
+
+        if close_dialog {
+            window.defer(cx, |window, cx| window.close_dialog(cx));
+        }
+    }
+
+    pub(crate) fn dialog_mut(&mut self, id: &str) -> Option<&mut ComponentDialog> {
+        let key = ComponentKey::new(ComponentKind::Dialog, id);
+        self.active.insert(key.clone());
+        match self.entries.get_mut(&key) {
+            Some(StatefulComponent::Dialog(dialog)) => Some(dialog),
+            _other => None,
+        }
+    }
+
+    pub(crate) fn insert_dialog(&mut self, id: &str, dialog: ComponentDialog) {
+        let key = ComponentKey::new(ComponentKind::Dialog, id);
+        self.active.insert(key.clone());
+        self.entries.insert(key, StatefulComponent::Dialog(dialog));
     }
 
     pub(crate) fn input_mut(&mut self, id: &str) -> Option<&mut ComponentInput> {
