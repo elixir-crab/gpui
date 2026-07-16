@@ -27,6 +27,23 @@ defmodule GPUI.Schema do
       ]
     },
     %Component{
+      tag: :ui_popover,
+      kind: :popover_component,
+      events: [change: :"phx-change"],
+      children: true,
+      attrs: [
+        id: :string,
+        open: :boolean,
+        anchor:
+          {:enum,
+           ~w(top_left top_center top_right bottom_left bottom_center bottom_right left_center right_center)},
+        appearance: {:default, :boolean, true},
+        closable: {:default, :boolean, true}
+      ]
+    },
+    %Component{tag: :ui_popover_trigger, kind: :popover_trigger_component, children: true},
+    %Component{tag: :ui_popover_content, kind: :popover_content_component, children: true},
+    %Component{
       tag: :ui_checkbox,
       kind: :checkbox_component,
       events: [change: :"phx-change"],

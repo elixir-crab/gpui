@@ -9,6 +9,7 @@ pub(crate) mod event;
 use component::{
     render_accordion_component, render_accordion_item_component, render_button_component,
     render_checkbox_component, render_combobox_component, render_input_component,
+    render_popover_component, render_popover_content_component, render_popover_trigger_component,
     render_radio_group_component, render_select_component, render_slider_component,
     render_switch_component, render_tabs_component,
 };
@@ -25,6 +26,9 @@ pub(crate) enum ElementNode {
     },
     Input(InputNode),
     ButtonComponent(ButtonComponentNode),
+    PopoverComponent(PopoverComponentNode),
+    PopoverTriggerComponent(PopoverTriggerComponentNode),
+    PopoverContentComponent(PopoverContentComponentNode),
     CheckboxComponent(CheckboxComponentNode),
     InputComponent(InputComponentNode),
     SelectComponent(SelectComponentNode),
@@ -100,6 +104,13 @@ impl ElementNode {
             }
             Self::Input(input) => render_input_primitive(element_id, input, context),
             Self::ButtonComponent(button) => render_button_component(button, context),
+            Self::PopoverComponent(popover) => render_popover_component(popover, context),
+            Self::PopoverTriggerComponent(trigger) => {
+                render_popover_trigger_component(trigger, context)
+            }
+            Self::PopoverContentComponent(content) => {
+                render_popover_content_component(content, context)
+            }
             Self::CheckboxComponent(checkbox) => render_checkbox_component(checkbox, context),
             Self::InputComponent(input) => render_input_component(element_id, input, context),
             Self::SelectComponent(select) => render_select_component(select, context),

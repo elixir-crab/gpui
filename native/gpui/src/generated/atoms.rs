@@ -6,8 +6,9 @@ mod atoms {
         window_id, event, resource_type, size, title, root, tree, children, attrs,
         __type__, style, click = "click", phx_click = "phx-click", id = "id", label =
         "label", variant = "variant", disabled = "disabled", selected = "selected",
-        loading = "loading", outline = "outline", compact = "compact", checked =
-        "checked", change = "change", phx_change = "phx-change", value = "value",
+        loading = "loading", outline = "outline", compact = "compact", open = "open",
+        anchor = "anchor", appearance = "appearance", closable = "closable", change =
+        "change", phx_change = "phx-change", checked = "checked", value = "value",
         placeholder = "placeholder", cleanable = "cleanable", masked = "masked", options
         = "options", search_placeholder = "search_placeholder", search = "search",
         phx_search = "phx-search", orientation = "orientation", expanded = "expanded",

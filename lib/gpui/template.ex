@@ -66,13 +66,15 @@ defmodule GPUI.Template do
          caller
        )
        when component_type in [:remote_component, :local_component] do
-    children = children |> Enum.reject(&blank_text?/1) |> Enum.map(&compile_node(&1, caller))
-    component_call(component_type, name, attrs, children, caller)
+    children = Enum.reject(children, &blank_text?/1)
+    {slots, children} = Enum.split_with(children, &slot_node?/1)
+    children = Enum.map(children, &compile_node(&1, caller))
+    component_call(component_type, name, attrs, children, compile_slots(slots, caller), caller)
   end
 
   defp compile_node({:self_close, component_type, name, attrs, _meta}, caller)
        when component_type in [:remote_component, :local_component] do
-    component_call(component_type, name, attrs, [], caller)
+    component_call(component_type, name, attrs, [], [], caller)
   end
 
   defp compile_node({:text, text, _meta}, _caller), do: text
@@ -85,38 +87,85 @@ defmodule GPUI.Template do
     Code.string_to_quoted!(expr, line: meta.line, column: meta.column)
   end
 
-  defp component_call(:remote_component, name, attrs, children, _caller) do
-    {module, function} = remote_component_target(name)
+  defp component_call(:remote_component, name, attrs, children, slots, caller) do
+    {module, function} = remote_component_target(name, caller)
 
     quote do
       unquote(module).unquote(function)(
-        GPUI.Component.assigns(unquote(compile_attrs(attrs)), List.flatten(unquote(children)))
+        GPUI.Component.assigns(
+          unquote(compile_attrs(attrs)),
+          List.flatten(unquote(children)),
+          unquote(slots)
+        )
       )
     end
   end
 
-  defp component_call(:local_component, name, attrs, children, caller) do
+  defp component_call(:local_component, name, attrs, children, slots, caller) do
     function = compile_time_atom(name)
     module = caller.module
 
     quote do
       unquote(module).unquote(function)(
-        GPUI.Component.assigns(unquote(compile_attrs(attrs)), List.flatten(unquote(children)))
+        GPUI.Component.assigns(
+          unquote(compile_attrs(attrs)),
+          List.flatten(unquote(children)),
+          unquote(slots)
+        )
       )
     end
   end
 
-  defp remote_component_target(name) do
+  defp compile_slots(slots, caller) do
+    Enum.map(slots, fn
+      {:block, :slot, name, attrs, children, _open_meta, _close_meta} ->
+        children =
+          children
+          |> Enum.reject(&blank_text?/1)
+          |> Enum.map(&compile_node(&1, caller))
+
+        slot =
+          quote do
+            %GPUI.Component.Slot{
+              attrs: unquote(compile_attrs(attrs)),
+              children: List.flatten(unquote(children))
+            }
+          end
+
+        {compile_time_atom(name), slot}
+
+      {:self_close, :slot, name, attrs, _meta} ->
+        slot =
+          quote do
+            %GPUI.Component.Slot{attrs: unquote(compile_attrs(attrs)), children: []}
+          end
+
+        {compile_time_atom(name), slot}
+    end)
+  end
+
+  defp remote_component_target(name, caller) do
     parts = String.split(name, ".")
     last = List.last(parts)
 
     if function_name?(last) and match?([_, _ | _], parts) do
-      module = parts |> Enum.drop(-1) |> Module.concat()
+      module = parts |> Enum.drop(-1) |> expand_component_module(caller)
       {module, compile_time_atom(last)}
     else
-      {Module.concat(parts), :render}
+      {expand_component_module(parts, caller), :render}
     end
   end
+
+  defp expand_component_module(parts, caller) do
+    parts
+    |> Enum.map(&compile_time_atom/1)
+    |> then(&{:__aliases__, [], &1})
+    |> Macro.expand(caller)
+  end
+
+  defp slot_node?({:self_close, :slot, _name, _attrs, _meta}), do: true
+  defp slot_node?({:block, :slot, _name, _attrs, _children, _open_meta, _close_meta}), do: true
+  defp slot_node?(_node), do: false
 
   defp function_name?(<<first, _rest::binary>>), do: first in ?a..?z or first == ?_
   defp function_name?(""), do: false

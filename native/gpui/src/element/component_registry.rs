@@ -197,9 +197,19 @@ pub(crate) struct ComponentSlider {
     pub(crate) _subscription: gpui::Subscription,
 }
 
+pub(crate) struct ComponentPopover {
+    pub(crate) binding: SharedBinding<bool>,
+    pub(crate) effective_open: Arc<Mutex<bool>>,
+    pub(crate) trigger_focus: gpui::FocusHandle,
+    pub(crate) content_focus: gpui::FocusHandle,
+    pub(crate) previous_focus: Option<gpui::FocusHandle>,
+    pub(crate) rendered_open: bool,
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 enum ComponentKind {
     Input,
+    Popover,
     Select,
     Combobox,
     Slider,
@@ -222,6 +232,7 @@ impl ComponentKey {
 
 enum StatefulComponent {
     Input(ComponentInput),
+    Popover(ComponentPopover),
     Select(ComponentSelect),
     Combobox(ComponentCombobox),
     Slider(ComponentSlider),
@@ -256,6 +267,22 @@ impl ComponentRegistry {
         let key = ComponentKey::new(ComponentKind::Input, id);
         self.active.insert(key.clone());
         self.entries.insert(key, StatefulComponent::Input(input));
+    }
+
+    pub(crate) fn popover_mut(&mut self, id: &str) -> Option<&mut ComponentPopover> {
+        let key = ComponentKey::new(ComponentKind::Popover, id);
+        self.active.insert(key.clone());
+        match self.entries.get_mut(&key) {
+            Some(StatefulComponent::Popover(popover)) => Some(popover),
+            _other => None,
+        }
+    }
+
+    pub(crate) fn insert_popover(&mut self, id: &str, popover: ComponentPopover) {
+        let key = ComponentKey::new(ComponentKind::Popover, id);
+        self.active.insert(key.clone());
+        self.entries
+            .insert(key, StatefulComponent::Popover(popover));
     }
 
     pub(crate) fn select_mut(&mut self, id: &str) -> Option<&mut ComponentSelect> {

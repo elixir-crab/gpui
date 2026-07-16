@@ -3,6 +3,9 @@ defmodule GPUI.TemplateTest do
 
   import GPUI.Template, only: [sigil_GPUI: 2]
 
+  alias GPUI.UI
+  alias GPUI.UI.Overlay
+
   def card(assigns) do
     %GPUI.Element{type: :card, attrs: [title: assigns.title], children: assigns.children}
   end
@@ -288,6 +291,40 @@ defmodule GPUI.TemplateTest do
     assert slider_attrs[:step] == 0.5
     assert slider_attrs[:"phx-change"] == "volume_changed"
     assert slider_attrs[:"phx-release"] == "volume_released"
+  end
+
+  test "popover uses explicit trigger and content slots" do
+    assert %GPUI.Element{
+             type: :ui_popover,
+             attrs: attrs,
+             children: [
+               %GPUI.Element{type: :ui_popover_trigger, children: ["Open"]},
+               %GPUI.Element{type: :ui_popover_content, children: [content]}
+             ]
+           } =
+             ~GPUI"""
+             <Overlay.popover id="account-menu" open={true} phx-change="menu_changed">
+               <:trigger>Open</:trigger>
+               <:content>
+                 <UI.button id="profile" label="Profile" phx-click="profile" />
+               </:content>
+             </Overlay.popover>
+             """
+
+    assert attrs[:id] == "account-menu"
+    assert attrs[:open]
+    assert attrs[:appearance]
+    assert attrs[:closable]
+    assert attrs[:"phx-change"] == "menu_changed"
+    assert %GPUI.Element{type: :ui_button} = content
+  end
+
+  test "popover validates its structural slots" do
+    trigger = %GPUI.Component.Slot{children: ["Open"]}
+
+    assert_raise ArgumentError, ~r/exactly one :content slot/, fn ->
+      Overlay.popover(%{id: "menu", trigger: [trigger], children: []})
+    end
   end
 
   test "native UI components require stable ids" do

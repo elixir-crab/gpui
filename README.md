@@ -147,8 +147,8 @@ native styles rather than relying only on parent styles.
 
 `GPUI.UI.button/1`, `GPUI.UI.checkbox/1`, `GPUI.UI.input/1`,
 `GPUI.UI.select/1`, `GPUI.UI.combobox/1`, `GPUI.UI.switch/1`,
-`GPUI.UI.radio_group/1`, `GPUI.UI.accordion/1`, `GPUI.UI.tabs/1`, and
-`GPUI.UI.slider/1` render real
+`GPUI.UI.radio_group/1`, `GPUI.UI.accordion/1`, `GPUI.UI.tabs/1`,
+`GPUI.UI.slider/1`, and `GPUI.UI.Overlay.popover/1` render real
 [`gpui-component`](https://github.com/longbridge/gpui-component) controls. They
 are controlled by Elixir assigns and require stable string IDs. Stateful
 component entities are reconciled by kind and ID so focus, selection, open
@@ -233,6 +233,29 @@ snapshot crosses the display boundary:
 </div>
 """
 ```
+
+Aliases keep component-heavy templates concise, and overlays use ordinary HEEx
+named slots instead of synthetic slot components:
+
+```elixir
+alias GPUI.UI
+alias GPUI.UI.Overlay
+
+~GPUI"""
+<Overlay.popover id="account-menu" open={assigns.menu_open} phx-change="menu_changed">
+  <:trigger>
+    <UI.button id="account-trigger" label="Account" />
+  </:trigger>
+  <:content>
+    <text>Account settings</text>
+  </:content>
+</Overlay.popover>
+"""
+```
+
+Popover triggers support pointer and Enter/Space activation. Escape and outside
+clicks request closure, and focus returns to the prior trigger. Set
+`closable={false}` to disable outside-click dismissal.
 
 Checkbox and switch change events carry a boolean `:value`; input, select,
 radio-group, and combobox change events carry their controlled `:value`. Combobox search events carry the

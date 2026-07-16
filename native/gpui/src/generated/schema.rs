@@ -4,6 +4,9 @@
 pub enum GeneratedComponentKind {
     Container,
     ButtonComponent,
+    PopoverComponent,
+    PopoverTriggerComponent,
+    PopoverContentComponent,
     CheckboxComponent,
     InputComponent,
     SelectComponent,
@@ -588,6 +591,91 @@ pub(crate) fn decode_generated_button_component(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct PopoverComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) open: bool,
+    pub(crate) anchor: Option<String>,
+    pub(crate) appearance: bool,
+    pub(crate) closable: bool,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) change: Option<String>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_popover_component(
+    term: Term,
+) -> NifResult<PopoverComponentNode> {
+    Ok(PopoverComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        open: component_bool_attr(term, atoms::open())?.unwrap_or(false),
+        anchor: component_enum_attr(
+            term,
+            atoms::anchor(),
+            &[
+                "top_left",
+                "top_center",
+                "top_right",
+                "bottom_left",
+                "bottom_center",
+                "bottom_right",
+                "left_center",
+                "right_center",
+            ],
+        )?,
+        appearance: component_bool_attr(term, atoms::appearance())?.unwrap_or(true),
+        closable: component_bool_attr(term, atoms::closable())?.unwrap_or(true),
+        children: decode_children(term)?,
+        change: component_string_attr(term, atoms::phx_change())?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct PopoverTriggerComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) children: Vec<ElementNode>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_popover_trigger_component(
+    term: Term,
+) -> NifResult<PopoverTriggerComponentNode> {
+    Ok(PopoverTriggerComponentNode {
+        style: decode_style(term)?,
+        children: decode_children(term)?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct PopoverContentComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) children: Vec<ElementNode>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_popover_content_component(
+    term: Term,
+) -> NifResult<PopoverContentComponentNode> {
+    Ok(PopoverContentComponentNode {
+        style: decode_style(term)?,
+        children: decode_children(term)?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct CheckboxComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -942,6 +1030,9 @@ pub enum GeneratedElementTag {
     Div,
     Button,
     UiButton,
+    UiPopover,
+    UiPopoverTrigger,
+    UiPopoverContent,
     UiCheckbox,
     UiInput,
     UiSelect,
@@ -969,6 +1060,9 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "div" => GeneratedElementTag::Div,
         "button" => GeneratedElementTag::Button,
         "ui_button" => GeneratedElementTag::UiButton,
+        "ui_popover" => GeneratedElementTag::UiPopover,
+        "ui_popover_trigger" => GeneratedElementTag::UiPopoverTrigger,
+        "ui_popover_content" => GeneratedElementTag::UiPopoverContent,
         "ui_checkbox" => GeneratedElementTag::UiCheckbox,
         "ui_input" => GeneratedElementTag::UiInput,
         "ui_select" => GeneratedElementTag::UiSelect,
@@ -997,6 +1091,13 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::Div => GeneratedComponentKind::Container,
         GeneratedElementTag::Button => GeneratedComponentKind::Container,
         GeneratedElementTag::UiButton => GeneratedComponentKind::ButtonComponent,
+        GeneratedElementTag::UiPopover => GeneratedComponentKind::PopoverComponent,
+        GeneratedElementTag::UiPopoverTrigger => {
+            GeneratedComponentKind::PopoverTriggerComponent
+        }
+        GeneratedElementTag::UiPopoverContent => {
+            GeneratedComponentKind::PopoverContentComponent
+        }
         GeneratedElementTag::UiCheckbox => GeneratedComponentKind::CheckboxComponent,
         GeneratedElementTag::UiInput => GeneratedComponentKind::InputComponent,
         GeneratedElementTag::UiSelect => GeneratedComponentKind::SelectComponent,

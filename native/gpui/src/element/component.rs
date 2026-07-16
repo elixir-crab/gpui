@@ -1,4 +1,5 @@
 mod accordion;
+mod overlay;
 mod radio;
 mod slider;
 mod switch;
@@ -18,7 +19,8 @@ use super::SelectOptionNode;
 use super::{
     apply_generated_render_styles, AccordionComponentNode, AccordionItemComponentNode,
     ButtonComponentNode, CheckboxComponentNode, ComboboxComponentNode, ElementRenderContext,
-    InputComponentNode, RadioGroupComponentNode, SelectComponentNode, SliderComponentNode,
+    InputComponentNode, PopoverComponentNode, PopoverContentComponentNode,
+    PopoverTriggerComponentNode, RadioGroupComponentNode, SelectComponentNode, SliderComponentNode,
     SwitchComponentNode, TabsComponentNode,
 };
 use crate::gpui;
@@ -571,6 +573,27 @@ pub(crate) fn render_combobox_component(
     };
 
     apply_component_styles(element, node.style).into_any_element()
+}
+
+pub(crate) fn render_popover_component(
+    node: PopoverComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    overlay::render(node, context)
+}
+
+pub(crate) fn render_popover_trigger_component(
+    node: PopoverTriggerComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    overlay::render_trigger(node, context)
+}
+
+pub(crate) fn render_popover_content_component(
+    node: PopoverContentComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    overlay::render_content(node, context)
 }
 
 #[cfg(feature = "components")]

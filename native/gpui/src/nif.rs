@@ -413,6 +413,17 @@ pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
         GeneratedComponentKind::ButtonComponent => {
             decode_generated_button_component(term).map(ElementNode::ButtonComponent)
         }
+        GeneratedComponentKind::PopoverComponent => {
+            decode_generated_popover_component(term).map(ElementNode::PopoverComponent)
+        }
+        GeneratedComponentKind::PopoverTriggerComponent => {
+            decode_generated_popover_trigger_component(term)
+                .map(ElementNode::PopoverTriggerComponent)
+        }
+        GeneratedComponentKind::PopoverContentComponent => {
+            decode_generated_popover_content_component(term)
+                .map(ElementNode::PopoverContentComponent)
+        }
         GeneratedComponentKind::CheckboxComponent => {
             decode_generated_checkbox_component(term).map(ElementNode::CheckboxComponent)
         }

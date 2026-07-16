@@ -125,6 +125,10 @@ defmodule GPUI.Test do
   @spec toggle(GenServer.server(), String.t(), boolean(), keyword()) :: Snapshot.t()
   def toggle(runtime, event, checked, opts \\ []), do: change(runtime, event, checked, opts)
 
+  @doc "Changes the controlled open state of an overlay."
+  @spec open(GenServer.server(), String.t(), boolean(), keyword()) :: Snapshot.t()
+  def open(runtime, event, open, opts \\ []), do: change(runtime, event, open, opts)
+
   @doc "Selects a controlled component option and returns the updated snapshot."
   @spec select(GenServer.server(), String.t(), String.t() | nil, keyword()) :: Snapshot.t()
   def select(runtime, event, value, opts \\ []), do: change(runtime, event, value, opts)

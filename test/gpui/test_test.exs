@@ -4,6 +4,8 @@ defmodule GPUI.TestTest do
   defmodule TestView do
     use GPUI.View
 
+    alias GPUI.UI.Overlay
+
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
@@ -56,6 +58,14 @@ defmodule GPUI.TestTest do
           phx-change="volume_changed"
           phx-release="volume_released"
         />
+        <Overlay.popover
+          id="account-menu"
+          open={assigns.overlay_open}
+          phx-change="overlay_changed"
+        >
+          <:trigger>Account</:trigger>
+          <:content>Profile</:content>
+        </Overlay.popover>
       </div>
       """
     end
@@ -93,6 +103,9 @@ defmodule GPUI.TestTest do
 
     def handle_event("volume_released", %{value: volume}, assigns),
       do: {:noreply, %{assigns | released_volume: volume}}
+
+    def handle_event("overlay_changed", %{value: open}, assigns),
+      do: {:noreply, %{assigns | overlay_open: open}}
   end
 
   defmodule TestApp do
@@ -114,7 +127,8 @@ defmodule GPUI.TestTest do
              expanded: [],
              section: "general",
              volume: 25.0,
-             released_volume: nil
+             released_volume: nil,
+             overlay_open: false
            )
          end
        ]}
@@ -134,7 +148,8 @@ defmodule GPUI.TestTest do
         expanded: [],
         section: "general",
         volume: 25.0,
-        released_volume: nil
+        released_volume: nil,
+        overlay_open: false
       )
 
     assert %GPUI.Element{type: :ui_button} = find!(tree, id: "increment")
@@ -156,7 +171,8 @@ defmodule GPUI.TestTest do
              expanded: [],
              section: "general",
              volume: 25.0,
-             released_volume: nil
+             released_volume: nil,
+             overlay_open: false
            } = assigns(runtime)
 
     assert %{title: "Primary"} = window_snapshot(runtime, "Primary")
@@ -178,6 +194,7 @@ defmodule GPUI.TestTest do
     select(runtime, "section_changed", "advanced")
     slide(runtime, "volume_changed", 40.0)
     release(runtime, "volume_released", 40.0)
+    open(runtime, "overlay_changed", true)
 
     assert %{
              language: nil,
@@ -188,7 +205,8 @@ defmodule GPUI.TestTest do
              expanded: ["security"],
              section: "advanced",
              volume: 40.0,
-             released_volume: 40.0
+             released_volume: 40.0,
+             overlay_open: true
            } = assigns(runtime)
   end
 

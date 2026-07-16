@@ -93,6 +93,7 @@ defmodule GPUI.MixProject do
         Displays: [GPUI.Display, GPUI.Display.Native],
         Elements: [
           GPUI.UI,
+          GPUI.UI.Overlay,
           GPUI.Element,
           GPUI.Event,
           GPUI.Raster,
