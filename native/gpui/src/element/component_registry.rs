@@ -208,35 +208,26 @@ pub(crate) struct DialogConfig {
     pub(crate) style: crate::StyleAttrs,
 }
 
-pub(crate) struct ComponentDialog {
+pub(crate) struct ComponentOverlayState {
     pub(crate) binding: SharedBinding<bool>,
     pub(crate) effective_open: Arc<Mutex<bool>>,
+    pub(crate) trigger_focus: gpui::FocusHandle,
+    pub(crate) content_focus: gpui::FocusHandle,
+}
+
+pub(crate) struct ComponentDialog {
+    pub(crate) overlay: ComponentOverlayState,
     pub(crate) opened: Arc<Mutex<bool>>,
     pub(crate) keyboard: Arc<Mutex<bool>>,
     pub(crate) config: Arc<Mutex<DialogConfig>>,
-    pub(crate) trigger_focus: gpui::FocusHandle,
-    pub(crate) content_focus: gpui::FocusHandle,
     pub(crate) content: gpui::Entity<crate::ElixirRoot>,
     pub(crate) content_state: crate::SharedWindow,
 }
 
 pub(crate) struct ComponentPopover {
-    pub(crate) binding: SharedBinding<bool>,
-    pub(crate) effective_open: Arc<Mutex<bool>>,
-    pub(crate) trigger_focus: gpui::FocusHandle,
-    pub(crate) content_focus: gpui::FocusHandle,
+    pub(crate) overlay: ComponentOverlayState,
     pub(crate) previous_focus: Option<gpui::FocusHandle>,
     pub(crate) rendered_open: bool,
-}
-
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-enum ComponentKind {
-    Dialog,
-    Input,
-    Popover,
-    Select,
-    Combobox,
-    Slider,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -254,20 +245,13 @@ impl ComponentKey {
     }
 }
 
-enum StatefulComponent {
-    Dialog(ComponentDialog),
-    Input(ComponentInput),
-    Popover(ComponentPopover),
-    Select(ComponentSelect),
-    Combobox(ComponentCombobox),
-    Slider(ComponentSlider),
-}
-
 #[derive(Default)]
 pub(crate) struct ComponentRegistry {
     entries: HashMap<ComponentKey, StatefulComponent>,
     active: HashSet<ComponentKey>,
 }
+
+include!("../generated/component_registry.rs");
 
 impl ComponentRegistry {
     pub(crate) fn begin_render(&mut self) {
@@ -294,97 +278,5 @@ impl ComponentRegistry {
         if close_dialog {
             window.defer(cx, |window, cx| window.close_dialog(cx));
         }
-    }
-
-    pub(crate) fn dialog_mut(&mut self, id: &str) -> Option<&mut ComponentDialog> {
-        let key = ComponentKey::new(ComponentKind::Dialog, id);
-        self.active.insert(key.clone());
-        match self.entries.get_mut(&key) {
-            Some(StatefulComponent::Dialog(dialog)) => Some(dialog),
-            _other => None,
-        }
-    }
-
-    pub(crate) fn insert_dialog(&mut self, id: &str, dialog: ComponentDialog) {
-        let key = ComponentKey::new(ComponentKind::Dialog, id);
-        self.active.insert(key.clone());
-        self.entries.insert(key, StatefulComponent::Dialog(dialog));
-    }
-
-    pub(crate) fn input_mut(&mut self, id: &str) -> Option<&mut ComponentInput> {
-        let key = ComponentKey::new(ComponentKind::Input, id);
-        self.active.insert(key.clone());
-        match self.entries.get_mut(&key) {
-            Some(StatefulComponent::Input(input)) => Some(input),
-            _other => None,
-        }
-    }
-
-    pub(crate) fn insert_input(&mut self, id: &str, input: ComponentInput) {
-        let key = ComponentKey::new(ComponentKind::Input, id);
-        self.active.insert(key.clone());
-        self.entries.insert(key, StatefulComponent::Input(input));
-    }
-
-    pub(crate) fn popover_mut(&mut self, id: &str) -> Option<&mut ComponentPopover> {
-        let key = ComponentKey::new(ComponentKind::Popover, id);
-        self.active.insert(key.clone());
-        match self.entries.get_mut(&key) {
-            Some(StatefulComponent::Popover(popover)) => Some(popover),
-            _other => None,
-        }
-    }
-
-    pub(crate) fn insert_popover(&mut self, id: &str, popover: ComponentPopover) {
-        let key = ComponentKey::new(ComponentKind::Popover, id);
-        self.active.insert(key.clone());
-        self.entries
-            .insert(key, StatefulComponent::Popover(popover));
-    }
-
-    pub(crate) fn select_mut(&mut self, id: &str) -> Option<&mut ComponentSelect> {
-        let key = ComponentKey::new(ComponentKind::Select, id);
-        self.active.insert(key.clone());
-        match self.entries.get_mut(&key) {
-            Some(StatefulComponent::Select(select)) => Some(select),
-            _other => None,
-        }
-    }
-
-    pub(crate) fn insert_select(&mut self, id: &str, select: ComponentSelect) {
-        let key = ComponentKey::new(ComponentKind::Select, id);
-        self.active.insert(key.clone());
-        self.entries.insert(key, StatefulComponent::Select(select));
-    }
-
-    pub(crate) fn combobox_mut(&mut self, id: &str) -> Option<&mut ComponentCombobox> {
-        let key = ComponentKey::new(ComponentKind::Combobox, id);
-        self.active.insert(key.clone());
-        match self.entries.get_mut(&key) {
-            Some(StatefulComponent::Combobox(combobox)) => Some(combobox),
-            _other => None,
-        }
-    }
-
-    pub(crate) fn insert_combobox(&mut self, id: &str, combobox: ComponentCombobox) {
-        let key = ComponentKey::new(ComponentKind::Combobox, id);
-        self.active.insert(key.clone());
-        self.entries
-            .insert(key, StatefulComponent::Combobox(combobox));
-    }
-
-    pub(crate) fn slider_mut(&mut self, id: &str) -> Option<&mut ComponentSlider> {
-        let key = ComponentKey::new(ComponentKind::Slider, id);
-        self.active.insert(key.clone());
-        match self.entries.get_mut(&key) {
-            Some(StatefulComponent::Slider(slider)) => Some(slider),
-            _other => None,
-        }
-    }
-
-    pub(crate) fn insert_slider(&mut self, id: &str, slider: ComponentSlider) {
-        let key = ComponentKey::new(ComponentKind::Slider, id);
-        self.active.insert(key.clone());
-        self.entries.insert(key, StatefulComponent::Slider(slider));
     }
 }

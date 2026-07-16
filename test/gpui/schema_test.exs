@@ -41,6 +41,16 @@ defmodule GPUI.SchemaTest do
     assert :ui_popover in GPUI.Schema.identified_tags()
     assert :ui_tooltip in GPUI.Schema.identified_tags()
     assert :ui_dialog in GPUI.Schema.identified_tags()
+
+    assert Enum.map(GPUI.Schema.stateful_components(), & &1.kind) == [
+             :popover_component,
+             :dialog_component,
+             :input_component,
+             :select_component,
+             :combobox_component,
+             :slider_component
+           ]
+
     assert :raster in GPUI.Schema.resources()
     assert :border_radius in GPUI.Schema.styles()
     assert :font_weight in GPUI.Schema.styles()

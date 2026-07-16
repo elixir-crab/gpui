@@ -397,10 +397,10 @@ pub(crate) fn window_tree(window: Term) -> NifResult<ElementNode> {
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
     if let Ok(text) = term.decode::<String>() {
-        return Ok(ElementNode::Text {
+        return Ok(ElementNode::Text(TextNode {
             text,
             style: StyleAttrs::default(),
-        });
+        }));
     }
 
     let type_term = term.map_get(atoms::type_atom())?;
@@ -408,86 +408,20 @@ pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
 
     let tag = decode_generated_element_tag(node_type.as_str());
 
-    match generated_component_kind(tag) {
-        GeneratedComponentKind::Container => decode_container(term, tag),
-        GeneratedComponentKind::ButtonComponent => {
-            decode_generated_button_component(term).map(ElementNode::ButtonComponent)
-        }
-        GeneratedComponentKind::PopoverComponent => {
-            decode_generated_popover_component(term).map(ElementNode::PopoverComponent)
-        }
-        GeneratedComponentKind::PopoverTriggerComponent => {
-            decode_generated_popover_trigger_component(term)
-                .map(ElementNode::PopoverTriggerComponent)
-        }
-        GeneratedComponentKind::PopoverContentComponent => {
-            decode_generated_popover_content_component(term)
-                .map(ElementNode::PopoverContentComponent)
-        }
-        GeneratedComponentKind::TooltipComponent => {
-            decode_generated_tooltip_component(term).map(ElementNode::TooltipComponent)
-        }
-        GeneratedComponentKind::TooltipTriggerComponent => {
-            decode_generated_tooltip_trigger_component(term)
-                .map(ElementNode::TooltipTriggerComponent)
-        }
-        GeneratedComponentKind::DialogComponent => {
-            decode_generated_dialog_component(term).map(ElementNode::DialogComponent)
-        }
-        GeneratedComponentKind::DialogTriggerComponent => {
-            decode_generated_dialog_trigger_component(term).map(ElementNode::DialogTriggerComponent)
-        }
-        GeneratedComponentKind::DialogContentComponent => {
-            decode_generated_dialog_content_component(term).map(ElementNode::DialogContentComponent)
-        }
-        GeneratedComponentKind::CheckboxComponent => {
-            decode_generated_checkbox_component(term).map(ElementNode::CheckboxComponent)
-        }
-        GeneratedComponentKind::InputComponent => {
-            decode_generated_input_component(term).map(ElementNode::InputComponent)
-        }
-        GeneratedComponentKind::SelectComponent => {
-            decode_generated_select_component(term).map(ElementNode::SelectComponent)
-        }
-        GeneratedComponentKind::ComboboxComponent => {
-            decode_generated_combobox_component(term).map(ElementNode::ComboboxComponent)
-        }
-        GeneratedComponentKind::SliderComponent => {
-            decode_generated_slider_component(term).map(ElementNode::SliderComponent)
-        }
-        GeneratedComponentKind::TabsComponent => {
-            decode_generated_tabs_component(term).map(ElementNode::TabsComponent)
-        }
-        GeneratedComponentKind::SwitchComponent => {
-            decode_generated_switch_component(term).map(ElementNode::SwitchComponent)
-        }
-        GeneratedComponentKind::RadioGroupComponent => {
-            decode_generated_radio_group_component(term).map(ElementNode::RadioGroupComponent)
-        }
-        GeneratedComponentKind::AccordionComponent => {
-            decode_generated_accordion_component(term).map(ElementNode::AccordionComponent)
-        }
-        GeneratedComponentKind::AccordionItemComponent => {
-            decode_generated_accordion_item_component(term).map(ElementNode::AccordionItemComponent)
-        }
-        GeneratedComponentKind::Input => decode_input(term),
-        GeneratedComponentKind::Image => decode_image(term),
-        GeneratedComponentKind::Text => Ok(ElementNode::Text {
-            text: decode_text_children(term)?,
-            style: decode_style(term)?,
-        }),
-        GeneratedComponentKind::Unknown => Err(rustler::Error::BadArg),
-    }
+    decode_generated_element_node(term, tag)
 }
 
 #[cfg(feature = "real-gpui")]
-fn decode_container(term: Term, tag: GeneratedElementTag) -> NifResult<ElementNode> {
-    Ok(ElementNode::Div {
+pub(crate) fn decode_container_node(
+    term: Term,
+    tag: GeneratedElementTag,
+) -> NifResult<ElementNode> {
+    Ok(ElementNode::Div(ContainerNode {
         tag,
         style: decode_style(term)?,
         children: decode_children(term)?,
         click: string_attr(term, atoms::phx_click()),
-    })
+    }))
 }
 
 #[cfg(feature = "real-gpui")]
@@ -538,7 +472,7 @@ pub(crate) fn decode_radio_options(term: Term) -> NifResult<Vec<RadioOptionNode>
 }
 
 #[cfg(feature = "real-gpui")]
-fn decode_input(term: Term) -> NifResult<ElementNode> {
+pub(crate) fn decode_input_node(term: Term, _tag: GeneratedElementTag) -> NifResult<ElementNode> {
     Ok(ElementNode::Input(InputNode {
         style: decode_style(term)?,
         value: string_attr(term, atoms::value()).unwrap_or_default(),
@@ -642,7 +576,7 @@ pub(crate) fn component_enum_attr(
 }
 
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_image(term: Term) -> NifResult<ElementNode> {
+pub(crate) fn decode_image_node(term: Term, _tag: GeneratedElementTag) -> NifResult<ElementNode> {
     let attrs = term.map_get(atoms::attrs())?;
     let raster = attrs.map_get(atoms::raster())?;
 
@@ -652,19 +586,27 @@ pub(crate) fn decode_image(term: Term) -> NifResult<ElementNode> {
             .is_ok_and(|value| value == "resource_ref")
         {
             let id = decode_resource_ref(raster)?;
-            return Ok(ElementNode::Image {
+            return Ok(ElementNode::Image(ImageNode {
                 image: ImageData::Ref(id),
                 style: decode_style(term)?,
-            });
+            }));
         }
     }
 
     let raster = decode_raster_resource(raster)?;
     raster.validate()?;
-    Ok(ElementNode::Image {
+    Ok(ElementNode::Image(ImageNode {
         image: ImageData::Raster(raster),
         style: decode_style(term)?,
-    })
+    }))
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_text_node(term: Term, _tag: GeneratedElementTag) -> NifResult<ElementNode> {
+    Ok(ElementNode::Text(TextNode {
+        text: decode_text_children(term)?,
+        style: decode_style(term)?,
+    }))
 }
 
 #[cfg(feature = "real-gpui")]

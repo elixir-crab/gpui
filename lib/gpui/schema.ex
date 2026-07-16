@@ -29,6 +29,7 @@ defmodule GPUI.Schema do
     %Component{
       tag: :ui_popover,
       kind: :popover_component,
+      stateful: true,
       events: [change: :"phx-change"],
       children: true,
       attrs: [
@@ -58,6 +59,7 @@ defmodule GPUI.Schema do
     %Component{
       tag: :ui_dialog,
       kind: :dialog_component,
+      stateful: true,
       events: [change: :"phx-change"],
       children: true,
       attrs: [
@@ -89,6 +91,7 @@ defmodule GPUI.Schema do
     %Component{
       tag: :ui_input,
       kind: :input_component,
+      stateful: true,
       events: [change: :"phx-change"],
       attrs: [
         id: :string,
@@ -104,6 +107,7 @@ defmodule GPUI.Schema do
     %Component{
       tag: :ui_select,
       kind: :select_component,
+      stateful: true,
       events: [change: :"phx-change"],
       attrs: [
         id: :string,
@@ -118,6 +122,7 @@ defmodule GPUI.Schema do
     %Component{
       tag: :ui_combobox,
       kind: :combobox_component,
+      stateful: true,
       events: [change: :"phx-change", search: :"phx-search"],
       attrs: [
         id: :string,
@@ -194,6 +199,7 @@ defmodule GPUI.Schema do
     %Component{
       tag: :ui_slider,
       kind: :slider_component,
+      stateful: true,
       events: [change: :"phx-change", release: :"phx-release"],
       attrs: [
         id: :string,
@@ -426,6 +432,7 @@ defmodule GPUI.Schema do
   ]
 
   def components, do: @components
+  def stateful_components, do: Enum.filter(@components, & &1.stateful)
   def styles, do: Enum.map(@styles, & &1.name)
   def style_specs, do: @styles
   def resources, do: Enum.map(@resources, & &1.name)

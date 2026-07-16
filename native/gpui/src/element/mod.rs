@@ -6,54 +6,29 @@ pub(crate) mod component_registry;
 pub(crate) mod controlled;
 pub(crate) mod event;
 
-use component::{
-    render_accordion_component, render_accordion_item_component, render_button_component,
-    render_checkbox_component, render_combobox_component, render_dialog_component,
-    render_dialog_content_component, render_dialog_trigger_component, render_input_component,
-    render_popover_component, render_popover_content_component, render_popover_trigger_component,
-    render_radio_group_component, render_select_component, render_slider_component,
-    render_switch_component, render_tabs_component, render_tooltip_component,
-    render_tooltip_trigger_component,
-};
 use event::{apply_click_event, apply_input_events};
 
 #[cfg(feature = "real-gpui")]
 #[derive(Clone, Debug)]
-pub(crate) enum ElementNode {
-    Div {
-        tag: GeneratedElementTag,
-        style: StyleAttrs,
-        children: Vec<ElementNode>,
-        click: Option<String>,
-    },
-    Input(InputNode),
-    ButtonComponent(ButtonComponentNode),
-    PopoverComponent(PopoverComponentNode),
-    PopoverTriggerComponent(PopoverTriggerComponentNode),
-    PopoverContentComponent(PopoverContentComponentNode),
-    TooltipComponent(TooltipComponentNode),
-    TooltipTriggerComponent(TooltipTriggerComponentNode),
-    DialogComponent(DialogComponentNode),
-    DialogTriggerComponent(DialogTriggerComponentNode),
-    DialogContentComponent(DialogContentComponentNode),
-    CheckboxComponent(CheckboxComponentNode),
-    InputComponent(InputComponentNode),
-    SelectComponent(SelectComponentNode),
-    ComboboxComponent(ComboboxComponentNode),
-    SwitchComponent(SwitchComponentNode),
-    RadioGroupComponent(RadioGroupComponentNode),
-    SliderComponent(SliderComponentNode),
-    TabsComponent(TabsComponentNode),
-    AccordionComponent(AccordionComponentNode),
-    AccordionItemComponent(AccordionItemComponentNode),
-    Image {
-        image: ImageData,
-        style: StyleAttrs,
-    },
-    Text {
-        text: String,
-        style: StyleAttrs,
-    },
+pub(crate) struct ContainerNode {
+    pub(crate) tag: GeneratedElementTag,
+    pub(crate) style: StyleAttrs,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) click: Option<String>,
+}
+
+#[cfg(feature = "real-gpui")]
+#[derive(Clone, Debug)]
+pub(crate) struct ImageNode {
+    pub(crate) image: ImageData,
+    pub(crate) style: StyleAttrs,
+}
+
+#[cfg(feature = "real-gpui")]
+#[derive(Clone, Debug)]
+pub(crate) struct TextNode {
+    pub(crate) text: String,
+    pub(crate) style: StyleAttrs,
 }
 
 #[cfg(feature = "real-gpui")]
@@ -93,58 +68,35 @@ impl ElementRenderContext<'_, '_> {
 #[cfg(feature = "real-gpui")]
 impl ElementNode {
     pub(crate) fn empty_root() -> Self {
-        Self::Div {
+        Self::Div(ContainerNode {
             tag: GeneratedElementTag::Div,
             style: StyleAttrs::default(),
             children: Vec::new(),
             click: None,
-        }
+        })
     }
 
     pub(crate) fn render(self, context: &mut ElementRenderContext<'_, '_>) -> gpui::AnyElement {
         let element_id = context.allocate_element_id();
 
         match self {
-            Self::Text { text, style } => render_text_primitive(text, style),
-            Self::Image { image, style } => {
-                render_image_primitive(image, style, context.runtime.clone(), context.window_id)
-            }
+            Self::Text(node) => render_text_primitive(node.text, node.style),
+            Self::Image(node) => render_image_primitive(
+                node.image,
+                node.style,
+                context.runtime.clone(),
+                context.window_id,
+            ),
             Self::Input(input) => render_input_primitive(element_id, input, context),
-            Self::ButtonComponent(button) => render_button_component(button, context),
-            Self::PopoverComponent(popover) => render_popover_component(popover, context),
-            Self::PopoverTriggerComponent(trigger) => {
-                render_popover_trigger_component(trigger, context)
-            }
-            Self::PopoverContentComponent(content) => {
-                render_popover_content_component(content, context)
-            }
-            Self::TooltipComponent(tooltip) => render_tooltip_component(tooltip, context),
-            Self::TooltipTriggerComponent(trigger) => {
-                render_tooltip_trigger_component(trigger, context)
-            }
-            Self::DialogComponent(dialog) => render_dialog_component(dialog, context),
-            Self::DialogTriggerComponent(trigger) => {
-                render_dialog_trigger_component(trigger, context)
-            }
-            Self::DialogContentComponent(content) => {
-                render_dialog_content_component(content, context)
-            }
-            Self::CheckboxComponent(checkbox) => render_checkbox_component(checkbox, context),
-            Self::InputComponent(input) => render_input_component(element_id, input, context),
-            Self::SelectComponent(select) => render_select_component(select, context),
-            Self::ComboboxComponent(combobox) => render_combobox_component(combobox, context),
-            Self::SwitchComponent(switch) => render_switch_component(switch, context),
-            Self::RadioGroupComponent(radio) => render_radio_group_component(radio, context),
-            Self::SliderComponent(slider) => render_slider_component(slider, context),
-            Self::TabsComponent(tabs) => render_tabs_component(tabs, context),
-            Self::AccordionComponent(accordion) => render_accordion_component(accordion, context),
-            Self::AccordionItemComponent(item) => render_accordion_item_component(item, context),
-            Self::Div {
-                tag,
-                style,
-                children,
-                click,
-            } => render_container_primitive(element_id, tag, style, children, click, context),
+            Self::Div(node) => render_container_primitive(
+                element_id,
+                node.tag,
+                node.style,
+                node.children,
+                node.click,
+                context,
+            ),
+            component => render_generated_component_node(component, element_id, context),
         }
     }
 }

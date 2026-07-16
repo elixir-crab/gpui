@@ -12,7 +12,7 @@
 - Added packaged `GPUI.Test` ExUnit helpers and `GPUI.Test.Display` for consumer tests.
 - Added a typed persistent native component registry with structural duplicate-ID validation.
 - Added controlled `GPUI.UI.select/1`, native popup interaction, and semantic test support.
-- Generated native component contracts and decoders from the component schema.
+- Generated native component contracts, element variants, decoder/render dispatch, and state-registry accessors from the component schema.
 - Added persistent `GPUI.UI.combobox/1` with search events, dynamic filtering, clearing, and local/remote native coverage.
 - Added controlled `GPUI.UI.slider/1` with generated numeric contracts, change/release events, persistent reconciliation, and native coverage.
 - Added controlled `GPUI.UI.tabs/1` backed directly by `gpui-component` tab bars.

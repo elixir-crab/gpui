@@ -69,6 +69,10 @@ generate "native-schema", "native/gpui/src/generated/schema.rs" do
   content(GPUI.Codegen.Native.Schema.source())
 end
 
+generate "component-registry", "native/gpui/src/generated/component_registry.rs" do
+  content(GPUI.Codegen.Native.Schema.registry_source())
+end
+
 nifs = [
   start_runtime: [],
   open_window: [schedule: :dirty_cpu],

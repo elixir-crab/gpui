@@ -9,7 +9,7 @@ pub(super) fn render_dialog(
     node: DialogComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
-    use super::super::component_registry::{ComponentDialog, DialogConfig};
+    use super::super::component_registry::{ComponentDialog, ComponentOverlayState, DialogConfig};
     use super::super::controlled::ControlledBinding;
     use gpui::{
         AppContext, InteractiveElement, IntoElement, MouseButton, ParentElement, Role,
@@ -86,13 +86,15 @@ pub(super) fn render_dialog(
         context.components.insert_dialog(
             &node.id,
             ComponentDialog {
-                binding,
-                effective_open,
+                overlay: ComponentOverlayState {
+                    binding,
+                    effective_open,
+                    trigger_focus: context.cx.focus_handle(),
+                    content_focus,
+                },
                 opened,
                 keyboard,
                 config,
-                trigger_focus: context.cx.focus_handle(),
-                content_focus,
                 content: content_view,
                 content_state,
             },
@@ -121,6 +123,7 @@ pub(super) fn render_dialog(
         };
     }
     let force_open = dialog
+        .overlay
         .binding
         .lock()
         .map(|mut binding| {
@@ -129,22 +132,23 @@ pub(super) fn render_dialog(
         })
         .unwrap_or(true);
     if force_open {
-        if let Ok(mut effective_open) = dialog.effective_open.lock() {
+        if let Ok(mut effective_open) = dialog.overlay.effective_open.lock() {
             *effective_open = node.open;
         }
     }
     let open = dialog
+        .overlay
         .effective_open
         .lock()
         .map(|open| *open)
         .unwrap_or(node.open);
     let was_open = dialog.opened.lock().map(|opened| *opened).unwrap_or(false);
 
-    let binding = dialog.binding.clone();
-    let effective_open = dialog.effective_open.clone();
+    let binding = dialog.overlay.binding.clone();
+    let effective_open = dialog.overlay.effective_open.clone();
     let opened = dialog.opened.clone();
-    let trigger_focus = dialog.trigger_focus.clone();
-    let content_focus = dialog.content_focus.clone();
+    let trigger_focus = dialog.overlay.trigger_focus.clone();
+    let content_focus = dialog.overlay.content_focus.clone();
     let content_view = dialog.content.clone();
     let config = dialog.config.clone();
     let runtime = context.runtime.clone();
@@ -310,12 +314,12 @@ fn dialog_slots(
 
 #[cfg(feature = "components")]
 fn dialog_content_tree(content: DialogContentComponentNode) -> crate::ElementNode {
-    crate::ElementNode::Div {
+    crate::ElementNode::Div(crate::ContainerNode {
         tag: crate::GeneratedElementTag::Div,
         style: content.style,
         children: content.children,
         click: None,
-    }
+    })
 }
 
 pub(super) fn render_dialog_trigger(
@@ -399,7 +403,7 @@ pub(super) fn render(
     node: PopoverComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
-    use super::super::component_registry::ComponentPopover;
+    use super::super::component_registry::{ComponentOverlayState, ComponentPopover};
     use super::super::controlled::ControlledBinding;
     use gpui::{
         InteractiveElement, IntoElement, MouseButton, ParentElement, Role,
@@ -417,13 +421,15 @@ pub(super) fn render(
         context.components.insert_popover(
             &node.id,
             ComponentPopover {
-                binding: Arc::new(Mutex::new(ControlledBinding::new(
-                    node.change.clone(),
-                    node.open,
-                ))),
-                effective_open: Arc::new(Mutex::new(node.open)),
-                trigger_focus: context.cx.focus_handle(),
-                content_focus: context.cx.focus_handle(),
+                overlay: ComponentOverlayState {
+                    binding: Arc::new(Mutex::new(ControlledBinding::new(
+                        node.change.clone(),
+                        node.open,
+                    ))),
+                    effective_open: Arc::new(Mutex::new(node.open)),
+                    trigger_focus: context.cx.focus_handle(),
+                    content_focus: context.cx.focus_handle(),
+                },
                 previous_focus: None,
                 rendered_open: node.open,
             },
@@ -435,6 +441,7 @@ pub(super) fn render(
         .popover_mut(&node.id)
         .expect("component popover should exist");
     let force_open = popover
+        .overlay
         .binding
         .lock()
         .map(|mut binding| {
@@ -443,11 +450,12 @@ pub(super) fn render(
         })
         .unwrap_or(true);
     if force_open {
-        if let Ok(mut effective_open) = popover.effective_open.lock() {
+        if let Ok(mut effective_open) = popover.overlay.effective_open.lock() {
             *effective_open = node.open;
         }
     }
     let open = popover
+        .overlay
         .effective_open
         .lock()
         .map(|open| *open)
@@ -456,29 +464,34 @@ pub(super) fn render(
     if popover.rendered_open != open {
         if open {
             if !popover
+                .overlay
                 .content_focus
                 .contains_focused(context.window, context.cx)
             {
                 popover.previous_focus = context.window.focused(context.cx);
-                popover.content_focus.focus(context.window, context.cx);
+                popover
+                    .overlay
+                    .content_focus
+                    .focus(context.window, context.cx);
             }
         } else if popover
+            .overlay
             .content_focus
             .contains_focused(context.window, context.cx)
         {
             popover
                 .previous_focus
                 .take()
-                .unwrap_or_else(|| popover.trigger_focus.clone())
+                .unwrap_or_else(|| popover.overlay.trigger_focus.clone())
                 .focus(context.window, context.cx);
         }
         popover.rendered_open = open;
     }
 
-    let binding = popover.binding.clone();
-    let effective_open = popover.effective_open.clone();
-    let trigger_focus = popover.trigger_focus.clone();
-    let content_focus = popover.content_focus.clone();
+    let binding = popover.overlay.binding.clone();
+    let effective_open = popover.overlay.effective_open.clone();
+    let trigger_focus = popover.overlay.trigger_focus.clone();
+    let content_focus = popover.overlay.content_focus.clone();
     let runtime = context.runtime.clone();
     let window_id = context.window_id;
     let trigger_runtime = runtime.clone();

@@ -1156,6 +1156,35 @@ pub(crate) fn decode_generated_slider_component(
 }
 
 
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+pub(crate) enum ElementNode {
+    Div(ContainerNode),
+    Input(InputNode),
+    ButtonComponent(ButtonComponentNode),
+    PopoverComponent(PopoverComponentNode),
+    PopoverTriggerComponent(PopoverTriggerComponentNode),
+    PopoverContentComponent(PopoverContentComponentNode),
+    TooltipComponent(TooltipComponentNode),
+    TooltipTriggerComponent(TooltipTriggerComponentNode),
+    DialogComponent(DialogComponentNode),
+    DialogTriggerComponent(DialogTriggerComponentNode),
+    DialogContentComponent(DialogContentComponentNode),
+    CheckboxComponent(CheckboxComponentNode),
+    InputComponent(InputComponentNode),
+    SelectComponent(SelectComponentNode),
+    ComboboxComponent(ComboboxComponentNode),
+    SwitchComponent(SwitchComponentNode),
+    RadioGroupComponent(RadioGroupComponentNode),
+    AccordionComponent(AccordionComponentNode),
+    AccordionItemComponent(AccordionItemComponentNode),
+    TabsComponent(TabsComponentNode),
+    SliderComponent(SliderComponentNode),
+    Image(ImageNode),
+    Text(TextNode),
+}
+
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GeneratedElementTag {
     Div,
@@ -1271,6 +1300,155 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::Img => GeneratedComponentKind::Image,
         GeneratedElementTag::Text => GeneratedComponentKind::Text,
         GeneratedElementTag::Unknown => GeneratedComponentKind::Unknown,
+    }
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_element_node(
+    term: Term,
+    tag: GeneratedElementTag,
+) -> NifResult<ElementNode> {
+    match generated_component_kind(tag) {
+        GeneratedComponentKind::Container => nif::decode_container_node(term, tag),
+        GeneratedComponentKind::ButtonComponent => {
+            decode_generated_button_component(term).map(ElementNode::ButtonComponent)
+        }
+        GeneratedComponentKind::PopoverComponent => {
+            decode_generated_popover_component(term).map(ElementNode::PopoverComponent)
+        }
+        GeneratedComponentKind::PopoverTriggerComponent => {
+            decode_generated_popover_trigger_component(term)
+                .map(ElementNode::PopoverTriggerComponent)
+        }
+        GeneratedComponentKind::PopoverContentComponent => {
+            decode_generated_popover_content_component(term)
+                .map(ElementNode::PopoverContentComponent)
+        }
+        GeneratedComponentKind::TooltipComponent => {
+            decode_generated_tooltip_component(term).map(ElementNode::TooltipComponent)
+        }
+        GeneratedComponentKind::TooltipTriggerComponent => {
+            decode_generated_tooltip_trigger_component(term)
+                .map(ElementNode::TooltipTriggerComponent)
+        }
+        GeneratedComponentKind::DialogComponent => {
+            decode_generated_dialog_component(term).map(ElementNode::DialogComponent)
+        }
+        GeneratedComponentKind::DialogTriggerComponent => {
+            decode_generated_dialog_trigger_component(term)
+                .map(ElementNode::DialogTriggerComponent)
+        }
+        GeneratedComponentKind::DialogContentComponent => {
+            decode_generated_dialog_content_component(term)
+                .map(ElementNode::DialogContentComponent)
+        }
+        GeneratedComponentKind::CheckboxComponent => {
+            decode_generated_checkbox_component(term).map(ElementNode::CheckboxComponent)
+        }
+        GeneratedComponentKind::InputComponent => {
+            decode_generated_input_component(term).map(ElementNode::InputComponent)
+        }
+        GeneratedComponentKind::SelectComponent => {
+            decode_generated_select_component(term).map(ElementNode::SelectComponent)
+        }
+        GeneratedComponentKind::ComboboxComponent => {
+            decode_generated_combobox_component(term).map(ElementNode::ComboboxComponent)
+        }
+        GeneratedComponentKind::SwitchComponent => {
+            decode_generated_switch_component(term).map(ElementNode::SwitchComponent)
+        }
+        GeneratedComponentKind::RadioGroupComponent => {
+            decode_generated_radio_group_component(term)
+                .map(ElementNode::RadioGroupComponent)
+        }
+        GeneratedComponentKind::AccordionComponent => {
+            decode_generated_accordion_component(term)
+                .map(ElementNode::AccordionComponent)
+        }
+        GeneratedComponentKind::AccordionItemComponent => {
+            decode_generated_accordion_item_component(term)
+                .map(ElementNode::AccordionItemComponent)
+        }
+        GeneratedComponentKind::TabsComponent => {
+            decode_generated_tabs_component(term).map(ElementNode::TabsComponent)
+        }
+        GeneratedComponentKind::SliderComponent => {
+            decode_generated_slider_component(term).map(ElementNode::SliderComponent)
+        }
+        GeneratedComponentKind::Text => nif::decode_text_node(term, tag),
+        GeneratedComponentKind::Input => nif::decode_input_node(term, tag),
+        GeneratedComponentKind::Image => nif::decode_image_node(term, tag),
+        GeneratedComponentKind::Unknown => Err(rustler::Error::BadArg),
+    }
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn render_generated_component_node(
+    node: ElementNode,
+    element_id: usize,
+    context: &mut element::ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    match node {
+        ElementNode::ButtonComponent(node) => {
+            element::component::render_button_component(node, context)
+        }
+        ElementNode::PopoverComponent(node) => {
+            element::component::render_popover_component(node, context)
+        }
+        ElementNode::PopoverTriggerComponent(node) => {
+            element::component::render_popover_trigger_component(node, context)
+        }
+        ElementNode::PopoverContentComponent(node) => {
+            element::component::render_popover_content_component(node, context)
+        }
+        ElementNode::TooltipComponent(node) => {
+            element::component::render_tooltip_component(node, context)
+        }
+        ElementNode::TooltipTriggerComponent(node) => {
+            element::component::render_tooltip_trigger_component(node, context)
+        }
+        ElementNode::DialogComponent(node) => {
+            element::component::render_dialog_component(node, context)
+        }
+        ElementNode::DialogTriggerComponent(node) => {
+            element::component::render_dialog_trigger_component(node, context)
+        }
+        ElementNode::DialogContentComponent(node) => {
+            element::component::render_dialog_content_component(node, context)
+        }
+        ElementNode::CheckboxComponent(node) => {
+            element::component::render_checkbox_component(node, context)
+        }
+        ElementNode::InputComponent(node) => {
+            element::component::render_input_component(element_id, node, context)
+        }
+        ElementNode::SelectComponent(node) => {
+            element::component::render_select_component(node, context)
+        }
+        ElementNode::ComboboxComponent(node) => {
+            element::component::render_combobox_component(node, context)
+        }
+        ElementNode::SwitchComponent(node) => {
+            element::component::render_switch_component(node, context)
+        }
+        ElementNode::RadioGroupComponent(node) => {
+            element::component::render_radio_group_component(node, context)
+        }
+        ElementNode::AccordionComponent(node) => {
+            element::component::render_accordion_component(node, context)
+        }
+        ElementNode::AccordionItemComponent(node) => {
+            element::component::render_accordion_item_component(node, context)
+        }
+        ElementNode::TabsComponent(node) => {
+            element::component::render_tabs_component(node, context)
+        }
+        ElementNode::SliderComponent(node) => {
+            element::component::render_slider_component(node, context)
+        }
+        _ => unreachable!(),
     }
 }
 

@@ -632,7 +632,6 @@ pub(crate) fn render_popover_content_component(
     overlay::render_content(node, context)
 }
 
-#[cfg(feature = "components")]
 pub(crate) fn render_switch_component(
     node: SwitchComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
@@ -640,15 +639,6 @@ pub(crate) fn render_switch_component(
     switch::render(node, context)
 }
 
-#[cfg(not(feature = "components"))]
-pub(crate) fn render_switch_component(
-    node: SwitchComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    switch::render(node, context)
-}
-
-#[cfg(feature = "components")]
 pub(crate) fn render_radio_group_component(
     node: RadioGroupComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
@@ -656,15 +646,6 @@ pub(crate) fn render_radio_group_component(
     radio::render(node, context)
 }
 
-#[cfg(not(feature = "components"))]
-pub(crate) fn render_radio_group_component(
-    node: RadioGroupComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    radio::render(node, context)
-}
-
-#[cfg(feature = "components")]
 pub(crate) fn render_accordion_component(
     node: AccordionComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
@@ -672,7 +653,6 @@ pub(crate) fn render_accordion_component(
     accordion::render(node, context)
 }
 
-#[cfg(feature = "components")]
 pub(crate) fn render_accordion_item_component(
     node: AccordionItemComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
@@ -680,23 +660,6 @@ pub(crate) fn render_accordion_item_component(
     accordion::render_item(node, context)
 }
 
-#[cfg(not(feature = "components"))]
-pub(crate) fn render_accordion_component(
-    node: AccordionComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    accordion::render(node, context)
-}
-
-#[cfg(not(feature = "components"))]
-pub(crate) fn render_accordion_item_component(
-    node: AccordionItemComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    accordion::render_item(node, context)
-}
-
-#[cfg(feature = "components")]
 pub(crate) fn render_tabs_component(
     node: TabsComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
@@ -704,23 +667,6 @@ pub(crate) fn render_tabs_component(
     tabs::render(node, context)
 }
 
-#[cfg(not(feature = "components"))]
-pub(crate) fn render_tabs_component(
-    node: TabsComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    tabs::render(node, context)
-}
-
-#[cfg(feature = "components")]
-pub(crate) fn render_slider_component(
-    node: SliderComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    slider::render(node, context)
-}
-
-#[cfg(not(feature = "components"))]
 pub(crate) fn render_slider_component(
     node: SliderComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
