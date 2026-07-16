@@ -17,7 +17,9 @@ defmodule GPUI.Runtime do
           display: pid(),
           display_module: module(),
           events: [map()],
-          poll_interval: pos_integer() | nil
+          poll_interval: pos_integer() | nil,
+          revision: non_neg_integer(),
+          subscribers: %{pid() => reference()}
         }
 
   @spec start_link(keyword()) :: GenServer.on_start()
@@ -53,6 +55,20 @@ defmodule GPUI.Runtime do
   def inject_event(runtime, event),
     do: GenServer.call(runtime, {:inject_event, event}, @call_timeout)
 
+  @doc "Subscribes the calling process to synchronized runtime updates."
+  @spec subscribe(GenServer.server()) :: :ok
+  def subscribe(runtime), do: GenServer.call(runtime, :subscribe, @call_timeout)
+
+  @doc "Unsubscribes the calling process from runtime updates."
+  @spec unsubscribe(GenServer.server()) :: :ok
+  def unsubscribe(runtime), do: GenServer.call(runtime, :unsubscribe, @call_timeout)
+
+  @doc "Waits until a complete display frame follows the current window state."
+  @spec await_frame(GenServer.server(), pos_integer(), pos_integer()) ::
+          :ok | {:error, term()}
+  def await_frame(runtime, window_id, timeout \\ 5_000),
+    do: GPUI.Display.call_await_frame(runtime, window_id, timeout)
+
   @impl GenServer
   def init(opts) do
     display_module = Keyword.get(opts, :display, GPUI.Display.Native)
@@ -70,7 +86,9 @@ defmodule GPUI.Runtime do
         display: display,
         display_module: display_module,
         events: [],
-        poll_interval: poll_interval(opts)
+        poll_interval: poll_interval(opts),
+        revision: 0,
+        subscribers: %{}
       }
 
       schedule_poll(state)
@@ -93,21 +111,39 @@ defmodule GPUI.Runtime do
 
   def handle_call(:events, _from, state), do: {:reply, Enum.reverse(state.events), state}
 
+  def handle_call(:subscribe, {pid, _tag}, state) do
+    state =
+      if Map.has_key?(state.subscribers, pid) do
+        state
+      else
+        put_in(state.subscribers[pid], Process.monitor(pid))
+      end
+
+    {:reply, :ok, state}
+  end
+
+  def handle_call(:unsubscribe, {pid, _tag}, state) do
+    {monitor, subscribers} = Map.pop(state.subscribers, pid)
+    if monitor, do: Process.demonitor(monitor, [:flush])
+    {:reply, :ok, %{state | subscribers: subscribers}}
+  end
+
   def handle_call({:put_resource, id, resource}, _from, state) do
     :ok = GPUI.Session.put_resource(state.session, id, resource)
-    reply = sync_display(state)
+    {reply, state} = sync_and_publish(state)
     {:reply, reply, state}
   end
 
   def handle_call({:drop_resource, id}, _from, state) do
     :ok = GPUI.Session.drop_resource(state.session, id)
-    reply = sync_display(state)
+    {reply, state} = sync_and_publish(state)
     {:reply, reply, state}
   end
 
   def handle_call({:dispatch_event, event}, _from, state) do
     {handled, snapshot} = GPUI.Session.dispatch_event(state.session, event)
     :ok = state.display_module.sync(state.display, snapshot)
+    state = publish_update(state, [handled], snapshot)
     {:reply, {handled, snapshot}, state}
   end
 
@@ -120,7 +156,30 @@ defmodule GPUI.Runtime do
     {:reply, state.display_module.inject_event(state.display, event), state}
   end
 
+  def handle_call({:await_frame, window_id, timeout}, from, state) do
+    :ok =
+      GPUI.Display.reply_after_frame(
+        state.display_module,
+        state.display,
+        window_id,
+        timeout,
+        from
+      )
+
+    {:noreply, state}
+  end
+
   @impl GenServer
+  def handle_info({:DOWN, monitor, :process, pid, _reason}, state) do
+    state =
+      case Map.get(state.subscribers, pid) do
+        ^monitor -> %{state | subscribers: Map.delete(state.subscribers, pid)}
+        _other -> state
+      end
+
+    {:noreply, state}
+  end
+
   def handle_info(:poll_display, state) do
     {handled, state} = drain_display_events(state)
     events = handled |> Enum.reverse(state.events) |> Enum.take(@event_history_limit)
@@ -138,15 +197,37 @@ defmodule GPUI.Runtime do
 
   defp drain_display_events(state) do
     {:ok, events} = state.display_module.drain_events(state.display)
-
     {handled, snapshot} = GPUI.Session.dispatch_events(state.session, events)
 
-    if events != [], do: :ok = state.display_module.sync(state.display, snapshot)
+    state =
+      if events == [] do
+        state
+      else
+        :ok = state.display_module.sync(state.display, snapshot)
+        publish_update(state, handled, snapshot)
+      end
+
     {handled, state}
   end
 
-  defp sync_display(state) do
-    state.display_module.sync(state.display, GPUI.Session.snapshot(state.session))
+  defp sync_and_publish(state) do
+    snapshot = GPUI.Session.snapshot(state.session)
+
+    case state.display_module.sync(state.display, snapshot) do
+      :ok -> {:ok, publish_update(state, [], snapshot)}
+      {:error, _reason} = error -> {error, state}
+    end
+  end
+
+  defp publish_update(state, events, snapshot) do
+    revision = state.revision + 1
+    update = %GPUI.Runtime.Update{revision: revision, events: events, snapshot: snapshot}
+
+    Enum.each(state.subscribers, fn {pid, _monitor} ->
+      send(pid, {:gpui, self(), update})
+    end)
+
+    %{state | revision: revision}
   end
 
   defp poll_interval(opts) do

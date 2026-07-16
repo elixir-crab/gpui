@@ -18,6 +18,11 @@ pub(super) fn render(
     use gpui_component::slider::{Slider, SliderEvent, SliderScale, SliderState};
     use std::sync::{Arc, Mutex};
 
+    let vertical = node.orientation.as_deref() == Some("vertical");
+    let component_height = node
+        .style
+        .height
+        .unwrap_or(if vertical { 120.0 } else { 24.0 });
     let config = SliderConfig {
         min: node.min as f32,
         max: node.max as f32,
@@ -28,6 +33,9 @@ pub(super) fn render(
     if !config.accepts(native_value) {
         return apply_component_styles(gpui::div(), node.style).into_any_element();
     }
+    let mut component_style = node.style.clone();
+    component_style.height = Some(component_height);
+    component_style.flex_grow = Some(0.0);
 
     let rebuild = context
         .components
@@ -145,7 +153,7 @@ pub(super) fn render(
     }
 
     let mut element = Slider::new(&slider.state).disabled(node.disabled);
-    if node.orientation.as_deref() == Some("vertical") {
+    if vertical {
         element = element.vertical();
     } else {
         element = element.horizontal();
@@ -154,7 +162,7 @@ pub(super) fn render(
         element = element.reverse();
     }
 
-    apply_component_styles(element, node.style).into_any_element()
+    apply_component_styles(element, component_style).into_any_element()
 }
 
 #[cfg(feature = "components")]

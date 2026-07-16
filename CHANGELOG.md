@@ -21,6 +21,11 @@
 - Split advanced native component renderers by responsibility and expanded local/remote lifecycle coverage.
 - Added controlled `GPUI.UI.switch/1` and `radio_group/1` with disabled radio options and local/remote native coverage.
 - Added Switch Enter/Space activation, Radio Group arrow navigation with disabled-option skipping, roving tab stops, and visual Switch loading feedback.
+- Added monitored `GPUI.Runtime` update subscriptions with typed revisions, normalized events, and synchronized snapshots.
+- Added generation-based native frame barriers for local and remote displays without blocking runtime message processing.
+- Added deterministic Xvfb visual captures for components and overlays, plus explicit single-purpose screenshot helpers.
+- Added structured ExDoc guides and replaced the long-form README with a concise project introduction.
+- Preserved upstream component style defaults and constrained full-size Select, Combobox, and Slider controls to their intended layout heights.
 
 ## 0.1.0
 

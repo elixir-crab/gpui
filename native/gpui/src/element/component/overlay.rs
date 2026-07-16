@@ -27,9 +27,7 @@ pub(super) fn render_dialog(
     let content_tree = dialog_content_tree(content);
 
     if context.components.dialog_mut(&node.id).is_none() {
-        let content_state = Arc::new(crate::WindowState {
-            tree: Mutex::new(content_tree.clone()),
-        });
+        let content_state = Arc::new(crate::WindowState::new(content_tree.clone()));
         let binding = Arc::new(Mutex::new(ControlledBinding::new(
             node.change.clone(),
             node.open,

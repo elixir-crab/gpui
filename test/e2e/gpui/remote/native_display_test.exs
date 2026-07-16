@@ -182,19 +182,21 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
       assert "remote" = get_in(updated, [:root, :assigns, :name])
     end)
 
+    Desktop.request_frame!(window_id)
+    assert :ok = GPUI.Remote.Client.await_frame(client, 1)
+    Desktop.click!(window_id, 160, 239)
+
+    Desktop.eventually(fn ->
+      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
+      assert 50.0 = get_in(updated, [:root, :assigns, :volume])
+    end)
+
     Desktop.click!(window_id, 80, 190)
     Desktop.click!(window_id, 80, 263)
 
     Desktop.eventually(fn ->
       assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
       assert "elixir" = get_in(updated, [:root, :assigns, :language])
-    end)
-
-    Desktop.click!(window_id, 160, 250)
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert 50.0 = get_in(updated, [:root, :assigns, :volume])
     end)
   end
 

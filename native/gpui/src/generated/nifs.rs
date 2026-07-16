@@ -30,6 +30,15 @@ fn close_window<'a>(
     close_window_impl(env, runtime, window_id)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
+fn await_frame<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+    timeout_ms: u64,
+) -> NifResult<Term<'a>> {
+    await_frame_impl(env, runtime, window_id, timeout_ms)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
 fn stop_runtime<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,

@@ -40,7 +40,8 @@ defmodule GPUI.MixProject do
         test_e2e: :test,
         test_all: :test,
         "gpui.release.check": :release,
-        "gpui.test.e2e": :e2e
+        "gpui.test.e2e": :e2e,
+        "gpui.visual.capture": :e2e
       ]
     ]
   end
@@ -75,7 +76,7 @@ defmodule GPUI.MixProject do
 
   defp package_files do
     files =
-      ~w(lib codegen config/config.exs native/gpui/Cargo.toml native/gpui/Cargo.lock native/gpui/src mix.exs rustq.exs README.md CHANGELOG.md LICENSE)
+      ~w(lib codegen guides config/config.exs native/gpui/Cargo.toml native/gpui/Cargo.lock native/gpui/src mix.exs rustq.exs README.md CHANGELOG.md LICENSE)
 
     if File.exists?("checksum-Elixir.GPUI.Native.exs") do
       ["checksum-Elixir.GPUI.Native.exs" | files]
@@ -87,9 +88,36 @@ defmodule GPUI.MixProject do
   defp docs do
     [
       main: "readme",
-      extras: ["README.md", "CHANGELOG.md"],
+      source_ref: "v#{@version}",
+      extras: [
+        "README.md",
+        "CHANGELOG.md",
+        "guides/introduction/getting-started.md",
+        "guides/architecture/sessions-and-displays.md",
+        "guides/ui/components-and-styling.md",
+        "guides/ui/overlays-and-menus.md",
+        "guides/remote/remote-displays.md",
+        "guides/testing/testing.md",
+        "guides/deployment/native-builds.md"
+      ],
+      groups_for_extras: [
+        Introduction: ~r/guides\/introduction\//,
+        Architecture: ~r/guides\/architecture\//,
+        UI: ~r/guides\/ui\//,
+        Remote: ~r/guides\/remote\//,
+        Testing: ~r/guides\/testing\//,
+        Deployment: ~r/guides\/deployment\//
+      ],
       groups_for_modules: [
-        Core: [GPUI, GPUI.Application, GPUI.Session, GPUI.Snapshot, GPUI.Runtime, GPUI.View],
+        Core: [
+          GPUI,
+          GPUI.Application,
+          GPUI.Session,
+          GPUI.Snapshot,
+          GPUI.Runtime,
+          GPUI.Runtime.Update,
+          GPUI.View
+        ],
         Displays: [GPUI.Display, GPUI.Display.Native],
         Elements: [
           GPUI.UI,

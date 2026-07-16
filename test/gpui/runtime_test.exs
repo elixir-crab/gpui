@@ -12,6 +12,10 @@ defmodule GPUI.RuntimeTest do
       </div>
       """
     end
+
+    @impl GPUI.View
+    def handle_event("rename", %{value: name}, assigns),
+      do: {:noreply, %{assigns | name: name}}
   end
 
   defmodule DemoApp do
@@ -34,6 +38,34 @@ defmodule GPUI.RuntimeTest do
 
     @impl GPUI.Application
     def mount(_args), do: {:ok, []}
+  end
+
+  defmodule BlockingFrameDisplay do
+    @behaviour GPUI.Display
+
+    use Agent
+
+    @impl GPUI.Display
+    def start_link(opts), do: Agent.start_link(fn -> Keyword.fetch!(opts, :owner) end)
+
+    @impl GPUI.Display
+    def sync(_display, _snapshot), do: :ok
+
+    @impl GPUI.Display
+    def drain_events(_display), do: {:ok, []}
+
+    @impl GPUI.Display
+    def inject_event(_display, _event), do: {:ok, :ok}
+
+    @impl GPUI.Display
+    def await_frame(display, _window_id, _timeout) do
+      owner = Agent.get(display, & &1)
+      send(owner, {:frame_waiting, self()})
+
+      receive do
+        :release_frame -> :ok
+      end
+    end
   end
 
   test "application modules start renderer-independent sessions with a display" do
@@ -75,6 +107,89 @@ defmodule GPUI.RuntimeTest do
            } = GPUI.Runtime.snapshot(runtime)
 
     assert module =~ "HelloView"
+  end
+
+  test "runtime subscriptions deliver synchronized typed updates" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(app: DemoApp, display: GPUI.Test.Display)
+
+    assert :ok = GPUI.Runtime.subscribe(runtime)
+
+    {_handled, snapshot} =
+      GPUI.Runtime.dispatch_event(runtime, %{
+        type: :change,
+        window_id: 1,
+        event: "rename",
+        value: "BEAM"
+      })
+
+    assert_receive {:gpui, ^runtime,
+                    %GPUI.Runtime.Update{
+                      revision: 1,
+                      events: [%{event: "rename"}],
+                      snapshot: ^snapshot
+                    }}
+
+    assert :ok = GPUI.Runtime.unsubscribe(runtime)
+
+    GPUI.Runtime.dispatch_event(runtime, %{
+      type: :change,
+      window_id: 1,
+      event: "rename",
+      value: "OTP"
+    })
+
+    refute_receive {:gpui, ^runtime, %GPUI.Runtime.Update{}}
+  end
+
+  test "runtime removes subscribers when their processes exit" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(app: DemoApp, display: GPUI.Test.Display)
+
+    owner = self()
+
+    subscriber =
+      spawn(fn ->
+        :ok = GPUI.Runtime.subscribe(runtime)
+        send(owner, {:subscribed, self()})
+
+        receive do
+          :stop -> :ok
+        end
+      end)
+
+    assert_receive {:subscribed, ^subscriber}
+    %{subscribers: %{^subscriber => monitor}} = :sys.get_state(runtime)
+    :erlang.trace(runtime, true, [:receive])
+    Process.exit(subscriber, :kill)
+
+    assert_receive {:trace, ^runtime, :receive, {:DOWN, ^monitor, :process, ^subscriber, :killed}}
+    refute Map.has_key?(:sys.get_state(runtime).subscribers, subscriber)
+    :erlang.trace(runtime, false, [:receive])
+  end
+
+  test "runtime frame barriers delegate to the active display" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(app: DemoApp, display: GPUI.Test.Display)
+
+    assert :ok = GPUI.Runtime.await_frame(runtime, 1)
+    assert {:error, :window_not_found} = GPUI.Runtime.await_frame(runtime, 999)
+  end
+
+  test "waiting for a frame does not block the runtime" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(
+        app: DemoApp,
+        display: BlockingFrameDisplay,
+        display_opts: [owner: self()]
+      )
+
+    waiter = Task.async(fn -> GPUI.Runtime.await_frame(runtime, 1) end)
+    assert_receive {:frame_waiting, frame_task}
+    assert [%GPUI.WindowSpec{id: 1}] = GPUI.Runtime.windows(runtime)
+
+    send(frame_task, :release_frame)
+    assert :ok = Task.await(waiter)
   end
 
   test "applications can mount an empty window set without placeholder state" do

@@ -22,9 +22,7 @@ pub(crate) fn open_window_impl<'a>(
     let window_id = window_id(window)?;
     let (width, height) = window_size(window)?;
     let tree = window_tree(window)?;
-    let shared_window = Arc::new(WindowState {
-        tree: Mutex::new(tree),
-    });
+    let shared_window = Arc::new(WindowState::new(tree));
     let (reply, receiver) = std::sync::mpsc::sync_channel(1);
 
     let command = WindowCommand::Open {
@@ -131,6 +129,41 @@ pub(crate) fn close_window_impl<'a>(
 }
 
 #[cfg(feature = "real-gpui")]
+pub(crate) fn await_frame_impl<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+    timeout_ms: u64,
+) -> NifResult<Term<'a>> {
+    let (reply, receiver) = std::sync::mpsc::sync_channel(1);
+    let command = WindowCommand::AwaitFrame {
+        runtime_id: runtime.id,
+        window_id,
+        reply,
+    };
+
+    match execute_window_command_with_timeout(
+        &runtime,
+        command,
+        receiver,
+        std::time::Duration::from_millis(timeout_ms),
+    ) {
+        Ok(()) => Ok((atoms::ok(), window_id).encode(env)),
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+    }
+}
+
+#[cfg(not(feature = "real-gpui"))]
+pub(crate) fn await_frame_impl<'a>(
+    _env: Env<'a>,
+    _runtime: ResourceArc<RuntimeResource>,
+    _window_id: u64,
+    _timeout_ms: u64,
+) -> NifResult<Term<'a>> {
+    Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
+}
+
+#[cfg(feature = "real-gpui")]
 pub(crate) fn stop_runtime_impl<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,
@@ -216,6 +249,21 @@ fn execute_window_command(
     command: WindowCommand,
     receiver: std::sync::mpsc::Receiver<Result<(), String>>,
 ) -> Result<(), String> {
+    execute_window_command_with_timeout(
+        runtime,
+        command,
+        receiver,
+        std::time::Duration::from_secs(5),
+    )
+}
+
+#[cfg(feature = "real-gpui")]
+fn execute_window_command_with_timeout(
+    runtime: &ResourceArc<RuntimeResource>,
+    command: WindowCommand,
+    receiver: std::sync::mpsc::Receiver<Result<(), String>>,
+    timeout: std::time::Duration,
+) -> Result<(), String> {
     use std::sync::atomic::Ordering;
 
     if runtime.stopped.load(Ordering::Acquire) {
@@ -227,7 +275,7 @@ fn execute_window_command(
         .unbounded_send(command)
         .map_err(|_| "gpui_runtime_stopped".to_string())?;
 
-    match receiver.recv_timeout(std::time::Duration::from_secs(5)) {
+    match receiver.recv_timeout(timeout) {
         Ok(result) => result,
         Err(std::sync::mpsc::RecvTimeoutError::Timeout) => Err("gpui_command_timeout".to_string()),
         Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {

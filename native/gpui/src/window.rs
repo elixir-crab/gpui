@@ -1,8 +1,26 @@
 use crate::*;
 
 #[cfg(feature = "real-gpui")]
+pub(crate) type WindowCommandReply = std::sync::mpsc::SyncSender<Result<(), String>>;
+
+#[cfg(feature = "real-gpui")]
 pub(crate) struct WindowState {
     pub(crate) tree: Mutex<ElementNode>,
+    requested_generation: std::sync::atomic::AtomicU64,
+    rendered_generation: std::sync::atomic::AtomicU64,
+    frame_waiters: Mutex<Vec<(u64, WindowCommandReply)>>,
+}
+
+#[cfg(feature = "real-gpui")]
+impl WindowState {
+    pub(crate) fn new(tree: ElementNode) -> Self {
+        Self {
+            tree: Mutex::new(tree),
+            requested_generation: std::sync::atomic::AtomicU64::new(1),
+            rendered_generation: std::sync::atomic::AtomicU64::new(0),
+            frame_waiters: Mutex::new(Vec::new()),
+        }
+    }
 }
 
 #[cfg(feature = "real-gpui")]
@@ -106,10 +124,11 @@ impl gpui::Render for ElixirRoot {
         if self.render_dialog_layer {
             use gpui::{IntoElement, ParentElement};
 
-            return gpui::div()
+            let element = gpui::div()
                 .child(element)
                 .children(gpui_component::Root::render_dialog_layer(_window, cx))
                 .into_any_element();
+            return acknowledge_frame(element, self.window_state.clone());
         }
 
         #[cfg(feature = "components")]
@@ -118,20 +137,63 @@ impl gpui::Render for ElixirRoot {
         {
             use gpui::{InteractiveElement, IntoElement, ParentElement};
 
-            return gpui::div()
+            let element = gpui::div()
                 .id("gpui-elixir-dialog-content")
                 .track_focus(&focus.tab_stop(true))
                 .on_key_down(move |event, window, cx| key_handler(event, window, cx))
                 .child(element)
                 .into_any_element();
+            return acknowledge_frame(element, self.window_state.clone());
         }
 
-        element
+        acknowledge_frame(element, self.window_state.clone())
     }
 }
 
 #[cfg(feature = "real-gpui")]
-pub(crate) type WindowCommandReply = std::sync::mpsc::SyncSender<Result<(), String>>;
+fn acknowledge_frame(element: gpui::AnyElement, window_state: SharedWindow) -> gpui::AnyElement {
+    use gpui::{IntoElement, ParentElement, Styled};
+    use std::sync::atomic::Ordering;
+
+    let barrier = gpui::canvas(
+        move |_bounds, window, _cx| {
+            let generation = window_state.requested_generation.load(Ordering::Acquire);
+            let window_state = window_state.clone();
+            window.on_next_frame(move |_window, _cx| complete_frame(&window_state, generation));
+        },
+        |_bounds, _prepaint, _window, _cx| {},
+    )
+    .absolute()
+    .size_full();
+
+    gpui::div()
+        .relative()
+        .size_full()
+        .child(barrier)
+        .child(element)
+        .into_any_element()
+}
+
+#[cfg(feature = "real-gpui")]
+fn complete_frame(window_state: &SharedWindow, generation: u64) {
+    use std::sync::atomic::Ordering;
+
+    window_state
+        .rendered_generation
+        .fetch_max(generation, Ordering::AcqRel);
+
+    if let Ok(mut waiters) = window_state.frame_waiters.lock() {
+        let mut pending = Vec::new();
+        for (target, reply) in std::mem::take(&mut *waiters) {
+            if target <= generation {
+                send_reply(reply, Ok(()));
+            } else {
+                pending.push((target, reply));
+            }
+        }
+        *waiters = pending;
+    }
+}
 
 #[cfg(feature = "real-gpui")]
 #[derive(Clone, Copy)]
@@ -159,6 +221,11 @@ pub(crate) enum WindowCommand {
         reply: WindowCommandReply,
     },
     Close {
+        runtime_id: u64,
+        window_id: u64,
+        reply: WindowCommandReply,
+    },
+    AwaitFrame {
         runtime_id: u64,
         window_id: u64,
         reply: WindowCommandReply,
@@ -290,6 +357,11 @@ fn handle_window_command(
             let result = close_gpui_window(windows, (runtime_id, window_id), cx);
             send_reply(reply, result);
         }
+        WindowCommand::AwaitFrame {
+            runtime_id,
+            window_id,
+            reply,
+        } => await_gpui_frame(windows, (runtime_id, window_id), reply, cx),
         WindowCommand::ShutdownRuntime { runtime_id, reply } => {
             let keys = windows
                 .keys()
@@ -383,16 +455,53 @@ fn update_gpui_window(
         .tree
         .lock()
         .map_err(|_| "runtime_lock_failed".to_string())? = tree;
+    window
+        .state
+        .requested_generation
+        .fetch_add(1, std::sync::atomic::Ordering::AcqRel);
 
     let view = window.view.clone();
 
-    window
-        .handle
-        .update(cx, |_root, native_window, cx| {
+    let result = window.handle.update(cx, |_root, native_window, cx| {
+        native_window.defer(cx, move |native_window, cx| {
             view.update(cx, |_view, cx| cx.notify());
             native_window.refresh();
-        })
-        .map_err(|error| error.to_string())
+            cx.refresh_windows();
+        });
+    });
+    result.map_err(|error| error.to_string())
+}
+
+#[cfg(feature = "real-gpui")]
+fn await_gpui_frame(
+    windows: &HashMap<WindowKey, ManagedWindow>,
+    key: WindowKey,
+    reply: WindowCommandReply,
+    _cx: &mut gpui::App,
+) {
+    use std::sync::atomic::Ordering;
+
+    let Some(window) = windows.get(&key) else {
+        send_reply(reply, Err("unknown_window".to_string()));
+        return;
+    };
+
+    let target = window.state.requested_generation.load(Ordering::Acquire);
+    if window.state.rendered_generation.load(Ordering::Acquire) >= target {
+        send_reply(reply, Ok(()));
+        return;
+    }
+
+    match window.state.frame_waiters.lock() {
+        Ok(mut waiters) => {
+            if window.state.rendered_generation.load(Ordering::Acquire) >= target {
+                send_reply(reply, Ok(()));
+            } else {
+                waiters.push((target, reply));
+            }
+        }
+        Err(_error) => send_reply(reply, Err("runtime_lock_failed".to_string())),
+    }
 }
 
 #[cfg(feature = "real-gpui")]

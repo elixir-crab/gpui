@@ -21,6 +21,12 @@ defmodule GPUI.Remote.Client do
   def event(client, event), do: GenServer.call(client, {:event, event})
   def snapshot(client), do: GenServer.call(client, :snapshot)
 
+  @doc "Waits for the current local display frame of a remote window."
+  @spec await_frame(GenServer.server(), pos_integer(), pos_integer()) ::
+          :ok | {:error, term()}
+  def await_frame(client, window_id, timeout \\ 5_000),
+    do: GPUI.Display.call_await_frame(client, window_id, timeout)
+
   @impl GenServer
   def init(opts) do
     display_module = Keyword.get(opts, :display, GPUI.Display.Native)
@@ -69,6 +75,19 @@ defmodule GPUI.Remote.Client do
 
   def handle_call(:snapshot, _from, state) do
     remote_snapshot_call(state, :snapshot, %{session_id: state.session_id})
+  end
+
+  def handle_call({:await_frame, window_id, timeout}, from, state) do
+    :ok =
+      GPUI.Display.reply_after_frame(
+        state.display_module,
+        state.display,
+        window_id,
+        timeout,
+        from
+      )
+
+    {:noreply, state}
   end
 
   @impl GenServer

@@ -282,7 +282,9 @@ pub(crate) fn render_select_component(
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     use crate::{push_event, EventValue, InputKind, NativeEvent};
-    use gpui::{AppContext, IntoElement};
+    use gpui::AppContext;
+
+    let component_height = component_input_height(node.size.as_deref(), node.style.height);
     use gpui_component::{
         select::{Select, SelectEvent, SelectState},
         IndexPath, Sizable,
@@ -400,7 +402,10 @@ pub(crate) fn render_select_component(
         _ => element,
     };
 
-    apply_component_styles(element, node.style).into_any_element()
+    constrain_full_size_component(
+        apply_component_styles(element, node.style),
+        component_height,
+    )
 }
 
 #[cfg(feature = "components")]
@@ -409,7 +414,9 @@ pub(crate) fn render_combobox_component(
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     use crate::{push_event, EventValue, InputKind, NativeEvent};
-    use gpui::{AppContext, IntoElement};
+    use gpui::AppContext;
+
+    let component_height = component_input_height(node.size.as_deref(), node.style.height);
     use gpui_component::{
         combobox::{Combobox, ComboboxEvent, ComboboxState},
         IndexPath, Sizable,
@@ -574,7 +581,34 @@ pub(crate) fn render_combobox_component(
         _ => element,
     };
 
-    apply_component_styles(element, node.style).into_any_element()
+    constrain_full_size_component(
+        apply_component_styles(element, node.style),
+        component_height,
+    )
+}
+
+#[cfg(feature = "components")]
+fn component_input_height(size: Option<&str>, styled_height: Option<f32>) -> f32 {
+    styled_height.unwrap_or(match size {
+        Some("xs") => 20.0,
+        Some("sm") => 24.0,
+        Some("lg") => 44.0,
+        _ => 32.0,
+    })
+}
+
+#[cfg(feature = "components")]
+pub(super) fn constrain_full_size_component(
+    component: impl gpui::IntoElement,
+    height: f32,
+) -> gpui::AnyElement {
+    use gpui::{IntoElement, ParentElement, Styled};
+
+    gpui::div()
+        .flex()
+        .h(gpui::px(height))
+        .child(component)
+        .into_any_element()
 }
 
 pub(crate) fn render_dropdown_menu_component(
@@ -762,8 +796,10 @@ pub(super) fn apply_component_styles<T>(mut component: T, style: crate::StyleAtt
 where
     T: gpui::Styled,
 {
-    let mut styled = apply_generated_render_styles(gpui::div(), style);
-    *component.style() = styled.style().clone();
+    use gpui::Refineable;
+
+    let mut refinement = apply_generated_render_styles(gpui::div(), style);
+    component.style().refine(refinement.style());
     component
 }
 

@@ -24,6 +24,15 @@ defmodule GPUI.Display.Native do
   @impl GPUI.Display
   def inject_event(display, event), do: GenServer.call(display, {:inject_event, event})
 
+  @doc "Waits until a complete native frame has followed the current window state."
+  @spec await_frame(GenServer.server(), pos_integer(), pos_integer()) ::
+          :ok | {:error, term()}
+  @impl GPUI.Display
+  def await_frame(display, window_id, timeout \\ 5_000)
+      when is_integer(window_id) and window_id > 0 and is_integer(timeout) and timeout > 0 do
+    GenServer.call(display, {:await_frame, window_id, timeout}, timeout + 1_000)
+  end
+
   @doc "Changes the process-global native component theme and refreshes every window."
   @spec set_theme(GenServer.server(), :light | :dark) :: :ok | {:error, term()}
   def set_theme(display, mode) when mode in [:light, :dark],
@@ -65,6 +74,26 @@ defmodule GPUI.Display.Native do
 
   def handle_call({:inject_event, event}, _from, state) do
     {:reply, GPUI.Native.inject_event(state.runtime, event), state}
+  end
+
+  def handle_call({:await_frame, window_id, timeout}, from, state) do
+    runtime = state.runtime
+
+    Task.start(fn ->
+      reply =
+        case GPUI.Native.await_frame(runtime, window_id, timeout) do
+          {:ok, ^window_id} -> :ok
+          {:error, "unknown_window"} -> {:error, :window_not_found}
+          {:error, "window_closed"} -> {:error, :window_closed}
+          {:error, "gpui_command_timeout"} -> {:error, :timeout}
+          {:error, "gpui_runtime_stopped"} -> {:error, :runtime_stopped}
+          {:error, reason} -> {:error, reason}
+        end
+
+      GenServer.reply(from, reply)
+    end)
+
+    {:noreply, state}
   end
 
   def handle_call({:set_theme, mode}, _from, state) do

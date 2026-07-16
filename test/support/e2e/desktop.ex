@@ -27,8 +27,11 @@ defmodule GPUITest.E2E.Desktop do
     end)
   end
 
+  def request_frame!(window_id, x \\ 1, y \\ 1),
+    do: command!(["mousemove", "--sync", "--window", window_id, to_string(x), to_string(y)])
+
   def click!(window_id, x, y) do
-    command!(["mousemove", "--sync", "--window", window_id, to_string(x), to_string(y)])
+    request_frame!(window_id, x, y)
     command!(["click", "1"])
   end
 
@@ -37,20 +40,23 @@ defmodule GPUITest.E2E.Desktop do
 
   def key!(window_id, key), do: command!(["key", "--window", window_id, key])
 
-  def close_window!(window_id) do
+  def close_window!(window_id), do: driver!("close-window", [window_id])
+
+  def capture!(window_id, path), do: driver!("capture-window", [window_id, path])
+
+  defp driver!(command, arguments) do
     args = [
       "run",
       "--quiet",
       "--manifest-path",
       @driver_manifest,
       "--",
-      "close-window",
-      window_id
+      command | arguments
     ]
 
     case System.cmd("cargo", args, stderr_to_stdout: true) do
       {_output, 0} -> :ok
-      {output, status} -> flunk("sending WM_DELETE_WINDOW failed (#{status}): #{output}")
+      {output, status} -> flunk("#{command} failed (#{status}): #{output}")
     end
   end
 

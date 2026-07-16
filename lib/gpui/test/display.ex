@@ -43,10 +43,22 @@ defmodule GPUI.Test.Display do
   end
 
   @impl GPUI.Display
+  def await_frame(display, window_id, _timeout) do
+    if Agent.get(display, &window_present?(&1, window_id)),
+      do: :ok,
+      else: {:error, :window_not_found}
+  end
+
+  @impl GPUI.Display
   def inject_event(display, event) do
     Agent.update(display, &%{&1 | events: [event | &1.events]})
     {:ok, :ok}
   end
+
+  defp window_present?(%{snapshots: [snapshot | _snapshots]}, window_id),
+    do: Enum.any?(snapshot.windows, &(&1.id == window_id))
+
+  defp window_present?(_state, _window_id), do: false
 
   @doc "Returns synchronized snapshots in chronological order."
   @spec snapshots(Agent.agent()) :: [GPUI.Snapshot.t()]

@@ -284,6 +284,8 @@ defmodule GPUI.Native.ComponentsE2ETest do
     assert :ok = GPUI.Display.Native.set_theme(theme_display, :dark)
 
     window_id = Desktop.window_id!(title)
+    Desktop.request_frame!(window_id)
+    assert :ok = GPUI.Runtime.await_frame(runtime, 1)
     Desktop.click!(window_id, 80, 32)
 
     Desktop.eventually(fn ->
@@ -316,6 +318,8 @@ defmodule GPUI.Native.ComponentsE2ETest do
       window_id: window.id,
       event: "replace_name"
     })
+
+    assert :ok = GPUI.Runtime.await_frame(runtime, window.id)
 
     Desktop.eventually(fn ->
       assert %{name: "server"} = assigns(runtime)

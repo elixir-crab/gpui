@@ -18,6 +18,10 @@ defmodule GPUI.Native.Generated do
         :erlang.nif_error(:nif_not_loaded)
       end
 
+      def await_frame(_runtime, _window_id, _timeout_ms) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
       def stop_runtime(_runtime) do
         :erlang.nif_error(:nif_not_loaded)
       end
