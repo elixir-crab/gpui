@@ -10,7 +10,10 @@ mod atoms {
         "checked", change = "change", phx_change = "phx-change", value = "value",
         placeholder = "placeholder", cleanable = "cleanable", masked = "masked", options
         = "options", search_placeholder = "search_placeholder", search = "search",
-        phx_search = "phx-search", keydown = "keydown", keyup = "keyup", phx_keydown =
+        phx_search = "phx-search", expanded = "expanded", multiple = "multiple", bordered
+        = "bordered", menu = "menu", min = "min", max = "max", step = "step", orientation
+        = "orientation", scale = "scale", reverse = "reverse", release = "release",
+        phx_release = "phx-release", keydown = "keydown", keyup = "keyup", phx_keydown =
         "phx-keydown", phx_keyup = "phx-keyup", raster = "raster", width = "width",
         height = "height", format = "format", stride = "stride", data = "data",
         resource_ref = "resource_ref", display = "display", flex_direction =

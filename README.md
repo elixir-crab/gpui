@@ -74,7 +74,8 @@ defmodule CounterTest do
     change(runtime, "name_changed", "Ada")
     select(runtime, "language_changed", "elixir")
     search(runtime, "framework_searched", "live")
-    assert %{name: "Ada", language: "elixir", query: "live"} = assigns(runtime)
+    slide(runtime, "volume_changed", 75.0)
+    assert %{name: "Ada", language: "elixir", query: "live", volume: 75.0} = assigns(runtime)
     assert %{type: :ui_input} = runtime |> tree() |> find!(id: "name")
   end
 end
@@ -145,7 +146,8 @@ Templates support `div`, `button`, `span`, `scroll`, `list`, `item`, `icon`,
 native styles rather than relying only on parent styles.
 
 `GPUI.UI.button/1`, `GPUI.UI.checkbox/1`, `GPUI.UI.input/1`,
-`GPUI.UI.select/1`, and `GPUI.UI.combobox/1` render real
+`GPUI.UI.select/1`, `GPUI.UI.combobox/1`, `GPUI.UI.accordion/1`,
+`GPUI.UI.tabs/1`, and `GPUI.UI.slider/1` render real
 [`gpui-component`](https://github.com/longbridge/gpui-component) controls. They
 are controlled by Elixir assigns and require stable string IDs. Stateful
 component entities are reconciled by kind and ID so focus, selection, open
@@ -188,14 +190,41 @@ snapshot crosses the display boundary:
     phx-change="framework_changed"
     phx-search="framework_searched"
   />
+  <GPUI.UI.accordion
+    id="details"
+    expanded={assigns.expanded}
+    phx-change="details_changed"
+  >
+    <GPUI.UI.accordion_item id="account" title="Account">
+      <text>Account details</text>
+    </GPUI.UI.accordion_item>
+  </GPUI.UI.accordion>
+  <GPUI.UI.tabs
+    id="section"
+    value={assigns.section}
+    options={[{"General", "general"}, {"Advanced", "advanced"}]}
+    phx-change="section_changed"
+  />
+  <GPUI.UI.slider
+    id="volume"
+    value={assigns.volume}
+    min={0}
+    max={100}
+    step={5}
+    phx-change="volume_changed"
+    phx-release="volume_released"
+  />
 </div>
 """
 ```
 
 Checkbox change events carry a boolean `:value`; input, select, and combobox
 change events carry their controlled `:value`. Combobox search events carry the
-current query. Select and combobox options accept strings, `{label, value}`
-tuples, or `%{label: label, value: value}` maps. Button variants are `default`,
+current query. Tab changes carry the selected string value, while accordion
+changes carry the ordered list of expanded item IDs. Slider change events are
+continuous and release events fire once pointer interaction ends. Select,
+combobox, and tab options accept strings, `{label, value}` tuples, or
+`%{label: label, value: value}` maps. Button variants are `default`,
 `primary`, `secondary`, `danger`, `warning`, `success`, `info`, `ghost`, `link`,
 and `text`; component sizes are
 `xs`, `sm`, `md`, and `lg`.

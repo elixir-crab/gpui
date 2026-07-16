@@ -147,7 +147,16 @@ defmodule GPUI.TemplateTest do
                %GPUI.Element{type: :ui_checkbox, attrs: checkbox_attrs},
                %GPUI.Element{type: :ui_input, attrs: input_attrs},
                %GPUI.Element{type: :ui_select, attrs: select_attrs},
-               %GPUI.Element{type: :ui_combobox, attrs: combobox_attrs}
+               %GPUI.Element{type: :ui_combobox, attrs: combobox_attrs},
+               %GPUI.Element{
+                 type: :ui_accordion,
+                 attrs: accordion_attrs,
+                 children: [
+                   %GPUI.Element{type: :ui_accordion_item, attrs: accordion_item_attrs}
+                 ]
+               },
+               %GPUI.Element{type: :ui_tabs, attrs: tabs_attrs},
+               %GPUI.Element{type: :ui_slider, attrs: slider_attrs}
              ]
            } =
              ~GPUI"""
@@ -178,6 +187,31 @@ defmodule GPUI.TemplateTest do
                  search_placeholder="Search frameworks"
                  phx-change="framework_changed"
                  phx-search="framework_searched"
+               />
+               <GPUI.UI.accordion
+                 id="details"
+                 expanded={["account"]}
+                 phx-change="details_changed"
+               >
+                 <GPUI.UI.accordion_item id="account" title="Account">
+                   <text>Account details</text>
+                 </GPUI.UI.accordion_item>
+               </GPUI.UI.accordion>
+               <GPUI.UI.tabs
+                 id="section"
+                 value="general"
+                 options={[{"General", "general"}, {"Advanced", "advanced"}]}
+                 variant="underline"
+                 phx-change="section_changed"
+               />
+               <GPUI.UI.slider
+                 id="volume"
+                 value={25}
+                 min={0}
+                 max={50}
+                 step={0.5}
+                 phx-change="volume_changed"
+                 phx-release="volume_released"
                />
              </div>
              """
@@ -211,6 +245,23 @@ defmodule GPUI.TemplateTest do
     assert combobox_attrs[:search_placeholder] == "Search frameworks"
     assert combobox_attrs[:"phx-change"] == "framework_changed"
     assert combobox_attrs[:"phx-search"] == "framework_searched"
+    assert accordion_attrs[:id] == "details"
+    assert accordion_attrs[:expanded] == ["account"]
+    assert accordion_attrs[:bordered]
+    assert accordion_attrs[:"phx-change"] == "details_changed"
+    assert accordion_item_attrs[:id] == "account"
+    assert accordion_item_attrs[:title] == "Account"
+    assert tabs_attrs[:id] == "section"
+    assert tabs_attrs[:value] == "general"
+    assert tabs_attrs[:variant] == "underline"
+    assert tabs_attrs[:"phx-change"] == "section_changed"
+    assert slider_attrs[:id] == "volume"
+    assert slider_attrs[:value] == 25.0
+    assert slider_attrs[:min] == 0.0
+    assert slider_attrs[:max] == 50.0
+    assert slider_attrs[:step] == 0.5
+    assert slider_attrs[:"phx-change"] == "volume_changed"
+    assert slider_attrs[:"phx-release"] == "volume_released"
   end
 
   test "native UI components require stable ids" do
@@ -230,6 +281,42 @@ defmodule GPUI.TemplateTest do
 
     combobox = GPUI.UI.combobox(%{id: "framework", value: "LiveView", options: []})
     assert combobox.attrs[:value] == "LiveView"
+  end
+
+  test "accordion validates controlled expanded item IDs" do
+    item = GPUI.UI.accordion_item(%{id: "account", title: "Account", children: []})
+
+    assert_raise ArgumentError, ~r/must identify accordion items/, fn ->
+      GPUI.UI.accordion(%{id: "details", expanded: ["missing"], children: [item]})
+    end
+
+    assert_raise ArgumentError, ~r/requires multiple=\{true\}/, fn ->
+      GPUI.UI.accordion(%{
+        id: "details",
+        expanded: ["account", "security"],
+        children: [item, GPUI.UI.accordion_item(%{id: "security", title: "Security"})]
+      })
+    end
+  end
+
+  test "tabs require a controlled value from their options" do
+    assert_raise ArgumentError, ~r/is not present in options/, fn ->
+      GPUI.UI.tabs(%{id: "section", value: "missing", options: ["General"]})
+    end
+  end
+
+  test "slider validates its numeric contract" do
+    assert_raise ArgumentError, ~r/min must be less than max/, fn ->
+      GPUI.UI.slider(%{id: "invalid", min: 10, max: 10})
+    end
+
+    assert_raise ArgumentError, ~r/value must be between min and max/, fn ->
+      GPUI.UI.slider(%{id: "invalid", value: 11, min: 0, max: 10})
+    end
+
+    assert_raise ArgumentError, ~r/logarithmic scale requires min greater than zero/, fn ->
+      GPUI.UI.slider(%{id: "invalid", min: 0, scale: "logarithmic"})
+    end
   end
 
   test "serialized component trees reject duplicate stable ids" do

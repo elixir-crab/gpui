@@ -118,35 +118,30 @@ defmodule GPUI.Test do
 
   @doc "Dispatches a change event and returns the updated snapshot."
   @spec change(GenServer.server(), String.t(), term(), keyword()) :: Snapshot.t()
-  def change(runtime, event, value, opts \\ []) do
-    {_handled, snapshot} =
-      dispatch(runtime, %{
-        type: :change,
-        window_id: event_window_id(runtime, opts),
-        event: event,
-        value: value
-      })
-
-    snapshot
-  end
+  def change(runtime, event, value, opts \\ []),
+    do: dispatch_value(runtime, :change, event, value, opts)
 
   @doc "Selects a controlled component option and returns the updated snapshot."
   @spec select(GenServer.server(), String.t(), String.t() | nil, keyword()) :: Snapshot.t()
   def select(runtime, event, value, opts \\ []), do: change(runtime, event, value, opts)
 
+  @doc "Changes the expanded IDs of a controlled accordion."
+  @spec expand(GenServer.server(), String.t(), [String.t()], keyword()) :: Snapshot.t()
+  def expand(runtime, event, ids, opts \\ []), do: change(runtime, event, ids, opts)
+
+  @doc "Changes a controlled slider value and returns the updated snapshot."
+  @spec slide(GenServer.server(), String.t(), number(), keyword()) :: Snapshot.t()
+  def slide(runtime, event, value, opts \\ []), do: change(runtime, event, value, opts)
+
+  @doc "Dispatches a slider release event and returns the updated snapshot."
+  @spec release(GenServer.server(), String.t(), number(), keyword()) :: Snapshot.t()
+  def release(runtime, event, value, opts \\ []),
+    do: dispatch_value(runtime, :release, event, value, opts)
+
   @doc "Dispatches a combobox search event and returns the updated snapshot."
   @spec search(GenServer.server(), String.t(), String.t(), keyword()) :: Snapshot.t()
-  def search(runtime, event, query, opts \\ []) do
-    {_handled, snapshot} =
-      dispatch(runtime, %{
-        type: :search,
-        window_id: event_window_id(runtime, opts),
-        event: event,
-        value: query
-      })
-
-    snapshot
-  end
+  def search(runtime, event, query, opts \\ []),
+    do: dispatch_value(runtime, :search, event, query, opts)
 
   @doc "Returns every element in a tree matching the given attributes."
   @spec all(Element.t() | map(), keyword()) :: [Element.t() | map()]
@@ -165,6 +160,18 @@ defmodule GPUI.Test do
   def find!(tree, selector) when is_list(selector) do
     find(tree, selector) ||
       raise ArgumentError, "no GPUI element matches #{inspect(selector)}"
+  end
+
+  defp dispatch_value(runtime, type, event, value, opts) do
+    {_handled, snapshot} =
+      dispatch(runtime, %{
+        type: type,
+        window_id: event_window_id(runtime, opts),
+        event: event,
+        value: value
+      })
+
+    snapshot
   end
 
   defp find_window!(source, predicate, description) do

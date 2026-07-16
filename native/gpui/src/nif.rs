@@ -314,12 +314,18 @@ pub(crate) fn inject_event_impl<'a>(
                 },
             )?;
         }
-        "change" | "search" | "keydown" | "keyup" => {
+        "change" | "release" | "search" | "keydown" | "keyup" => {
             let event_name = event.map_get(atoms::event())?.decode::<String>()?;
             let value = event.map_get(atoms::value()).ok().and_then(|term| {
                 term.decode::<String>()
                     .map(EventValue::String)
+                    .or_else(|_| term.decode::<Vec<String>>().map(EventValue::Strings))
                     .or_else(|_| term.decode::<bool>().map(EventValue::Boolean))
+                    .or_else(|_| term.decode::<f64>().map(EventValue::Number))
+                    .or_else(|_| {
+                        term.decode::<i64>()
+                            .map(|value| EventValue::Number(value as f64))
+                    })
                     .or_else(|_| {
                         term.decode::<Atom>().and_then(|atom| {
                             if atom == atoms::nil() {
@@ -333,6 +339,7 @@ pub(crate) fn inject_event_impl<'a>(
             });
             let kind = match event_type.as_str() {
                 "change" => InputKind::Change,
+                "release" => InputKind::Release,
                 "search" => InputKind::Search,
                 "keydown" => InputKind::KeyDown,
                 "keyup" => InputKind::KeyUp,
@@ -417,6 +424,18 @@ pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
         }
         GeneratedComponentKind::ComboboxComponent => {
             decode_generated_combobox_component(term).map(ElementNode::ComboboxComponent)
+        }
+        GeneratedComponentKind::SliderComponent => {
+            decode_generated_slider_component(term).map(ElementNode::SliderComponent)
+        }
+        GeneratedComponentKind::TabsComponent => {
+            decode_generated_tabs_component(term).map(ElementNode::TabsComponent)
+        }
+        GeneratedComponentKind::AccordionComponent => {
+            decode_generated_accordion_component(term).map(ElementNode::AccordionComponent)
+        }
+        GeneratedComponentKind::AccordionItemComponent => {
+            decode_generated_accordion_item_component(term).map(ElementNode::AccordionItemComponent)
         }
         GeneratedComponentKind::Input => decode_input(term),
         GeneratedComponentKind::Image => decode_image(term),
@@ -518,6 +537,33 @@ pub(crate) fn component_bool_attr(term: Term, attr: Atom) -> NifResult<Option<bo
     match attrs.map_get(attr) {
         Ok(value) => value.decode::<bool>().map(Some),
         Err(_missing) => Ok(None),
+    }
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn component_number_attr(term: Term, attr: Atom) -> NifResult<Option<f64>> {
+    let attrs = term.map_get(atoms::attrs())?;
+    match attrs.map_get(attr) {
+        Ok(value) => {
+            let number = value
+                .decode::<f64>()
+                .or_else(|_| value.decode::<i64>().map(|number| number as f64))?;
+            if number.is_finite() {
+                Ok(Some(number))
+            } else {
+                Err(rustler::Error::BadArg)
+            }
+        }
+        Err(_missing) => Ok(None),
+    }
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn component_string_list_attr(term: Term, attr: Atom) -> NifResult<Vec<String>> {
+    let attrs = term.map_get(atoms::attrs())?;
+    match attrs.map_get(attr) {
+        Ok(value) => value.decode::<Vec<String>>(),
+        Err(_missing) => Ok(Vec::new()),
     }
 }
 

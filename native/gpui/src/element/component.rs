@@ -1,18 +1,19 @@
 #[cfg(feature = "components")]
 use super::component_registry::{
-    filter_options, ComponentCombobox, ComponentInput, ComponentSelect, NativeComboboxDelegate,
-    NativeSelectOption, SharedEvent, SharedQuery,
+    filter_options, ComponentCombobox, ComponentInput, ComponentSelect, ComponentSlider,
+    NativeComboboxDelegate, NativeSelectOption, SharedEvent, SharedQuery, SliderConfig,
 };
 #[cfg(feature = "components")]
 use super::controlled::{ControlledBinding, SharedBinding};
 #[cfg(not(feature = "components"))]
 use super::InputNode;
-#[cfg(feature = "components")]
-use super::SelectOptionNode;
 use super::{
-    apply_generated_render_styles, ButtonComponentNode, CheckboxComponentNode,
-    ComboboxComponentNode, ElementRenderContext, InputComponentNode, SelectComponentNode,
+    apply_generated_render_styles, AccordionComponentNode, AccordionItemComponentNode,
+    ButtonComponentNode, CheckboxComponentNode, ComboboxComponentNode, ElementRenderContext,
+    InputComponentNode, SelectComponentNode, SliderComponentNode, TabsComponentNode,
 };
+#[cfg(feature = "components")]
+use super::{ElementNode, SelectOptionNode};
 use crate::gpui;
 #[cfg(feature = "components")]
 use crate::gpui::Styled;
@@ -563,6 +564,375 @@ pub(crate) fn render_combobox_component(
     };
 
     apply_component_styles(element, node.style).into_any_element()
+}
+
+#[cfg(feature = "components")]
+pub(crate) fn render_accordion_component(
+    node: AccordionComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    use crate::{push_event, EventValue, InputKind, NativeEvent};
+    use gpui::{IntoElement, ParentElement};
+    use gpui_component::{accordion::Accordion, Sizable};
+    use std::collections::HashSet;
+
+    let expanded = node.expanded.iter().collect::<HashSet<_>>();
+    let mut item_ids = Vec::new();
+    let mut items = Vec::new();
+    for child in node.children {
+        let ElementNode::AccordionItemComponent(item) = child else {
+            continue;
+        };
+        let is_open = expanded.contains(&item.id);
+        let children = item
+            .children
+            .into_iter()
+            .map(|child| child.render(context))
+            .collect::<Vec<_>>();
+        item_ids.push(item.id);
+        items.push((
+            item.title.unwrap_or_default(),
+            item.disabled,
+            is_open,
+            children,
+        ));
+    }
+
+    let runtime = context.runtime.clone();
+    let window_id = context.window_id;
+    let change_event = node.change.clone();
+    let mut element = Accordion::new(node.id)
+        .multiple(node.multiple)
+        .bordered(node.bordered)
+        .disabled(node.disabled)
+        .on_toggle_click(move |indices, _window, _cx| {
+            let Some(event) = change_event.as_ref() else {
+                return;
+            };
+            let mut indices = indices.to_vec();
+            indices.sort_unstable();
+            let values = indices
+                .into_iter()
+                .filter_map(|index| item_ids.get(index).cloned())
+                .collect::<Vec<_>>();
+            let _ = push_event(
+                &runtime,
+                NativeEvent::Input {
+                    kind: InputKind::Change,
+                    window_id,
+                    event: event.clone(),
+                    value: Some(EventValue::Strings(values)),
+                },
+            );
+        });
+    for (title, disabled, open, children) in items {
+        element = element.item(move |item| {
+            item.title(title)
+                .disabled(disabled)
+                .open(open)
+                .children(children)
+        });
+    }
+    element = match node.size.as_deref() {
+        Some("xs") => element.xsmall(),
+        Some("sm") => element.small(),
+        Some("lg") => element.large(),
+        _ => element,
+    };
+
+    apply_generated_render_styles(gpui::div(), node.style)
+        .child(element)
+        .into_any_element()
+}
+
+#[cfg(feature = "components")]
+pub(crate) fn render_accordion_item_component(
+    node: AccordionItemComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    use gpui::{IntoElement, ParentElement};
+
+    let mut element = apply_component_styles(gpui::div(), node.style);
+    if let Some(title) = node.title {
+        element = element.child(title);
+    }
+    for child in node.children {
+        element = element.child(child.render(context));
+    }
+    element.into_any_element()
+}
+
+#[cfg(not(feature = "components"))]
+pub(crate) fn render_accordion_component(
+    node: AccordionComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    render_component_fallback(node.style, None, node.children, context)
+}
+
+#[cfg(not(feature = "components"))]
+pub(crate) fn render_accordion_item_component(
+    node: AccordionItemComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    render_component_fallback(node.style, node.title, node.children, context)
+}
+
+#[cfg(feature = "components")]
+pub(crate) fn render_tabs_component(
+    node: TabsComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    use crate::{push_event, EventValue, InputKind, NativeEvent};
+    use gpui::IntoElement;
+    use gpui_component::{
+        tab::{Tab, TabBar},
+        Sizable,
+    };
+
+    let selected_index = node.value.as_ref().and_then(|value| {
+        node.options
+            .iter()
+            .position(|option| &option.value == value)
+    });
+    let tabs = node
+        .options
+        .iter()
+        .map(|option| {
+            Tab::new()
+                .label(option.label.clone())
+                .disabled(node.disabled)
+        })
+        .collect::<Vec<_>>();
+    let values = node
+        .options
+        .iter()
+        .map(|option| option.value.clone())
+        .collect::<Vec<_>>();
+    let runtime = context.runtime.clone();
+    let window_id = context.window_id;
+    let change_event = node.change.clone();
+    let mut element = TabBar::new(node.id)
+        .children(tabs)
+        .menu(node.menu)
+        .on_click(move |index, _window, _cx| {
+            let Some(event) = change_event.as_ref() else {
+                return;
+            };
+            let Some(value) = values.get(*index) else {
+                return;
+            };
+            let _ = push_event(
+                &runtime,
+                NativeEvent::Input {
+                    kind: InputKind::Change,
+                    window_id,
+                    event: event.clone(),
+                    value: Some(EventValue::String(value.clone())),
+                },
+            );
+        });
+    if let Some(selected_index) = selected_index {
+        element = element.selected_index(selected_index);
+    }
+    element = match node.variant.as_deref() {
+        Some("outline") => element.outline(),
+        Some("pill") => element.pill(),
+        Some("segmented") => element.segmented(),
+        Some("underline") => element.underline(),
+        _ => element,
+    };
+    element = match node.size.as_deref() {
+        Some("xs") => element.xsmall(),
+        Some("sm") => element.small(),
+        Some("lg") => element.large(),
+        _ => element,
+    };
+
+    apply_component_styles(element, node.style).into_any_element()
+}
+
+#[cfg(not(feature = "components"))]
+pub(crate) fn render_tabs_component(
+    node: TabsComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    let label = node
+        .value
+        .as_ref()
+        .and_then(|value| node.options.iter().find(|option| &option.value == value))
+        .map(|option| option.label.clone());
+
+    render_component_fallback(node.style, label, Vec::new(), context)
+}
+
+#[cfg(feature = "components")]
+pub(crate) fn render_slider_component(
+    node: SliderComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    use crate::{push_event, EventValue, InputKind, NativeEvent};
+    use gpui::{AppContext, IntoElement};
+    use gpui_component::slider::{Slider, SliderEvent, SliderScale, SliderState};
+
+    let config = SliderConfig {
+        min: node.min as f32,
+        max: node.max as f32,
+        step: node.step as f32,
+        logarithmic: node.scale.as_deref() == Some("logarithmic"),
+    };
+    let native_value = node.value as f32;
+    if !config.accepts(native_value) {
+        return apply_component_styles(gpui::div(), node.style).into_any_element();
+    }
+
+    let rebuild = context
+        .components
+        .slider_mut(&node.id)
+        .map(|slider| slider.config != config)
+        .unwrap_or(true);
+
+    if rebuild {
+        let scale = if config.logarithmic {
+            SliderScale::Logarithmic
+        } else {
+            SliderScale::Linear
+        };
+        let state = context.cx.new(|_cx| {
+            SliderState::new()
+                .min(config.min)
+                .max(config.max)
+                .step(config.step)
+                .scale(scale)
+                .default_value(native_value)
+        });
+        let binding: SharedBinding<f64> = Arc::new(Mutex::new(ControlledBinding::new(
+            node.change.clone(),
+            node.value,
+        )));
+        let release_event: SharedEvent = Arc::new(Mutex::new(node.release.clone()));
+        let runtime = context.runtime.clone();
+        let window_id = context.window_id;
+        let event_binding = binding.clone();
+        let event_release = release_event.clone();
+        let subscription = context.cx.subscribe_in(
+            &state,
+            context.window,
+            move |_root, _state, event: &SliderEvent, _window, _cx| {
+                let (kind, event_name, value, track_pending) = match event {
+                    SliderEvent::Change(value) => {
+                        let value = slider_number(*value);
+                        let event_name = event_binding.lock().ok().and_then(|mut binding| {
+                            binding.event.clone().inspect(|_event| {
+                                binding.push_pending(value);
+                            })
+                        });
+                        (InputKind::Change, event_name, value, true)
+                    }
+                    SliderEvent::Release(value) => {
+                        let value = slider_number(*value);
+                        let event_name = event_release.lock().ok().and_then(|event| event.clone());
+                        let track_pending = event_binding
+                            .lock()
+                            .map(|mut binding| {
+                                if binding.event.is_none() && event_name.is_some() {
+                                    binding.push_pending(value);
+                                    true
+                                } else {
+                                    false
+                                }
+                            })
+                            .unwrap_or(false);
+                        (InputKind::Release, event_name, value, track_pending)
+                    }
+                };
+
+                if let Some(event_name) = event_name {
+                    let result = push_event(
+                        &runtime,
+                        NativeEvent::Input {
+                            kind,
+                            window_id,
+                            event: event_name,
+                            value: Some(EventValue::Number(value)),
+                        },
+                    );
+                    if result.is_err() && track_pending {
+                        if let Ok(mut binding) = event_binding.lock() {
+                            binding.pop_pending();
+                        }
+                    }
+                }
+            },
+        );
+
+        context.components.insert_slider(
+            &node.id,
+            ComponentSlider {
+                state,
+                binding,
+                release_event,
+                config,
+                _subscription: subscription,
+            },
+        );
+    }
+
+    let slider = context
+        .components
+        .slider_mut(&node.id)
+        .expect("component slider should exist");
+    if let Ok(mut release_event) = slider.release_event.lock() {
+        *release_event = node.release.clone();
+    }
+
+    let apply_value = slider
+        .binding
+        .lock()
+        .map(|mut binding| {
+            binding.event = node.change.clone();
+            binding.reconcile(&node.value)
+        })
+        .unwrap_or(true);
+    let current_value = slider_number(slider.state.read(context.cx).value());
+    if apply_value && (current_value - node.value).abs() > f64::from(f32::EPSILON) {
+        slider.state.update(context.cx, |state, cx| {
+            state.set_value(native_value, context.window, cx)
+        });
+    }
+
+    let mut element = Slider::new(&slider.state).disabled(node.disabled);
+    if node.orientation.as_deref() == Some("vertical") {
+        element = element.vertical();
+    } else {
+        element = element.horizontal();
+    }
+    if node.reverse {
+        element = element.reverse();
+    }
+
+    apply_component_styles(element, node.style).into_any_element()
+}
+
+#[cfg(feature = "components")]
+fn slider_number(value: gpui_component::slider::SliderValue) -> f64 {
+    match value {
+        gpui_component::slider::SliderValue::Single(value) => f64::from(value),
+        gpui_component::slider::SliderValue::Range(_start, end) => f64::from(end),
+    }
+}
+
+#[cfg(not(feature = "components"))]
+pub(crate) fn render_slider_component(
+    node: SliderComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    render_component_fallback(
+        node.style,
+        Some(node.value.to_string()),
+        Vec::new(),
+        context,
+    )
 }
 
 #[cfg(not(feature = "components"))]

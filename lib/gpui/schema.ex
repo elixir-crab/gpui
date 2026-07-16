@@ -84,6 +84,56 @@ defmodule GPUI.Schema do
         loading: :boolean
       ]
     },
+    %Component{
+      tag: :ui_accordion,
+      kind: :accordion_component,
+      events: [change: :"phx-change"],
+      children: true,
+      attrs: [
+        id: :string,
+        expanded: :string_list,
+        multiple: :boolean,
+        bordered: {:default, :boolean, true},
+        size: {:enum, ~w(xs sm md lg)},
+        disabled: :boolean
+      ]
+    },
+    %Component{
+      tag: :ui_accordion_item,
+      kind: :accordion_item_component,
+      children: true,
+      attrs: [id: :string, title: :string, disabled: :boolean]
+    },
+    %Component{
+      tag: :ui_tabs,
+      kind: :tabs_component,
+      events: [change: :"phx-change"],
+      attrs: [
+        id: :string,
+        value: :string,
+        options: :select_options,
+        variant: {:enum, ~w(tab outline pill segmented underline)},
+        size: {:enum, ~w(xs sm md lg)},
+        disabled: :boolean,
+        menu: :boolean
+      ]
+    },
+    %Component{
+      tag: :ui_slider,
+      kind: :slider_component,
+      events: [change: :"phx-change", release: :"phx-release"],
+      attrs: [
+        id: :string,
+        value: {:default, :number, 0.0},
+        min: {:default, :number, 0.0},
+        max: {:default, :number, 100.0},
+        step: {:default, :number, 1.0},
+        orientation: {:enum, ~w(horizontal vertical)},
+        scale: {:enum, ~w(linear logarithmic)},
+        disabled: :boolean,
+        reverse: :boolean
+      ]
+    },
     %Component{tag: :span, kind: :container, events: [click: :"phx-click"]},
     %Component{tag: :scroll, kind: :container, events: [click: :"phx-click"]},
     %Component{tag: :list, kind: :container, events: [click: :"phx-click"]},

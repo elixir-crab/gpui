@@ -8,6 +8,10 @@ pub enum GeneratedComponentKind {
     InputComponent,
     SelectComponent,
     ComboboxComponent,
+    AccordionComponent,
+    AccordionItemComponent,
+    TabsComponent,
+    SliderComponent,
     Text,
     Input,
     Image,
@@ -712,6 +716,148 @@ pub(crate) fn decode_generated_combobox_component(
 }
 
 
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct AccordionComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) expanded: Vec<String>,
+    pub(crate) multiple: bool,
+    pub(crate) bordered: bool,
+    pub(crate) size: Option<String>,
+    pub(crate) disabled: bool,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) change: Option<String>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_accordion_component(
+    term: Term,
+) -> NifResult<AccordionComponentNode> {
+    Ok(AccordionComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        expanded: component_string_list_attr(term, atoms::expanded())?,
+        multiple: component_bool_attr(term, atoms::multiple())?.unwrap_or(false),
+        bordered: component_bool_attr(term, atoms::bordered())?.unwrap_or(true),
+        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        children: decode_children(term)?,
+        change: component_string_attr(term, atoms::phx_change())?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct AccordionItemComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) title: Option<String>,
+    pub(crate) disabled: bool,
+    pub(crate) children: Vec<ElementNode>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_accordion_item_component(
+    term: Term,
+) -> NifResult<AccordionItemComponentNode> {
+    Ok(AccordionItemComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        title: component_string_attr(term, atoms::title())?,
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        children: decode_children(term)?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct TabsComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) value: Option<String>,
+    pub(crate) options: Vec<SelectOptionNode>,
+    pub(crate) variant: Option<String>,
+    pub(crate) size: Option<String>,
+    pub(crate) disabled: bool,
+    pub(crate) menu: bool,
+    pub(crate) change: Option<String>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_tabs_component(
+    term: Term,
+) -> NifResult<TabsComponentNode> {
+    Ok(TabsComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        value: component_string_attr(term, atoms::value())?,
+        options: decode_select_options(term)?,
+        variant: component_enum_attr(
+            term,
+            atoms::variant(),
+            &["tab", "outline", "pill", "segmented", "underline"],
+        )?,
+        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        menu: component_bool_attr(term, atoms::menu())?.unwrap_or(false),
+        change: component_string_attr(term, atoms::phx_change())?,
+    })
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct SliderComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) value: f64,
+    pub(crate) min: f64,
+    pub(crate) max: f64,
+    pub(crate) step: f64,
+    pub(crate) orientation: Option<String>,
+    pub(crate) scale: Option<String>,
+    pub(crate) disabled: bool,
+    pub(crate) reverse: bool,
+    pub(crate) change: Option<String>,
+    pub(crate) release: Option<String>,
+}
+
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_slider_component(
+    term: Term,
+) -> NifResult<SliderComponentNode> {
+    Ok(SliderComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        value: component_number_attr(term, atoms::value())?.unwrap_or(0.0),
+        min: component_number_attr(term, atoms::min())?.unwrap_or(0.0),
+        max: component_number_attr(term, atoms::max())?.unwrap_or(100.0),
+        step: component_number_attr(term, atoms::step())?.unwrap_or(1.0),
+        orientation: component_enum_attr(
+            term,
+            atoms::orientation(),
+            &["horizontal", "vertical"],
+        )?,
+        scale: component_enum_attr(term, atoms::scale(), &["linear", "logarithmic"])?,
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        reverse: component_bool_attr(term, atoms::reverse())?.unwrap_or(false),
+        change: component_string_attr(term, atoms::phx_change())?,
+        release: component_string_attr(term, atoms::phx_release())?,
+    })
+}
+
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GeneratedElementTag {
     Div,
@@ -721,6 +867,10 @@ pub enum GeneratedElementTag {
     UiInput,
     UiSelect,
     UiCombobox,
+    UiAccordion,
+    UiAccordionItem,
+    UiTabs,
+    UiSlider,
     Span,
     Scroll,
     List,
@@ -742,6 +892,10 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_input" => GeneratedElementTag::UiInput,
         "ui_select" => GeneratedElementTag::UiSelect,
         "ui_combobox" => GeneratedElementTag::UiCombobox,
+        "ui_accordion" => GeneratedElementTag::UiAccordion,
+        "ui_accordion_item" => GeneratedElementTag::UiAccordionItem,
+        "ui_tabs" => GeneratedElementTag::UiTabs,
+        "ui_slider" => GeneratedElementTag::UiSlider,
         "span" => GeneratedElementTag::Span,
         "scroll" => GeneratedElementTag::Scroll,
         "list" => GeneratedElementTag::List,
@@ -764,6 +918,12 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::UiInput => GeneratedComponentKind::InputComponent,
         GeneratedElementTag::UiSelect => GeneratedComponentKind::SelectComponent,
         GeneratedElementTag::UiCombobox => GeneratedComponentKind::ComboboxComponent,
+        GeneratedElementTag::UiAccordion => GeneratedComponentKind::AccordionComponent,
+        GeneratedElementTag::UiAccordionItem => {
+            GeneratedComponentKind::AccordionItemComponent
+        }
+        GeneratedElementTag::UiTabs => GeneratedComponentKind::TabsComponent,
+        GeneratedElementTag::UiSlider => GeneratedComponentKind::SliderComponent,
         GeneratedElementTag::Span => GeneratedComponentKind::Container,
         GeneratedElementTag::Scroll => GeneratedComponentKind::Container,
         GeneratedElementTag::List => GeneratedComponentKind::Container,

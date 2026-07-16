@@ -44,6 +44,7 @@ defmodule GPUI.Native.ComponentsE2ETest do
           options={assigns.framework_options}
           search_placeholder="Search frameworks"
           cleanable={true}
+          loading={assigns.framework_loading}
           phx-change="framework_changed"
           phx-search="framework_searched"
         />
@@ -72,7 +73,7 @@ defmodule GPUI.Native.ComponentsE2ETest do
       do: {:noreply, %{assigns | language: language}}
 
     def handle_event("framework_changed", %{value: framework}, assigns),
-      do: {:noreply, %{assigns | framework: framework}}
+      do: {:noreply, %{assigns | framework: framework, framework_loading: true}}
 
     def handle_event("framework_searched", %{value: query}, assigns) do
       options = Enum.filter(["Phoenix", "LiveView", "Surface"], &contains?(&1, query))
@@ -100,8 +101,135 @@ defmodule GPUI.Native.ComponentsE2ETest do
              language: "rust",
              framework: nil,
              framework_query: "",
-             framework_options: ["Phoenix", "LiveView", "Surface"]
+             framework_options: ["Phoenix", "LiveView", "Surface"],
+             framework_loading: false
            )
+         end
+       ]}
+    end
+  end
+
+  defmodule SliderView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(assigns) do
+      ~GPUI"""
+      <div class="w-[360px] h-[100px] p-4 bg-slate-900">
+        <GPUI.UI.slider
+          id="component-volume"
+          class="w-full h-full"
+          value={assigns.volume}
+          step={5}
+          disabled={assigns.disabled}
+          phx-change="volume_changed"
+          phx-release="volume_released"
+        />
+      </div>
+      """
+    end
+
+    @impl GPUI.View
+    def handle_event("volume_changed", %{value: volume}, assigns),
+      do: {:noreply, %{assigns | volume: volume}}
+
+    def handle_event("volume_released", %{value: volume}, assigns),
+      do: {:noreply, %{assigns | released_volume: volume, disabled: true}}
+  end
+
+  defmodule SliderApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(%{title: title}) do
+      {:ok,
+       [
+         window title do
+           size(360, 100)
+           root(SliderView, volume: 25.0, released_volume: nil, disabled: false)
+         end
+       ]}
+    end
+  end
+
+  defmodule AccordionView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(assigns) do
+      ~GPUI"""
+      <div class="w-[360px] h-[160px] p-4 bg-slate-900">
+        <GPUI.UI.accordion
+          id="component-accordion"
+          expanded={assigns.expanded}
+          disabled={assigns.disabled}
+          phx-change="details_changed"
+        >
+          <GPUI.UI.accordion_item id="account" title="Account">
+            <text>Account details</text>
+          </GPUI.UI.accordion_item>
+          <GPUI.UI.accordion_item id="security" title="Security">
+            <text>Security details</text>
+          </GPUI.UI.accordion_item>
+        </GPUI.UI.accordion>
+      </div>
+      """
+    end
+
+    @impl GPUI.View
+    def handle_event("details_changed", %{value: expanded}, assigns),
+      do: {:noreply, %{assigns | expanded: expanded, disabled: true}}
+  end
+
+  defmodule AccordionApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(%{title: title}) do
+      {:ok,
+       [
+         window title do
+           size(360, 160)
+           root(AccordionView, expanded: [], disabled: false)
+         end
+       ]}
+    end
+  end
+
+  defmodule TabsView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(assigns) do
+      ~GPUI"""
+      <div class="w-[360px] h-[80px] p-4 bg-slate-900">
+        <GPUI.UI.tabs
+          id="component-tabs"
+          value={assigns.section}
+          options={[{"General", "general"}, {"Advanced", "advanced"}]}
+          variant="segmented"
+          disabled={assigns.disabled}
+          phx-change="section_changed"
+        />
+      </div>
+      """
+    end
+
+    @impl GPUI.View
+    def handle_event("section_changed", %{value: section}, assigns),
+      do: {:noreply, %{assigns | section: section, disabled: true}}
+  end
+
+  defmodule TabsApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(%{title: title}) do
+      {:ok,
+       [
+         window title do
+           size(360, 80)
+           root(TabsView, section: "general", disabled: false)
          end
        ]}
     end
@@ -203,12 +331,73 @@ defmodule GPUI.Native.ComponentsE2ETest do
       assert %{framework_query: "live"} = assigns(runtime)
     end)
 
+    Desktop.key!(window_id, "Escape")
+    Process.sleep(100)
+    assert %{framework: nil} = assigns(runtime)
+
+    Desktop.key!(window_id, "Return")
     Desktop.key!(window_id, "Down")
     Desktop.key!(window_id, "Return")
 
     Desktop.eventually(fn ->
-      assert %{framework: "LiveView"} = assigns(runtime)
+      assert %{framework: "LiveView", framework_loading: true} = assigns(runtime)
     end)
+
+    Desktop.key!(window_id, "Return")
+    Desktop.type!(window_id, "x")
+    Process.sleep(100)
+    assert %{framework_query: "live"} = assigns(runtime)
+  end
+
+  test "native accordion emits controlled expanded IDs and respects disabled state" do
+    title = "GPUI Accordion E2E #{System.unique_integer([:positive])}"
+    {:ok, runtime} = GPUI.Runtime.start_link(app: AccordionApp, args: %{title: title})
+    on_exit(fn -> Desktop.stop_process(runtime) end)
+
+    window_id = Desktop.window_id!(title)
+    Desktop.click!(window_id, 100, 78)
+
+    Desktop.eventually(fn ->
+      assert %{expanded: ["security"], disabled: true} = assigns(runtime)
+    end)
+
+    Desktop.click!(window_id, 100, 32)
+    Process.sleep(100)
+    assert %{expanded: ["security"]} = assigns(runtime)
+  end
+
+  test "native tabs emit controlled selections and respect disabled state" do
+    title = "GPUI Tabs E2E #{System.unique_integer([:positive])}"
+    {:ok, runtime} = GPUI.Runtime.start_link(app: TabsApp, args: %{title: title})
+    on_exit(fn -> Desktop.stop_process(runtime) end)
+
+    window_id = Desktop.window_id!(title)
+    Desktop.click!(window_id, 130, 32)
+
+    Desktop.eventually(fn ->
+      assert %{section: "advanced", disabled: true} = assigns(runtime)
+    end)
+
+    Desktop.click!(window_id, 80, 32)
+    Process.sleep(100)
+    assert %{section: "advanced"} = assigns(runtime)
+  end
+
+  test "native slider emits change and release events and respects disabled state" do
+    title = "GPUI Slider E2E #{System.unique_integer([:positive])}"
+    {:ok, runtime} = GPUI.Runtime.start_link(app: SliderApp, args: %{title: title})
+    on_exit(fn -> Desktop.stop_process(runtime) end)
+
+    window_id = Desktop.window_id!(title)
+    Desktop.click!(window_id, 278, 20)
+
+    Desktop.eventually(fn ->
+      assert %{volume: 80.0, released_volume: 80.0, disabled: true} = assigns(runtime)
+    end)
+
+    Desktop.click!(window_id, 80, 20)
+    Process.sleep(100)
+    assert %{volume: 80.0, released_volume: 80.0} = assigns(runtime)
   end
 
   defp assigns(runtime) do

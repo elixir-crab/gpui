@@ -5,6 +5,7 @@ use gpui_component::{
     input::InputState,
     searchable_list::{SearchableListDelegate, SearchableListItem},
     select::SelectState,
+    slider::SliderState,
     IndexPath,
 };
 use std::{
@@ -166,11 +167,42 @@ pub(crate) struct ComponentCombobox {
     pub(crate) _subscription: gpui::Subscription,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct SliderConfig {
+    pub(crate) min: f32,
+    pub(crate) max: f32,
+    pub(crate) step: f32,
+    pub(crate) logarithmic: bool,
+}
+
+impl SliderConfig {
+    pub(crate) fn accepts(self, value: f32) -> bool {
+        self.min.is_finite()
+            && self.max.is_finite()
+            && self.step.is_finite()
+            && value.is_finite()
+            && self.min < self.max
+            && self.step > 0.0
+            && value >= self.min
+            && value <= self.max
+            && (!self.logarithmic || self.min > 0.0)
+    }
+}
+
+pub(crate) struct ComponentSlider {
+    pub(crate) state: gpui::Entity<SliderState>,
+    pub(crate) binding: SharedBinding<f64>,
+    pub(crate) release_event: SharedEvent,
+    pub(crate) config: SliderConfig,
+    pub(crate) _subscription: gpui::Subscription,
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 enum ComponentKind {
     Input,
     Select,
     Combobox,
+    Slider,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -192,6 +224,7 @@ enum StatefulComponent {
     Input(ComponentInput),
     Select(ComponentSelect),
     Combobox(ComponentCombobox),
+    Slider(ComponentSlider),
 }
 
 #[derive(Default)]
@@ -254,5 +287,20 @@ impl ComponentRegistry {
         self.active.insert(key.clone());
         self.entries
             .insert(key, StatefulComponent::Combobox(combobox));
+    }
+
+    pub(crate) fn slider_mut(&mut self, id: &str) -> Option<&mut ComponentSlider> {
+        let key = ComponentKey::new(ComponentKind::Slider, id);
+        self.active.insert(key.clone());
+        match self.entries.get_mut(&key) {
+            Some(StatefulComponent::Slider(slider)) => Some(slider),
+            _other => None,
+        }
+    }
+
+    pub(crate) fn insert_slider(&mut self, id: &str, slider: ComponentSlider) {
+        let key = ComponentKey::new(ComponentKind::Slider, id);
+        self.active.insert(key.clone());
+        self.entries.insert(key, StatefulComponent::Slider(slider));
     }
 }

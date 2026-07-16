@@ -7,8 +7,9 @@ pub(crate) mod controlled;
 pub(crate) mod event;
 
 use component::{
-    render_button_component, render_checkbox_component, render_combobox_component,
-    render_input_component, render_select_component,
+    render_accordion_component, render_accordion_item_component, render_button_component,
+    render_checkbox_component, render_combobox_component, render_input_component,
+    render_select_component, render_slider_component, render_tabs_component,
 };
 use event::{apply_click_event, apply_input_events};
 
@@ -27,6 +28,10 @@ pub(crate) enum ElementNode {
     InputComponent(InputComponentNode),
     SelectComponent(SelectComponentNode),
     ComboboxComponent(ComboboxComponentNode),
+    SliderComponent(SliderComponentNode),
+    TabsComponent(TabsComponentNode),
+    AccordionComponent(AccordionComponentNode),
+    AccordionItemComponent(AccordionItemComponentNode),
     Image {
         image: ImageData,
         style: StyleAttrs,
@@ -96,6 +101,10 @@ impl ElementNode {
             Self::InputComponent(input) => render_input_component(element_id, input, context),
             Self::SelectComponent(select) => render_select_component(select, context),
             Self::ComboboxComponent(combobox) => render_combobox_component(combobox, context),
+            Self::SliderComponent(slider) => render_slider_component(slider, context),
+            Self::TabsComponent(tabs) => render_tabs_component(tabs, context),
+            Self::AccordionComponent(accordion) => render_accordion_component(accordion, context),
+            Self::AccordionItemComponent(item) => render_accordion_item_component(item, context),
             Self::Div {
                 tag,
                 style,

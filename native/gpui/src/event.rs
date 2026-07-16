@@ -4,7 +4,9 @@ use rustler::{Atom, Encoder, Env, NifResult, Term};
 #[derive(Clone, Debug)]
 pub(crate) enum EventValue {
     String(String),
+    Strings(Vec<String>),
     Boolean(bool),
+    Number(f64),
     #[cfg_attr(not(feature = "components"), allow(dead_code))]
     Nil,
 }
@@ -13,7 +15,9 @@ impl EventValue {
     fn encode<'a>(self, env: Env<'a>) -> Term<'a> {
         match self {
             Self::String(value) => value.encode(env),
+            Self::Strings(value) => value.encode(env),
             Self::Boolean(value) => value.encode(env),
+            Self::Number(value) => value.encode(env),
             Self::Nil => atoms::nil().encode(env),
         }
     }
@@ -22,6 +26,7 @@ impl EventValue {
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum InputKind {
     Change,
+    Release,
     Search,
     KeyDown,
     KeyUp,
@@ -31,6 +36,7 @@ impl InputKind {
     fn atom(self) -> Atom {
         match self {
             Self::Change => atoms::change(),
+            Self::Release => atoms::release(),
             Self::Search => atoms::search(),
             Self::KeyDown => atoms::keydown(),
             Self::KeyUp => atoms::keyup(),

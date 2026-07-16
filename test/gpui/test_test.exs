@@ -24,6 +24,27 @@ defmodule GPUI.TestTest do
           phx-change="framework_changed"
           phx-search="framework_searched"
         />
+        <GPUI.UI.accordion
+          id="details"
+          expanded={assigns.expanded}
+          multiple={true}
+          phx-change="details_changed"
+        >
+          <GPUI.UI.accordion_item id="account" title="Account" />
+          <GPUI.UI.accordion_item id="security" title="Security" />
+        </GPUI.UI.accordion>
+        <GPUI.UI.tabs
+          id="section"
+          value={assigns.section}
+          options={[{"General", "general"}, {"Advanced", "advanced"}]}
+          phx-change="section_changed"
+        />
+        <GPUI.UI.slider
+          id="volume"
+          value={assigns.volume}
+          phx-change="volume_changed"
+          phx-release="volume_released"
+        />
       </div>
       """
     end
@@ -43,6 +64,18 @@ defmodule GPUI.TestTest do
 
     def handle_event("framework_searched", %{value: query}, assigns),
       do: {:noreply, %{assigns | query: query}}
+
+    def handle_event("details_changed", %{value: expanded}, assigns),
+      do: {:noreply, %{assigns | expanded: expanded}}
+
+    def handle_event("section_changed", %{value: section}, assigns),
+      do: {:noreply, %{assigns | section: section}}
+
+    def handle_event("volume_changed", %{value: volume}, assigns),
+      do: {:noreply, %{assigns | volume: volume}}
+
+    def handle_event("volume_released", %{value: volume}, assigns),
+      do: {:noreply, %{assigns | released_volume: volume}}
   end
 
   defmodule TestApp do
@@ -58,7 +91,11 @@ defmodule GPUI.TestTest do
              name: "",
              language: "rust",
              framework: nil,
-             query: ""
+             query: "",
+             expanded: [],
+             section: "general",
+             volume: 25.0,
+             released_volume: nil
            )
          end
        ]}
@@ -72,7 +109,11 @@ defmodule GPUI.TestTest do
         name: "Ada",
         language: "rust",
         framework: nil,
-        query: ""
+        query: "",
+        expanded: [],
+        section: "general",
+        volume: 25.0,
+        released_volume: nil
       )
 
     assert %GPUI.Element{type: :ui_button} = find!(tree, id: "increment")
@@ -88,7 +129,11 @@ defmodule GPUI.TestTest do
              name: "",
              language: "rust",
              framework: nil,
-             query: ""
+             query: "",
+             expanded: [],
+             section: "general",
+             volume: 25.0,
+             released_volume: nil
            } = assigns(runtime)
 
     assert %{title: "Primary"} = window_snapshot(runtime, "Primary")
@@ -104,7 +149,20 @@ defmodule GPUI.TestTest do
     select(runtime, "language_changed", nil)
     search(runtime, "framework_searched", "live")
     select(runtime, "framework_changed", "LiveView")
-    assert %{language: nil, query: "live", framework: "LiveView"} = assigns(runtime)
+    expand(runtime, "details_changed", ["security"])
+    select(runtime, "section_changed", "advanced")
+    slide(runtime, "volume_changed", 40.0)
+    release(runtime, "volume_released", 40.0)
+
+    assert %{
+             language: nil,
+             query: "live",
+             framework: "LiveView",
+             expanded: ["security"],
+             section: "advanced",
+             volume: 40.0,
+             released_volume: 40.0
+           } = assigns(runtime)
   end
 
   test "public test display records snapshots chronologically" do

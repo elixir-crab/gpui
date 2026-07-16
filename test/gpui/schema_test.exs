@@ -10,6 +10,10 @@ defmodule GPUI.SchemaTest do
              :ui_input,
              :ui_select,
              :ui_combobox,
+             :ui_accordion,
+             :ui_accordion_item,
+             :ui_tabs,
+             :ui_slider,
              :span,
              :scroll,
              :list,
@@ -22,6 +26,7 @@ defmodule GPUI.SchemaTest do
 
     assert :"phx-change" in GPUI.Schema.events()
     assert :"phx-search" in GPUI.Schema.events()
+    assert :"phx-release" in GPUI.Schema.events()
     assert :ui_select in GPUI.Schema.identified_tags()
     assert :raster in GPUI.Schema.resources()
     assert :border_radius in GPUI.Schema.styles()

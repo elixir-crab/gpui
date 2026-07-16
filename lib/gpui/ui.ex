@@ -39,6 +39,129 @@ defmodule GPUI.UI do
   def combobox(assigns),
     do: component(:ui_combobox, normalize_options_assigns!(:ui_combobox, assigns))
 
+  @doc """
+  Builds a controlled GPUI Component accordion from `accordion_item/1` children.
+
+  `expanded` contains the stable item IDs currently open. Changes emit the new
+  list through `phx-change`.
+  """
+  @spec accordion(map()) :: Element.t()
+  def accordion(assigns) when is_map(assigns) do
+    assigns =
+      assigns
+      |> Map.put_new(:expanded, [])
+      |> Map.put_new(:multiple, false)
+      |> Map.put_new(:bordered, true)
+
+    expanded = assigns.expanded
+    children = Map.get(assigns, :children, [])
+
+    unless is_list(expanded) and Enum.all?(expanded, &(is_binary(&1) and &1 != "")) do
+      raise ArgumentError, "ui_accordion expanded must be a list of non-empty string IDs"
+    end
+
+    unless length(expanded) == MapSet.size(MapSet.new(expanded)) do
+      raise ArgumentError, "ui_accordion expanded IDs must be unique"
+    end
+
+    item_ids =
+      Enum.map(children, fn
+        %Element{type: :ui_accordion_item, attrs: attrs} ->
+          Map.fetch!(Map.new(attrs), :id)
+
+        child ->
+          raise ArgumentError,
+                "ui_accordion only accepts accordion_item children, got: #{inspect(child)}"
+      end)
+
+    unless Enum.all?(expanded, &(&1 in item_ids)) do
+      raise ArgumentError, "ui_accordion expanded IDs must identify accordion items"
+    end
+
+    if not assigns.multiple and match?([_, _ | _], expanded) do
+      raise ArgumentError, "ui_accordion requires multiple={true} for multiple expanded items"
+    end
+
+    component(:ui_accordion, assigns)
+  end
+
+  @doc "Builds an item for `accordion/1`."
+  @spec accordion_item(map()) :: Element.t()
+  def accordion_item(%{title: title} = assigns) when is_binary(title) and title != "",
+    do: component(:ui_accordion_item, assigns)
+
+  def accordion_item(_assigns),
+    do: raise(ArgumentError, "ui_accordion_item requires a non-empty string title")
+
+  @doc """
+  Builds a controlled GPUI Component tab bar.
+
+  Options use the same label/value format as `select/1`; `value` identifies the
+  selected tab and changes are emitted through `phx-change`.
+  """
+  @spec tabs(map()) :: Element.t()
+  def tabs(assigns) do
+    assigns = normalize_options_assigns!(:ui_tabs, assigns)
+    values = Enum.map(assigns.options, & &1.value)
+
+    if is_nil(Map.get(assigns, :value)) or assigns.value not in values do
+      raise ArgumentError,
+            "ui_tabs value #{inspect(Map.get(assigns, :value))} is not present in options"
+    end
+
+    component(:ui_tabs, assigns)
+  end
+
+  @doc """
+  Builds a persistent controlled GPUI Component slider.
+
+  `phx-change` is emitted continuously during pointer interaction and
+  `phx-release` is emitted once interaction finishes.
+  """
+  @spec slider(map()) :: Element.t()
+  def slider(assigns) when is_map(assigns) do
+    assigns =
+      assigns
+      |> Map.put_new(:value, 0.0)
+      |> Map.put_new(:min, 0.0)
+      |> Map.put_new(:max, 100.0)
+      |> Map.put_new(:step, 1.0)
+      |> Map.put_new(:orientation, "horizontal")
+      |> Map.put_new(:scale, "linear")
+      |> normalize_slider_numbers!()
+
+    validate_slider!(assigns)
+    component(:ui_slider, assigns)
+  end
+
+  defp normalize_slider_numbers!(assigns) do
+    Enum.reduce([:value, :min, :max, :step], assigns, fn name, normalized ->
+      case Map.fetch!(normalized, name) do
+        value when is_number(value) -> Map.put(normalized, name, value / 1)
+        value -> raise ArgumentError, "ui_slider #{name} must be a number, got: #{inspect(value)}"
+      end
+    end)
+  end
+
+  defp validate_slider!(assigns) do
+    cond do
+      assigns.min >= assigns.max ->
+        raise ArgumentError, "ui_slider min must be less than max"
+
+      assigns.step <= 0 ->
+        raise ArgumentError, "ui_slider step must be greater than zero"
+
+      assigns.value < assigns.min or assigns.value > assigns.max ->
+        raise ArgumentError, "ui_slider value must be between min and max"
+
+      assigns.scale == "logarithmic" and assigns.min <= 0 ->
+        raise ArgumentError, "ui_slider logarithmic scale requires min greater than zero"
+
+      true ->
+        :ok
+    end
+  end
+
   defp normalize_options_assigns!(type, %{options: options} = assigns) when is_list(options) do
     options = normalize_options!(type, options)
     values = Enum.map(options, & &1.value)

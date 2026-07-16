@@ -10,6 +10,9 @@
 - Added controlled `GPUI.UI.select/1`, native popup interaction, and semantic test support.
 - Generated native component contracts and decoders from the component schema.
 - Added persistent `GPUI.UI.combobox/1` with search events, dynamic filtering, clearing, and local/remote native coverage.
+- Added controlled `GPUI.UI.slider/1` with generated numeric contracts, change/release events, persistent reconciliation, and native coverage.
+- Added controlled `GPUI.UI.tabs/1` backed directly by `gpui-component` tab bars.
+- Added controlled `GPUI.UI.accordion/1` and `accordion_item/1` with arbitrary nested GPUI content.
 
 ## 0.1.0
 

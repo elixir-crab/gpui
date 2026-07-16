@@ -33,6 +33,14 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
           options={[{"Rust", "rust"}, {"Elixir", "elixir"}]}
           phx-change="language_changed"
         />
+        <GPUI.UI.slider
+          id="remote-volume"
+          class="w-full h-[32px]"
+          value={assigns.volume}
+          step={10}
+          phx-change="volume_changed"
+          phx-release="volume_released"
+        />
       </div>
       """
     end
@@ -55,6 +63,12 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
       {:noreply, %{assigns | query: query, framework_options: options}}
     end
 
+    def handle_event("volume_changed", %{value: volume}, assigns),
+      do: {:noreply, %{assigns | volume: volume}}
+
+    def handle_event("volume_released", %{value: volume}, assigns),
+      do: {:noreply, %{assigns | released_volume: volume}}
+
     defp contains?(label, query),
       do: String.contains?(String.downcase(label), String.downcase(query))
   end
@@ -75,7 +89,9 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
              language: "rust",
              framework: nil,
              query: "",
-             framework_options: ["Phoenix", "LiveView"]
+             framework_options: ["Phoenix", "LiveView"],
+             volume: 0.0,
+             released_volume: nil
            )
          end
        ]}
@@ -102,6 +118,7 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
     assert "" = get_in(window, [:root, :assigns, :name])
     assert "rust" = get_in(window, [:root, :assigns, :language])
     assert nil == get_in(window, [:root, :assigns, :framework])
+    assert get_in(window, [:root, :assigns, :volume]) == 0.0
 
     window_id = Desktop.window_id!("GPUI Remote E2E")
     Desktop.click!(window_id, 80, 68)
@@ -133,6 +150,13 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
     Desktop.eventually(fn ->
       assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
       assert "elixir" = get_in(updated, [:root, :assigns, :language])
+    end)
+
+    Desktop.click!(window_id, 160, 250)
+
+    Desktop.eventually(fn ->
+      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
+      assert 50.0 = get_in(updated, [:root, :assigns, :volume])
     end)
   end
 

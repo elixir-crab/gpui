@@ -137,7 +137,10 @@ defmodule GPUI.Codegen.Native.Schema do
   defp component_field_type(:id, :string), do: T.path(:String)
   defp component_field_type(_name, :string), do: T.option(:String)
   defp component_field_type(_name, {:default, :string}), do: T.path(:String)
+  defp component_field_type(_name, {:default, :number, _value}), do: T.path(:f64)
   defp component_field_type(_name, :boolean), do: T.path(:bool)
+  defp component_field_type(_name, {:default, :boolean, _value}), do: T.path(:bool)
+  defp component_field_type(_name, :string_list), do: T.vec(:String)
   defp component_field_type(_name, {:enum, _values}), do: T.option(:String)
   defp component_field_type(_name, :select_options), do: T.vec(:SelectOptionNode)
 
@@ -154,12 +157,29 @@ defmodule GPUI.Codegen.Native.Schema do
     |> A.method(:unwrap_or_default)
   end
 
+  defp component_decoder_expr(name, {:default, :number, default}) do
+    :component_number_attr
+    |> component_attr_call(name)
+    |> A.try()
+    |> A.method(:unwrap_or, [A.lit(default)])
+  end
+
   defp component_decoder_expr(name, :boolean) do
     :component_bool_attr
     |> component_attr_call(name)
     |> A.try()
     |> A.method(:unwrap_or, [false])
   end
+
+  defp component_decoder_expr(name, {:default, :boolean, default}) do
+    :component_bool_attr
+    |> component_attr_call(name)
+    |> A.try()
+    |> A.method(:unwrap_or, [default])
+  end
+
+  defp component_decoder_expr(name, :string_list),
+    do: A.try(component_attr_call(:component_string_list_attr, name))
 
   defp component_decoder_expr(name, {:enum, values}) do
     A.try(
