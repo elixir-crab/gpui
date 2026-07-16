@@ -3,6 +3,7 @@ defmodule GPUI.Codegen.Native.Decoder do
 
   use RustQ.Meta
 
+  alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Type, as: R
 
@@ -22,7 +23,9 @@ defmodule GPUI.Codegen.Native.Decoder do
   @spec number_value(term()) :: R.option(R.f32())
   defrust number_value(term) do
     case decode_as(term, R.f64()) do
-      {:ok, value} -> some(cast(value, R.f32()))
+      {:ok, value} ->
+        some(cast(value, R.f32()))
+
       {:error, _reason} ->
         case decode_as(term, R.i64()) do
           {:ok, value} -> some(cast(value, R.f32()))
@@ -76,10 +79,14 @@ defmodule GPUI.Codegen.Native.Decoder do
   @spec text_fragment(term()) :: R.nif_result(String.t())
   defrust text_fragment(term) do
     case decode_as(term, String.t()) do
-      {:ok, value} -> {:ok, value}
+      {:ok, value} ->
+        {:ok, value}
+
       {:error, _reason} ->
         case decode_as(term, R.i64()) do
-          {:ok, value} -> {:ok, value.to_string()}
+          {:ok, value} ->
+            {:ok, value.to_string()}
+
           {:error, _reason} ->
             case decode_as(term, R.f64()) do
               {:ok, value} -> {:ok, value.to_string()}
@@ -90,7 +97,7 @@ defmodule GPUI.Codegen.Native.Decoder do
   end
 
   def asts do
-    Enum.map(__rustq_asts__(), fn ast ->
+    Enum.map(MetaAST.functions(__MODULE__), fn ast ->
       %{ast | vis: :crate, attrs: [A.attr(:cfg, feature: "real-gpui") | ast.attrs]}
     end)
   end
