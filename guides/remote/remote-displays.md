@@ -44,9 +44,21 @@ client cannot mutate another client's application state.
 
 The native event loop remains local to the display client. Only declarative
 snapshots, resources, events, and protocol operations cross the connection.
+Remote display updates use the same typed OTP message shape as local runtimes:
+
+```elixir
+:ok = GPUI.Remote.Client.subscribe(client)
+
+receive do
+  {:gpui, ^client, %GPUI.Runtime.Update{events: events, snapshot: snapshot}} ->
+    # The snapshot is already synchronized to the client's display.
+end
+```
+
 After synchronizing a remote snapshot, callers can wait for its local native
 frame with `GPUI.Remote.Client.await_frame/3`; the remote client remains
-responsive while the display barrier is pending.
+responsive while the display barrier is pending. Subscribers are monitored and
+removed when they exit.
 
 ## SSL
 

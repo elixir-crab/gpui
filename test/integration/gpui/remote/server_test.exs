@@ -79,14 +79,28 @@ defmodule GPUI.Remote.ServerTest do
 
     assert {:ok, %{windows: [%{id: 1}]}} = GPUI.Remote.Client.mount(client, %{name: "old"})
     assert_receive {:gpui_snapshot, %{windows: [%{id: 1}]}}
+    assert :ok = GPUI.Remote.Client.subscribe(client)
+
+    event = %{
+      type: :change,
+      window_id: 1,
+      event: "rename",
+      value: "client"
+    }
 
     assert {:ok, %{windows: [%{root: %{assigns: %{name: "client"}}}]}} =
-             GPUI.Remote.Client.event(client, %{
-               type: :change,
-               window_id: 1,
-               event: "rename",
-               value: "client"
-             })
+             GPUI.Remote.Client.event(client, event)
+
+    assert_receive {:gpui, ^client,
+                    %GPUI.Runtime.Update{
+                      revision: 2,
+                      events: [^event],
+                      snapshot: %{windows: [%{root: %{assigns: %{name: "client"}}}]}
+                    }}
+
+    assert :ok = GPUI.Remote.Client.unsubscribe(client)
+    assert {:ok, _snapshot} = GPUI.Remote.Client.event(client, %{event | value: "silent"})
+    refute_receive {:gpui, ^client, %GPUI.Runtime.Update{}}
   end
 
   test "remote client forwards local display events automatically" do
@@ -104,6 +118,7 @@ defmodule GPUI.Remote.ServerTest do
       )
 
     assert {:ok, _snapshot} = GPUI.Remote.Client.mount(client, %{name: "old"})
+    assert :ok = GPUI.Remote.Client.subscribe(client)
 
     assert {:ok, :ok} =
              GPUI.Test.Display.inject_event(display_name, %{
@@ -113,10 +128,10 @@ defmodule GPUI.Remote.ServerTest do
                value: "polled"
              })
 
-    assert_eventually(fn ->
-      assert {:ok, %{windows: [%{root: %{assigns: %{name: "polled"}}}]}} =
-               GPUI.Remote.Client.snapshot(client)
-    end)
+    assert_receive {:gpui, ^client,
+                    %GPUI.Runtime.Update{
+                      snapshot: %{windows: [%{root: %{assigns: %{name: "polled"}}}]}
+                    }}
   end
 
   test "remote client ignores display diagnostics that are not user input" do
@@ -143,7 +158,8 @@ defmodule GPUI.Remote.ServerTest do
                id: "missing"
              })
 
-    Process.sleep(30)
+    send(client, :poll_display)
+    _state = :sys.get_state(client)
     assert Process.alive?(client)
 
     assert {:ok, %{windows: [%{root: %{assigns: %{name: "unchanged"}}}]}} =
@@ -183,7 +199,9 @@ defmodule GPUI.Remote.ServerTest do
     {:ok, client} = start_client(port)
 
     assert {:ok, _reply} = SafeRPC.call(client, :mount, %{session_id: "expired"})
-    Process.sleep(80)
+    session = :sys.get_state(server).sessions["expired"].pid
+    monitor = Process.monitor(session)
+    assert_receive {:DOWN, ^monitor, :process, ^session, _reason}, 1_000
 
     assert {:error, :unknown_session} =
              SafeRPC.call(client, :resume_session, %{session_id: "expired"})
@@ -213,22 +231,6 @@ defmodule GPUI.Remote.ServerTest do
       )
 
     assert {:error, :unauthorized} = SafeRPC.call(client, :hello, %{})
-  end
-
-  defp assert_eventually(fun) do
-    assert_eventually(fun, System.monotonic_time(:millisecond) + 1_000)
-  end
-
-  defp assert_eventually(fun, deadline) do
-    fun.()
-  rescue
-    error in ExUnit.AssertionError ->
-      if System.monotonic_time(:millisecond) >= deadline do
-        reraise(error, __STACKTRACE__)
-      else
-        Process.sleep(10)
-        assert_eventually(fun, deadline)
-      end
   end
 
   defp start_client(port) do

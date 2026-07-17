@@ -152,6 +152,7 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
     client = start_remote!(CounterApp)
 
     assert {:ok, %{windows: [window]}} = GPUI.Remote.Client.mount(client)
+    :ok = GPUI.Remote.Client.subscribe(client)
     assert 0 = get_in(window, [:root, :assigns, :count])
     assert "" = get_in(window, [:root, :assigns, :name])
     assert "rust" = get_in(window, [:root, :assigns, :language])
@@ -204,6 +205,7 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
     client = start_remote!(ControlledApp)
 
     assert {:ok, %{windows: [_window]}} = GPUI.Remote.Client.mount(client)
+    :ok = GPUI.Remote.Client.subscribe(client)
     window_id = Desktop.window_id!("GPUI Remote Controls E2E")
     Desktop.click!(window_id, 130, 32)
 

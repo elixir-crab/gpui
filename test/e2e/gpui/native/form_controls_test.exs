@@ -77,6 +77,7 @@ defmodule GPUI.Native.FormControlsE2ETest do
   test "switches and radio groups remain controlled through native interaction" do
     title = "GPUI Form Controls E2E #{System.unique_integer([:positive])}"
     {:ok, runtime} = GPUI.Runtime.start_link(app: FormApp, args: %{title: title})
+    :ok = GPUI.Runtime.subscribe(runtime)
     on_exit(fn -> Desktop.stop_process(runtime) end)
 
     window_id = Desktop.window_id!(title)
@@ -101,13 +102,11 @@ defmodule GPUI.Native.FormControlsE2ETest do
     })
 
     Desktop.eventually(fn -> assert %{switch_loading: true} = assigns(runtime) end)
-    Process.sleep(200)
-    Desktop.key!(window_id, "space")
-    Process.sleep(100)
+    Desktop.await_frame!(runtime, 1, window_id)
+    Desktop.refute_update!(runtime, fn -> Desktop.key!(window_id, "space") end)
     assert %{notifications: false} = assigns(runtime)
 
-    Desktop.click!(window_id, 100, 60)
-    Process.sleep(100)
+    Desktop.refute_update!(runtime, fn -> Desktop.click!(window_id, 100, 60) end)
     assert %{plan: "free"} = assigns(runtime)
 
     Desktop.key!(window_id, "Tab")

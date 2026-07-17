@@ -121,6 +121,7 @@ defmodule GPUI.Remote.FormControlsE2ETest do
     on_exit(fn -> Desktop.stop_process(server) end)
 
     assert {:ok, %{windows: [_window]}} = GPUI.Remote.Client.mount(client)
+    :ok = GPUI.Remote.Client.subscribe(client)
     window_id = Desktop.window_id!("GPUI Remote Form E2E")
     Desktop.click!(window_id, 30, 26)
 
@@ -165,7 +166,7 @@ defmodule GPUI.Remote.FormControlsE2ETest do
       assert true == get_in(updated, [:root, :assigns, :dialog_open])
     end)
 
-    Process.sleep(150)
+    Desktop.await_frame!(client, 1, window_id)
     Desktop.key!(window_id, "Escape")
 
     Desktop.eventually(fn ->
@@ -173,7 +174,7 @@ defmodule GPUI.Remote.FormControlsE2ETest do
       assert false == get_in(updated, [:root, :assigns, :dialog_open])
     end)
 
-    Process.sleep(150)
+    Desktop.await_frame!(client, 1, window_id)
     Desktop.click!(window_id, 55, 208)
 
     Desktop.eventually(fn ->
@@ -181,7 +182,7 @@ defmodule GPUI.Remote.FormControlsE2ETest do
       assert true == get_in(updated, [:root, :assigns, :menu_open])
     end)
 
-    Process.sleep(150)
+    Desktop.await_frame!(client, 1, window_id)
     Desktop.key!(window_id, "Escape")
 
     Desktop.eventually(fn ->

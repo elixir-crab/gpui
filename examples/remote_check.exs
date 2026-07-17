@@ -47,6 +47,7 @@ children = [
 
 pid = Process.whereis(RemoteCheckApp)
 [window] = GPUI.Runtime.windows(pid)
+:ok = GPUI.Runtime.subscribe(pid)
 
 {:ok, :ok} =
   GPUI.Runtime.inject_event(pid, %{
@@ -54,18 +55,14 @@ pid = Process.whereis(RemoteCheckApp)
     event: "inc"
   })
 
-deadline = System.monotonic_time(:millisecond) + 1_000
-
 result =
-  Stream.repeatedly(fn ->
-    Process.sleep(10)
-    [updated] = GPUI.Runtime.windows(pid)
-    {_module, assigns} = updated.root
-    assigns.count
-  end)
-  |> Enum.find(fn count ->
-    count == 1 or System.monotonic_time(:millisecond) > deadline
-  end)
+  receive do
+    {:gpui, ^pid,
+     %GPUI.Runtime.Update{snapshot: %{windows: [%{root: %{assigns: %{count: count}}}]}}} ->
+      count
+  after
+    1_000 -> :timeout
+  end
 
 if result == 1 do
   IO.puts("GPUI remote check: PASS")

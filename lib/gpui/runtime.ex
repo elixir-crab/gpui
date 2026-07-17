@@ -112,19 +112,12 @@ defmodule GPUI.Runtime do
   def handle_call(:events, _from, state), do: {:reply, Enum.reverse(state.events), state}
 
   def handle_call(:subscribe, {pid, _tag}, state) do
-    state =
-      if Map.has_key?(state.subscribers, pid) do
-        state
-      else
-        put_in(state.subscribers[pid], Process.monitor(pid))
-      end
-
-    {:reply, :ok, state}
+    subscribers = GPUI.UpdateSubscribers.subscribe(state.subscribers, pid)
+    {:reply, :ok, %{state | subscribers: subscribers}}
   end
 
   def handle_call(:unsubscribe, {pid, _tag}, state) do
-    {monitor, subscribers} = Map.pop(state.subscribers, pid)
-    if monitor, do: Process.demonitor(monitor, [:flush])
+    subscribers = GPUI.UpdateSubscribers.unsubscribe(state.subscribers, pid)
     {:reply, :ok, %{state | subscribers: subscribers}}
   end
 
@@ -143,7 +136,7 @@ defmodule GPUI.Runtime do
   def handle_call({:dispatch_event, event}, _from, state) do
     {handled, snapshot} = GPUI.Session.dispatch_event(state.session, event)
     :ok = state.display_module.sync(state.display, snapshot)
-    state = publish_update(state, [handled], snapshot)
+    state = GPUI.UpdateSubscribers.publish_update(state, self(), [handled], snapshot)
     {:reply, {handled, snapshot}, state}
   end
 
@@ -171,13 +164,8 @@ defmodule GPUI.Runtime do
 
   @impl GenServer
   def handle_info({:DOWN, monitor, :process, pid, _reason}, state) do
-    state =
-      case Map.get(state.subscribers, pid) do
-        ^monitor -> %{state | subscribers: Map.delete(state.subscribers, pid)}
-        _other -> state
-      end
-
-    {:noreply, state}
+    subscribers = GPUI.UpdateSubscribers.remove_down(state.subscribers, pid, monitor)
+    {:noreply, %{state | subscribers: subscribers}}
   end
 
   def handle_info(:poll_display, state) do
@@ -204,7 +192,7 @@ defmodule GPUI.Runtime do
         state
       else
         :ok = state.display_module.sync(state.display, snapshot)
-        publish_update(state, handled, snapshot)
+        GPUI.UpdateSubscribers.publish_update(state, self(), handled, snapshot)
       end
 
     {handled, state}
@@ -214,20 +202,9 @@ defmodule GPUI.Runtime do
     snapshot = GPUI.Session.snapshot(state.session)
 
     case state.display_module.sync(state.display, snapshot) do
-      :ok -> {:ok, publish_update(state, [], snapshot)}
+      :ok -> {:ok, GPUI.UpdateSubscribers.publish_update(state, self(), [], snapshot)}
       {:error, _reason} = error -> {error, state}
     end
-  end
-
-  defp publish_update(state, events, snapshot) do
-    revision = state.revision + 1
-    update = %GPUI.Runtime.Update{revision: revision, events: events, snapshot: snapshot}
-
-    Enum.each(state.subscribers, fn {pid, _monitor} ->
-      send(pid, {:gpui, self(), update})
-    end)
-
-    %{state | revision: revision}
   end
 
   defp poll_interval(opts) do

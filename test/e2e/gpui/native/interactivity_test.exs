@@ -71,6 +71,7 @@ defmodule GPUI.Native.InteractivityE2ETest do
   test "real pointer and keyboard input reaches the Elixir view and rerenders" do
     title = "GPUI Interactivity E2E #{System.unique_integer([:positive])}"
     {:ok, runtime} = GPUI.Runtime.start_link(app: InteractiveApp, args: %{title: title})
+    :ok = GPUI.Runtime.subscribe(runtime)
     on_exit(fn -> Desktop.stop_process(runtime) end)
 
     window_id = Desktop.window_id!(title)

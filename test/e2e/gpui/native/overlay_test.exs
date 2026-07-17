@@ -102,6 +102,7 @@ defmodule GPUI.Native.OverlayE2ETest do
   test "controlled overlays dismiss and dropdown items select" do
     title = "GPUI Overlay E2E #{System.unique_integer([:positive])}"
     {:ok, runtime} = GPUI.Runtime.start_link(app: OverlayApp, args: %{title: title})
+    :ok = GPUI.Runtime.subscribe(runtime)
     on_exit(fn -> Desktop.stop_process(runtime) end)
 
     window_id = Desktop.window_id!(title)
@@ -122,8 +123,12 @@ defmodule GPUI.Native.OverlayE2ETest do
     Desktop.click!(window_id, 360, 190)
     Desktop.eventually(fn -> assert %{open: false} = assigns(runtime) end)
 
-    Desktop.command!(["mousemove", "--sync", "--window", window_id, "50", "72"])
-    Process.sleep(250)
+    Desktop.refute_update!(
+      runtime,
+      fn -> Desktop.command!(["mousemove", "--sync", "--window", window_id, "50", "72"]) end,
+      250
+    )
+
     assert Process.alive?(runtime)
     Desktop.command!(["mousemove", "--sync", "--window", window_id, "360", "190"])
     Desktop.click!(window_id, 50, 72)
@@ -131,19 +136,19 @@ defmodule GPUI.Native.OverlayE2ETest do
 
     Desktop.click!(window_id, 55, 116)
     Desktop.eventually(fn -> assert %{dialog_open: true} = assigns(runtime) end)
-    Process.sleep(150)
+    Desktop.await_frame!(runtime, 1, window_id)
     Desktop.key!(window_id, "Escape")
     Desktop.eventually(fn -> assert %{dialog_open: false} = assigns(runtime) end)
 
     Desktop.key!(window_id, "space")
     Desktop.eventually(fn -> assert %{dialog_open: true} = assigns(runtime) end)
-    Process.sleep(150)
+    Desktop.await_frame!(runtime, 1, window_id)
     Desktop.click!(window_id, 400, 270)
     Desktop.eventually(fn -> assert %{dialog_open: false} = assigns(runtime) end)
 
     Desktop.click!(window_id, 55, 160)
     Desktop.eventually(fn -> assert %{menu_open: true} = assigns(runtime) end)
-    Process.sleep(150)
+    Desktop.await_frame!(runtime, 1, window_id)
     Desktop.click!(window_id, 70, 212)
 
     Desktop.eventually(fn ->

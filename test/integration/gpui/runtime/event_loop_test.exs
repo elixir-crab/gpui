@@ -88,28 +88,17 @@ defmodule GPUI.Runtime.EventLoopTest do
         poll_interval: 10
       )
 
+    :ok = GPUI.Runtime.subscribe(runtime)
+
     {:ok, :ok} =
       GPUI.Runtime.inject_event(runtime, %{type: :click, window_id: 1, event: "inc"})
 
-    assert_eventually(fn ->
-      assert %{windows: [%{root: %{assigns: %{count: 1}}}]} = GPUI.Runtime.snapshot(runtime)
-      assert %{type: :click, event: "inc", window_id: 1} in GPUI.Runtime.events(runtime)
-    end)
-  end
+    assert_receive {:gpui, ^runtime,
+                    %GPUI.Runtime.Update{
+                      events: [%{type: :click, event: "inc", window_id: 1}],
+                      snapshot: %{windows: [%{root: %{assigns: %{count: 1}}}]}
+                    }}
 
-  defp assert_eventually(fun) do
-    assert_eventually(fun, System.monotonic_time(:millisecond) + 1_000)
-  end
-
-  defp assert_eventually(fun, deadline) do
-    fun.()
-  rescue
-    error in ExUnit.AssertionError ->
-      if System.monotonic_time(:millisecond) >= deadline do
-        reraise(error, __STACKTRACE__)
-      else
-        Process.sleep(10)
-        assert_eventually(fun, deadline)
-      end
+    assert %{type: :click, event: "inc", window_id: 1} in GPUI.Runtime.events(runtime)
   end
 end

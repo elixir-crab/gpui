@@ -276,6 +276,7 @@ defmodule GPUI.Native.ComponentsE2ETest do
         display_opts: [theme: :dark]
       )
 
+    :ok = GPUI.Runtime.subscribe(runtime)
     {:ok, theme_display} = GPUI.Display.Native.start_link([])
     on_exit(fn -> Desktop.stop_process(theme_display) end)
     on_exit(fn -> Desktop.stop_process(runtime) end)
@@ -366,8 +367,7 @@ defmodule GPUI.Native.ComponentsE2ETest do
       assert %{framework_query: "live"} = assigns(runtime)
     end)
 
-    Desktop.key!(window_id, "Escape")
-    Process.sleep(100)
+    Desktop.refute_update!(runtime, fn -> Desktop.key!(window_id, "Escape") end)
     assert %{framework: nil} = assigns(runtime)
 
     Desktop.key!(window_id, "Return")
@@ -378,15 +378,18 @@ defmodule GPUI.Native.ComponentsE2ETest do
       assert %{framework: "LiveView", framework_loading: true} = assigns(runtime)
     end)
 
-    Desktop.key!(window_id, "Return")
-    Desktop.type!(window_id, "x")
-    Process.sleep(100)
+    Desktop.refute_update!(runtime, fn ->
+      Desktop.key!(window_id, "Return")
+      Desktop.type!(window_id, "x")
+    end)
+
     assert %{framework_query: "live"} = assigns(runtime)
   end
 
   test "native accordion emits controlled expanded IDs and respects disabled state" do
     title = "GPUI Accordion E2E #{System.unique_integer([:positive])}"
     {:ok, runtime} = GPUI.Runtime.start_link(app: AccordionApp, args: %{title: title})
+    :ok = GPUI.Runtime.subscribe(runtime)
     on_exit(fn -> Desktop.stop_process(runtime) end)
 
     window_id = Desktop.window_id!(title)
@@ -411,15 +414,15 @@ defmodule GPUI.Native.ComponentsE2ETest do
     })
 
     Desktop.eventually(fn -> assert %{disabled: true} = assigns(runtime) end)
-    Process.sleep(200)
-    Desktop.click!(window_id, 100, 32)
-    Process.sleep(100)
+    Desktop.await_frame!(runtime, 1, window_id)
+    Desktop.refute_update!(runtime, fn -> Desktop.click!(window_id, 100, 32) end)
     assert %{expanded: ["account", "security"]} = assigns(runtime)
   end
 
   test "native tabs emit controlled selections and respect disabled state" do
     title = "GPUI Tabs E2E #{System.unique_integer([:positive])}"
     {:ok, runtime} = GPUI.Runtime.start_link(app: TabsApp, args: %{title: title})
+    :ok = GPUI.Runtime.subscribe(runtime)
     on_exit(fn -> Desktop.stop_process(runtime) end)
 
     window_id = Desktop.window_id!(title)
@@ -429,14 +432,14 @@ defmodule GPUI.Native.ComponentsE2ETest do
       assert %{section: "advanced", disabled: true} = assigns(runtime)
     end)
 
-    Desktop.click!(window_id, 80, 32)
-    Process.sleep(100)
+    Desktop.refute_update!(runtime, fn -> Desktop.click!(window_id, 80, 32) end)
     assert %{section: "advanced"} = assigns(runtime)
   end
 
   test "native slider emits change and release events and respects disabled state" do
     title = "GPUI Slider E2E #{System.unique_integer([:positive])}"
     {:ok, runtime} = GPUI.Runtime.start_link(app: SliderApp, args: %{title: title})
+    :ok = GPUI.Runtime.subscribe(runtime)
     on_exit(fn -> Desktop.stop_process(runtime) end)
 
     window_id = Desktop.window_id!(title)
@@ -468,9 +471,8 @@ defmodule GPUI.Native.ComponentsE2ETest do
     })
 
     Desktop.eventually(fn -> assert %{disabled: true} = assigns(runtime) end)
-    Process.sleep(200)
-    Desktop.click!(window_id, 278, 20)
-    Process.sleep(100)
+    Desktop.await_frame!(runtime, 1, window_id)
+    Desktop.refute_update!(runtime, fn -> Desktop.click!(window_id, 278, 20) end)
     assert %{volume: 100.0, released_volume: 100.0} = assigns(runtime)
   end
 

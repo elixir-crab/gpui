@@ -3,7 +3,7 @@ defmodule GPUITest.E2E.Desktop do
 
   import ExUnit.Assertions
 
-  @eventually_timeout 3_000
+  @update_timeout 3_000
   @driver_manifest Path.expand("../e2e_driver/Cargo.toml", __DIR__)
 
   def command!(arguments) do
@@ -17,18 +17,33 @@ defmodule GPUITest.E2E.Desktop do
   end
 
   def window_id!(title) do
-    eventually(fn ->
-      case System.cmd("xdotool", ["search", "--onlyvisible", "--name", "^#{title}$"],
-             stderr_to_stdout: true
-           ) do
-        {output, 0} -> output |> String.split() |> List.first()
-        {_output, _status} -> nil
-      end
-    end)
+    case System.cmd(
+           "xdotool",
+           ["search", "--sync", "--onlyvisible", "--name", "^#{title}$"],
+           stderr_to_stdout: true
+         ) do
+      {output, 0} -> output |> String.split() |> List.first()
+      {output, status} -> flunk("window lookup failed (#{status}): #{output}")
+    end
   end
 
   def request_frame!(window_id, x \\ 1, y \\ 1),
     do: command!(["mousemove", "--sync", "--window", window_id, to_string(x), to_string(y)])
+
+  def await_frame!(source, window_id, native_window_id) do
+    coordinate = Process.get(:gpui_frame_coordinate, 1)
+    Process.put(:gpui_frame_coordinate, 3 - coordinate)
+
+    command!([
+      "mousemove",
+      "--window",
+      native_window_id,
+      to_string(coordinate),
+      to_string(coordinate)
+    ])
+
+    assert :ok = GPUI.Display.call_await_frame(source, window_id, @update_timeout)
+  end
 
   def click!(window_id, x, y) do
     request_frame!(window_id, x, y)
@@ -39,6 +54,12 @@ defmodule GPUITest.E2E.Desktop do
     do: command!(["type", "--window", window_id, "--delay", "30", text])
 
   def key!(window_id, key), do: command!(["key", "--window", window_id, key])
+
+  def refute_update!(source, action, timeout \\ 150) do
+    flush_updates(source)
+    action.()
+    refute_receive {:gpui, ^source, %GPUI.Runtime.Update{}}, timeout
+  end
 
   def close_window!(window_id), do: driver!("close-window", [window_id])
 
@@ -60,9 +81,9 @@ defmodule GPUITest.E2E.Desktop do
     end
   end
 
-  def eventually(fun, timeout \\ @eventually_timeout) do
+  def eventually(fun, timeout \\ @update_timeout) do
     deadline = System.monotonic_time(:millisecond) + timeout
-    eventually(fun, deadline, nil)
+    await_update(fun, deadline, nil)
   end
 
   def stop_process(pid) when is_pid(pid) do
@@ -72,11 +93,27 @@ defmodule GPUITest.E2E.Desktop do
     :exit, _reason -> :ok
   end
 
-  defp eventually(fun, deadline, last_error) do
-    case evaluate(fun) do
-      {:ok, value} when value not in [false, nil] -> value
-      {:ok, _value} -> retry(fun, deadline, last_error)
-      {:error, error} -> retry(fun, deadline, error)
+  defp await_update(fun, deadline, last_error) do
+    remaining = max(deadline - System.monotonic_time(:millisecond), 0)
+
+    receive do
+      {:gpui, _source, %GPUI.Runtime.Update{}} ->
+        case evaluate(fun) do
+          {:ok, value} when value not in [false, nil] -> value
+          {:ok, _value} -> await_update(fun, deadline, last_error)
+          {:error, error} -> await_update(fun, deadline, error)
+        end
+    after
+      remaining ->
+        flunk("update was not received before timeout; last error: #{inspect(last_error)}")
+    end
+  end
+
+  defp flush_updates(source) do
+    receive do
+      {:gpui, ^source, %GPUI.Runtime.Update{}} -> flush_updates(source)
+    after
+      0 -> :ok
     end
   end
 
@@ -86,14 +123,5 @@ defmodule GPUITest.E2E.Desktop do
     error in [ExUnit.AssertionError, MatchError] -> {:error, error}
   catch
     :exit, reason -> {:error, reason}
-  end
-
-  defp retry(fun, deadline, last_error) do
-    if System.monotonic_time(:millisecond) >= deadline do
-      flunk("condition was not satisfied before timeout; last error: #{inspect(last_error)}")
-    end
-
-    Process.sleep(20)
-    eventually(fun, deadline, last_error)
   end
 end

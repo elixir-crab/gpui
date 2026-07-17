@@ -21,6 +21,14 @@ defmodule GPUI.Remote.Client do
   def event(client, event), do: GenServer.call(client, {:event, event})
   def snapshot(client), do: GenServer.call(client, :snapshot)
 
+  @doc "Subscribes the calling process to synchronized remote display updates."
+  @spec subscribe(GenServer.server()) :: :ok
+  def subscribe(client), do: GenServer.call(client, :subscribe)
+
+  @doc "Unsubscribes the calling process from remote display updates."
+  @spec unsubscribe(GenServer.server()) :: :ok
+  def unsubscribe(client), do: GenServer.call(client, :unsubscribe)
+
   @doc "Waits for the current local display frame of a remote window."
   @spec await_frame(GenServer.server(), pos_integer(), pos_integer()) ::
           :ok | {:error, term()}
@@ -41,7 +49,9 @@ defmodule GPUI.Remote.Client do
         display_module: display_module,
         mounted_args: nil,
         session_id: Keyword.get_lazy(opts, :session_id, &new_session_id/0),
-        poll_interval: poll_interval(opts)
+        poll_interval: poll_interval(opts),
+        revision: 0,
+        subscribers: %{}
       }
 
       {:ok, schedule_poll(state)}
@@ -62,11 +72,22 @@ defmodule GPUI.Remote.Client do
     case call_with_reconnect(state, :mount, payload) do
       {:ok, %{snapshot: snapshot}, state} ->
         :ok = state.display_module.sync(state.display, snapshot)
+        state = GPUI.UpdateSubscribers.publish_update(state, self(), [], snapshot)
         {:reply, {:ok, snapshot}, %{state | mounted_args: args}}
 
       {:error, reason, state} ->
         {:reply, {:error, reason}, state}
     end
+  end
+
+  def handle_call(:subscribe, {pid, _tag}, state) do
+    subscribers = GPUI.UpdateSubscribers.subscribe(state.subscribers, pid)
+    {:reply, :ok, %{state | subscribers: subscribers}}
+  end
+
+  def handle_call(:unsubscribe, {pid, _tag}, state) do
+    subscribers = GPUI.UpdateSubscribers.unsubscribe(state.subscribers, pid)
+    {:reply, :ok, %{state | subscribers: subscribers}}
   end
 
   def handle_call({:event, event}, _from, state) do
@@ -91,6 +112,11 @@ defmodule GPUI.Remote.Client do
   end
 
   @impl GenServer
+  def handle_info({:DOWN, monitor, :process, pid, _reason}, state) do
+    subscribers = GPUI.UpdateSubscribers.remove_down(state.subscribers, pid, monitor)
+    {:noreply, %{state | subscribers: subscribers}}
+  end
+
   def handle_info(:poll_display, state) do
     state = forward_display_events(state)
     schedule_poll(state)
@@ -101,6 +127,19 @@ defmodule GPUI.Remote.Client do
     case call_with_reconnect(state, op, payload) do
       {:ok, %{snapshot: snapshot}, state} ->
         :ok = state.display_module.sync(state.display, snapshot)
+
+        state =
+          if op == :event do
+            GPUI.UpdateSubscribers.publish_update(
+              state,
+              self(),
+              [Map.delete(payload, :session_id)],
+              snapshot
+            )
+          else
+            state
+          end
+
         {:reply, {:ok, snapshot}, state}
 
       {:error, reason, state} ->
@@ -136,7 +175,7 @@ defmodule GPUI.Remote.Client do
     case safe_call(state.rpc, :resume_session, %{session_id: state.session_id}) do
       {:ok, %{snapshot: snapshot}} ->
         :ok = state.display_module.sync(state.display, snapshot)
-        {:ok, state}
+        {:ok, GPUI.UpdateSubscribers.publish_update(state, self(), [], snapshot)}
 
       {:error, _reason} ->
         remount(state)
@@ -149,7 +188,7 @@ defmodule GPUI.Remote.Client do
     case safe_call(state.rpc, :mount, payload) do
       {:ok, %{snapshot: snapshot}} ->
         :ok = state.display_module.sync(state.display, snapshot)
-        {:ok, state}
+        {:ok, GPUI.UpdateSubscribers.publish_update(state, self(), [], snapshot)}
 
       {:error, reason} ->
         {:error, reason, state}
@@ -186,7 +225,13 @@ defmodule GPUI.Remote.Client do
     case call_with_reconnect(state, :event, payload) do
       {:ok, %{snapshot: snapshot}, state} ->
         :ok = state.display_module.sync(state.display, snapshot)
-        state
+
+        GPUI.UpdateSubscribers.publish_update(
+          state,
+          self(),
+          [Map.delete(payload, :session_id)],
+          snapshot
+        )
 
       {:error, _reason, state} ->
         state
