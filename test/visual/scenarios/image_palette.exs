@@ -46,6 +46,12 @@ defmodule GPUITest.Visual.ImagePalette.Scenario do
         ]
       },
       %{
+        name: "copied-css",
+        actions: [
+          {:dispatch, %{type: :click, window_id: 1, event: "palette_copied"}}
+        ]
+      },
+      %{
         name: "loading-replacement",
         actions: [
           {:dispatch, %{type: :click, window_id: 1, event: "load_image"}},

@@ -38,10 +38,13 @@ defmodule GPUI.Native.ImagePaletteE2ETest do
     native_window_id = Desktop.window_id!("Image Palette")
     Desktop.await_frame!(runtime, 1, native_window_id)
 
-    {_event, _snapshot} =
-      GPUI.Runtime.dispatch_event(runtime, %{type: :click, window_id: 1, event: "load_image"})
+    GPUI.Runtime.dispatch_event(runtime, %{
+      type: :click,
+      window_id: 1,
+      event: "load_image"
+    })
 
-    assert_receive {:image_palette, :loaded, 1}
+    assert_receive {:image_palette, :loaded, 1}, 5_000
     Desktop.await_frame!(runtime, 1, native_window_id)
 
     assert %{

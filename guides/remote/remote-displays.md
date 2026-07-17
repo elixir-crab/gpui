@@ -44,6 +44,11 @@ client cannot mutate another client's application state.
 
 The native event loop remains local to the display client. Only declarative
 snapshots, resources, events, and protocol operations cross the connection.
+Display-side file pickers read bounded bytes on the client and send those bytes
+with an operation ID; they never claim that a client-local path is readable by
+the application server. Clipboard buttons likewise write to the display
+client's clipboard.
+
 Remote display updates use the same typed OTP message shape as local runtimes:
 
 ```elixir

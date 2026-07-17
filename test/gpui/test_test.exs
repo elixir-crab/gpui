@@ -13,6 +13,11 @@ defmodule GPUI.TestTest do
         <text>Count: {assigns.count}</text>
         <GPUI.UI.button id="increment" label="Increment" phx-click="increment" />
         <GPUI.UI.input id="name" value={assigns.name} phx-change="name_changed" />
+        <GPUI.UI.file_picker
+          id="file"
+          label="Choose file"
+          phx-change="file_selected"
+        />
         <GPUI.UI.select
           id="language"
           value={assigns.language}
@@ -87,6 +92,9 @@ defmodule GPUI.TestTest do
     def handle_event("name_changed", %{value: name}, assigns),
       do: {:noreply, %{assigns | name: name}}
 
+    def handle_event("file_selected", %{value: file}, assigns),
+      do: {:noreply, %{assigns | file: file}}
+
     def handle_event("language_changed", %{value: language}, assigns),
       do: {:noreply, %{assigns | language: language}}
 
@@ -139,6 +147,7 @@ defmodule GPUI.TestTest do
            root(TestView,
              count: 0,
              name: "",
+             file: nil,
              language: "rust",
              framework: nil,
              query: "",
@@ -162,6 +171,7 @@ defmodule GPUI.TestTest do
       render(TestView,
         count: 2,
         name: "Ada",
+        file: nil,
         language: "rust",
         framework: nil,
         query: "",
@@ -209,6 +219,14 @@ defmodule GPUI.TestTest do
     assert %{count: 2} = assigns(runtime)
 
     change(runtime, "name_changed", "Ada")
+    file_select(runtime, "file_selected", "fixture.bin", <<1, 2, 3>>)
+
+    assert %{file: %{status: :selected, name: "fixture.bin", size: 3, data: <<1, 2, 3>>}} =
+             assigns(runtime)
+
+    file_cancel(runtime, "file_selected")
+    assert %{file: %{status: :cancelled}} = assigns(runtime)
+
     select(runtime, "language_changed", "elixir")
     assert %{count: 2, name: "Ada", language: "elixir"} = assigns(runtime)
 

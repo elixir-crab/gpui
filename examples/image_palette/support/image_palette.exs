@@ -3,6 +3,7 @@ Code.require_file("analysis.exs", __DIR__)
 defmodule Examples.ImagePalette.View do
   use GPUI.View
 
+  alias Examples.ImagePalette.Analysis
   alias GPUI.ResourceRef
   alias GPUI.UI
 
@@ -16,20 +17,15 @@ defmodule Examples.ImagePalette.View do
           <text style={[color: {:rgb, 0x94A3B8}]}>Decode an image, inspect its dominant colors, and export CSS variables.</text>
         </div>
         <div class="flex items-center gap-3">
-          <UI.input
-            id="image-path"
-            value={assigns.path}
-            placeholder="Path to a PNG, JPEG, WebP, GIF, TIFF, or BMP"
-            phx-change="path_changed"
-            class="w-[760px]"
+          <UI.file_picker
+            id="image-file-picker"
+            label={picker_label(assigns.status)}
+            prompt="Choose an image"
+            max_bytes={25 * 1_024 * 1_024}
+            disabled={assigns.status == :loading}
+            phx-change="image_file_selected"
           />
-          <UI.button
-            id="load-image"
-            label={load_label(assigns.status)}
-            variant="primary"
-            disabled={assigns.status == :loading or String.trim(assigns.path) == ""}
-            phx-click="load_image"
-          />
+          <text style={[color: {:rgb, 0x94A3B8}]}>{source_label(assigns)}</text>
         </div>
         {progress(assigns)}
       </div>
@@ -47,8 +43,30 @@ defmodule Examples.ImagePalette.View do
   end
 
   @impl GPUI.View
-  def handle_event("path_changed", %{value: path}, assigns),
-    do: {:noreply, %{assigns | path: path}}
+  def handle_event(
+        "image_file_selected",
+        %{value: %{status: :selected, name: name}},
+        assigns
+      ) do
+    {:noreply,
+     %{
+       assigns
+       | status: :loading,
+         progress: 0,
+         stage: "Queued",
+         error: nil,
+         source_name: name,
+         job_id: assigns.job_id + 1
+     }}
+  end
+
+  def handle_event("image_file_selected", %{value: %{status: :cancelled}}, assigns) do
+    status = if assigns.image, do: :ready, else: :idle
+    {:noreply, %{assigns | status: status, stage: "Selection cancelled", error: nil}}
+  end
+
+  def handle_event("image_file_selected", %{value: %{status: :error, reason: reason}}, assigns),
+    do: {:noreply, %{assigns | status: :error, stage: "Selection failed", error: reason}}
 
   def handle_event("export_path_changed", %{value: export_path}, assigns),
     do: {:noreply, %{assigns | export_path: export_path}}
@@ -68,6 +86,9 @@ defmodule Examples.ImagePalette.View do
        }}
     end
   end
+
+  def handle_event("palette_copied", _event, assigns),
+    do: {:noreply, %{assigns | status: :copied, stage: "CSS copied to clipboard", error: nil}}
 
   def handle_event("select_color:" <> hex, _event, assigns) do
     selected = if Enum.any?(assigns.palette, &(&1.hex == hex)), do: hex, else: assigns.selected
@@ -117,15 +138,14 @@ defmodule Examples.ImagePalette.View do
   def handle_info(_message, assigns), do: {:noreply, assigns}
 
   defp progress(%{status: :loading} = assigns) do
-    assigns = Map.put(assigns, :progress_width, assigns.progress * 8.8)
-
     ~GPUI"""
-    <div class="flex flex-col gap-1 w-[880px]">
-      <div class="h-[10px] w-[880px]" style={[background: {:rgb, 0x334155}]}>
-        <div style={[width: {:px, assigns.progress_width}, height: {:px, 10}, background: {:rgb, 0x2563EB}]} />
-      </div>
-      <text style={[color: {:rgb, 0xBFDBFE}]}>{assigns.progress}% · {assigns.stage}</text>
-    </div>
+    <UI.progress
+      id="image-progress"
+      label={assigns.stage}
+      value={assigns.progress}
+      max={100}
+      class="w-[880px]"
+    />
     """
   end
 
@@ -148,7 +168,7 @@ defmodule Examples.ImagePalette.View do
     ~GPUI"""
     <div class="flex flex-col items-center gap-2 p-5">
       <text class="text-white text-xl">No image loaded</text>
-      <text style={[color: {:rgb, 0x94A3B8}]}>Enter a local image path to begin.</text>
+      <text style={[color: {:rgb, 0x94A3B8}]}>Choose a local image to begin.</text>
     </div>
     """
   end
@@ -186,13 +206,22 @@ defmodule Examples.ImagePalette.View do
           placeholder="palette.css"
           phx-change="export_path_changed"
         />
-        <UI.button
-          id="export-palette"
-          label={export_label(assigns.status)}
-          variant="primary"
-          disabled={assigns.status == :exporting or String.trim(assigns.export_path) == ""}
-          phx-click="export_palette"
-        />
+        <div class="flex gap-2">
+          <UI.button
+            id="export-palette"
+            label={export_label(assigns.status)}
+            variant="primary"
+            disabled={assigns.status == :exporting or String.trim(assigns.export_path) == ""}
+            phx-click="export_palette"
+          />
+          <UI.copy_button
+            id="copy-palette-css"
+            label="Copy CSS"
+            text={Analysis.css(assigns.palette)}
+            disabled={assigns.status == :exporting}
+            phx-click="palette_copied"
+          />
+        </div>
         <text style={[color: status_color(assigns.status)]}>{status_text(assigns)}</text>
       </div>
     </div>
@@ -217,19 +246,22 @@ defmodule Examples.ImagePalette.View do
   end
 
   defp color_rgb(color), do: color.red * 65_536 + color.green * 256 + color.blue
-  defp load_label(:loading), do: "Loading…"
-  defp load_label(_status), do: "Load image"
+  defp picker_label(:loading), do: "Loading…"
+  defp picker_label(_status), do: "Choose image"
+  defp source_label(%{source_name: nil}), do: "No image selected"
+  defp source_label(assigns), do: assigns.source_name
   defp export_label(:exporting), do: "Exporting…"
   defp export_label(_status), do: "Export CSS"
   defp palette_empty_text(:loading), do: "Analyzing the image…"
   defp palette_empty_text(_status), do: "Load an image to generate a palette."
   defp status_color(:error), do: {:rgb, 0xFCA5A5}
-  defp status_color(:exported), do: {:rgb, 0x86EFAC}
+  defp status_color(status) when status in [:copied, :exported], do: {:rgb, 0x86EFAC}
   defp status_color(_status), do: {:rgb, 0x94A3B8}
 
   defp status_text(%{error: error}) when is_binary(error), do: error
-  defp status_text(%{status: :idle}), do: "Ready for an image path"
+  defp status_text(%{status: :idle, stage: stage}), do: stage
   defp status_text(%{status: :ready}), do: "Palette ready"
+  defp status_text(%{status: :copied, stage: stage}), do: stage
   defp status_text(%{status: :exporting}), do: "Writing CSS…"
   defp status_text(%{status: :exported, stage: stage}), do: stage
   defp status_text(assigns), do: assigns.stage
@@ -245,6 +277,7 @@ defmodule Examples.ImagePalette.App do
     path = Map.get(args, :path, "")
     palette = if result, do: result.palette, else: []
     selected = palette |> List.first() |> then(&if(&1, do: &1.hex))
+    source_name = if path == "", do: nil, else: Path.basename(path)
 
     {:ok,
      [
@@ -256,9 +289,10 @@ defmodule Examples.ImagePalette.App do
            export_path: Map.get(args, :export_path, "palette.css"),
            status: if(result, do: :ready, else: :idle),
            progress: if(result, do: 100, else: 0),
-           stage: if(result, do: "Ready", else: "Ready for an image path"),
+           stage: if(result, do: "Ready", else: "Choose an image to begin"),
            error: nil,
            job_id: 0,
+           source_name: source_name,
            image: result && result.preview,
            image_width: result && result.width,
            image_height: result && result.height,
@@ -304,9 +338,17 @@ defmodule Examples.ImagePalette.Coordinator do
 
     state =
       Enum.reduce(update.events, state, fn
-        %{event: "load_image"}, state -> start_load(state, assigns)
-        %{event: "export_palette"}, state -> start_export(state, assigns)
-        _event, state -> state
+        %{event: "load_image"}, state ->
+          start_load(state, assigns)
+
+        %{event: "image_file_selected", value: %{status: :selected, data: data}}, state ->
+          start_bytes_load(state, assigns, data)
+
+        %{event: "export_palette"}, state ->
+          start_export(state, assigns)
+
+        _event, state ->
+          state
       end)
 
     {:noreply, state}
@@ -406,6 +448,20 @@ defmodule Examples.ImagePalette.Coordinator do
     %{state | load_task: %{task: task, job_id: job_id}}
   end
 
+  defp start_bytes_load(state, assigns, data) do
+    state = %{state | load_task: cancel_task(state.load_task)}
+    parent = self()
+    job_id = assigns.job_id
+    source_name = assigns.source_name
+
+    task =
+      Task.Supervisor.async_nolink(state.task_supervisor, fn ->
+        decode_image(parent, job_id, source_name, data, state)
+      end)
+
+    %{state | load_task: %{task: task, job_id: job_id}}
+  end
+
   defp start_export(state, assigns) do
     state = %{state | export_task: cancel_task(state.export_task)}
     parent = self()
@@ -426,10 +482,19 @@ defmodule Examples.ImagePalette.Coordinator do
   defp load_image(parent, job_id, path, state) do
     send(parent, {:image_progress, job_id, 10, "Reading file"})
 
+    case state.read.(path) do
+      {:ok, bytes} -> decode_image(parent, job_id, path, bytes, state)
+      {:error, reason} -> send(parent, {:image_failed, job_id, load_error(path, reason)})
+    end
+  rescue
+    error -> send(parent, {:image_failed, job_id, Exception.message(error)})
+  end
+
+  defp decode_image(parent, job_id, source_name, bytes, state) do
+    send(parent, {:image_progress, job_id, 25, "Decoding image"})
+
     result =
-      with {:ok, bytes} <- state.read.(path),
-           :ok <- progress(parent, job_id, 25, "Decoding image"),
-           {:ok, raster} <- state.decode.(bytes) do
+      with {:ok, raster} <- state.decode.(bytes) do
         progress = fn percent, stage ->
           send(parent, {:image_progress, job_id, percent, stage})
         end
@@ -439,15 +504,10 @@ defmodule Examples.ImagePalette.Coordinator do
 
     case result do
       {:ok, analysis} -> send(parent, {:image_loaded, job_id, analysis})
-      {:error, reason} -> send(parent, {:image_failed, job_id, load_error(path, reason)})
+      {:error, reason} -> send(parent, {:image_failed, job_id, load_error(source_name, reason)})
     end
   rescue
     error -> send(parent, {:image_failed, job_id, Exception.message(error)})
-  end
-
-  defp progress(parent, job_id, percent, stage) do
-    send(parent, {:image_progress, job_id, percent, stage})
-    :ok
   end
 
   defp root_assigns(%GPUI.Snapshot{windows: [%{root: %{assigns: assigns}} | _windows]}),

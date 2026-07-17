@@ -126,6 +126,56 @@ Tab changes carry one string value. Accordion changes carry an ordered list of
 expanded item IDs. Slider changes are continuous and `phx-release` fires once
 pointer interaction ends. Linear and logarithmic slider scales are supported.
 
+## Progress and display-side actions
+
+`progress/1` renders a native accessible progress indicator. Values are
+controlled and must remain between zero and `max`; set `indeterminate={true}`
+when the amount of completed work is unknown.
+
+```elixir
+<UI.progress id="import" label="Importing image" value={assigns.progress} max={100} />
+```
+
+`file_picker/1` opens the platform picker on the machine running the display.
+It reads one selected file with a bounded size and emits bytes rather than a
+filesystem path, so the same event remains meaningful for remote displays.
+`max_bytes` defaults to 25 MiB and cannot exceed 100 MiB.
+
+```elixir
+<UI.file_picker
+  id="source-image"
+  label="Choose image"
+  prompt="Choose an image"
+  max_bytes={25 * 1_024 * 1_024}
+  phx-change="image_selected"
+/>
+```
+
+The event value is one of:
+
+```elixir
+%{operation_id: 42, status: :selected, name: "photo.png", size: 12_345, data: encoded_bytes}
+%{operation_id: 42, status: :cancelled}
+%{operation_id: 42, status: :error, reason: "..."}
+```
+
+`copy_button/1` writes its controlled `text` to the clipboard owned by the
+local display and emits `phx-click` after the platform write is requested. This
+also gives remote applications the expected user-side clipboard rather than the
+application server's clipboard.
+
+```elixir
+<UI.copy_button
+  id="copy-css"
+  label="Copy CSS"
+  text={assigns.css}
+  phx-click="css_copied"
+/>
+```
+
+Tests select or cancel files deterministically with `GPUI.Test.file_select/5`
+and `GPUI.Test.file_cancel/3`; neither helper opens a native window.
+
 ## Virtualized collections
 
 `virtual_list/1` presents large collections through GPUI's native uniform-list

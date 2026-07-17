@@ -8,9 +8,94 @@ defmodule GPUI.UI do
 
   alias GPUI.Element
 
+  @max_file_bytes 100 * 1_024 * 1_024
+
+  @type file_picker_value ::
+          %{
+            operation_id: non_neg_integer(),
+            status: :selected,
+            name: String.t(),
+            size: non_neg_integer(),
+            data: binary()
+          }
+          | %{operation_id: non_neg_integer(), status: :cancelled}
+          | %{operation_id: non_neg_integer(), status: :error, reason: String.t()}
+
   @doc "Builds a native GPUI Component button."
   @spec button(map()) :: Element.t()
   def button(assigns), do: component(:ui_button, assigns)
+
+  @doc """
+  Builds an accessible controlled progress indicator.
+
+  `value` defaults to zero, `max` defaults to 100, and `indeterminate` enables
+  native loading animation while preserving the textual accessibility label.
+  """
+  @spec progress(map()) :: Element.t()
+  def progress(assigns) when is_map(assigns) do
+    assigns =
+      assigns
+      |> Map.put_new(:value, 0.0)
+      |> Map.put_new(:max, 100.0)
+      |> Map.put_new(:indeterminate, false)
+
+    validate_non_empty_label!(:ui_progress, Map.get(assigns, :label))
+
+    unless is_number(assigns.max) and assigns.max > 0 do
+      raise ArgumentError, "ui_progress max must be greater than zero"
+    end
+
+    unless is_number(assigns.value) and assigns.value >= 0 and assigns.value <= assigns.max do
+      raise ArgumentError, "ui_progress value must be between zero and max"
+    end
+
+    component(:ui_progress, assigns)
+  end
+
+  @doc """
+  Builds a display-side file picker that emits selected file bytes through `phx-change`.
+
+  The event value is a selected-file, cancellation, or error map described by
+  `file_picker_value/0`. Bytes are read on the display machine, bounded by
+  `max_bytes`, and can therefore cross a remote display connection without
+  exposing an unusable client-local path.
+  """
+  @spec file_picker(map()) :: Element.t()
+  def file_picker(assigns) when is_map(assigns) do
+    assigns =
+      assigns
+      |> Map.put_new(:max_bytes, 25 * 1_024 * 1_024)
+      |> Map.put_new(:disabled, false)
+
+    validate_non_empty_label!(:ui_file_picker, Map.get(assigns, :label))
+    validate_event!(:ui_file_picker, assigns, :"phx-change")
+
+    unless is_integer(assigns.max_bytes) and assigns.max_bytes > 0 and
+             assigns.max_bytes <= @max_file_bytes do
+      raise ArgumentError, "ui_file_picker max_bytes must be between 1 and #{@max_file_bytes}"
+    end
+
+    component(:ui_file_picker, assigns)
+  end
+
+  @doc """
+  Builds a button that writes text to the display-side clipboard before `phx-click`.
+
+  Clipboard ownership follows the renderer, so remote clients write to the
+  user's clipboard rather than the application server's clipboard.
+  """
+  @spec copy_button(map()) :: Element.t()
+  def copy_button(assigns) when is_map(assigns) do
+    assigns = Map.put_new(assigns, :disabled, false)
+    validate_non_empty_label!(:ui_copy_button, Map.get(assigns, :label))
+    validate_event!(:ui_copy_button, assigns, :"phx-click")
+
+    unless is_binary(Map.get(assigns, :text)) do
+      raise ArgumentError, "ui_copy_button requires string text"
+    end
+
+    component(:ui_copy_button, assigns)
+  end
 
   @doc "Builds a native GPUI Component checkbox."
   @spec checkbox(map()) :: Element.t()
@@ -70,6 +155,19 @@ defmodule GPUI.UI do
 
   def radio_group(_assigns),
     do: raise(ArgumentError, "ui_radio_group requires an options list")
+
+  defp validate_non_empty_label!(_component, label) when is_binary(label) and label != "", do: :ok
+
+  defp validate_non_empty_label!(component, _label),
+    do: raise(ArgumentError, "#{component} requires a non-empty string label")
+
+  defp validate_event!(component, assigns, event) do
+    value = Map.get(assigns, event) || Map.get(assigns, Atom.to_string(event))
+
+    unless is_binary(value) and value != "" do
+      raise ArgumentError, "#{component} requires #{event}"
+    end
+  end
 
   defp normalize_radio_option!(%{disabled: disabled} = option) when is_boolean(disabled) do
     option

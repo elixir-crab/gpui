@@ -59,6 +59,8 @@ slide(runtime, "volume_changed", 75.0)
 release(runtime, "volume_released", 75.0)
 open(runtime, "dialog_open_changed", true)
 menu_select(runtime, "file_menu_selected", "new")
+file_select(runtime, "source_selected", "fixture.png", encoded_png)
+file_cancel(runtime, "source_selected")
 ```
 
 All helpers return the resulting snapshot. `dispatch/2` is available for custom

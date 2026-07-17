@@ -18,6 +18,9 @@ defmodule GPUI.Remote.ServerTest do
 
     @impl GPUI.View
     def handle_event("rename", %{value: value}, assigns), do: {:noreply, %{assigns | name: value}}
+
+    def handle_event("file_selected", %{value: value}, assigns),
+      do: {:noreply, %{assigns | file: value}}
   end
 
   defmodule FormApp do
@@ -26,7 +29,7 @@ defmodule GPUI.Remote.ServerTest do
     @impl GPUI.Application
     def mount(args) do
       name = Map.get(Map.new(args), :name, "old")
-      {:ok, [window("Remote Form", do: root(FormView, name: name))]}
+      {:ok, [window("Remote Form", do: root(FormView, name: name, file: nil))]}
     end
   end
 
@@ -173,6 +176,27 @@ defmodule GPUI.Remote.ServerTest do
     assert_receive {:gpui, ^client,
                     %GPUI.Runtime.Update{
                       snapshot: %{windows: [%{root: %{assigns: %{name: "polled"}}}]}
+                    }}
+
+    selection = %{
+      operation_id: 17,
+      status: :selected,
+      name: "remote.png",
+      size: 4,
+      data: <<1, 2, 3, 4>>
+    }
+
+    assert {:ok, :ok} =
+             GPUI.Test.Display.inject_event(display_name, %{
+               type: :change,
+               window_id: 1,
+               event: "file_selected",
+               value: selection
+             })
+
+    assert_receive {:gpui, ^client,
+                    %GPUI.Runtime.Update{
+                      snapshot: %{windows: [%{root: %{assigns: %{file: ^selection}}}]}
                     }}
   end
 

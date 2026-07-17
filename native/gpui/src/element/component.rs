@@ -1,4 +1,5 @@
 pub(crate) mod accordion;
+pub(crate) mod display;
 pub(crate) mod overlay;
 pub(crate) mod radio;
 pub(crate) mod slider;

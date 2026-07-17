@@ -4,6 +4,9 @@
 pub enum GeneratedComponentKind {
     Container,
     ButtonComponent,
+    ProgressComponent,
+    FilePickerComponent,
+    CopyButtonComponent,
     PopoverComponent,
     PopoverTriggerComponent,
     PopoverContentComponent,
@@ -786,6 +789,82 @@ pub(crate) fn decode_generated_button_component(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct ProgressComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) label: Option<String>,
+    pub(crate) value: f64,
+    pub(crate) max: f64,
+    pub(crate) indeterminate: bool,
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_progress_component(
+    term: Term,
+) -> NifResult<ProgressComponentNode> {
+    Ok(ProgressComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        label: component_string_attr(term, atoms::label())?,
+        value: component_number_attr(term, atoms::value())?.unwrap_or(0.0),
+        max: component_positive_number_attr(term, atoms::max())?.unwrap_or(100.0),
+        indeterminate: component_bool_attr(term, atoms::indeterminate())?
+            .unwrap_or(false),
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct FilePickerComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) label: Option<String>,
+    pub(crate) prompt: Option<String>,
+    pub(crate) max_bytes: f64,
+    pub(crate) disabled: bool,
+    pub(crate) change: Option<String>,
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_file_picker_component(
+    term: Term,
+) -> NifResult<FilePickerComponentNode> {
+    Ok(FilePickerComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        label: component_string_attr(term, atoms::label())?,
+        prompt: component_string_attr(term, atoms::prompt())?,
+        max_bytes: component_positive_number_attr(term, atoms::max_bytes())?
+            .unwrap_or(26214400.0),
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        change: component_string_attr(term, atoms::phx_change())?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct CopyButtonComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) label: Option<String>,
+    pub(crate) text: String,
+    pub(crate) disabled: bool,
+    pub(crate) click: Option<String>,
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_copy_button_component(
+    term: Term,
+) -> NifResult<CopyButtonComponentNode> {
+    Ok(CopyButtonComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        label: component_string_attr(term, atoms::label())?,
+        text: component_string_attr(term, atoms::text())?.unwrap_or_default(),
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        click: component_string_attr(term, atoms::phx_click())?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct PopoverComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -1416,6 +1495,9 @@ pub(crate) enum ElementNode {
     Div(ContainerNode),
     Input(InputNode),
     ButtonComponent(ButtonComponentNode),
+    ProgressComponent(ProgressComponentNode),
+    FilePickerComponent(FilePickerComponentNode),
+    CopyButtonComponent(CopyButtonComponentNode),
     PopoverComponent(PopoverComponentNode),
     PopoverTriggerComponent(PopoverTriggerComponentNode),
     PopoverContentComponent(PopoverContentComponentNode),
@@ -1447,6 +1529,9 @@ pub enum GeneratedElementTag {
     Div,
     Button,
     UiButton,
+    UiProgress,
+    UiFilePicker,
+    UiCopyButton,
     UiPopover,
     UiPopoverTrigger,
     UiPopoverContent,
@@ -1485,6 +1570,9 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "div" => GeneratedElementTag::Div,
         "button" => GeneratedElementTag::Button,
         "ui_button" => GeneratedElementTag::UiButton,
+        "ui_progress" => GeneratedElementTag::UiProgress,
+        "ui_file_picker" => GeneratedElementTag::UiFilePicker,
+        "ui_copy_button" => GeneratedElementTag::UiCopyButton,
         "ui_popover" => GeneratedElementTag::UiPopover,
         "ui_popover_trigger" => GeneratedElementTag::UiPopoverTrigger,
         "ui_popover_content" => GeneratedElementTag::UiPopoverContent,
@@ -1524,6 +1612,9 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::Div => GeneratedComponentKind::Container,
         GeneratedElementTag::Button => GeneratedComponentKind::Container,
         GeneratedElementTag::UiButton => GeneratedComponentKind::ButtonComponent,
+        GeneratedElementTag::UiProgress => GeneratedComponentKind::ProgressComponent,
+        GeneratedElementTag::UiFilePicker => GeneratedComponentKind::FilePickerComponent,
+        GeneratedElementTag::UiCopyButton => GeneratedComponentKind::CopyButtonComponent,
         GeneratedElementTag::UiPopover => GeneratedComponentKind::PopoverComponent,
         GeneratedElementTag::UiPopoverTrigger => {
             GeneratedComponentKind::PopoverTriggerComponent
@@ -1589,6 +1680,17 @@ pub(crate) fn decode_generated_element_node(
         GeneratedComponentKind::Container => nif::decode_container_node(term, tag),
         GeneratedComponentKind::ButtonComponent => {
             decode_generated_button_component(term).map(ElementNode::ButtonComponent)
+        }
+        GeneratedComponentKind::ProgressComponent => {
+            decode_generated_progress_component(term).map(ElementNode::ProgressComponent)
+        }
+        GeneratedComponentKind::FilePickerComponent => {
+            decode_generated_file_picker_component(term)
+                .map(ElementNode::FilePickerComponent)
+        }
+        GeneratedComponentKind::CopyButtonComponent => {
+            decode_generated_copy_button_component(term)
+                .map(ElementNode::CopyButtonComponent)
         }
         GeneratedComponentKind::PopoverComponent => {
             decode_generated_popover_component(term).map(ElementNode::PopoverComponent)
@@ -1687,6 +1789,15 @@ pub(crate) fn render_generated_component_node(
     match node {
         ElementNode::ButtonComponent(node) => {
             element::component::render_button_component(node, context)
+        }
+        ElementNode::ProgressComponent(node) => {
+            element::component::display::render_progress(node, context)
+        }
+        ElementNode::FilePickerComponent(node) => {
+            element::component::display::render_file_picker(node, context)
+        }
+        ElementNode::CopyButtonComponent(node) => {
+            element::component::display::render_copy_button(node, context)
         }
         ElementNode::PopoverComponent(node) => {
             element::component::overlay::render(node, context)

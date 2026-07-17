@@ -20,7 +20,7 @@ defmodule GPUI.ImagePaletteExampleTest do
   end
 
   test "loads, analyzes, installs, selects, and exports through supervised work" do
-    runtime = start_gpui!(App, args: %{path: "/fixtures/colors.bmp"})
+    runtime = start_gpui!(App)
     task_supervisor = start_task_supervisor!()
     owner = self()
 
@@ -29,7 +29,6 @@ defmodule GPUI.ImagePaletteExampleTest do
         {Coordinator,
          runtime: runtime,
          task_supervisor: task_supervisor,
-         read: fn "/fixtures/colors.bmp" -> {:ok, "encoded"} end,
          decode: fn "encoded" -> {:ok, source_raster()} end,
          write: fn path, css ->
            send(owner, {:css_written, path, css})
@@ -40,12 +39,13 @@ defmodule GPUI.ImagePaletteExampleTest do
       )
     )
 
-    click(runtime, "load_image")
+    file_select(runtime, "image_file_selected", "colors.bmp", "encoded")
     assert_receive {:image_palette, :loaded, 1}
 
     assert %{
              status: :ready,
              progress: 100,
+             source_name: "colors.bmp",
              image: %GPUI.ResourceRef{id: "image-palette-preview"},
              palette: [%{hex: "#FF0000"} | _colors],
              selected: "#FF0000"
@@ -63,6 +63,15 @@ defmodule GPUI.ImagePaletteExampleTest do
     assert css =~ "--palette-1: #FF0000"
     assert_receive {:image_palette, :exported, "/tmp/palette.css"}
     assert %{status: :exported, stage: "Saved /tmp/palette.css"} = assigns(runtime)
+
+    click(runtime, "palette_copied")
+    assert %{status: :copied, stage: "CSS copied to clipboard"} = assigns(runtime)
+  end
+
+  test "handles deterministic display-side file cancellation" do
+    runtime = start_gpui!(App)
+    file_cancel(runtime, "image_file_selected")
+    assert %{status: :idle, stage: "Selection cancelled"} = assigns(runtime)
   end
 
   test "reports file errors without requiring native image decoding" do

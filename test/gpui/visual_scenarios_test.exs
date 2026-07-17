@@ -41,10 +41,12 @@ defmodule GPUI.VisualScenariosTest do
     assert [
              %{name: "palette-ready"},
              %{name: "selected-color", actions: [selection]},
+             %{name: "copied-css", actions: [copied]},
              %{name: "loading-replacement", actions: [load, progress]}
            ] = scenario.captures()
 
     assert {:dispatch, %{event: "select_color:#F59E0B"}} = selection
+    assert {:dispatch, %{event: "palette_copied"}} = copied
     assert {:dispatch, %{event: "load_image"}} = load
     assert {:send_view, 1, {:image_progress, 1, 45, "Sampling pixels"}} = progress
 

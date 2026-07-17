@@ -176,6 +176,16 @@ defmodule GPUI.Native.LifecycleE2ETest do
         type: :ui_virtual_list,
         attrs: %{id: "invalid-list", label: "Invalid list", item_height: 0},
         children: []
+      },
+      invalid_progress_max: %{
+        type: :ui_progress,
+        attrs: %{id: "invalid-progress", label: "Invalid progress", max: 0},
+        children: []
+      },
+      invalid_file_limit: %{
+        type: :ui_file_picker,
+        attrs: %{id: "invalid-picker", label: "Invalid picker", max_bytes: 0},
+        children: []
       }
     ]
 

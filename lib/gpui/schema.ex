@@ -27,6 +27,35 @@ defmodule GPUI.Schema do
       ]
     },
     %Component{
+      tag: :ui_progress,
+      kind: :progress_component,
+      attrs: [
+        id: :string,
+        label: :string,
+        value: {:default, :number, 0.0},
+        max: {:default, :positive_number, 100.0},
+        indeterminate: :boolean
+      ]
+    },
+    %Component{
+      tag: :ui_file_picker,
+      kind: :file_picker_component,
+      events: [change: :"phx-change"],
+      attrs: [
+        id: :string,
+        label: :string,
+        prompt: :string,
+        max_bytes: {:default, :positive_number, 26_214_400.0},
+        disabled: :boolean
+      ]
+    },
+    %Component{
+      tag: :ui_copy_button,
+      kind: :copy_button_component,
+      events: [click: :"phx-click"],
+      attrs: [id: :string, label: :string, text: {:default, :string}, disabled: :boolean]
+    },
+    %Component{
       tag: :ui_popover,
       kind: :popover_component,
       stateful: true,

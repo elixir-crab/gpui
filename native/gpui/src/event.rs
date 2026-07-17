@@ -1,6 +1,9 @@
 use crate::{atoms, SharedRuntime};
 use rustler::{Atom, Encoder, Env, NifResult, Term};
 
+#[cfg(feature = "components")]
+use crate::element::component::display::FileDialogResult;
+
 include!("generated/events.rs");
 
 #[derive(Clone, Debug)]
@@ -17,6 +20,13 @@ pub(crate) enum NativeEvent {
     },
     WindowClosed {
         window_id: u64,
+    },
+    #[cfg(feature = "components")]
+    FileDialog {
+        window_id: u64,
+        event: String,
+        operation_id: u64,
+        result: FileDialogResult,
     },
     #[cfg(feature = "real-gpui")]
     MissingResource {
@@ -70,6 +80,24 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
                 (atoms::window_id(), window_id.encode(env)),
             ],
         ),
+        #[cfg(feature = "components")]
+        NativeEvent::FileDialog {
+            window_id,
+            event,
+            operation_id,
+            result,
+        } => encode_event_map(
+            env,
+            vec![
+                (atoms::type_atom(), atoms::change().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
+                (
+                    atoms::value(),
+                    encode_file_dialog_result(env, operation_id, result)?,
+                ),
+            ],
+        ),
         #[cfg(feature = "real-gpui")]
         NativeEvent::MissingResource { window_id, id } => encode_event_map(
             env,
@@ -78,6 +106,48 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
                 (atoms::window_id(), window_id.encode(env)),
                 (atoms::id(), id.encode(env)),
                 (atoms::resource_type(), atoms::raster().to_term(env)),
+            ],
+        ),
+    }
+}
+
+#[cfg(feature = "components")]
+fn encode_file_dialog_result(
+    env: Env,
+    operation_id: u64,
+    result: FileDialogResult,
+) -> NifResult<Term> {
+    match result {
+        FileDialogResult::Selected { name, data } => {
+            let size = data.len() as u64;
+            let mut binary = rustler::OwnedBinary::new(data.len())
+                .ok_or_else(|| rustler::Error::Term(Box::new("file_allocation_failed")))?;
+            binary.as_mut_slice().copy_from_slice(&data);
+
+            encode_event_map(
+                env,
+                vec![
+                    (atoms::operation_id(), operation_id.encode(env)),
+                    (atoms::status(), atoms::selected().to_term(env)),
+                    (atoms::name(), name.encode(env)),
+                    (atoms::size(), size.encode(env)),
+                    (atoms::data(), binary.release(env).encode(env)),
+                ],
+            )
+        }
+        FileDialogResult::Cancelled => encode_event_map(
+            env,
+            vec![
+                (atoms::operation_id(), operation_id.encode(env)),
+                (atoms::status(), atoms::cancelled().to_term(env)),
+            ],
+        ),
+        FileDialogResult::Error(reason) => encode_event_map(
+            env,
+            vec![
+                (atoms::operation_id(), operation_id.encode(env)),
+                (atoms::status(), atoms::error().to_term(env)),
+                (atoms::reason(), reason.encode(env)),
             ],
         ),
     }
