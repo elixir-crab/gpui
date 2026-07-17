@@ -1,7 +1,7 @@
 defmodule Mix.Tasks.Gpui.Visual.Capture do
   use Mix.Task
 
-  @shortdoc "Captures synchronized native component gallery screenshots"
+  @shortdoc "Captures synchronized native visual review screenshots"
 
   defmodule GalleryView do
     use GPUI.View
@@ -95,19 +95,22 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
   @impl Mix.Task
   def run(args) do
     {opts, _argv, _invalid} =
-      OptionParser.parse(args, strict: [inner: :boolean, output: :string, theme: :string])
+      OptionParser.parse(args,
+        strict: [inner: :boolean, output: :string, theme: :string, example: :string]
+      )
 
     output = opts |> Keyword.get(:output, "tmp/gpui-visual") |> Path.expand()
     theme = opts |> Keyword.get(:theme, "dark") |> parse_theme!()
+    target = opts |> Keyword.get(:example, "gallery") |> parse_target!()
 
     if opts[:inner] do
-      capture_gallery(output, theme)
+      capture_target(target, output, theme)
     else
-      run_isolated(output, theme)
+      run_isolated(target, output, theme)
     end
   end
 
-  defp run_isolated(output, theme) do
+  defp run_isolated(target, output, theme) do
     ensure_executables!()
 
     args = [
@@ -122,7 +125,9 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
       "--output",
       output,
       "--theme",
-      Atom.to_string(theme)
+      Atom.to_string(theme),
+      "--example",
+      Atom.to_string(target)
     ]
 
     {_output, status} =
@@ -130,6 +135,11 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
 
     if status != 0, do: Mix.raise("visual capture failed")
   end
+
+  defp capture_target(:gallery, output, theme), do: capture_gallery(output, theme)
+
+  defp capture_target(:process_explorer, output, theme),
+    do: capture_process_explorer(output, theme)
 
   defp capture_gallery(output, theme) do
     File.mkdir_p!(output)
@@ -154,6 +164,52 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
     end
 
     Mix.shell().info("Captured synchronized visual review images in #{output}")
+  end
+
+  defp capture_process_explorer(output, theme) do
+    File.mkdir_p!(output)
+
+    Code.require_file(
+      Path.expand("../../../examples/process_explorer/support/process_explorer.exs", __DIR__)
+    )
+
+    title = "BEAM Process Explorer"
+
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(
+        app: Examples.ProcessExplorer.App,
+        display_opts: [theme: theme]
+      )
+
+    try do
+      window_id = x11_window_id!(title)
+      capture_current!(runtime, window_id, Path.join(output, "processes.bmp"))
+
+      selected_pid =
+        runtime
+        |> GPUI.Runtime.snapshot()
+        |> get_in([Access.key!(:windows), Access.at(0), :root, :assigns, :processes])
+        |> Enum.max_by(& &1.memory)
+        |> Map.fetch!(:pid)
+
+      GPUI.Runtime.dispatch_event(runtime, %{
+        type: :click,
+        window_id: 1,
+        event: "select:" <> selected_pid
+      })
+
+      capture_current!(runtime, window_id, Path.join(output, "selected-process.bmp"))
+    after
+      if Process.alive?(runtime), do: GenServer.stop(runtime)
+    end
+
+    Mix.shell().info("Captured synchronized process explorer images in #{output}")
+  end
+
+  defp capture_current!(runtime, x11_window_id, path) do
+    request_platform_frame!(x11_window_id)
+    :ok = GPUI.Runtime.await_frame(runtime, 1)
+    capture!(x11_window_id, path)
   end
 
   defp capture_state!(runtime, x11_window_id, output, name, nil) do
@@ -244,6 +300,12 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
   defp parse_theme!("dark"), do: :dark
   defp parse_theme!("light"), do: :light
   defp parse_theme!(theme), do: Mix.raise("unsupported visual capture theme: #{inspect(theme)}")
+
+  defp parse_target!("gallery"), do: :gallery
+  defp parse_target!("process_explorer"), do: :process_explorer
+
+  defp parse_target!(target),
+    do: Mix.raise("unsupported visual capture example: #{inspect(target)}")
 
   defp ensure_executables! do
     for executable <- ~w(cargo dbus-run-session xdotool xvfb-run),
