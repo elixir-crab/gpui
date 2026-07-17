@@ -188,6 +188,16 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
+  @spec component_positive_number_attr(term(), atom()) ::
+          R.nif_result(R.option(R.f64()))
+  defrust component_positive_number_attr(term, attr) do
+    case component_number_attr(term, attr) do
+      {:ok, {:some, number}} when number > 0.0 -> {:ok, some(number)}
+      {:ok, nil} -> {:ok, nil}
+      _invalid -> {:error, badarg()}
+    end
+  end
+
   @spec component_string_list_attr(term(), atom()) :: R.nif_result(R.vec(String.t()))
   defrust component_string_list_attr(term, attr) do
     attrs = unwrap!(term.map_get(Atoms.attrs()))

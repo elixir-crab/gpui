@@ -7,6 +7,7 @@ defmodule Examples.ProcessExplorer.View do
   def render(assigns) do
     processes = visible_processes(assigns)
     selected = selected_process(assigns)
+    visible_selection = visible_selection(processes, assigns.selected_pid)
 
     ~GPUI"""
     <div class="flex flex-col w-[1100px] h-[720px] bg-slate-900">
@@ -49,9 +50,17 @@ defmodule Examples.ProcessExplorer.View do
             <text class="text-white w-[100px]">Mailbox</text>
             <text class="text-white w-[110px]">Reductions</text>
           </div>
-          <scroll class="flex flex-col h-[520px]">
+          <UI.virtual_list
+            id="processes"
+            label="BEAM processes"
+            selected={visible_selection}
+            reveal={visible_selection}
+            item_height={76}
+            phx-change="process_selected"
+            class="h-[520px]"
+          >
             {Enum.map(processes, &process_row(&1, assigns.selected_pid))}
-          </scroll>
+          </UI.virtual_list>
         </div>
 
         <div class="flex flex-col w-[380px] h-[570px] gap-3 p-5" style={[background: {:rgb, 0x111827}]}>
@@ -72,7 +81,7 @@ defmodule Examples.ProcessExplorer.View do
   def handle_event("toggle_pause", _event, assigns),
     do: {:noreply, %{assigns | paused: not assigns.paused}}
 
-  def handle_event("select:" <> pid, _event, assigns),
+  def handle_event("process_selected", %{value: pid}, assigns),
     do: {:noreply, %{assigns | selected_pid: pid}}
 
   @impl GPUI.View
@@ -90,7 +99,6 @@ defmodule Examples.ProcessExplorer.View do
     assigns.processes
     |> Enum.filter(&matches_filter?(&1, filter))
     |> sort_processes(assigns.sort)
-    |> Enum.take(500)
   end
 
   defp matches_filter?(_process, ""), do: true
@@ -117,6 +125,12 @@ defmodule Examples.ProcessExplorer.View do
   defp selected_process(assigns),
     do: Enum.find(assigns.processes, &(&1.pid == assigns.selected_pid))
 
+  defp visible_selection(_processes, nil), do: nil
+
+  defp visible_selection(processes, selected_pid) do
+    if Enum.any?(processes, &(&1.pid == selected_pid)), do: selected_pid
+  end
+
   defp retain_selection(nil, _processes), do: nil
 
   defp retain_selection(pid, processes) do
@@ -127,20 +141,18 @@ defmodule Examples.ProcessExplorer.View do
     assigns = %{process: process, selected: process.pid == selected_pid}
 
     ~GPUI"""
-    <div
-      class="flex items-center gap-3 p-3"
-      style={row_style(assigns.selected)}
-      phx-click={"select:" <> assigns.process.pid}
-    >
-      <text class="text-white w-[130px]">{assigns.process.pid}</text>
-      <div class="flex flex-col w-[180px]">
-        <text class="text-white">{assigns.process.name}</text>
-        <text style={[color: {:rgb, 0x94A3B8}]}>{assigns.process.current_function}</text>
+    <UI.virtual_list_item id={assigns.process.pid} style={row_style(assigns.selected)}>
+      <div class="flex items-center gap-3 p-3">
+        <text class="text-white w-[130px]">{assigns.process.pid}</text>
+        <div class="flex flex-col w-[180px]">
+          <text class="text-white">{assigns.process.name}</text>
+          <text style={[color: {:rgb, 0x94A3B8}]}>{assigns.process.current_function}</text>
+        </div>
+        <text class="text-white w-[100px]">{format_bytes(assigns.process.memory)}</text>
+        <text class="text-white w-[100px]">{assigns.process.message_queue_len}</text>
+        <text class="text-white w-[110px]">{format_integer(assigns.process.reductions)}</text>
       </div>
-      <text class="text-white w-[100px]">{format_bytes(assigns.process.memory)}</text>
-      <text class="text-white w-[100px]">{assigns.process.message_queue_len}</text>
-      <text class="text-white w-[110px]">{format_integer(assigns.process.reductions)}</text>
-    </div>
+    </UI.virtual_list_item>
     """
   end
 

@@ -13,13 +13,14 @@ defmodule GPUI.ProcessExplorerExampleTest do
     runtime = start_gpui!(App, args: %{processes: processes()})
 
     assert %{processes: [_, _], selected_pid: nil, sort: "memory"} = assigns(runtime)
-    assert %{type: :div} = runtime |> tree() |> find!("phx-click": "select:<0.20.0>")
+    assert %{type: :ui_virtual_list} = runtime |> tree() |> find!(id: "processes")
+    assert %{type: :ui_virtual_list_item} = runtime |> tree() |> find!(id: "<0.20.0>")
 
     change(runtime, "filter_changed", "0.20")
-    assert runtime |> tree() |> all("phx-click": "select:<0.20.0>") |> length() == 1
-    assert runtime |> tree() |> all("phx-click": "select:<0.10.0>") |> length() == 0
+    assert runtime |> tree() |> all(id: "<0.20.0>") |> length() == 1
+    assert runtime |> tree() |> all(id: "<0.10.0>") |> length() == 0
 
-    click(runtime, "select:<0.20.0>")
+    select(runtime, "process_selected", "<0.20.0>")
     assert %{selected_pid: "<0.20.0>"} = assigns(runtime)
 
     assert runtime
@@ -28,16 +29,19 @@ defmodule GPUI.ProcessExplorerExampleTest do
            |> Enum.any?(&match?(%{children: ["Elixir.Worker.loop/1"]}, &1))
   end
 
-  test "pauses and resumes snapshots from the collector" do
+  test "pauses and resumes snapshots while reconciling terminated selections" do
     runtime = start_gpui!(App, args: %{processes: processes()})
+    select(runtime, "process_selected", "<0.20.0>")
     click(runtime, "toggle_pause")
 
     send_view(runtime, {:process_snapshot, [process("<0.30.0>", "new", 99)]})
-    assert %{paused: true, processes: [_, _]} = assigns(runtime)
+    assert %{paused: true, selected_pid: "<0.20.0>", processes: [_, _]} = assigns(runtime)
 
     click(runtime, "toggle_pause")
     send_view(runtime, {:process_snapshot, [process("<0.30.0>", "new", 99)]})
-    assert %{paused: false, processes: [%{pid: "<0.30.0>"}]} = assigns(runtime)
+
+    assert %{paused: false, selected_pid: nil, processes: [%{pid: "<0.30.0>"}]} =
+             assigns(runtime)
   end
 
   test "collector reports the current BEAM process set" do

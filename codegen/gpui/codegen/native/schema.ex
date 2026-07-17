@@ -295,7 +295,11 @@ defmodule GPUI.Codegen.Native.Schema do
   defp component_field_type(:id, :string), do: T.path(:String)
   defp component_field_type(_name, :string), do: T.option(:String)
   defp component_field_type(_name, {:default, :string}), do: T.path(:String)
-  defp component_field_type(_name, {:default, :number, _value}), do: T.path(:f64)
+
+  defp component_field_type(_name, {:default, type, _value})
+       when type in [:number, :positive_number],
+       do: T.path(:f64)
+
   defp component_field_type(_name, :boolean), do: T.path(:bool)
   defp component_field_type(_name, {:default, :boolean, _value}), do: T.path(:bool)
   defp component_field_type(_name, :string_list), do: T.vec(:String)
@@ -316,8 +320,14 @@ defmodule GPUI.Codegen.Native.Schema do
     |> A.method(:unwrap_or_default)
   end
 
-  defp component_decoder_expr(name, {:default, :number, default}) do
-    :component_number_attr
+  defp component_decoder_expr(name, {:default, type, default})
+       when type in [:number, :positive_number] do
+    helper =
+      if type == :positive_number,
+        do: :component_positive_number_attr,
+        else: :component_number_attr
+
+    helper
     |> component_attr_call(name)
     |> A.try()
     |> A.method(:unwrap_or, [A.lit(default)])

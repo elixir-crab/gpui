@@ -1,6 +1,6 @@
 defmodule GPUI.UI do
   @moduledoc """
-  Namespaced wrappers for native GPUI Component controls.
+  Namespaced wrappers for native GPUI controls and collection primitives.
 
   Components are controlled by Elixir assigns and require a stable `:id` so
   native focus, animation, and interaction state survives rerenders.
@@ -139,6 +139,95 @@ defmodule GPUI.UI do
 
   def accordion_item(_assigns),
     do: raise(ArgumentError, "ui_accordion_item requires a non-empty string title")
+
+  @doc """
+  Builds a controlled, virtualized list of uniform-height `virtual_list_item/1` children.
+
+  Only the visible item range is rendered natively. `selected` identifies the
+  controlled selection, while `reveal` requests that an item be scrolled into
+  view using `reveal_strategy`. Selection changes are emitted through
+  `phx-change`.
+  """
+  @spec virtual_list(map()) :: Element.t()
+  def virtual_list(assigns) when is_map(assigns) do
+    assigns =
+      assigns
+      |> Map.put_new(:item_height, 40.0)
+      |> Map.put_new(:reveal_strategy, "nearest")
+      |> Map.put_new(:disabled, false)
+
+    item_ids = virtual_list_item_ids!(Map.get(assigns, :children, []))
+    validate_virtual_list!(assigns, item_ids)
+
+    assigns = drop_nil_attrs(assigns, [:selected, :reveal])
+    component(:ui_virtual_list, assigns)
+  end
+
+  @doc "Builds a stable row for `virtual_list/1`."
+  @spec virtual_list_item(map()) :: Element.t()
+  def virtual_list_item(assigns) when is_map(assigns),
+    do: component(:ui_virtual_list_item, Map.put_new(assigns, :disabled, false))
+
+  defp virtual_list_item_ids!(children) do
+    item_ids =
+      Enum.map(children, fn
+        %Element{type: :ui_virtual_list_item, attrs: attrs} ->
+          Map.fetch!(Map.new(attrs), :id)
+
+        child ->
+          raise ArgumentError,
+                "ui_virtual_list only accepts virtual_list_item children, got: #{inspect(child)}"
+      end)
+
+    if item_ids != Enum.uniq(item_ids) do
+      raise ArgumentError, "ui_virtual_list item IDs must be unique"
+    end
+
+    item_ids
+  end
+
+  defp validate_virtual_list!(assigns, item_ids) do
+    validate_virtual_list_label!(Map.get(assigns, :label))
+    validate_item_height!(assigns.item_height)
+    validate_reveal_strategy!(assigns.reveal_strategy)
+    validate_controlled_item!(:selected, Map.get(assigns, :selected), item_ids)
+    validate_controlled_item!(:reveal, Map.get(assigns, :reveal), item_ids)
+  end
+
+  defp validate_virtual_list_label!(label) when is_binary(label) and label != "", do: :ok
+
+  defp validate_virtual_list_label!(_label),
+    do: raise(ArgumentError, "ui_virtual_list requires a non-empty string label")
+
+  defp validate_item_height!(height) when is_number(height) and height > 0, do: :ok
+
+  defp validate_item_height!(_height),
+    do: raise(ArgumentError, "ui_virtual_list item_height must be greater than zero")
+
+  defp validate_reveal_strategy!(strategy) when strategy in ~w(nearest top center bottom), do: :ok
+
+  defp validate_reveal_strategy!(_strategy) do
+    raise ArgumentError, "ui_virtual_list reveal_strategy must be nearest, top, center, or bottom"
+  end
+
+  defp validate_controlled_item!(_name, nil, _item_ids), do: :ok
+
+  defp validate_controlled_item!(name, value, item_ids) when is_binary(value) do
+    if value in item_ids do
+      :ok
+    else
+      raise ArgumentError, "ui_virtual_list #{name} must identify a virtual_list_item child"
+    end
+  end
+
+  defp validate_controlled_item!(name, _value, _item_ids),
+    do: raise(ArgumentError, "ui_virtual_list #{name} must identify a virtual_list_item child")
+
+  defp drop_nil_attrs(attrs, names) do
+    Enum.reduce(names, attrs, fn name, attrs ->
+      if is_nil(Map.get(attrs, name)), do: Map.delete(attrs, name), else: attrs
+    end)
+  end
 
   @doc """
   Builds a controlled GPUI Component tab bar.

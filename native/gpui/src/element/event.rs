@@ -3,7 +3,7 @@ use crate::*;
 #[cfg(feature = "real-gpui")]
 pub(crate) fn apply_click_event(
     element: gpui::Div,
-    element_id: usize,
+    element_id: String,
     event: Option<String>,
     runtime: SharedRuntime,
     window_id: u64,

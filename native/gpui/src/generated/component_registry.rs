@@ -8,6 +8,7 @@ enum ComponentKind {
     Input,
     Select,
     Combobox,
+    VirtualList,
     Slider,
 }
 enum StatefulComponent {
@@ -17,6 +18,7 @@ enum StatefulComponent {
     Input(ComponentInput),
     Select(ComponentSelect),
     Combobox(ComponentCombobox),
+    VirtualList(ComponentVirtualList),
     Slider(ComponentSlider),
 }
 impl ComponentRegistry {
@@ -120,6 +122,26 @@ impl ComponentRegistry {
         let key = ComponentKey::new(ComponentKind::Combobox, id);
         self.active.insert(key.clone());
         self.entries.insert(key, StatefulComponent::Combobox(component)).is_none()
+    }
+    pub(crate) fn virtual_list_mut(
+        &mut self,
+        id: &str,
+    ) -> Option<&mut ComponentVirtualList> {
+        let key = ComponentKey::new(ComponentKind::VirtualList, id);
+        self.active.insert(key.clone());
+        match self.entries.get_mut(&key) {
+            Some(StatefulComponent::VirtualList(component)) => Some(component),
+            _ => None,
+        }
+    }
+    pub(crate) fn insert_virtual_list(
+        &mut self,
+        id: &str,
+        component: ComponentVirtualList,
+    ) -> bool {
+        let key = ComponentKey::new(ComponentKind::VirtualList, id);
+        self.active.insert(key.clone());
+        self.entries.insert(key, StatefulComponent::VirtualList(component)).is_none()
     }
     pub(crate) fn slider_mut(&mut self, id: &str) -> Option<&mut ComponentSlider> {
         let key = ComponentKey::new(ComponentKind::Slider, id);

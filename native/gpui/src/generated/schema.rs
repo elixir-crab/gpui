@@ -23,6 +23,8 @@ pub enum GeneratedComponentKind {
     RadioGroupComponent,
     AccordionComponent,
     AccordionItemComponent,
+    VirtualListComponent,
+    VirtualListItemComponent,
     TabsComponent,
     SliderComponent,
     Text,
@@ -178,6 +180,17 @@ pub(crate) fn component_number_attr<'a>(
             }
         }
         Err(_missing) => Ok(None),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn component_positive_number_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+) -> NifResult<Option<f64>> {
+    match component_number_attr(term, attr) {
+        Ok(Some(number)) if number > 0.0 => Ok(Some(number)),
+        Ok(None) => Ok(None),
+        _invalid => Err(rustler::Error::BadArg),
     }
 }
 #[cfg(feature = "real-gpui")]
@@ -1269,6 +1282,63 @@ pub(crate) fn decode_generated_accordion_item_component(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct VirtualListComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) label: Option<String>,
+    pub(crate) selected: Option<String>,
+    pub(crate) reveal: Option<String>,
+    pub(crate) reveal_strategy: Option<String>,
+    pub(crate) item_height: f64,
+    pub(crate) disabled: bool,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) change: Option<String>,
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_virtual_list_component(
+    term: Term,
+) -> NifResult<VirtualListComponentNode> {
+    Ok(VirtualListComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        label: component_string_attr(term, atoms::label())?,
+        selected: component_string_attr(term, atoms::selected())?,
+        reveal: component_string_attr(term, atoms::reveal())?,
+        reveal_strategy: component_enum_attr(
+            term,
+            atoms::reveal_strategy(),
+            &["nearest", "top", "center", "bottom"],
+        )?,
+        item_height: component_positive_number_attr(term, atoms::item_height())?
+            .unwrap_or(40.0),
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        children: decode_children(term)?,
+        change: component_string_attr(term, atoms::phx_change())?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct VirtualListItemComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) disabled: bool,
+    pub(crate) children: Vec<ElementNode>,
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_virtual_list_item_component(
+    term: Term,
+) -> NifResult<VirtualListItemComponentNode> {
+    Ok(VirtualListItemComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        children: decode_children(term)?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct TabsComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -1365,6 +1435,8 @@ pub(crate) enum ElementNode {
     RadioGroupComponent(RadioGroupComponentNode),
     AccordionComponent(AccordionComponentNode),
     AccordionItemComponent(AccordionItemComponentNode),
+    VirtualListComponent(VirtualListComponentNode),
+    VirtualListItemComponent(VirtualListItemComponentNode),
     TabsComponent(TabsComponentNode),
     SliderComponent(SliderComponentNode),
     Image(ImageNode),
@@ -1394,6 +1466,8 @@ pub enum GeneratedElementTag {
     UiRadioGroup,
     UiAccordion,
     UiAccordionItem,
+    UiVirtualList,
+    UiVirtualListItem,
     UiTabs,
     UiSlider,
     Span,
@@ -1430,6 +1504,8 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_radio_group" => GeneratedElementTag::UiRadioGroup,
         "ui_accordion" => GeneratedElementTag::UiAccordion,
         "ui_accordion_item" => GeneratedElementTag::UiAccordionItem,
+        "ui_virtual_list" => GeneratedElementTag::UiVirtualList,
+        "ui_virtual_list_item" => GeneratedElementTag::UiVirtualListItem,
         "ui_tabs" => GeneratedElementTag::UiTabs,
         "ui_slider" => GeneratedElementTag::UiSlider,
         "span" => GeneratedElementTag::Span,
@@ -1484,6 +1560,12 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::UiAccordion => GeneratedComponentKind::AccordionComponent,
         GeneratedElementTag::UiAccordionItem => {
             GeneratedComponentKind::AccordionItemComponent
+        }
+        GeneratedElementTag::UiVirtualList => {
+            GeneratedComponentKind::VirtualListComponent
+        }
+        GeneratedElementTag::UiVirtualListItem => {
+            GeneratedComponentKind::VirtualListItemComponent
         }
         GeneratedElementTag::UiTabs => GeneratedComponentKind::TabsComponent,
         GeneratedElementTag::UiSlider => GeneratedComponentKind::SliderComponent,
@@ -1576,6 +1658,14 @@ pub(crate) fn decode_generated_element_node(
             decode_generated_accordion_item_component(term)
                 .map(ElementNode::AccordionItemComponent)
         }
+        GeneratedComponentKind::VirtualListComponent => {
+            decode_generated_virtual_list_component(term)
+                .map(ElementNode::VirtualListComponent)
+        }
+        GeneratedComponentKind::VirtualListItemComponent => {
+            decode_generated_virtual_list_item_component(term)
+                .map(ElementNode::VirtualListItemComponent)
+        }
         GeneratedComponentKind::TabsComponent => {
             decode_generated_tabs_component(term).map(ElementNode::TabsComponent)
         }
@@ -1654,6 +1744,12 @@ pub(crate) fn render_generated_component_node(
         }
         ElementNode::AccordionItemComponent(node) => {
             element::component::accordion::render_item(node, context)
+        }
+        ElementNode::VirtualListComponent(node) => {
+            element::component::virtual_list::render(node, context)
+        }
+        ElementNode::VirtualListItemComponent(node) => {
+            element::component::virtual_list::render_item(node, context)
         }
         ElementNode::TabsComponent(node) => {
             element::component::tabs::render(node, context)

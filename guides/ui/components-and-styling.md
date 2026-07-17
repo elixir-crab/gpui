@@ -126,6 +126,43 @@ Tab changes carry one string value. Accordion changes carry an ordered list of
 expanded item IDs. Slider changes are continuous and `phx-release` fires once
 pointer interaction ends. Linear and logarithmic slider scales are supported.
 
+## Virtualized collections
+
+`virtual_list/1` presents large collections through GPUI's native uniform-list
+layout. Every row has a stable ID and the same declared height; only the visible
+range is constructed and laid out natively.
+
+```elixir
+<UI.virtual_list
+  id="processes"
+  label="BEAM processes"
+  selected={assigns.selected_pid}
+  reveal={assigns.selected_pid}
+  reveal_strategy="nearest"
+  item_height={48}
+  phx-change="process_selected"
+  class="h-[480px]"
+>
+  {Enum.map(assigns.processes, fn process ->
+    UI.virtual_list_item(%{
+      id: process.pid,
+      children: [process.label]
+    })
+  end)}
+</UI.virtual_list>
+```
+
+`selected` is controlled and changes emit the selected item ID. `reveal`
+requests programmatic scrolling with `nearest`, `top`, `center`, or `bottom`
+placement. Up/Down, Home/End, Enter, and Space operate from one listbox tab stop
+and skip disabled rows. Pointer selection focuses the list, and native
+accessibility exposes listbox and option roles with an active descendant.
+
+The list itself must have a fixed or maximum height. Rows that differ from
+`item_height` violate the uniform-list contract. Filtering and sorting may
+replace or reorder children while scroll state remains attached to the list's
+stable ID.
+
 ## Button variants and sizes
 
 Button variants are `default`, `primary`, `secondary`, `danger`, `warning`,

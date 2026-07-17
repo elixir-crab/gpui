@@ -171,7 +171,12 @@ defmodule GPUI.Native.LifecycleE2ETest do
         attrs: %{label: "Missing ID"},
         children: []
       },
-      invalid_style: %{type: :div, attrs: %{style: [padding: :invalid]}, children: []}
+      invalid_style: %{type: :div, attrs: %{style: [padding: :invalid]}, children: []},
+      invalid_virtual_list_height: %{
+        type: :ui_virtual_list,
+        attrs: %{id: "invalid-list", label: "Invalid list", item_height: 0},
+        children: []
+      }
     ]
 
     for {name, malformed} <- malformed_trees do

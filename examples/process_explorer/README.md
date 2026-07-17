@@ -11,13 +11,12 @@ The application demonstrates a larger GPUI architecture:
 - an OTP worker samples `Process.list/0` and `Process.info/2`;
 - `GPUI.Runtime.send_view/3` delivers snapshots to the root view;
 - filtering, sorting, selection, and pause state remain controlled in Elixir;
-- a native scroll container presents the process collection;
-- selecting a row opens a process inspector without a second source of truth;
+- `GPUI.UI.virtual_list/1` renders only the visible process rows and preserves scroll state;
+- pointer or keyboard selection opens a process inspector without a second source of truth;
 - tests use synthetic process snapshots through `GPUI.Test` and do not need a
   native window.
 
-The renderer caps the visible result set at 500 rows. Filtering happens before
-the cap, so large nodes remain inspectable without constructing an unbounded
-native element tree. This is deliberately a normal collection rather than a
-claim of virtualized-list support; a future virtualized collection primitive
-should replace the cap.
+Rows have stable PID-based IDs and a uniform declared height. Filtering and
+sorting happen in Elixir, while GPUI's native uniform list constructs and lays
+out only the visible range. Controlled selection is revealed with the nearest
+scroll strategy.

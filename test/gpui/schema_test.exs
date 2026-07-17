@@ -25,6 +25,8 @@ defmodule GPUI.SchemaTest do
              :ui_radio_group,
              :ui_accordion,
              :ui_accordion_item,
+             :ui_virtual_list,
+             :ui_virtual_list_item,
              :ui_tabs,
              :ui_slider,
              :span,
@@ -46,6 +48,8 @@ defmodule GPUI.SchemaTest do
     assert :ui_tooltip in GPUI.Schema.identified_tags()
     assert :ui_dialog in GPUI.Schema.identified_tags()
     assert :ui_dropdown_menu in GPUI.Schema.identified_tags()
+    assert :ui_virtual_list in GPUI.Schema.identified_tags()
+    assert :ui_virtual_list_item in GPUI.Schema.identified_tags()
 
     assert Enum.map(GPUI.Schema.stateful_components(), & &1.kind) == [
              :popover_component,
@@ -54,6 +58,7 @@ defmodule GPUI.SchemaTest do
              :input_component,
              :select_component,
              :combobox_component,
+             :virtual_list_component,
              :slider_component
            ]
 

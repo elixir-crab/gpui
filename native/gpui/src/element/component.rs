@@ -4,6 +4,7 @@ pub(crate) mod radio;
 pub(crate) mod slider;
 pub(crate) mod switch;
 pub(crate) mod tabs;
+pub(crate) mod virtual_list;
 
 #[cfg(feature = "components")]
 use super::component_registry::{

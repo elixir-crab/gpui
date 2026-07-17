@@ -41,11 +41,11 @@ type DialogKeyHandler = Arc<dyn Fn(&gpui::KeyDownEvent, &mut gpui::Window, &mut 
 #[cfg(feature = "real-gpui")]
 pub(crate) struct ElixirRoot {
     window_state: SharedWindow,
-    runtime: SharedRuntime,
-    window_id: u64,
+    pub(crate) runtime: SharedRuntime,
+    pub(crate) window_id: u64,
     input_entities: HashMap<String, gpui::Entity<NativeTextInput>>,
     #[cfg(feature = "components")]
-    components: crate::element::component_registry::ComponentRegistry,
+    pub(crate) components: crate::element::component_registry::ComponentRegistry,
     #[cfg(feature = "components")]
     render_dialog_layer: bool,
     #[cfg(feature = "components")]
@@ -109,6 +109,7 @@ impl gpui::Render for ElixirRoot {
             runtime: self.runtime.clone(),
             window_id: self.window_id,
             next_element_id: 0,
+            id_namespace: "root".to_string(),
             active_input_ids: &mut active_input_ids,
             input_entities: &mut self.input_entities,
             #[cfg(feature = "components")]
@@ -122,7 +123,7 @@ impl gpui::Render for ElixirRoot {
         #[cfg(feature = "components")]
         self.components.finish_render(_window, cx);
 
-        let input_prefix = format!("gpui-elixir-input-{}-", self.window_id);
+        let input_prefix = format!("gpui-elixir-input-{}-root-", self.window_id);
         if let Ok(mut input_values) = self.runtime.input_values.lock() {
             input_values.retain(|input_id, _value| {
                 !input_id.starts_with(&input_prefix) || active_input_ids.contains(input_id)

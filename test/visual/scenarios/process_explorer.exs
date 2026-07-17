@@ -25,7 +25,8 @@ defmodule GPUITest.Visual.ProcessExplorer.Scenario do
       %{
         name: "selected-process",
         actions: [
-          {:dispatch, %{type: :click, window_id: 1, event: "select:<0.50.0>"}}
+          {:dispatch,
+           %{type: :change, window_id: 1, event: "process_selected", value: "<0.50.0>"}}
         ]
       }
     ]

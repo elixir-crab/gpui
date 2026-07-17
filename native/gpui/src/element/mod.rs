@@ -47,6 +47,7 @@ pub(crate) struct ElementRenderContext<'a, 'cx> {
     pub(crate) runtime: SharedRuntime,
     pub(crate) window_id: u64,
     pub(crate) next_element_id: usize,
+    pub(crate) id_namespace: String,
     pub(crate) active_input_ids: &'a mut HashSet<String>,
     pub(crate) input_entities: &'a mut HashMap<String, gpui::Entity<NativeTextInput>>,
     #[cfg(feature = "components")]
@@ -200,7 +201,10 @@ pub(crate) fn render_input_primitive(
     } = input_node;
     let runtime = context.runtime.clone();
     let window_id = context.window_id;
-    let input_id = format!("gpui-elixir-input-{window_id}-{element_id}");
+    let input_id = format!(
+        "gpui-elixir-input-{window_id}-{}-{element_id}",
+        context.id_namespace
+    );
     context.active_input_ids.insert(input_id.clone());
     let input = if let Some(input) = context.input_entities.get(&input_id).cloned() {
         context.cx.update_entity(&input, |input, _cx| {
@@ -250,7 +254,10 @@ pub(crate) fn render_container_primitive(
     }
 
     if tag == GeneratedElementTag::Scroll {
-        let scroll_id = format!("gpui-elixir-scroll-{window_id}-{element_id}");
+        let scroll_id = format!(
+            "gpui-elixir-scroll-{window_id}-{}-{element_id}",
+            context.id_namespace
+        );
         let element = element.id(scroll_id).overflow_y_scroll();
 
         if let Some(event) = click {
@@ -270,6 +277,7 @@ pub(crate) fn render_container_primitive(
             element.into_any_element()
         }
     } else {
+        let element_id = format!("{}-{element_id}", context.id_namespace);
         apply_click_event(element, element_id, click, runtime, window_id)
     }
 }

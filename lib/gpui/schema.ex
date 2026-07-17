@@ -213,6 +213,28 @@ defmodule GPUI.Schema do
       attrs: [id: :string, title: :string, disabled: :boolean]
     },
     %Component{
+      tag: :ui_virtual_list,
+      kind: :virtual_list_component,
+      stateful: true,
+      events: [change: :"phx-change"],
+      children: true,
+      attrs: [
+        id: :string,
+        label: :string,
+        selected: :string,
+        reveal: :string,
+        reveal_strategy: {:enum, ~w(nearest top center bottom)},
+        item_height: {:default, :positive_number, 40.0},
+        disabled: :boolean
+      ]
+    },
+    %Component{
+      tag: :ui_virtual_list_item,
+      kind: :virtual_list_item_component,
+      children: true,
+      attrs: [id: :string, disabled: :boolean]
+    },
+    %Component{
       tag: :ui_tabs,
       kind: :tabs_component,
       events: [change: :"phx-change"],
