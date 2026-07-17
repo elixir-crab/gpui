@@ -56,9 +56,10 @@ end
 ```
 
 After synchronizing a remote snapshot, callers can wait for its local native
-frame with `GPUI.Remote.Client.await_frame/3`; the remote client remains
-responsive while the display barrier is pending. Subscribers are monitored and
-removed when they exit.
+frame with `GPUI.Remote.Client.await_frame/3`. Native-only changes use
+`GPUI.Remote.Client.frame_token/2` and `await_frame_after/4`. The remote client
+remains responsive while either display barrier is pending. Subscribers are
+monitored and removed when they exit.
 
 ## SSL
 

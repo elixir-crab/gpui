@@ -105,8 +105,8 @@ RUST_FONTCONFIG_DLOPEN=1 mix gpui.visual.capture --output tmp/gpui-visual
 ```
 
 The task runs under Xvfb, requests an explicit platform frame, waits on the
-native generation barrier, and captures components, popovers, dialogs, and
-menus. Inspect the resulting images for spacing, clipping, contrast, popup
+native generation barriers, and captures components, tooltips, popovers,
+dialogs, and menus. Inspect the resulting images for spacing, clipping, contrast, popup
 placement, and state variants. `GPUITest.E2E.Desktop.capture!/2` remains a
 single-purpose explicit capture helper for repository E2E tests; it does not
 wait, inspect environment variables, or choose paths.

@@ -79,6 +79,8 @@ defmodule GPUI.Remote.ServerTest do
 
     assert {:ok, %{windows: [%{id: 1}]}} = GPUI.Remote.Client.mount(client, %{name: "old"})
     assert_receive {:gpui_snapshot, %{windows: [%{id: 1}]}}
+    assert {:ok, 0} = GPUI.Remote.Client.frame_token(client, 1)
+    assert :ok = GPUI.Remote.Client.await_frame_after(client, 1, 0)
     assert :ok = GPUI.Remote.Client.subscribe(client)
 
     event = %{

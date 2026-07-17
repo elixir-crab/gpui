@@ -33,6 +33,28 @@ defmodule GPUI.Display.Native do
     GenServer.call(display, {:await_frame, window_id, timeout}, timeout + 1_000)
   end
 
+  @doc "Returns the latest completed native frame generation for a window."
+  @spec frame_token(GenServer.server(), pos_integer()) ::
+          {:ok, non_neg_integer()} | {:error, term()}
+  @impl GPUI.Display
+  def frame_token(display, window_id) when is_integer(window_id) and window_id > 0 do
+    GenServer.call(display, {:frame_token, window_id})
+  end
+
+  @doc "Waits for a native frame completed after the supplied generation."
+  @spec await_frame_after(GenServer.server(), pos_integer(), non_neg_integer(), pos_integer()) ::
+          :ok | {:error, term()}
+  @impl GPUI.Display
+  def await_frame_after(display, window_id, generation, timeout \\ 5_000)
+      when is_integer(window_id) and window_id > 0 and is_integer(generation) and generation >= 0 and
+             is_integer(timeout) and timeout > 0 do
+    GenServer.call(
+      display,
+      {:await_frame_after, window_id, generation, timeout},
+      timeout + 1_000
+    )
+  end
+
   @doc "Changes the process-global native component theme and refreshes every window."
   @spec set_theme(GenServer.server(), :light | :dark) :: :ok | {:error, term()}
   def set_theme(display, mode) when mode in [:light, :dark],
@@ -85,6 +107,38 @@ defmodule GPUI.Display.Native do
           {:ok, ^window_id} -> :ok
           {:error, "unknown_window"} -> {:error, :window_not_found}
           {:error, "window_closed"} -> {:error, :window_closed}
+          {:error, "gpui_command_timeout"} -> {:error, :timeout}
+          {:error, "gpui_runtime_stopped"} -> {:error, :runtime_stopped}
+          {:error, reason} -> {:error, reason}
+        end
+
+      GenServer.reply(from, reply)
+    end)
+
+    {:noreply, state}
+  end
+
+  def handle_call({:frame_token, window_id}, _from, state) do
+    reply =
+      case GPUI.Native.frame_token(state.runtime, window_id) do
+        {:ok, generation} -> {:ok, generation}
+        {:error, "unknown_window"} -> {:error, :window_not_found}
+        {:error, "gpui_command_timeout"} -> {:error, :timeout}
+        {:error, "gpui_runtime_stopped"} -> {:error, :runtime_stopped}
+        {:error, reason} -> {:error, reason}
+      end
+
+    {:reply, reply, state}
+  end
+
+  def handle_call({:await_frame_after, window_id, generation, timeout}, from, state) do
+    runtime = state.runtime
+
+    Task.start(fn ->
+      reply =
+        case GPUI.Native.await_frame_after(runtime, window_id, generation, timeout) do
+          {:ok, ^window_id} -> :ok
+          {:error, "unknown_window"} -> {:error, :window_not_found}
           {:error, "gpui_command_timeout"} -> {:error, :timeout}
           {:error, "gpui_runtime_stopped"} -> {:error, :runtime_stopped}
           {:error, reason} -> {:error, reason}

@@ -123,12 +123,11 @@ defmodule GPUI.Native.OverlayE2ETest do
     Desktop.click!(window_id, 360, 190)
     Desktop.eventually(fn -> assert %{open: false} = assigns(runtime) end)
 
-    Desktop.refute_update!(
-      runtime,
-      fn -> Desktop.command!(["mousemove", "--sync", "--window", window_id, "50", "72"]) end,
-      250
-    )
-
+    assert {:ok, hover_generation} = GPUI.Runtime.frame_token(runtime, 1)
+    Desktop.command!(["mousemove", "--sync", "--window", window_id, "50", "72"])
+    Desktop.await_frame_after!(runtime, 1, hover_generation)
+    assert {:ok, tooltip_generation} = GPUI.Runtime.frame_token(runtime, 1)
+    Desktop.await_frame_after!(runtime, 1, tooltip_generation)
     assert Process.alive?(runtime)
     Desktop.command!(["mousemove", "--sync", "--window", window_id, "360", "190"])
     Desktop.click!(window_id, 50, 72)

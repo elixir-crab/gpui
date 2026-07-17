@@ -164,6 +164,77 @@ pub(crate) fn await_frame_impl<'a>(
 }
 
 #[cfg(feature = "real-gpui")]
+pub(crate) fn frame_token_impl<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+) -> NifResult<Term<'a>> {
+    let (reply, receiver) = std::sync::mpsc::sync_channel(1);
+    let command = WindowCommand::FrameToken {
+        runtime_id: runtime.id,
+        window_id,
+        reply,
+    };
+
+    match execute_window_command_with_timeout(
+        &runtime,
+        command,
+        receiver,
+        std::time::Duration::from_secs(5),
+    ) {
+        Ok(generation) => Ok((atoms::ok(), generation).encode(env)),
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+    }
+}
+
+#[cfg(not(feature = "real-gpui"))]
+pub(crate) fn frame_token_impl<'a>(
+    _env: Env<'a>,
+    _runtime: ResourceArc<RuntimeResource>,
+    _window_id: u64,
+) -> NifResult<Term<'a>> {
+    Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn await_frame_after_impl<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+    generation: u64,
+    timeout_ms: u64,
+) -> NifResult<Term<'a>> {
+    let (reply, receiver) = std::sync::mpsc::sync_channel(1);
+    let command = WindowCommand::AwaitFrameAfter {
+        runtime_id: runtime.id,
+        window_id,
+        generation,
+        reply,
+    };
+
+    match execute_window_command_with_timeout(
+        &runtime,
+        command,
+        receiver,
+        std::time::Duration::from_millis(timeout_ms),
+    ) {
+        Ok(()) => Ok((atoms::ok(), window_id).encode(env)),
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+    }
+}
+
+#[cfg(not(feature = "real-gpui"))]
+pub(crate) fn await_frame_after_impl<'a>(
+    _env: Env<'a>,
+    _runtime: ResourceArc<RuntimeResource>,
+    _window_id: u64,
+    _generation: u64,
+    _timeout_ms: u64,
+) -> NifResult<Term<'a>> {
+    Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
+}
+
+#[cfg(feature = "real-gpui")]
 pub(crate) fn stop_runtime_impl<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,
@@ -258,12 +329,12 @@ fn execute_window_command(
 }
 
 #[cfg(feature = "real-gpui")]
-fn execute_window_command_with_timeout(
+fn execute_window_command_with_timeout<T>(
     runtime: &ResourceArc<RuntimeResource>,
     command: WindowCommand,
-    receiver: std::sync::mpsc::Receiver<Result<(), String>>,
+    receiver: std::sync::mpsc::Receiver<Result<T, String>>,
     timeout: std::time::Duration,
-) -> Result<(), String> {
+) -> Result<T, String> {
     use std::sync::atomic::Ordering;
 
     if runtime.stopped.load(Ordering::Acquire) {

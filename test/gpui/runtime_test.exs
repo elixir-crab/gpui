@@ -173,7 +173,11 @@ defmodule GPUI.RuntimeTest do
       GPUI.Runtime.start_link(app: DemoApp, display: GPUI.Test.Display)
 
     assert :ok = GPUI.Runtime.await_frame(runtime, 1)
+    assert {:ok, 0} = GPUI.Runtime.frame_token(runtime, 1)
+    assert :ok = GPUI.Runtime.await_frame_after(runtime, 1, 0)
     assert {:error, :window_not_found} = GPUI.Runtime.await_frame(runtime, 999)
+    assert {:error, :window_not_found} = GPUI.Runtime.frame_token(runtime, 999)
+    assert {:error, :window_not_found} = GPUI.Runtime.await_frame_after(runtime, 999, 0)
   end
 
   test "waiting for a frame does not block the runtime" do

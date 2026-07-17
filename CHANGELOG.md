@@ -23,6 +23,7 @@
 - Added Switch Enter/Space activation, Radio Group arrow navigation with disabled-option skipping, roving tab stops, and visual Switch loading feedback.
 - Added monitored local-runtime and remote-client update subscriptions with typed revisions, normalized events, and synchronized snapshots.
 - Added generation-based native frame barriers for local and remote displays without blocking runtime message processing.
+- Added completed-frame tokens for deterministic synchronization of native-only hover, focus, tooltip, and input transitions.
 - Added deterministic Xvfb visual captures for components and overlays, plus explicit single-purpose screenshot helpers.
 - Replaced E2E state polling and sleep-based synchronization with monitored update messages, frame barriers, and mailbox assertions.
 - Added structured ExDoc guides and replaced the long-form README with a concise project introduction.

@@ -62,10 +62,27 @@ defmodule GPUI.Native.LifecycleE2ETest do
     Desktop.request_frame!(display_a_window)
     assert [:ok, :ok, :ok] = Enum.map(frame_waiters, &Task.await(&1, 7_000))
 
+    assert {:ok, generation} = GPUI.Display.Native.frame_token(display_a, 1)
+
+    next_frame_waiters =
+      for _index <- 1..3 do
+        Task.async(fn ->
+          GPUI.Display.Native.await_frame_after(display_a, 1, generation)
+        end)
+      end
+
+    assert :ok = GPUI.Display.Native.sync(display_a, snapshot([resource_window]))
+    Desktop.request_frame!(display_a_window, 3, 3)
+    assert [:ok, :ok, :ok] = Enum.map(next_frame_waiters, &Task.await(&1, 7_000))
+
     runtime_a = :sys.get_state(display_a).runtime
     assert :ok = GenServer.stop(display_a)
     assert {:error, "gpui_runtime_stopped"} = GPUI.Native.update_window(runtime_a, 1, tree_a)
     assert {:error, "gpui_runtime_stopped"} = GPUI.Native.await_frame(runtime_a, 1, 100)
+    assert {:error, "gpui_runtime_stopped"} = GPUI.Native.frame_token(runtime_a, 1)
+
+    assert {:error, "gpui_runtime_stopped"} =
+             GPUI.Native.await_frame_after(runtime_a, 1, 0, 100)
 
     assert :ok =
              GPUI.Display.Native.sync(
@@ -81,6 +98,8 @@ defmodule GPUI.Native.LifecycleE2ETest do
 
     assert {:error, "unknown_window"} = GPUI.Native.close_window(runtime_b, 1)
     assert {:error, "unknown_window"} = GPUI.Native.await_frame(runtime_b, 1, 100)
+    assert {:error, "unknown_window"} = GPUI.Native.frame_token(runtime_b, 1)
+    assert {:error, "unknown_window"} = GPUI.Native.await_frame_after(runtime_b, 1, 0, 100)
   end
 
   defp snapshot(windows, resources \\ %{}),

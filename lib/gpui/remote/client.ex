@@ -7,6 +7,7 @@ defmodule GPUI.Remote.Client do
   """
 
   use GenServer
+  use GPUI.Display.FrameAPI
 
   alias GPUI.Remote.Protocol
   alias GPUI.Remote.Reconnect
@@ -28,12 +29,6 @@ defmodule GPUI.Remote.Client do
   @doc "Unsubscribes the calling process from remote display updates."
   @spec unsubscribe(GenServer.server()) :: :ok
   def unsubscribe(client), do: GenServer.call(client, :unsubscribe)
-
-  @doc "Waits for the current local display frame of a remote window."
-  @spec await_frame(GenServer.server(), pos_integer(), pos_integer()) ::
-          :ok | {:error, term()}
-  def await_frame(client, window_id, timeout \\ 5_000),
-    do: GPUI.Display.call_await_frame(client, window_id, timeout)
 
   @impl GenServer
   def init(opts) do
@@ -105,6 +100,32 @@ defmodule GPUI.Remote.Client do
         state.display,
         window_id,
         timeout,
+        from
+      )
+
+    {:noreply, state}
+  end
+
+  def handle_call({:frame_token, window_id}, from, state) do
+    :ok =
+      GPUI.Display.reply_from_display(
+        state.display_module,
+        state.display,
+        :frame_token,
+        [window_id],
+        from
+      )
+
+    {:noreply, state}
+  end
+
+  def handle_call({:await_frame_after, window_id, generation, timeout}, from, state) do
+    :ok =
+      GPUI.Display.reply_from_display(
+        state.display_module,
+        state.display,
+        :await_frame_after,
+        [window_id, generation, timeout],
         from
       )
 

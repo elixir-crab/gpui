@@ -4,11 +4,17 @@ use crate::*;
 pub(crate) type WindowCommandReply = std::sync::mpsc::SyncSender<Result<(), String>>;
 
 #[cfg(feature = "real-gpui")]
+pub(crate) type WindowGenerationReply = std::sync::mpsc::SyncSender<Result<u64, String>>;
+
+#[cfg(feature = "real-gpui")]
 pub(crate) struct WindowState {
     pub(crate) tree: Mutex<ElementNode>,
     requested_generation: std::sync::atomic::AtomicU64,
     rendered_generation: std::sync::atomic::AtomicU64,
+    scheduled_frame_generation: std::sync::atomic::AtomicU64,
+    completed_frame_generation: std::sync::atomic::AtomicU64,
     frame_waiters: Mutex<Vec<(u64, WindowCommandReply)>>,
+    next_frame_waiters: Mutex<Vec<(u64, WindowCommandReply)>>,
 }
 
 #[cfg(feature = "real-gpui")]
@@ -18,7 +24,10 @@ impl WindowState {
             tree: Mutex::new(tree),
             requested_generation: std::sync::atomic::AtomicU64::new(1),
             rendered_generation: std::sync::atomic::AtomicU64::new(0),
+            scheduled_frame_generation: std::sync::atomic::AtomicU64::new(0),
+            completed_frame_generation: std::sync::atomic::AtomicU64::new(0),
             frame_waiters: Mutex::new(Vec::new()),
+            next_frame_waiters: Mutex::new(Vec::new()),
         }
     }
 }
@@ -158,8 +167,14 @@ fn acknowledge_frame(element: gpui::AnyElement, window_state: SharedWindow) -> g
     let barrier = gpui::canvas(
         move |_bounds, window, _cx| {
             let generation = window_state.requested_generation.load(Ordering::Acquire);
+            let frame_generation = window_state
+                .scheduled_frame_generation
+                .fetch_add(1, Ordering::AcqRel)
+                + 1;
             let window_state = window_state.clone();
-            window.on_next_frame(move |_window, _cx| complete_frame(&window_state, generation));
+            window.on_next_frame(move |_window, _cx| {
+                complete_frame(&window_state, generation, frame_generation)
+            });
         },
         |_bounds, _prepaint, _window, _cx| {},
     )
@@ -175,17 +190,32 @@ fn acknowledge_frame(element: gpui::AnyElement, window_state: SharedWindow) -> g
 }
 
 #[cfg(feature = "real-gpui")]
-fn complete_frame(window_state: &SharedWindow, generation: u64) {
+fn complete_frame(window_state: &SharedWindow, generation: u64, frame_generation: u64) {
     use std::sync::atomic::Ordering;
 
     window_state
         .rendered_generation
         .fetch_max(generation, Ordering::AcqRel);
+    window_state
+        .completed_frame_generation
+        .fetch_max(frame_generation, Ordering::AcqRel);
 
     if let Ok(mut waiters) = window_state.frame_waiters.lock() {
         let mut pending = Vec::new();
         for (target, reply) in std::mem::take(&mut *waiters) {
             if target <= generation {
+                send_reply(reply, Ok(()));
+            } else {
+                pending.push((target, reply));
+            }
+        }
+        *waiters = pending;
+    }
+
+    if let Ok(mut waiters) = window_state.next_frame_waiters.lock() {
+        let mut pending = Vec::new();
+        for (target, reply) in std::mem::take(&mut *waiters) {
+            if target <= frame_generation {
                 send_reply(reply, Ok(()));
             } else {
                 pending.push((target, reply));
@@ -228,6 +258,17 @@ pub(crate) enum WindowCommand {
     AwaitFrame {
         runtime_id: u64,
         window_id: u64,
+        reply: WindowCommandReply,
+    },
+    FrameToken {
+        runtime_id: u64,
+        window_id: u64,
+        reply: WindowGenerationReply,
+    },
+    AwaitFrameAfter {
+        runtime_id: u64,
+        window_id: u64,
+        generation: u64,
         reply: WindowCommandReply,
     },
     ShutdownRuntime {
@@ -362,6 +403,17 @@ fn handle_window_command(
             window_id,
             reply,
         } => await_gpui_frame(windows, (runtime_id, window_id), reply, cx),
+        WindowCommand::FrameToken {
+            runtime_id,
+            window_id,
+            reply,
+        } => gpui_frame_token(windows, (runtime_id, window_id), reply),
+        WindowCommand::AwaitFrameAfter {
+            runtime_id,
+            window_id,
+            generation,
+            reply,
+        } => await_gpui_frame_after(windows, (runtime_id, window_id), generation, reply),
         WindowCommand::ShutdownRuntime { runtime_id, reply } => {
             let keys = windows
                 .keys()
@@ -495,6 +547,68 @@ fn await_gpui_frame(
     match window.state.frame_waiters.lock() {
         Ok(mut waiters) => {
             if window.state.rendered_generation.load(Ordering::Acquire) >= target {
+                send_reply(reply, Ok(()));
+            } else {
+                waiters.push((target, reply));
+            }
+        }
+        Err(_error) => send_reply(reply, Err("runtime_lock_failed".to_string())),
+    }
+}
+
+#[cfg(feature = "real-gpui")]
+fn gpui_frame_token(
+    windows: &HashMap<WindowKey, ManagedWindow>,
+    key: WindowKey,
+    reply: WindowGenerationReply,
+) {
+    use std::sync::atomic::Ordering;
+
+    let result = windows
+        .get(&key)
+        .map(|window| {
+            window
+                .state
+                .completed_frame_generation
+                .load(Ordering::Acquire)
+        })
+        .ok_or_else(|| "unknown_window".to_string());
+    let _ = reply.send(result);
+}
+
+#[cfg(feature = "real-gpui")]
+fn await_gpui_frame_after(
+    windows: &HashMap<WindowKey, ManagedWindow>,
+    key: WindowKey,
+    generation: u64,
+    reply: WindowCommandReply,
+) {
+    use std::sync::atomic::Ordering;
+
+    let Some(window) = windows.get(&key) else {
+        send_reply(reply, Err("unknown_window".to_string()));
+        return;
+    };
+
+    let target = generation.saturating_add(1);
+    if window
+        .state
+        .completed_frame_generation
+        .load(Ordering::Acquire)
+        >= target
+    {
+        send_reply(reply, Ok(()));
+        return;
+    }
+
+    match window.state.next_frame_waiters.lock() {
+        Ok(mut waiters) => {
+            if window
+                .state
+                .completed_frame_generation
+                .load(Ordering::Acquire)
+                >= target
+            {
                 send_reply(reply, Ok(()));
             } else {
                 waiters.push((target, reply));

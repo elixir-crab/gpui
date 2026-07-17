@@ -31,17 +31,7 @@ defmodule GPUITest.E2E.Desktop do
     do: command!(["mousemove", "--sync", "--window", window_id, to_string(x), to_string(y)])
 
   def await_frame!(source, window_id, native_window_id) do
-    coordinate = Process.get(:gpui_frame_coordinate, 1)
-    Process.put(:gpui_frame_coordinate, 3 - coordinate)
-
-    command!([
-      "mousemove",
-      "--window",
-      native_window_id,
-      to_string(coordinate),
-      to_string(coordinate)
-    ])
-
+    nudge_frame!(native_window_id)
     assert :ok = GPUI.Display.call_await_frame(source, window_id, @update_timeout)
   end
 
@@ -55,10 +45,20 @@ defmodule GPUITest.E2E.Desktop do
 
   def key!(window_id, key), do: command!(["key", "--window", window_id, key])
 
-  def refute_update!(source, action, timeout \\ 150) do
-    flush_updates(source)
+  def await_frame_after!(source, window_id, generation, timeout \\ @update_timeout) do
+    assert :ok =
+             GPUI.Display.call_await_frame_after(source, window_id, generation, timeout)
+  end
+
+  def assert_no_runtime_update!(runtime, window_id, native_window_id, action) do
+    flush_updates(runtime)
+    assert {:ok, generation} = GPUI.Runtime.frame_token(runtime, window_id)
     action.()
-    refute_receive {:gpui, ^source, %GPUI.Runtime.Update{}}, timeout
+    assert :ok = GPUI.Runtime.request_frame(runtime)
+    nudge_frame!(native_window_id)
+    await_frame_after!(runtime, window_id, generation)
+    GPUI.Runtime.drain_events(runtime)
+    refute_receive {:gpui, ^runtime, %GPUI.Runtime.Update{}}, 0
   end
 
   def close_window!(window_id), do: driver!("close-window", [window_id])
@@ -107,6 +107,19 @@ defmodule GPUITest.E2E.Desktop do
       remaining ->
         flunk("update was not received before timeout; last error: #{inspect(last_error)}")
     end
+  end
+
+  defp nudge_frame!(native_window_id) do
+    coordinate = Process.get(:gpui_frame_coordinate, 1)
+    Process.put(:gpui_frame_coordinate, 3 - coordinate)
+
+    command!([
+      "mousemove",
+      "--window",
+      native_window_id,
+      to_string(coordinate),
+      to_string(coordinate)
+    ])
   end
 
   defp flush_updates(source) do

@@ -8,6 +8,7 @@ defmodule GPUI.Runtime do
   """
 
   use GenServer
+  use GPUI.Display.FrameAPI
 
   @call_timeout 5_000
   @event_history_limit 1_000
@@ -55,6 +56,10 @@ defmodule GPUI.Runtime do
   def inject_event(runtime, event),
     do: GenServer.call(runtime, {:inject_event, event}, @call_timeout)
 
+  @doc "Requests a display frame for the current snapshot without changing application state."
+  @spec request_frame(GenServer.server()) :: :ok | {:error, term()}
+  def request_frame(runtime), do: GenServer.call(runtime, :request_frame, @call_timeout)
+
   @doc "Subscribes the calling process to synchronized runtime updates."
   @spec subscribe(GenServer.server()) :: :ok
   def subscribe(runtime), do: GenServer.call(runtime, :subscribe, @call_timeout)
@@ -62,12 +67,6 @@ defmodule GPUI.Runtime do
   @doc "Unsubscribes the calling process from runtime updates."
   @spec unsubscribe(GenServer.server()) :: :ok
   def unsubscribe(runtime), do: GenServer.call(runtime, :unsubscribe, @call_timeout)
-
-  @doc "Waits until a complete display frame follows the current window state."
-  @spec await_frame(GenServer.server(), pos_integer(), pos_integer()) ::
-          :ok | {:error, term()}
-  def await_frame(runtime, window_id, timeout \\ 5_000),
-    do: GPUI.Display.call_await_frame(runtime, window_id, timeout)
 
   @impl GenServer
   def init(opts) do
@@ -149,6 +148,11 @@ defmodule GPUI.Runtime do
     {:reply, state.display_module.inject_event(state.display, event), state}
   end
 
+  def handle_call(:request_frame, _from, state) do
+    snapshot = GPUI.Session.snapshot(state.session)
+    {:reply, state.display_module.sync(state.display, snapshot), state}
+  end
+
   def handle_call({:await_frame, window_id, timeout}, from, state) do
     :ok =
       GPUI.Display.reply_after_frame(
@@ -156,6 +160,32 @@ defmodule GPUI.Runtime do
         state.display,
         window_id,
         timeout,
+        from
+      )
+
+    {:noreply, state}
+  end
+
+  def handle_call({:frame_token, window_id}, from, state) do
+    :ok =
+      GPUI.Display.reply_from_display(
+        state.display_module,
+        state.display,
+        :frame_token,
+        [window_id],
+        from
+      )
+
+    {:noreply, state}
+  end
+
+  def handle_call({:await_frame_after, window_id, generation, timeout}, from, state) do
+    :ok =
+      GPUI.Display.reply_from_display(
+        state.display_module,
+        state.display,
+        :await_frame_after,
+        [window_id, generation, timeout],
         from
       )
 

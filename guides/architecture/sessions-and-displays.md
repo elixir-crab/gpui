@@ -62,8 +62,20 @@ end
 Revisions increase monotonically within a runtime. Subscribers are monitored
 and removed automatically when they exit. Frame synchronization is separate
 from snapshot synchronization: `GPUI.Runtime.await_frame/3` waits until the
-current native window generation has completed a frame, without blocking the
-runtime from processing messages.
+current snapshot generation has completed a frame, without blocking the runtime
+from processing messages.
+
+Native-only changes such as hover, focus, tooltip timers, and IME state can be
+synchronized with a completed-frame token:
+
+```elixir
+{:ok, generation} = GPUI.Runtime.frame_token(runtime, window_id)
+# Send native platform input here.
+:ok = GPUI.Runtime.await_frame_after(runtime, window_id, generation)
+```
+
+`GPUI.Runtime.request_frame/1` resynchronizes the current snapshot when callers
+need an explicit frame without changing application state.
 
 ## Native process model
 
@@ -73,8 +85,8 @@ originating runtime and window IDs.
 
 Commands are acknowledged: callers receive success, timeout, disconnection, or
 stopped-runtime outcomes instead of enqueue-only success. Native frame barriers
-track requested and completed generations per window and acknowledge after the
-corresponding frame has passed prepaint and presentation submission. Closing the
+track snapshot and completed-frame generations per window and acknowledge after
+the corresponding frame has passed prepaint and presentation submission. Closing the
 final window does not terminate the shared loop. Runtime shutdown is
 non-blocking and cleans up only that runtime's windows and component state.
 

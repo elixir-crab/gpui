@@ -103,10 +103,17 @@ defmodule GPUI.Native.FormControlsE2ETest do
 
     Desktop.eventually(fn -> assert %{switch_loading: true} = assigns(runtime) end)
     Desktop.await_frame!(runtime, 1, window_id)
-    Desktop.refute_update!(runtime, fn -> Desktop.key!(window_id, "space") end)
+
+    Desktop.assert_no_runtime_update!(runtime, 1, window_id, fn ->
+      Desktop.key!(window_id, "space")
+    end)
+
     assert %{notifications: false} = assigns(runtime)
 
-    Desktop.refute_update!(runtime, fn -> Desktop.click!(window_id, 100, 60) end)
+    Desktop.assert_no_runtime_update!(runtime, 1, window_id, fn ->
+      Desktop.click!(window_id, 100, 60)
+    end)
+
     assert %{plan: "free"} = assigns(runtime)
 
     Desktop.key!(window_id, "Tab")

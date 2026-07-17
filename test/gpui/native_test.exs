@@ -46,6 +46,8 @@ defmodule GPUI.NativeTest do
     assert function_exported?(GPUI.Native, :update_window, 3)
     assert function_exported?(GPUI.Native, :close_window, 2)
     assert function_exported?(GPUI.Native, :await_frame, 3)
+    assert function_exported?(GPUI.Native, :frame_token, 2)
+    assert function_exported?(GPUI.Native, :await_frame_after, 4)
     assert function_exported?(GPUI.Native, :stop_runtime, 1)
     assert function_exported?(GPUI.Native, :set_theme, 2)
   end

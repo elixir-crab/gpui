@@ -45,6 +45,10 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
           <:trigger><UI.button id="popover-trigger" label="Popover" /></:trigger>
           <:content><text>Popover content</text></:content>
         </Overlay.popover>
+        <Overlay.tooltip id="gallery-tooltip" delay={100}>
+          <:trigger><UI.button id="tooltip-trigger" label="Tooltip" /></:trigger>
+          <:content>Tooltip content</:content>
+        </Overlay.tooltip>
         <Overlay.dialog
           id="gallery-dialog"
           open={assigns.overlay == "dialog"}
@@ -134,6 +138,7 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
       window_id = x11_window_id!(title)
       capture_state!(runtime, window_id, output, "components", nil)
       capture_state!(runtime, window_id, output, "popover", "popover")
+      capture_tooltip!(runtime, window_id, output)
       capture_state!(runtime, window_id, output, "dialog", "dialog")
       capture_state!(runtime, window_id, output, "dropdown-menu", "menu")
     after
@@ -150,16 +155,40 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
   end
 
   defp capture_state!(runtime, x11_window_id, output, name, overlay) do
-    GPUI.Runtime.dispatch_event(runtime, %{
-      type: :change,
-      window_id: 1,
-      event: "show_overlay",
-      value: overlay
-    })
+    GPUI.Runtime.dispatch_event(runtime, show_overlay_event(overlay))
 
     request_platform_frame!(x11_window_id)
     :ok = GPUI.Runtime.await_frame(runtime, 1)
     capture!(x11_window_id, Path.join(output, "#{name}.bmp"))
+  end
+
+  defp show_overlay_event(overlay) do
+    %{type: :change, window_id: 1, event: "show_overlay", value: overlay}
+  end
+
+  defp capture_tooltip!(runtime, x11_window_id, output) do
+    GPUI.Runtime.dispatch_event(runtime, show_overlay_event(nil))
+
+    request_platform_frame!(x11_window_id)
+    :ok = GPUI.Runtime.await_frame(runtime, 1)
+    {:ok, hover_generation} = GPUI.Runtime.frame_token(runtime, 1)
+    move_mouse!(x11_window_id, 320, 650)
+    :ok = GPUI.Runtime.await_frame_after(runtime, 1, hover_generation)
+    {:ok, tooltip_generation} = GPUI.Runtime.frame_token(runtime, 1)
+    :ok = GPUI.Runtime.await_frame_after(runtime, 1, tooltip_generation)
+    capture!(x11_window_id, Path.join(output, "tooltip.bmp"))
+    move_mouse!(x11_window_id, 1, 1)
+  end
+
+  defp move_mouse!(window_id, x, y) do
+    case System.cmd(
+           "xdotool",
+           ["mousemove", "--sync", "--window", window_id, to_string(x), to_string(y)],
+           stderr_to_stdout: true
+         ) do
+      {_output, 0} -> :ok
+      {output, status} -> Mix.raise("mouse move failed (#{status}): #{output}")
+    end
   end
 
   defp request_platform_frame!(window_id) do

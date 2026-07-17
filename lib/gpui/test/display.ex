@@ -50,6 +50,20 @@ defmodule GPUI.Test.Display do
   end
 
   @impl GPUI.Display
+  def frame_token(display, window_id) do
+    if Agent.get(display, &window_present?(&1, window_id)),
+      do: {:ok, 0},
+      else: {:error, :window_not_found}
+  end
+
+  @impl GPUI.Display
+  def await_frame_after(display, window_id, _generation, _timeout) do
+    if Agent.get(display, &window_present?(&1, window_id)),
+      do: :ok,
+      else: {:error, :window_not_found}
+  end
+
+  @impl GPUI.Display
   def inject_event(display, event) do
     Agent.update(display, &%{&1 | events: [event | &1.events]})
     {:ok, :ok}

@@ -79,6 +79,8 @@ nifs = [
   update_window: [schedule: :dirty_cpu],
   close_window: [schedule: :dirty_cpu],
   await_frame: [schedule: :dirty_cpu],
+  frame_token: [schedule: :dirty_cpu],
+  await_frame_after: [schedule: :dirty_cpu],
   stop_runtime: [schedule: :dirty_cpu],
   set_theme: [schedule: :dirty_cpu],
   put_resource: [schedule: :dirty_cpu],

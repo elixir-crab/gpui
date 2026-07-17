@@ -367,7 +367,10 @@ defmodule GPUI.Native.ComponentsE2ETest do
       assert %{framework_query: "live"} = assigns(runtime)
     end)
 
-    Desktop.refute_update!(runtime, fn -> Desktop.key!(window_id, "Escape") end)
+    Desktop.assert_no_runtime_update!(runtime, 1, window_id, fn ->
+      Desktop.key!(window_id, "Escape")
+    end)
+
     assert %{framework: nil} = assigns(runtime)
 
     Desktop.key!(window_id, "Return")
@@ -378,7 +381,7 @@ defmodule GPUI.Native.ComponentsE2ETest do
       assert %{framework: "LiveView", framework_loading: true} = assigns(runtime)
     end)
 
-    Desktop.refute_update!(runtime, fn ->
+    Desktop.assert_no_runtime_update!(runtime, 1, window_id, fn ->
       Desktop.key!(window_id, "Return")
       Desktop.type!(window_id, "x")
     end)
@@ -415,7 +418,11 @@ defmodule GPUI.Native.ComponentsE2ETest do
 
     Desktop.eventually(fn -> assert %{disabled: true} = assigns(runtime) end)
     Desktop.await_frame!(runtime, 1, window_id)
-    Desktop.refute_update!(runtime, fn -> Desktop.click!(window_id, 100, 32) end)
+
+    Desktop.assert_no_runtime_update!(runtime, 1, window_id, fn ->
+      Desktop.click!(window_id, 100, 32)
+    end)
+
     assert %{expanded: ["account", "security"]} = assigns(runtime)
   end
 
@@ -432,7 +439,10 @@ defmodule GPUI.Native.ComponentsE2ETest do
       assert %{section: "advanced", disabled: true} = assigns(runtime)
     end)
 
-    Desktop.refute_update!(runtime, fn -> Desktop.click!(window_id, 80, 32) end)
+    Desktop.assert_no_runtime_update!(runtime, 1, window_id, fn ->
+      Desktop.click!(window_id, 80, 32)
+    end)
+
     assert %{section: "advanced"} = assigns(runtime)
   end
 
@@ -472,7 +482,11 @@ defmodule GPUI.Native.ComponentsE2ETest do
 
     Desktop.eventually(fn -> assert %{disabled: true} = assigns(runtime) end)
     Desktop.await_frame!(runtime, 1, window_id)
-    Desktop.refute_update!(runtime, fn -> Desktop.click!(window_id, 278, 20) end)
+
+    Desktop.assert_no_runtime_update!(runtime, 1, window_id, fn ->
+      Desktop.click!(window_id, 278, 20)
+    end)
+
     assert %{volume: 100.0, released_volume: 100.0} = assigns(runtime)
   end
 
