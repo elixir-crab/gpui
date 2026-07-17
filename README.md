@@ -35,7 +35,9 @@ RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/03_settings_form.exs
 ```
 
 They cover the minimal application structure, OTP-driven updates, controlled
-native components, dialogs, theming, and deterministic tests.
+native components, dialogs, dynamic styling, and deterministic tests. The
+larger [`process_explorer`](examples/process_explorer/README.md) example applies
+those pieces to live BEAM process data.
 
 See [Getting started](guides/introduction/getting-started.md) for installation,
 native prerequisites, supervision, controlled components, and event handling.

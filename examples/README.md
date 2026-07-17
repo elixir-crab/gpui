@@ -20,6 +20,19 @@ RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/03_settings_form.exs
 The modules are separated into `getting_started/support/` so the examples can
 be loaded and tested through `GPUI.Test` without opening native windows.
 
+## Process explorer
+
+The first substantial example inspects live processes on the current BEAM node:
+
+```bash
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/process_explorer/run.exs
+```
+
+It combines a supervised sampler, periodic root-view messages, filtering,
+sorting, a scrollable process collection, selection, and a details pane. See
+[`process_explorer/README.md`](process_explorer/README.md) for its architecture
+and current collection-size tradeoff.
+
 ## Feature examples
 
 `features/resource_ref_image.exs` demonstrates reusable raster resources:
