@@ -36,8 +36,9 @@ RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/03_settings_form.exs
 
 They cover the minimal application structure, OTP-driven updates, controlled
 native components, dialogs, dynamic styling, and deterministic tests. The
-larger [`process_explorer`](examples/process_explorer/README.md) example applies
-those pieces to live BEAM process data.
+larger [`process_explorer`](examples/process_explorer/README.md) and
+[`image_palette`](examples/image_palette/README.md) examples apply those pieces
+to live BEAM process data and supervised image-analysis work.
 
 See [Getting started](guides/introduction/getting-started.md) for installation,
 native prerequisites, supervision, controlled components, and event handling.
@@ -48,6 +49,7 @@ native prerequisites, supervision, controlled components, and event handling.
 - A process-global native GPUI loop that safely owns multiple runtimes and windows.
 - HEEx-style templates with aliases, named slots, and schema-backed styling.
 - Controlled native form controls, overlays, and virtualized uniform-height collections.
+- Common image decoding, validated rasters, and reusable local or remote resources.
 - Local native and remote TCP/SSL displays.
 - Public deterministic ExUnit helpers that do not require a native library or display.
 - RustQ-generated Rustler contracts, decoders, element dispatch, and registry glue.

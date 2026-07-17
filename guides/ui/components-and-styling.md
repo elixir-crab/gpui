@@ -169,6 +169,26 @@ Button variants are `default`, `primary`, `secondary`, `danger`, `warning`,
 `success`, `info`, `ghost`, `link`, and `text`. Component sizes are `xs`, `sm`,
 `md`, and `lg` where supported.
 
+## Images and raster resources
+
+`GPUI.Image.decode/1` converts common encoded image bytes into a validated
+`GPUI.Raster`. Decoding runs on a dirty CPU scheduler; applications should keep
+file access and larger workflows in supervised tasks.
+
+```elixir
+with {:ok, bytes} <- File.read(path),
+     {:ok, raster} <- GPUI.Image.decode(bytes) do
+  GPUI.Runtime.put_resource(runtime, "preview", GPUI.Raster.to_payload(raster))
+end
+```
+
+Render an inline raster with `<img raster={raster} label="Preview" />`; `label`
+provides its native accessibility name. For images that survive
+multiple view updates, install the raster once and render
+`GPUI.ResourceRef.new("preview", :raster)` instead. Resource references avoid
+copying the full pixel payload through each later snapshot and work across local
+and remote displays.
+
 ## Styling
 
 Templates normalize a constrained Tailwind-compatible vocabulary into typed

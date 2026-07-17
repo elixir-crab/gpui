@@ -276,7 +276,7 @@ defmodule GPUI.Schema do
       events: [change: :"phx-change", keydown: :"phx-keydown", keyup: :"phx-keyup"],
       attrs: [value: :string, placeholder: :string]
     },
-    %Component{tag: :img, kind: :image, attrs: [raster: :resource]},
+    %Component{tag: :img, kind: :image, attrs: [raster: :resource, label: :string]},
     %Component{tag: :text, kind: :text}
   ]
 

@@ -1,5 +1,17 @@
 use crate::*;
 
+pub(crate) fn decode_image_impl<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
+    let (width, height, data) = match image_decode::decode(bytes.as_slice()) {
+        Ok(decoded) => decoded,
+        Err(_error) => return Ok((atoms::error(), "invalid_image").encode(env)),
+    };
+    let mut binary = rustler::OwnedBinary::new(data.len())
+        .ok_or_else(|| rustler::Error::Term(Box::new("image_allocation_failed")))?;
+    binary.as_mut_slice().copy_from_slice(&data);
+
+    Ok((atoms::ok(), width, height, binary.release(env)).encode(env))
+}
+
 pub(crate) fn start_runtime_impl<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
     #[cfg(feature = "real-gpui")]
     let runtime = ResourceArc::new(
@@ -527,6 +539,7 @@ pub(crate) fn decode_image_node(term: Term, _tag: GeneratedElementTag) -> NifRes
             return Ok(ElementNode::Image(ImageNode {
                 image: ImageData::Ref(id),
                 style: decode_style(term)?,
+                label: string_attr(term, atoms::label()).filter(|label| !label.is_empty()),
             }));
         }
     }
@@ -536,6 +549,7 @@ pub(crate) fn decode_image_node(term: Term, _tag: GeneratedElementTag) -> NifRes
     Ok(ElementNode::Image(ImageNode {
         image: ImageData::Raster(raster),
         style: decode_style(term)?,
+        label: string_attr(term, atoms::label()).filter(|label| !label.is_empty()),
     }))
 }
 

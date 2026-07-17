@@ -5,6 +5,10 @@ fn start_runtime<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
     start_runtime_impl(env)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
+fn decode_image<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
+    decode_image_impl(env, bytes)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
 fn open_window<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,

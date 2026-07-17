@@ -2,6 +2,8 @@
 
 ## 0.1.1
 
+- Added accessible virtualized uniform-height collections with stable row identities, controlled selection, keyboard navigation, and programmatic reveal.
+- Added common image decoding into `GPUI.Raster` values and a supervised image-palette application with progress, bounded previews, resource reuse, and CSS export.
 - Upgraded generation to RustQ `1.0.0-rc.3` and migrated compiled `defrust` access to the documented `RustQ.Meta.AST` API.
 - Derived native atoms, resources, event values and kinds, renderer routing, disabled-feature NIFs, and boundary policy structurally through RustQ and Rust source metadata.
 - Moved window and component term decoding into typed Rusty-Elixir `defrust` helpers.

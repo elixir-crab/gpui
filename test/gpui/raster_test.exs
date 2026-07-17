@@ -32,9 +32,13 @@ defmodule GPUI.RasterTest do
   test "supports <img raster={raster}> in GPUI templates" do
     raster = GPUI.Raster.new(1, 1, <<255, 0, 0, 255>>)
 
-    assert %GPUI.Element{type: :img, attrs: [raster: ^raster], children: []} =
+    assert %GPUI.Element{
+             type: :img,
+             attrs: [raster: ^raster, label: "Preview"],
+             children: []
+           } =
              ~GPUI"""
-             <img raster={raster} />
+             <img raster={raster} label="Preview" />
              """
   end
 

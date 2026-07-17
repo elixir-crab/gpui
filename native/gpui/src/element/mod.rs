@@ -22,6 +22,7 @@ pub(crate) struct ContainerNode {
 pub(crate) struct ImageNode {
     pub(crate) image: ImageData,
     pub(crate) style: StyleAttrs,
+    pub(crate) label: Option<String>,
 }
 
 #[cfg(feature = "real-gpui")]
@@ -85,6 +86,8 @@ impl ElementNode {
             Self::Image(node) => render_image_primitive(
                 node.image,
                 node.style,
+                node.label,
+                format!("{}-image-{element_id}", context.id_namespace),
                 context.runtime.clone(),
                 context.window_id,
             ),
@@ -115,10 +118,14 @@ pub(crate) fn render_text_primitive(text: String, style: StyleAttrs) -> gpui::An
 pub(crate) fn render_image_primitive(
     image: ImageData,
     style: StyleAttrs,
+    label: Option<String>,
+    element_id: String,
     runtime: SharedRuntime,
     window_id: u64,
 ) -> gpui::AnyElement {
-    use gpui::{div, IntoElement, ParentElement};
+    use gpui::{
+        div, InteractiveElement, IntoElement, ParentElement, Role, StatefulInteractiveElement,
+    };
 
     let image = match image {
         ImageData::Raster(raster) => raster.render(),
@@ -143,9 +150,13 @@ pub(crate) fn render_image_primitive(
         }
     };
 
-    apply_generated_render_styles(div(), style)
+    let mut element = apply_generated_render_styles(div(), style)
         .child(image)
-        .into_any_element()
+        .id(element_id);
+    if let Some(label) = label {
+        element = element.role(Role::Image).aria_label(label);
+    }
+    element.into_any_element()
 }
 
 #[cfg(feature = "real-gpui")]

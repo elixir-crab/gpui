@@ -22,6 +22,7 @@ defmodule GPUI.Codegen.Native.Boundary do
   def nifs do
     [
       start_runtime: [],
+      decode_image: [schedule: :dirty_cpu],
       open_window: [schedule: :dirty_cpu],
       update_window: [schedule: :dirty_cpu],
       close_window: [schedule: :dirty_cpu],

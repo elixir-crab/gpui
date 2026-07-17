@@ -1,4 +1,4 @@
-use rustler::{Atom, Encoder, Env, NifResult, ResourceArc, Term};
+use rustler::{Atom, Binary, Encoder, Env, NifResult, ResourceArc, Term};
 
 #[cfg(feature = "real-gpui")]
 use futures::{channel::mpsc, StreamExt};
@@ -13,6 +13,7 @@ use std::{
 use zed_gpui as gpui;
 
 mod event;
+mod image_decode;
 #[cfg(feature = "real-gpui")]
 mod input;
 #[cfg(feature = "real-gpui")]

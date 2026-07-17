@@ -29,9 +29,21 @@ RUST_FONTCONFIG_DLOPEN=1 mix run examples/process_explorer/run.exs
 ```
 
 It combines a supervised sampler, periodic root-view messages, filtering,
-sorting, a scrollable process collection, selection, and a details pane. See
-[`process_explorer/README.md`](process_explorer/README.md) for its architecture
-and current collection-size tradeoff.
+sorting, a virtualized process collection, selection, and a details pane. See
+[`process_explorer/README.md`](process_explorer/README.md) for its architecture.
+
+## Image palette
+
+The image palette application decodes a local image in supervised background
+work, extracts deterministic dominant colors, installs a bounded raster
+resource, reports progress, and exports CSS variables:
+
+```bash
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/image_palette/run.exs -- path/to/image.png
+```
+
+See [`image_palette/README.md`](image_palette/README.md) for its worker and
+analysis architecture.
 
 ## Feature examples
 

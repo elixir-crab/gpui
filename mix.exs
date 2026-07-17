@@ -125,6 +125,7 @@ defmodule GPUI.MixProject do
           GPUI.UI.Overlay,
           GPUI.Element,
           GPUI.Event,
+          GPUI.Image,
           GPUI.Raster,
           GPUI.ResourceRef,
           GPUI.Tailwind,

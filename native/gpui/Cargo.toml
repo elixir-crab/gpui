@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 
 [features]
 default = ["components"]
-real-gpui = ["dep:zed_gpui", "dep:gpui_platform", "dep:image", "dep:futures", "dep:unicode-segmentation"]
+real-gpui = ["dep:zed_gpui", "dep:gpui_platform", "dep:futures", "dep:unicode-segmentation"]
 desktop = ["real-gpui", "gpui_platform/font-kit", "gpui_platform/wayland", "gpui_platform/x11"]
 components = ["desktop", "dep:gpui-component", "dep:gpui-component-assets"]
 
@@ -23,7 +23,7 @@ zed_gpui = { git = "https://github.com/zed-industries/zed", package = "gpui", op
 gpui_platform = { git = "https://github.com/zed-industries/zed", package = "gpui_platform", optional = true }
 gpui-component = { git = "https://github.com/longbridge/gpui-component", rev = "3c270ed2", optional = true }
 gpui-component-assets = { git = "https://github.com/longbridge/gpui-component", rev = "3c270ed2", optional = true }
-image = { version = "0.25.10", optional = true }
+image = { version = "0.25.10", default-features = false, features = ["bmp", "gif", "ico", "jpeg", "png", "tiff", "webp"] }
 futures = { version = "0.3", optional = true }
 unicode-segmentation = { version = "1.12", optional = true }
 
