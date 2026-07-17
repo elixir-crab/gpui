@@ -37,34 +37,51 @@ defmodule GPUI.Codegen.Native.Decoder do
 
   @spec rgb_value(term()) :: R.option(R.u32())
   defrust rgb_value(term) do
-    case decode_as(term, R.vec(term())) do
-      {:ok, values} ->
-        if values.len() == 2 and atom_eq(index(values, 0), "rgb") do
-          decode_as(index(values, 1), R.u32()).ok()
+    case decode_as(term, {term(), term()}) do
+      {:ok, {unit, value}} ->
+        if atom_eq(unit, "rgb") do
+          decode_as(value, R.u32()).ok()
         else
           nil
         end
 
       {:error, _reason} ->
-        nil
+        case decode_as(term, R.vec(term())) do
+          {:ok, values} ->
+            if values.len() == 2 and atom_eq(index(values, 0), "rgb") do
+              decode_as(index(values, 1), R.u32()).ok()
+            else
+              nil
+            end
+
+          {:error, _reason} ->
+            nil
+        end
     end
   end
 
   @spec px_value(term()) :: R.option(R.f32())
   defrust px_value(term) do
-    case decode_as(term, R.vec(term())) do
-      {:ok, values} ->
-        if values.len() == 2 and atom_eq(index(values, 0), "px") do
-          case decode_as(index(values, 1), R.f64()) do
-            {:ok, value} -> some(cast(value, R.f32()))
-            {:error, _reason} -> nil
-          end
+    case decode_as(term, {term(), term()}) do
+      {:ok, {unit, value}} ->
+        if atom_eq(unit, "px") do
+          number_value(value)
         else
           nil
         end
 
       {:error, _reason} ->
-        nil
+        case decode_as(term, R.vec(term())) do
+          {:ok, values} ->
+            if values.len() == 2 and atom_eq(index(values, 0), "px") do
+              number_value(index(values, 1))
+            else
+              nil
+            end
+
+          {:error, _reason} ->
+            nil
+        end
     end
   end
 

@@ -35,6 +35,23 @@ defmodule GPUI.TemplateTest do
              """
   end
 
+  test "merges normalized classes with dynamic styles at runtime" do
+    dynamic_style = [background: {:rgb, 0xFFFFFF}]
+
+    assert %GPUI.Element{
+             attrs: [
+               style: [
+                 background: {:rgb, 0xFFFFFF},
+                 display: :flex,
+                 gap: {:px, 8.0}
+               ]
+             ]
+           } =
+             ~GPUI"""
+             <div class="flex gap-2" style={dynamic_style} />
+             """
+  end
+
   test "preserves unknown classes after style normalization" do
     assert %GPUI.Element{attrs: attrs} =
              ~GPUI"""

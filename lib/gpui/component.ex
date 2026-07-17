@@ -1,7 +1,5 @@
 defmodule GPUI.Component do
-  @moduledoc """
-  Helpers for HEEx-style GPUI component tags.
-  """
+  @moduledoc false
 
   alias GPUI.Element
 

@@ -220,7 +220,21 @@ defmodule GPUI.Template do
   defp put_style_attr(attrs, []), do: attrs
 
   defp put_style_attr(attrs, style) do
-    Keyword.update(attrs, :style, style, &Keyword.merge(&1, style))
+    case Keyword.fetch(attrs, :style) do
+      :error ->
+        Keyword.put(attrs, :style, style)
+
+      {:ok, existing} when is_list(existing) ->
+        Keyword.put(attrs, :style, Keyword.merge(existing, style))
+
+      {:ok, existing} ->
+        merged =
+          quote do
+            Keyword.merge(unquote(existing), unquote(Macro.escape(style)))
+          end
+
+        Keyword.put(attrs, :style, merged)
+    end
   end
 
   defp put_unknown_class_attr(attrs, []), do: attrs

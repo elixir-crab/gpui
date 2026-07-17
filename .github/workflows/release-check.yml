@@ -29,8 +29,21 @@ jobs:
         with:
           key: release-check
           workspaces: native/gpui -> target
+      - name: Install Rust security audit
+        run: cargo install cargo-audit --locked
       - name: Install native dependencies
         run: >-
           sudo apt-get update && sudo apt-get install -y --no-install-recommends
           libxkbcommon-dev libxkbcommon-x11-dev
+      - name: Generate dependency inventory
+        run: |
+          mkdir -p release-inventory
+          cargo metadata --locked --format-version 1 --manifest-path native/gpui/Cargo.toml > release-inventory/cargo-metadata.json
+          mix deps.tree --format plain > release-inventory/mix-dependencies.txt
       - run: mix gpui.release.check
+      - name: Upload dependency inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gpui-dependency-inventory
+          path: release-inventory/

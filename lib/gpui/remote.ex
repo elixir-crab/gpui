@@ -1,7 +1,5 @@
 defmodule GPUI.Remote do
-  @moduledoc """
-  Remote session and display support over the versioned GPUI protocol.
-  """
+  @moduledoc false
 
   @doc false
   @spec child_spec(module(), keyword()) :: Supervisor.child_spec()

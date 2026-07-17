@@ -6,18 +6,17 @@ defmodule GPUI.Remote.Transport.TCP do
   @behaviour SafeRPC.Transport
 
   defmodule Listener do
-    @moduledoc "Opaque TCP or SSL listener returned by `GPUI.Remote.Transport.TCP`."
+    @moduledoc false
     defstruct [:socket, :mode]
-
-    @type t :: %__MODULE__{socket: port() | tuple(), mode: :tcp | :ssl}
   end
 
   defmodule Connection do
-    @moduledoc "Opaque TCP or SSL connection used by the remote transport."
+    @moduledoc false
     defstruct [:socket, :mode]
-
-    @type t :: %__MODULE__{socket: port() | tuple(), mode: :tcp | :ssl}
   end
+
+  @opaque listener :: %Listener{socket: port() | tuple(), mode: :tcp | :ssl}
+  @opaque connection :: %Connection{socket: port() | tuple(), mode: :tcp | :ssl}
 
   @type listen_option :: {:port, :inet.port_number()} | {:ssl, false | keyword()}
   @type connect_option ::
@@ -27,7 +26,7 @@ defmodule GPUI.Remote.Transport.TCP do
           | {:timeout, timeout()}
 
   @impl SafeRPC.Transport
-  @spec listen([listen_option()]) :: {:ok, Listener.t()} | {:error, term()}
+  @spec listen([listen_option()]) :: {:ok, listener()} | {:error, term()}
   def listen(opts \\ []) do
     port = Keyword.get(opts, :port, 0)
 
@@ -38,7 +37,7 @@ defmodule GPUI.Remote.Transport.TCP do
   end
 
   @impl SafeRPC.Transport
-  @spec accept(Listener.t(), timeout()) :: {:ok, Connection.t()} | {:error, term()}
+  @spec accept(listener(), timeout()) :: {:ok, connection()} | {:error, term()}
   def accept(listener, timeout \\ :infinity)
 
   def accept(%Listener{socket: socket, mode: :tcp}, timeout) do
@@ -55,7 +54,7 @@ defmodule GPUI.Remote.Transport.TCP do
   end
 
   @impl SafeRPC.Transport
-  @spec connect([connect_option()]) :: {:ok, Connection.t()} | {:error, term()}
+  @spec connect([connect_option()]) :: {:ok, connection()} | {:error, term()}
   def connect(opts) do
     host = opts |> Keyword.fetch!(:host) |> normalize_host()
     port = Keyword.fetch!(opts, :port)
@@ -67,7 +66,7 @@ defmodule GPUI.Remote.Transport.TCP do
     end
   end
 
-  @spec port(Listener.t()) :: {:ok, :inet.port_number()} | {:error, term()}
+  @spec port(listener()) :: {:ok, :inet.port_number()} | {:error, term()}
   def port(%Listener{socket: socket, mode: :tcp}) do
     with {:ok, {_addr, port}} <- :inet.sockname(socket), do: {:ok, port}
   end
@@ -88,7 +87,7 @@ defmodule GPUI.Remote.Transport.TCP do
     end
   end
 
-  @spec controlling_process(Connection.t(), pid()) :: :ok | {:error, term()}
+  @spec controlling_process(connection(), pid()) :: :ok | {:error, term()}
   def controlling_process(%Connection{socket: socket, mode: :tcp}, pid),
     do: :gen_tcp.controlling_process(socket, pid)
 
@@ -96,7 +95,7 @@ defmodule GPUI.Remote.Transport.TCP do
     do: :ssl.controlling_process(socket, pid)
 
   @impl SafeRPC.Transport
-  @spec close(Connection.t() | Listener.t()) :: :ok
+  @spec close(connection() | listener()) :: :ok
   def close(%Connection{socket: socket, mode: :tcp}), do: :gen_tcp.close(socket)
   def close(%Connection{socket: socket, mode: :ssl}), do: :ssl.close(socket)
   def close(%Listener{socket: socket, mode: :tcp}), do: :gen_tcp.close(socket)

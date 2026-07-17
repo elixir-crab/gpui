@@ -29,6 +29,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  rust-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: rust-audit
+      - run: cargo install cargo-audit --locked
+      - run: >-
+          cargo audit --file native/gpui/Cargo.lock
+          --ignore RUSTSEC-2026-0194
+          --ignore RUSTSEC-2026-0195
+
   native-quality:
     uses: elixir-vibe/actions/.github/workflows/elixir-rustler-ci.yml@v1
     with:

@@ -55,31 +55,40 @@ pub(crate) fn number_value<'a>(term: Term<'a>) -> Option<f32> {
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn rgb_value<'a>(term: Term<'a>) -> Option<u32> {
-    match term.decode::<Vec<Term<'a>>>() {
-        Ok(values) => {
-            if values.len() == 2 && atom_eq(values[0], "rgb") {
-                values[1].decode::<u32>().ok()
-            } else {
-                None
+    match term.decode::<(Term<'a>, Term<'a>)>() {
+        Ok((unit, value)) => {
+            if atom_eq(unit, "rgb") { value.decode::<u32>().ok() } else { None }
+        }
+        Err(_reason) => {
+            match term.decode::<Vec<Term<'a>>>() {
+                Ok(values) => {
+                    if values.len() == 2 && atom_eq(values[0], "rgb") {
+                        values[1].decode::<u32>().ok()
+                    } else {
+                        None
+                    }
+                }
+                Err(_reason) => None,
             }
         }
-        Err(_reason) => None,
     }
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn px_value<'a>(term: Term<'a>) -> Option<f32> {
-    match term.decode::<Vec<Term<'a>>>() {
-        Ok(values) => {
-            if values.len() == 2 && atom_eq(values[0], "px") {
-                match values[1].decode::<f64>() {
-                    Ok(value) => Some(value as f32),
-                    Err(_reason) => None,
+    match term.decode::<(Term<'a>, Term<'a>)>() {
+        Ok((unit, value)) => if atom_eq(unit, "px") { number_value(value) } else { None }
+        Err(_reason) => {
+            match term.decode::<Vec<Term<'a>>>() {
+                Ok(values) => {
+                    if values.len() == 2 && atom_eq(values[0], "px") {
+                        number_value(values[1])
+                    } else {
+                        None
+                    }
                 }
-            } else {
-                None
+                Err(_reason) => None,
             }
         }
-        Err(_reason) => None,
     }
 }
 #[cfg(feature = "real-gpui")]
@@ -273,152 +282,226 @@ pub(crate) fn apply_generated_style_attr(
 ) -> bool {
     match key {
         value if value == atoms::display() => {
-            attrs.display = atom_string(term);
-            true
+            let value = atom_string(term);
+            let valid = value.is_some();
+            attrs.display = value;
+            valid
         }
         value if value == atoms::flex_direction() => {
-            attrs.flex_direction = atom_string(term);
-            true
+            let value = atom_string(term);
+            let valid = value.is_some();
+            attrs.flex_direction = value;
+            valid
         }
         value if value == atoms::align_items() => {
-            attrs.align_items = atom_string(term);
-            true
+            let value = atom_string(term);
+            let valid = value.is_some();
+            attrs.align_items = value;
+            valid
         }
         value if value == atoms::justify_content() => {
-            attrs.justify_content = atom_string(term);
-            true
+            let value = atom_string(term);
+            let valid = value.is_some();
+            attrs.justify_content = value;
+            valid
         }
         value if value == atoms::flex_wrap() => {
-            attrs.flex_wrap = atom_string(term);
-            true
+            let value = atom_string(term);
+            let valid = value.is_some();
+            attrs.flex_wrap = value;
+            valid
         }
         value if value == atoms::flex_grow() => {
-            attrs.flex_grow = number_value(term);
-            true
+            let value = number_value(term);
+            let valid = value.is_some();
+            attrs.flex_grow = value;
+            valid
         }
         value if value == atoms::flex_shrink() => {
-            attrs.flex_shrink = number_value(term);
-            true
+            let value = number_value(term);
+            let valid = value.is_some();
+            attrs.flex_shrink = value;
+            valid
         }
         value if value == atoms::background() => {
-            attrs.background = rgb_value(term);
-            true
+            let value = rgb_value(term);
+            let valid = value.is_some();
+            attrs.background = value;
+            valid
         }
         value if value == atoms::color() => {
-            attrs.color = rgb_value(term);
-            true
+            let value = rgb_value(term);
+            let valid = value.is_some();
+            attrs.color = value;
+            valid
         }
         value if value == atoms::font_size() => {
-            attrs.font_size = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.font_size = value;
+            valid
         }
         value if value == atoms::font_weight() => {
-            attrs.font_weight = atom_string(term);
-            true
+            let value = atom_string(term);
+            let valid = value.is_some();
+            attrs.font_weight = value;
+            valid
         }
         value if value == atoms::line_height() => {
-            attrs.line_height = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.line_height = value;
+            valid
         }
         value if value == atoms::opacity() => {
-            attrs.opacity = number_value(term);
-            true
+            let value = number_value(term);
+            let valid = value.is_some();
+            attrs.opacity = value;
+            valid
         }
         value if value == atoms::gap() => {
-            attrs.gap = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.gap = value;
+            valid
         }
         value if value == atoms::padding() => {
-            attrs.padding = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.padding = value;
+            valid
         }
         value if value == atoms::padding_x() => {
-            attrs.padding_x = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.padding_x = value;
+            valid
         }
         value if value == atoms::padding_y() => {
-            attrs.padding_y = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.padding_y = value;
+            valid
         }
         value if value == atoms::padding_top() => {
-            attrs.padding_top = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.padding_top = value;
+            valid
         }
         value if value == atoms::padding_right() => {
-            attrs.padding_right = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.padding_right = value;
+            valid
         }
         value if value == atoms::padding_bottom() => {
-            attrs.padding_bottom = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.padding_bottom = value;
+            valid
         }
         value if value == atoms::padding_left() => {
-            attrs.padding_left = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.padding_left = value;
+            valid
         }
         value if value == atoms::margin() => {
-            attrs.margin = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.margin = value;
+            valid
         }
         value if value == atoms::margin_x() => {
-            attrs.margin_x = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.margin_x = value;
+            valid
         }
         value if value == atoms::margin_y() => {
-            attrs.margin_y = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.margin_y = value;
+            valid
         }
         value if value == atoms::margin_top() => {
-            attrs.margin_top = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.margin_top = value;
+            valid
         }
         value if value == atoms::margin_right() => {
-            attrs.margin_right = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.margin_right = value;
+            valid
         }
         value if value == atoms::margin_bottom() => {
-            attrs.margin_bottom = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.margin_bottom = value;
+            valid
         }
         value if value == atoms::margin_left() => {
-            attrs.margin_left = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.margin_left = value;
+            valid
         }
         value if value == atoms::width() => {
-            attrs.width = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.width = value;
+            valid
         }
         value if value == atoms::height() => {
-            attrs.height = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.height = value;
+            valid
         }
         value if value == atoms::min_width() => {
-            attrs.min_width = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.min_width = value;
+            valid
         }
         value if value == atoms::max_width() => {
-            attrs.max_width = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.max_width = value;
+            valid
         }
         value if value == atoms::min_height() => {
-            attrs.min_height = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.min_height = value;
+            valid
         }
         value if value == atoms::max_height() => {
-            attrs.max_height = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.max_height = value;
+            valid
         }
         value if value == atoms::border_radius() => {
-            attrs.border_radius = radius_value(term);
-            true
+            let value = radius_value(term);
+            let valid = value.is_some();
+            attrs.border_radius = value;
+            valid
         }
         value if value == atoms::border_width() => {
-            attrs.border_width = px_value(term);
-            true
+            let value = px_value(term);
+            let valid = value.is_some();
+            attrs.border_width = value;
+            valid
         }
         value if value == atoms::border_color() => {
-            attrs.border_color = rgb_value(term);
-            true
+            let value = rgb_value(term);
+            let valid = value.is_some();
+            attrs.border_color = value;
+            valid
         }
         _ => false,
     }

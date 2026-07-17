@@ -105,6 +105,46 @@ defmodule GPUI.Remote.ServerTest do
     refute_receive {:gpui, ^client, %GPUI.Runtime.Update{}}
   end
 
+  test "remote client remains responsive across repeated updates and connection replacement" do
+    {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.Server.port(server)
+
+    {:ok, client} =
+      GPUI.Remote.Client.start_link(
+        host: "127.0.0.1",
+        port: port,
+        display: GPUI.Test.Display,
+        poll_interval: nil
+      )
+
+    assert {:ok, _snapshot} = GPUI.Remote.Client.mount(client, %{name: "initial"})
+
+    final_snapshot =
+      Enum.reduce(1..25, nil, fn iteration, _snapshot ->
+        assert {:ok, snapshot} =
+                 GPUI.Remote.Client.event(client, %{
+                   type: :change,
+                   window_id: 1,
+                   event: "rename",
+                   value: "update-#{iteration}"
+                 })
+
+        snapshot
+      end)
+
+    assert %{windows: [%{root: %{assigns: %{name: "update-25"}}}]} = final_snapshot
+
+    rpc = :sys.get_state(client).rpc
+    :ok = GenServer.stop(rpc)
+    refute Process.alive?(rpc)
+
+    assert {:ok, %{windows: [%{root: %{assigns: %{name: "update-25"}}}]}} =
+             GPUI.Remote.Client.snapshot(client)
+
+    assert Process.alive?(client)
+    assert Process.alive?(:sys.get_state(client).display)
+  end
+
   test "remote client forwards local display events automatically" do
     {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
     {:ok, port} = GPUI.Remote.Server.port(server)
@@ -173,8 +213,20 @@ defmodule GPUI.Remote.ServerTest do
     {:ok, port} = GPUI.Remote.Server.port(server)
     {:ok, client} = start_client(port)
 
-    assert {:error, {:invalid_payload, :mount}} = SafeRPC.call(client, :mount, "invalid")
-    assert Process.alive?(server)
+    malformed = [
+      hello: "invalid",
+      mount: "invalid",
+      resume_session: %{},
+      event: %{},
+      snapshot: %{}
+    ]
+
+    for {operation, payload} <- malformed do
+      assert {:error, {:invalid_payload, ^operation}} = SafeRPC.call(client, operation, payload)
+      assert Process.alive?(server)
+    end
+
+    assert {:ok, _reply} = SafeRPC.call(client, :mount, %{session_id: "recovered"})
   end
 
   test "requires hello independently for every connection" do

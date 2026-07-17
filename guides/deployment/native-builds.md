@@ -10,7 +10,10 @@ The validated release target is:
 - `x86_64-unknown-linux-gnu`
 
 macOS, Windows, Linux ARM, musl, and additional target triples must not be
-claimed until their native build and interaction suites pass.
+claimed until their native build and interaction suites pass. Linux release
+artifacts are built on Ubuntu 22.04 and must not require GLIBC symbols newer
+than `GLIBC_2.35`; binaries built on a newer development host are not release
+artifacts.
 
 ## Source builds on Linux
 
@@ -76,8 +79,28 @@ consumer checksum validation and no-Rust installation.
 
 - package contents, including native source fallback;
 - documentation generation;
-- dependency audit;
+- Hex and RustSec dependency audits;
+- that the MIT native artifact has no GPL-3 Rust dependencies;
 - production source compilation from the built package.
+
+The RustSec gate currently acknowledges `RUSTSEC-2026-0194` and
+`RUSTSEC-2026-0195` for transitive `quick-xml` versions constrained by the
+pinned GPUI platform stack. The `0.30` path is XCB/build metadata; the `0.39`
+paths are Wayland code generation and local D-Bus introspection. They do not
+parse GPUI snapshots or remote protocol payloads. New advisories still fail the
+gate, and these exceptions must be removed when the upstream platform stack
+accepts `quick-xml >= 0.41`.
+
+Zed's Apache-licensed `sum_tree` uses only the `ztracing::instrument` surface,
+but Zed declares its tracing facade as GPL-3. GPUI patches that facade with the
+small `native/gpui/compat/ztracing` adapter, which re-exports the upstream
+MIT/Apache `tracing` API. This keeps GPL-only tracing and logging crates out of
+the linked NIF. Zed packages without per-crate license metadata are covered by
+the repository's `LICENSE-APACHE`; `gpui-component` is Apache-2.0.
+
+Run the release check with `cargo-audit` installed; release CI installs the
+locked tool automatically. Release CI also uploads locked Cargo metadata and
+the Mix dependency tree as a dependency inventory for each validation run.
 
 It intentionally does not replace native E2E validation. Release claims should
 cover only platforms tested with real windows and interaction.

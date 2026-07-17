@@ -110,11 +110,10 @@ defmodule GPUI.Codegen.Native.Style do
         %AST.Arm{
           pattern: %AST.PatAtomGuard{name: spec.name, module: [:atoms]},
           body: [
-            A.assign(
-              A.field(A.var(:attrs), spec.field),
-              style_decode_call(spec.type)
-            ),
-            A.return_stmt(A.lit(true))
+            A.let(:value, style_decode_call(spec.type)),
+            A.let(:valid, valid_style_value(spec.type)),
+            A.assign(A.field(A.var(:attrs), spec.field), :value),
+            A.return_stmt(:valid)
           ]
         }
       end) ++
@@ -133,6 +132,9 @@ defmodule GPUI.Codegen.Native.Style do
       body: [A.return_stmt(A.match_expr(A.var(:key), arms))]
     }
   end
+
+  defp valid_style_value({:atom_eq, _expected}), do: A.var(:value)
+  defp valid_style_value(_type), do: A.method(:value, :is_some)
 
   defp style_decode_call({:atom_eq, expected}),
     do: A.call(:atom_eq, [A.var(:term), A.lit(to_string(expected))])

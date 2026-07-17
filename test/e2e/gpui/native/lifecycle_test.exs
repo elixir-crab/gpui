@@ -102,6 +102,117 @@ defmodule GPUI.Native.LifecycleE2ETest do
     assert {:error, "unknown_window"} = GPUI.Native.await_frame_after(runtime_b, 1, 0, 100)
   end
 
+  test "repeated window and resource reconciliation remains responsive" do
+    title = "Lifecycle stress"
+    {:ok, display} = GPUI.Display.Native.start_link([])
+    on_exit(fn -> Desktop.stop_process(display) end)
+
+    assert :ok = GPUI.Display.Native.sync(display, snapshot([window(1, title, tree("initial"))]))
+    native_window_id = Desktop.window_id!(title)
+    Desktop.await_frame!(display, 1, native_window_id)
+
+    final_window_id =
+      Enum.reduce(1..20, native_window_id, fn iteration, current_window_id ->
+        pixel = stress_pixel(iteration)
+        resource_window = window(1, title, resource_tree("pixel"))
+        assert {:ok, generation} = GPUI.Display.Native.frame_token(display, 1)
+
+        assert :ok =
+                 GPUI.Display.Native.sync(
+                   display,
+                   snapshot([resource_window], %{"pixel" => pixel})
+                 )
+
+        Desktop.request_frame!(current_window_id, rem(iteration, 4) + 1, 2)
+        assert :ok = GPUI.Display.Native.await_frame_after(display, 1, generation)
+
+        if rem(iteration, 5) == 0 do
+          assert :ok = GPUI.Display.Native.sync(display, snapshot([]))
+
+          assert {:ok, events} = GPUI.Display.Native.drain_events(display)
+          assert %{type: :window_closed, window_id: 1} in events
+
+          assert :ok =
+                   GPUI.Display.Native.sync(
+                     display,
+                     snapshot([resource_window], %{"pixel" => pixel})
+                   )
+
+          reopened_window_id = Desktop.window_id!(title)
+          Desktop.await_frame!(display, 1, reopened_window_id)
+          reopened_window_id
+        else
+          current_window_id
+        end
+      end)
+
+    assert is_binary(final_window_id)
+    assert Process.alive?(display)
+    assert %{windows: windows, resources: resources} = :sys.get_state(display)
+    assert MapSet.equal?(windows, MapSet.new([1]))
+    assert Map.has_key?(resources, "pixel")
+  end
+
+  test "malformed native payloads are rejected without poisoning the runtime" do
+    title = "Malformed payloads"
+    {:ok, display} = GPUI.Display.Native.start_link([])
+    on_exit(fn -> Desktop.stop_process(display) end)
+
+    assert :ok = GPUI.Display.Native.sync(display, snapshot([window(1, title, tree("valid"))]))
+    native_window_id = Desktop.window_id!(title)
+    Desktop.await_frame!(display, 1, native_window_id)
+    runtime = :sys.get_state(display).runtime
+
+    malformed_trees = [
+      missing_type: %{},
+      unknown_type: %{type: :unknown, attrs: %{}, children: []},
+      missing_component_id: %{
+        type: :ui_button,
+        attrs: %{label: "Missing ID"},
+        children: []
+      },
+      invalid_style: %{type: :div, attrs: %{style: [padding: :invalid]}, children: []}
+    ]
+
+    for {name, malformed} <- malformed_trees do
+      assert_native_rejected(name, fn -> GPUI.Native.update_window(runtime, 1, malformed) end)
+      assert Process.alive?(display)
+    end
+
+    assert_native_rejected(:invalid_resource, fn ->
+      GPUI.Native.put_resource(runtime, "bad", %{
+        width: 0,
+        height: 1,
+        format: :rgba8,
+        data: <<>>
+      })
+    end)
+
+    assert :ok =
+             GPUI.Display.Native.sync(display, snapshot([window(1, title, tree("recovered"))]))
+
+    Desktop.await_frame!(display, 1, native_window_id)
+    assert Process.alive?(display)
+  end
+
+  defp assert_native_rejected(name, fun) do
+    result =
+      try do
+        {:returned, fun.()}
+      rescue
+        error in [ArgumentError, ErlangError] -> {:raised, error}
+      end
+
+    assert match?({:returned, {:error, _reason}}, result) or match?({:raised, _error}, result),
+           "expected #{name} to be rejected, got: #{inspect(result)}"
+  end
+
+  defp stress_pixel(iteration) do
+    red = rem(iteration * 31, 256)
+    blue = rem(iteration * 67, 256)
+    GPUI.Raster.new(1, 1, <<red, 0, blue, 255>>) |> GPUI.Raster.to_payload()
+  end
+
   defp snapshot(windows, resources \\ %{}),
     do: %Snapshot{windows: windows, resources: resources}
 

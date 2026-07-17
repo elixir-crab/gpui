@@ -2,6 +2,7 @@
 name = "gpui_nif"
 version = "0.1.1"
 edition = "2021"
+license = "MIT"
 publish = false
 
 [lib]
@@ -28,3 +29,8 @@ unicode-segmentation = { version = "1.12", optional = true }
 
 [patch.crates-io]
 async-process = { git = "https://github.com/zed-industries/async-process.git", rev = "0b6d6713570af61806e1e5cb40e0f757cb93fd9d" }
+
+[patch."https://github.com/zed-industries/zed"]
+# GPUI uses only `ztracing::instrument` through Apache-licensed `sum_tree`.
+# Replace Zed's GPL-only tracing facade with the upstream MIT/Apache `tracing` API.
+ztracing = { path = "compat/ztracing" }

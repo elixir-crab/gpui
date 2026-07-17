@@ -3,7 +3,7 @@ defmodule GPUI.Remote.Acceptor do
 
   alias GPUI.Remote.Transport.TCP
 
-  @spec start(TCP.Listener.t()) :: {:ok, pid()}
+  @spec start(TCP.listener()) :: {:ok, pid()}
   def start(listener) do
     owner = self()
 
