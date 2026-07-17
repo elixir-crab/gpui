@@ -7,15 +7,16 @@ layer.
 ## Deterministic application tests
 
 ```elixir
-defmodule MyApp.CounterTest do
+defmodule MyApp.FocusTimerTest do
   use GPUI.Test, async: true
 
-  test "increments" do
-    runtime = start_gpui!(MyApp.Desktop)
+  test "starts and receives OTP ticks" do
+    runtime = start_gpui!(GettingStarted.FocusTimer.App, args: %{seconds: 2})
 
-    assert %{count: 0} = assigns(runtime)
-    click(runtime, "increment")
-    assert %{count: 1} = assigns(runtime)
+    click(runtime, "start")
+    send_view(runtime, :tick)
+
+    assert %{remaining: 1, status: :running} = assigns(runtime)
   end
 end
 ```
@@ -61,7 +62,9 @@ menu_select(runtime, "file_menu_selected", "new")
 ```
 
 All helpers return the resulting snapshot. `dispatch/2` is available for custom
-normalized events.
+normalized events. `send_view/3` delivers an OTP message through
+`GPUI.Runtime.send_view/3`, making background-process behavior deterministic
+without running timers in a test.
 
 ## Test layout
 
@@ -101,7 +104,8 @@ Behavioral E2E assertions are not a substitute for visual review. Before a
 release that changes rendering, capture the synchronized component gallery:
 
 ```bash
-RUST_FONTCONFIG_DLOPEN=1 mix gpui.visual.capture --output tmp/gpui-visual
+RUST_FONTCONFIG_DLOPEN=1 mix gpui.visual.capture --theme dark --output tmp/gpui-visual-dark
+RUST_FONTCONFIG_DLOPEN=1 mix gpui.visual.capture --theme light --output tmp/gpui-visual-light
 ```
 
 The task runs under Xvfb, requests an explicit platform frame, waits on the
@@ -116,7 +120,6 @@ wait, inspect environment variables, or choose paths.
 ```bash
 mix ci
 mix test_e2e
-RUST_FONTCONFIG_DLOPEN=1 mix gpui.release.check
 ```
 
 `mix ci` also checks generated Rust freshness, Cargo formatting and feature

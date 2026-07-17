@@ -8,62 +8,34 @@ GPUI applications keep state and event handling in Elixir while a Rust display
 owns native windows, rendering, focus, and platform input. The same application
 session can be presented locally or through the remote display protocol.
 
-> GPUI is currently private and unpublished. Version `0.1.x` is under active
-> development and only x86-64 GNU/Linux has completed release validation.
+> GPUI is under active development. The native application examples currently
+> target x86-64 GNU/Linux.
 
 ## Installation
 
-After publication, add `gpui` to your dependencies:
+Add GPUI to an application with a path or Git dependency while it is under development:
 
 ```elixir
 def deps do
-  [{:gpui, "~> 0.1"}]
+  [{:gpui, path: "../gpui"}]
 end
 ```
 
-Precompiled NIFs are planned for validated targets. Source builds require Rust
-and the platform GPUI development libraries. See
+Native builds require Rust and the platform GPUI development libraries. See
 [Native builds and deployment](guides/deployment/native-builds.md).
 
 ## Quick start
 
-```elixir
-defmodule CounterView do
-  use GPUI.View
+Run the progressive examples from the repository:
 
-  @impl GPUI.View
-  def render(assigns) do
-    ~GPUI"""
-    <div class="flex flex-col items-center justify-center gap-3 p-4 bg-slate-900">
-      <text class="text-white text-2xl">Count: {assigns.count}</text>
-      <GPUI.UI.button id="increment" label="Increment" phx-click="increment" />
-    </div>
-    """
-  end
-
-  @impl GPUI.View
-  def handle_event("increment", _event, assigns),
-    do: {:noreply, %{assigns | count: assigns.count + 1}}
-end
-
-defmodule CounterApp do
-  use GPUI.Application
-
-  @impl GPUI.Application
-  def mount(_args) do
-    {:ok,
-     [
-       window "Counter" do
-         size(320, 240)
-         root(CounterView, count: 0)
-       end
-     ]}
-  end
-end
-
-children = [{CounterApp, poll_interval: 16}]
-Supervisor.start_link(children, strategy: :one_for_one)
+```bash
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/01_hello_window.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/02_focus_timer.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/03_settings_form.exs
 ```
+
+They cover the minimal application structure, OTP-driven updates, controlled
+native components, dialogs, theming, and deterministic tests.
 
 See [Getting started](guides/introduction/getting-started.md) for installation,
 native prerequisites, supervision, controlled components, and event handling.
@@ -77,7 +49,7 @@ native prerequisites, supervision, controlled components, and event handling.
 - Local native and remote TCP/SSL displays.
 - Public deterministic ExUnit helpers that do not require a native library or display.
 - RustQ-generated Rustler contracts, decoders, element dispatch, and registry glue.
-- Native Xvfb/Lavapipe interaction coverage and source-build fallback.
+- Native Xvfb/Lavapipe interaction coverage.
 
 ## Documentation
 
@@ -96,7 +68,6 @@ native prerequisites, supervision, controlled components, and event handling.
 mix deps.get
 mix ci
 mix test_e2e
-RUST_FONTCONFIG_DLOPEN=1 mix gpui.release.check
 ```
 
 `mix ci` covers Elixir, generated Rust freshness, Cargo feature matrices,

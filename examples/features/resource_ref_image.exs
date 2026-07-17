@@ -1,6 +1,6 @@
 # Run with:
 #   PATH="$HOME/.cargo/bin:$PATH" mix compile
-#   PATH="$HOME/.cargo/bin:$PATH" mix run examples/resource_ref_image.exs
+#   PATH="$HOME/.cargo/bin:$PATH" mix run examples/features/resource_ref_image.exs
 
 import GPUI.Template, only: [sigil_GPUI: 2]
 
@@ -9,10 +9,22 @@ raster = %GPUI.Raster{
   height: 2,
   format: :rgba8,
   data: <<
-    255, 0, 0, 255,
-    0, 255, 0, 255,
-    0, 0, 255, 255,
-    255, 255, 0, 255
+    255,
+    0,
+    0,
+    255,
+    0,
+    255,
+    0,
+    255,
+    0,
+    0,
+    255,
+    255,
+    255,
+    255,
+    0,
+    255
   >>
 }
 

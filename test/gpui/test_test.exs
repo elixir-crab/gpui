@@ -122,6 +122,10 @@ defmodule GPUI.TestTest do
 
     def handle_event("menu_selected", %{value: value}, assigns),
       do: {:noreply, %{assigns | menu_selection: value}}
+
+    @impl GPUI.View
+    def handle_info(:increment, assigns),
+      do: {:noreply, %{assigns | count: assigns.count + 1}}
   end
 
   defmodule TestApp do
@@ -201,11 +205,12 @@ defmodule GPUI.TestTest do
     assert %{type: :ui_input} = runtime |> tree() |> find!(id: "name")
 
     click(runtime, "increment")
-    assert %{count: 1} = assigns(runtime)
+    send_view(runtime, :increment)
+    assert %{count: 2} = assigns(runtime)
 
     change(runtime, "name_changed", "Ada")
     select(runtime, "language_changed", "elixir")
-    assert %{count: 1, name: "Ada", language: "elixir"} = assigns(runtime)
+    assert %{count: 2, name: "Ada", language: "elixir"} = assigns(runtime)
 
     select(runtime, "language_changed", nil)
     search(runtime, "framework_searched", "live")

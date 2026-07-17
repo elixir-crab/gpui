@@ -76,7 +76,7 @@ defmodule GPUI.MixProject do
 
   defp package_files do
     files =
-      ~w(lib codegen guides config/config.exs native/gpui/Cargo.toml native/gpui/Cargo.lock native/gpui/compat native/gpui/src mix.exs rustq.exs README.md CHANGELOG.md LICENSE)
+      ~w(lib codegen examples guides config/config.exs native/gpui/Cargo.toml native/gpui/Cargo.lock native/gpui/compat native/gpui/src mix.exs rustq.exs README.md CHANGELOG.md LICENSE)
 
     if File.exists?("checksum-Elixir.GPUI.Native.exs") do
       ["checksum-Elixir.GPUI.Native.exs" | files]

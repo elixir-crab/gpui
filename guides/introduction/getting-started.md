@@ -1,15 +1,13 @@
 # Getting started
 
 GPUI keeps application state in ordinary Elixir processes and uses a display to
-present serializable snapshots. A local application normally combines a
-`GPUI.Application`, one or more `GPUI.View` modules, and `GPUI.Runtime` under an
-OTP supervisor.
+present serializable snapshots. A local application combines one or more
+`GPUI.View` modules, a `GPUI.Application`, and an OTP-supervised `GPUI.Runtime`.
 
 ## Prerequisites
 
-GPUI requires Elixir 1.20 or later. The currently validated native target is
-x86-64 GNU/Linux. A source build also requires Rust and the XKB development
-packages:
+GPUI requires Elixir 1.20 or later. Native Linux builds require Rust and the XKB
+development packages:
 
 ```bash
 sudo apt-get install libxkbcommon-dev libxkbcommon-x11-dev
@@ -21,43 +19,50 @@ If `fontconfig.pc` is unavailable, compile with:
 RUST_FONTCONFIG_DLOPEN=1 mix compile
 ```
 
-See [Native builds and deployment](native-builds.html) for supported artifacts,
-source fallback, and release constraints.
+## Run the examples
+
+The getting-started examples form a short progression:
+
+```bash
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/01_hello_window.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/02_focus_timer.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/03_settings_form.exs
+```
+
+- **Hello Window** introduces a view, an application, and supervision.
+- **Focus Timer** combines controlled events with periodic OTP messages.
+- **Settings Form** demonstrates native controls, validation state, dynamic
+  styling, and a controlled dialog.
+
+Their application modules live under `examples/getting_started/support/`, so
+they can also be loaded without starting a native display and tested through
+`GPUI.Test`.
 
 ## Define a view
 
-A view renders a `%GPUI.Element{}` tree from assigns and handles named events.
-The `~GPUI` sigil accepts HEEx-shaped tags, expressions, aliases, components,
-and named slots.
+A view renders a `%GPUI.Element{}` tree from assigns. The `~GPUI` sigil accepts
+HEEx-shaped tags, expressions, aliases, native components, and named slots.
 
 ```elixir
-defmodule MyApp.CounterView do
+defmodule MyApp.WelcomeView do
   use GPUI.View
 
   @impl GPUI.View
-  def render(assigns) do
+  def render(_assigns) do
     ~GPUI"""
-    <div class="flex flex-col items-center justify-center gap-3 p-4 bg-slate-900">
-      <text class="text-white text-2xl">Count: {assigns.count}</text>
-      <GPUI.UI.button id="increment" label="Increment" phx-click="increment" />
+    <div class="flex flex-col items-center justify-center gap-4 p-8 bg-slate-900">
+      <text class="text-white text-3xl font-semibold">Hello from the BEAM</text>
+      <text class="text-green-500">● Runtime connected</text>
     </div>
     """
   end
-
-  @impl GPUI.View
-  def handle_event("increment", _event, assigns),
-    do: {:noreply, %{assigns | count: assigns.count + 1}}
 end
 ```
 
-Interactive values are controlled. The view updates its assigns in response to
-an event, then GPUI reconciles the resulting snapshot with persistent native
-state.
-
 ## Define an application
 
-The application `mount/1` callback returns the initial window specifications. Each root
-view owns its own assigns.
+An application's `mount/1` callback returns its initial windows. Each root view
+owns its own assigns.
 
 ```elixir
 defmodule MyApp.Desktop do
@@ -67,52 +72,85 @@ defmodule MyApp.Desktop do
   def mount(_args) do
     {:ok,
      [
-       window "Counter" do
-         size(320, 240)
-         root(MyApp.CounterView, count: 0)
+       window "My application" do
+         size(520, 320)
+         root(MyApp.WelcomeView)
        end
      ]}
   end
 end
 ```
 
-## Supervise the runtime
-
-Using a GPUI application module as a child starts `GPUI.Runtime` with the native
+Using the application module as a child starts a `GPUI.Runtime` with the native
 display by default:
 
 ```elixir
-children = [
-  {MyApp.Desktop, poll_interval: 16}
-]
-
-Supervisor.start_link(children, strategy: :one_for_one)
+Supervisor.start_link([MyApp.Desktop], strategy: :one_for_one)
 ```
-
-The polling interval controls how frequently native events are drained. Tests
-can set it to `nil` and inject events explicitly through `GPUI.Test`.
 
 ## Controlled events
 
-Native components emit payloads with a `:value` field:
+Interactive native controls are controlled by root-view assigns:
 
 ```elixir
 <GPUI.UI.input
-  id="name"
+  id="display-name"
   value={assigns.name}
   phx-change="name_changed"
 />
 ```
 
 ```elixir
+@impl GPUI.View
 def handle_event("name_changed", %{value: name}, assigns),
   do: {:noreply, %{assigns | name: name}}
 ```
 
-Stable string IDs are required for stateful native controls. They preserve
-focus, editing state, popup state, and selection across snapshots. Duplicate
-IDs are rejected before a snapshot reaches a display.
+Stable string IDs preserve native focus, editing state, popup state, and
+selection across snapshots. Duplicate IDs are rejected before reaching a
+display.
+
+## Updates from OTP processes
+
+Views can also handle application messages independently of pointer and keyboard
+input:
+
+```elixir
+@impl GPUI.View
+def handle_info(:tick, assigns),
+  do: {:noreply, %{assigns | elapsed: assigns.elapsed + 1}}
+```
+
+A supervised worker delivers the message through the runtime:
+
+```elixir
+{:ok, _snapshot} = GPUI.Runtime.send_view(MyApp.Runtime, 1, :tick)
+```
+
+`send_view/3` updates the selected root view, synchronizes the display, and
+publishes the same typed runtime update used by other state transitions. The
+Focus Timer shows this pattern with a `GenServer` using `Process.send_after/3`.
+
+## Test without a native window
+
+The examples use normal application modules, so the same behavior can be tested
+without a NIF or display server:
+
+```elixir
+defmodule MyApp.TimerTest do
+  use GPUI.Test, async: true
+
+  test "advances from an OTP message" do
+    runtime = start_gpui!(GettingStarted.FocusTimer.App, args: %{seconds: 2})
+
+    click(runtime, "start")
+    send_view(runtime, :tick)
+
+    assert %{remaining: 1, status: :running} = assigns(runtime)
+  end
+end
+```
 
 Continue with [Components and styling](components-and-styling.html),
-[Overlays and menus](overlays-and-menus.html), and
-[Sessions, runtimes, and displays](sessions-and-displays.html).
+[Overlays and menus](overlays-and-menus.html), [Testing GPUI applications](testing.html),
+and [Sessions, runtimes, and displays](sessions-and-displays.html).

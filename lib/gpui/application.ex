@@ -15,7 +15,7 @@ defmodule GPUI.Application do
     quote do
       @behaviour GPUI.Application
 
-      import GPUI.Application, only: [window: 2, size: 2, root: 2]
+      import GPUI.Application, only: [window: 2, size: 2, root: 1, root: 2]
 
       def child_spec(opts) do
         %{

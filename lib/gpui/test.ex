@@ -5,15 +5,15 @@ defmodule GPUI.Test do
   Use this module from a test case to import deterministic runtime, event, and
   tree-query helpers:
 
-      defmodule CounterTest do
+      defmodule FocusTimerTest do
         use GPUI.Test, async: true
 
-        test "increments" do
-          runtime = start_gpui!(CounterApp)
+        test "advances from an OTP message" do
+          runtime = start_gpui!(FocusTimerApp, args: %{seconds: 2})
 
-          assert %{count: 0} = assigns(runtime)
-          click(runtime, "increment")
-          assert %{count: 1} = assigns(runtime)
+          click(runtime, "start")
+          send_view(runtime, :tick)
+          assert %{remaining: 1, status: :running} = assigns(runtime)
         end
       end
 
@@ -101,6 +101,14 @@ defmodule GPUI.Test do
       {:ok, :ok} -> {Runtime.drain_events(runtime), Runtime.snapshot(runtime)}
       {:error, reason} -> raise "GPUI test display rejected event: #{inspect(reason)}"
     end
+  end
+
+  @doc "Delivers an OTP message to a root view and returns the updated snapshot."
+  @spec send_view(GenServer.server(), term(), keyword()) :: Snapshot.t()
+  def send_view(runtime, message, opts \\ []) do
+    window_id = event_window_id(runtime, opts)
+    {:ok, snapshot} = Runtime.send_view(runtime, window_id, message)
+    snapshot
   end
 
   @doc "Dispatches a click event and returns the updated snapshot."

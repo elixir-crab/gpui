@@ -70,7 +70,7 @@ GPUI_REMOTE_SSL=1 \
 GPUI_REMOTE_SSL_CERTFILE=/path/to/server.pem \
 GPUI_REMOTE_SSL_KEYFILE=/path/to/server.key \
 GPUI_APP_PORT=5050 \
-mix run examples/remote_app_server.exs
+mix run examples/remote/app_server.exs
 ```
 
 The client uses a CA certificate and optional SNI name:
@@ -81,7 +81,7 @@ GPUI_REMOTE_SSL_CACERTFILE=/path/to/ca.pem \
 GPUI_REMOTE_SSL_SERVER_NAME=localhost \
 GPUI_APP_HOST=localhost \
 GPUI_APP_PORT=5050 \
-mix run examples/local_display_client.exs
+mix run examples/remote/display_client.exs
 ```
 
 ## Failure behavior

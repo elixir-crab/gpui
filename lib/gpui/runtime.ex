@@ -52,6 +52,12 @@ defmodule GPUI.Runtime do
   def dispatch_event(runtime, event),
     do: GenServer.call(runtime, {:dispatch_event, event}, @call_timeout)
 
+  @doc "Delivers an OTP message to a window's root view and synchronizes the display."
+  @spec send_view(GenServer.server(), pos_integer(), term()) ::
+          {:ok, GPUI.Snapshot.t()} | {:error, term()}
+  def send_view(runtime, window_id, message),
+    do: GenServer.call(runtime, {:send_view, window_id, message}, @call_timeout)
+
   @spec inject_event(GenServer.server(), map()) :: {:ok, term()} | {:error, term()}
   def inject_event(runtime, event),
     do: GenServer.call(runtime, {:inject_event, event}, @call_timeout)
@@ -137,6 +143,18 @@ defmodule GPUI.Runtime do
     :ok = state.display_module.sync(state.display, snapshot)
     state = GPUI.UpdateSubscribers.publish_update(state, self(), [handled], snapshot)
     {:reply, {handled, snapshot}, state}
+  end
+
+  def handle_call({:send_view, window_id, message}, _from, state) do
+    case GPUI.Session.send_view(state.session, window_id, message) do
+      {:ok, snapshot} ->
+        :ok = state.display_module.sync(state.display, snapshot)
+        state = GPUI.UpdateSubscribers.publish_update(state, self(), [], snapshot)
+        {:reply, {:ok, snapshot}, state}
+
+      {:error, _reason} = error ->
+        {:reply, error, state}
+    end
   end
 
   def handle_call(:drain_events, _from, state) do

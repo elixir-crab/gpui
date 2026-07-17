@@ -16,6 +16,10 @@ defmodule GPUI.RuntimeTest do
     @impl GPUI.View
     def handle_event("rename", %{value: name}, assigns),
       do: {:noreply, %{assigns | name: name}}
+
+    @impl GPUI.View
+    def handle_info({:rename, name}, assigns),
+      do: {:noreply, %{assigns | name: name}}
   end
 
   defmodule DemoApp do
@@ -166,6 +170,28 @@ defmodule GPUI.RuntimeTest do
     assert_receive {:trace, ^runtime, :receive, {:DOWN, ^monitor, :process, ^subscriber, :killed}}
     refute Map.has_key?(:sys.get_state(runtime).subscribers, subscriber)
     :erlang.trace(runtime, false, [:receive])
+  end
+
+  test "OTP messages update root views and synchronize displays" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(
+        app: DemoApp,
+        display: GPUI.Test.Display,
+        display_opts: [owner: self()]
+      )
+
+    assert_receive {:gpui_snapshot, %{windows: [%{root: %{assigns: %{name: "OTP"}}}]}}
+    assert :ok = GPUI.Runtime.subscribe(runtime)
+
+    assert {:ok, %{windows: [%{root: %{assigns: %{name: "BEAM"}}}]} = snapshot} =
+             GPUI.Runtime.send_view(runtime, 1, {:rename, "BEAM"})
+
+    assert_receive {:gpui_snapshot, ^snapshot}
+
+    assert_receive {:gpui, ^runtime,
+                    %GPUI.Runtime.Update{revision: 1, events: [], snapshot: ^snapshot}}
+
+    assert {:error, :window_not_found} = GPUI.Runtime.send_view(runtime, 999, :ignored)
   end
 
   test "runtime frame barriers delegate to the active display" do

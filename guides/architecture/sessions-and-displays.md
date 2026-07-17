@@ -46,6 +46,16 @@ the resulting snapshot back to the display.
 Normally the application module is placed directly in a supervision tree and
 its generated child specification starts the runtime.
 
+Supervised workers can update a root view without pretending that application
+work is native input:
+
+```elixir
+{:ok, snapshot} = GPUI.Runtime.send_view(runtime, window_id, {:loaded, records})
+```
+
+The selected view receives the message in `handle_info/2`. The runtime then
+synchronizes and publishes the resulting snapshot.
+
 Runtime updates are available through ordinary OTP messages:
 
 ```elixir

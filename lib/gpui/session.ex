@@ -42,6 +42,12 @@ defmodule GPUI.Session do
   @spec dispatch_events(GenServer.server(), [map()]) :: {[map()], snapshot()}
   def dispatch_events(session, events), do: GenServer.call(session, {:dispatch_events, events})
 
+  @doc "Delivers an OTP message to a window's root view."
+  @spec send_view(GenServer.server(), pos_integer(), term()) ::
+          {:ok, snapshot()} | {:error, :window_not_found}
+  def send_view(session, window_id, message),
+    do: GenServer.call(session, {:send_view, window_id, message})
+
   @doc "Converts a declarative window into its serializable representation."
   @spec window_payload(WindowSpec.t()) :: map()
   def window_payload(%WindowSpec{} = window) do
@@ -89,6 +95,24 @@ defmodule GPUI.Session do
       end)
 
     {:reply, {handled, snapshot_from_state(state)}, state}
+  end
+
+  def handle_call({:send_view, window_id, message}, _from, state) do
+    case Enum.find(state.windows, &(&1.id == window_id)) do
+      %WindowSpec{root: {module, assigns}} = window ->
+        assigns = Map.new(assigns)
+
+        {:noreply, new_assigns} =
+          if function_exported?(module, :handle_info, 2),
+            do: module.handle_info(message, assigns),
+            else: {:noreply, assigns}
+
+        {_message, state} = update_window(message, state, window, module, new_assigns)
+        {:reply, {:ok, snapshot_from_state(state)}, state}
+
+      nil ->
+        {:reply, {:error, :window_not_found}, state}
+    end
   end
 
   defp new_state(windows), do: %{windows: windows, resources: %{}}
