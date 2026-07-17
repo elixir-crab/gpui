@@ -22,9 +22,9 @@ defmodule Examples.ImagePalette.View do
             label={picker_label(assigns.status)}
             prompt="Choose an image"
             max_bytes={25 * 1_024 * 1_024}
-            disabled={assigns.status == :loading}
             phx-change="image_file_selected"
           />
+          {cancel_button(assigns)}
           <text style={[color: {:rgb, 0x94A3B8}]}>{source_label(assigns)}</text>
         </div>
         {progress(assigns)}
@@ -87,6 +87,20 @@ defmodule Examples.ImagePalette.View do
     end
   end
 
+  def handle_event("cancel_load", _event, assigns) do
+    status = if assigns.image, do: :ready, else: :idle
+
+    {:noreply,
+     %{
+       assigns
+       | status: status,
+         progress: 0,
+         stage: "Analysis cancelled",
+         error: nil,
+         job_id: assigns.job_id + 1
+     }}
+  end
+
   def handle_event("palette_copied", _event, assigns),
     do: {:noreply, %{assigns | status: :copied, stage: "CSS copied to clipboard", error: nil}}
 
@@ -136,6 +150,18 @@ defmodule Examples.ImagePalette.View do
     do: {:noreply, %{assigns | status: :ready, error: message}}
 
   def handle_info(_message, assigns), do: {:noreply, assigns}
+
+  defp cancel_button(%{status: :loading}) do
+    ~GPUI"""
+    <UI.button id="cancel-analysis" label="Cancel" phx-click="cancel_load" />
+    """
+  end
+
+  defp cancel_button(_assigns) do
+    ~GPUI"""
+    <div />
+    """
+  end
 
   defp progress(%{status: :loading} = assigns) do
     ~GPUI"""
@@ -246,7 +272,7 @@ defmodule Examples.ImagePalette.View do
   end
 
   defp color_rgb(color), do: color.red * 65_536 + color.green * 256 + color.blue
-  defp picker_label(:loading), do: "Loading…"
+  defp picker_label(:loading), do: "Choose replacement"
   defp picker_label(_status), do: "Choose image"
   defp source_label(%{source_name: nil}), do: "No image selected"
   defp source_label(assigns), do: assigns.source_name
@@ -260,6 +286,7 @@ defmodule Examples.ImagePalette.View do
 
   defp status_text(%{error: error}) when is_binary(error), do: error
   defp status_text(%{status: :idle, stage: stage}), do: stage
+  defp status_text(%{status: :ready, stage: "Analysis cancelled"}), do: "Analysis cancelled"
   defp status_text(%{status: :ready}), do: "Palette ready"
   defp status_text(%{status: :copied, stage: stage}), do: stage
   defp status_text(%{status: :exporting}), do: "Writing CSS…"
@@ -343,6 +370,9 @@ defmodule Examples.ImagePalette.Coordinator do
 
         %{event: "image_file_selected", value: %{status: :selected, data: data}}, state ->
           start_bytes_load(state, assigns, data)
+
+        %{event: "cancel_load"}, state ->
+          cancel_load(state)
 
         %{event: "export_palette"}, state ->
           start_export(state, assigns)
@@ -460,6 +490,14 @@ defmodule Examples.ImagePalette.Coordinator do
       end)
 
     %{state | load_task: %{task: task, job_id: job_id}}
+  end
+
+  defp cancel_load(%{load_task: nil} = state), do: state
+
+  defp cancel_load(state) do
+    job_id = state.load_task.job_id
+    notify(state.owner, {:image_palette, :cancelled, job_id})
+    %{state | load_task: cancel_task(state.load_task)}
   end
 
   defp start_export(state, assigns) do

@@ -1,4 +1,5 @@
-for scenario <- ~w(component_gallery image_palette process_explorer virtual_list) do
+for scenario <-
+      ~w(component_gallery git_repository_browser image_palette process_explorer virtual_list) do
   Code.require_file("../visual/scenarios/#{scenario}.exs", __DIR__)
 end
 
@@ -42,13 +43,15 @@ defmodule GPUI.VisualScenariosTest do
              %{name: "palette-ready"},
              %{name: "selected-color", actions: [selection]},
              %{name: "copied-css", actions: [copied]},
-             %{name: "loading-replacement", actions: [load, progress]}
+             %{name: "loading-replacement", actions: [load, progress]},
+             %{name: "cancelled-analysis", actions: [cancel]}
            ] = scenario.captures()
 
     assert {:dispatch, %{event: "select_color:#F59E0B"}} = selection
     assert {:dispatch, %{event: "palette_copied"}} = copied
     assert {:dispatch, %{event: "load_image"}} = load
     assert {:send_view, 1, {:image_progress, 1, 45, "Sampling pixels"}} = progress
+    assert {:dispatch, %{event: "cancel_load"}} = cancel
 
     runtime = start_gpui!(scenario.app(), args: scenario.args(:dark))
 
@@ -59,6 +62,26 @@ defmodule GPUI.VisualScenariosTest do
            } = assigns(runtime)
 
     assert Enum.any?(palette, &(&1.hex == "#F59E0B"))
+  end
+
+  test "git repository browser scenario uses fixed hierarchy and diff transitions" do
+    scenario = GPUITest.Visual.GitRepositoryBrowser.Scenario
+    %{repository: repository, preview: preview} = scenario.args(:dark)
+
+    assert repository.root == "/workspace/gpui"
+    assert repository.counts == %{total: 16, clean: 10, changed: 6}
+    assert Enum.count_until(preview.lines, 101) == 101
+
+    assert [
+             %{name: "repository"},
+             %{name: "filtered-untracked", actions: [filter]},
+             %{name: "selected-readme", actions: [all, select, loaded]}
+           ] = scenario.captures()
+
+    assert {:dispatch, %{event: "status_filter_changed", value: "untracked"}} = filter
+    assert {:dispatch, %{event: "status_filter_changed", value: "all"}} = all
+    assert {:dispatch, %{event: "tree_selected", value: "file:README.md"}} = select
+    assert {:send_view, 1, {:preview_loaded, 1, %{path: "README.md"}}} = loaded
   end
 
   test "process explorer scenario uses fixed data and transitions" do

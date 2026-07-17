@@ -45,6 +45,19 @@ RUST_FONTCONFIG_DLOPEN=1 mix run examples/image_palette/run.exs -- path/to/image
 See [`image_palette/README.md`](image_palette/README.md) for its worker and
 analysis architecture.
 
+## Git repository browser
+
+The repository browser scans a server-local Git working tree, presents an
+expandable virtualized hierarchy, filters by path and status, and virtualizes
+bounded file and diff previews:
+
+```bash
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/git_repository_browser/run.exs -- path/to/repository
+```
+
+See [`git_repository_browser/README.md`](git_repository_browser/README.md) for
+its supervision, bounds, and local/remote filesystem semantics.
+
 ## Feature examples
 
 `features/resource_ref_image.exs` demonstrates reusable raster resources:

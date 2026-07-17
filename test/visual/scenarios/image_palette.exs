@@ -57,6 +57,12 @@ defmodule GPUITest.Visual.ImagePalette.Scenario do
           {:dispatch, %{type: :click, window_id: 1, event: "load_image"}},
           {:send_view, 1, {:image_progress, 1, 45, "Sampling pixels"}}
         ]
+      },
+      %{
+        name: "cancelled-analysis",
+        actions: [
+          {:dispatch, %{type: :click, window_id: 1, event: "cancel_load"}}
+        ]
       }
     ]
   end

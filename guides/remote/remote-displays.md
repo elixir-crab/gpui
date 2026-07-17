@@ -47,7 +47,10 @@ snapshots, resources, events, and protocol operations cross the connection.
 Display-side file pickers read bounded bytes on the client and send those bytes
 with an operation ID; they never claim that a client-local path is readable by
 the application server. Clipboard buttons likewise write to the display
-client's clipboard.
+client's clipboard. Application-side filesystem work has the opposite
+semantics: paths identify files on the application server. The
+`git_repository_browser` example makes that distinction explicit instead of
+presenting a server-local directory as a remote-client directory.
 
 Remote display updates use the same typed OTP message shape as local runtimes:
 

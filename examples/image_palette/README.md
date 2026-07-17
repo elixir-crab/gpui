@@ -10,9 +10,11 @@ RUST_FONTCONFIG_DLOPEN=1 mix run examples/image_palette/run.exs -- path/to/image
 ```
 
 Use the native **Choose image** action to select or replace the image while the
-application is running. The display reads bounded file bytes rather than
-returning a client-local path, so selection also has useful remote-display
-semantics. PNG, JPEG, WebP, GIF, TIFF, BMP, and ICO formats are accepted.
+application is running. Active analysis can be cancelled or replaced without
+allowing stale task results to overwrite the newer state. The display reads
+bounded file bytes rather than returning a client-local path, so selection also
+has useful remote-display semantics. PNG, JPEG, WebP, GIF, TIFF, BMP, and ICO
+formats are accepted.
 
 ## Architecture
 
