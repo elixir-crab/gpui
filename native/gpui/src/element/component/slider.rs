@@ -7,7 +7,7 @@ use super::apply_component_styles;
 use super::render_component_fallback;
 
 #[cfg(feature = "components")]
-pub(super) fn render(
+pub(crate) fn render(
     node: SliderComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
@@ -174,7 +174,7 @@ fn slider_number(value: gpui_component::slider::SliderValue) -> f64 {
 }
 
 #[cfg(not(feature = "components"))]
-pub(super) fn render(
+pub(crate) fn render(
     node: SliderComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {

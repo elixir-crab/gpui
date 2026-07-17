@@ -456,9 +456,18 @@ defmodule GPUI.Schema do
   @resources [
     %Resource{
       name: :raster,
-      fields: [width: :u32, height: :u32, format: :string, stride: {:option, :u32}, data: :binary]
+      fields: [
+        width: :u32,
+        height: :u32,
+        format: {:default, :atom_string, "rgba8"},
+        stride: {:option, :u32},
+        data: :binary
+      ]
     },
-    %Resource{name: :resource_ref, fields: [id: :string, type: :atom]}
+    %Resource{
+      name: :resource_ref,
+      fields: [id: :string, resource_type: {:field, :type, :atom}]
+    }
   ]
 
   def components, do: @components

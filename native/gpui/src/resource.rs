@@ -2,49 +2,22 @@ use crate::{atoms, gpui};
 use rustler::{Binary, NifResult, Term};
 use std::sync::Arc;
 
+include!("generated/resources.rs");
+
 #[derive(Clone, Debug)]
 pub(crate) enum ImageData {
     Raster(RasterData),
     Ref(String),
 }
 
-#[derive(Clone, Debug, Default)]
-pub(crate) struct RasterData {
-    pub(crate) width: u32,
-    pub(crate) height: u32,
-    pub(crate) format: String,
-    pub(crate) stride: Option<u32>,
-    pub(crate) data: Vec<u8>,
-}
-
-pub(crate) fn decode_raster_resource(term: Term) -> NifResult<RasterData> {
-    Ok(RasterData {
-        width: term.map_get(atoms::width())?.decode::<u32>()?,
-        height: term.map_get(atoms::height())?.decode::<u32>()?,
-        format: term
-            .map_get(atoms::format())?
-            .atom_to_string()
-            .unwrap_or_else(|_| "rgba8".to_string()),
-        stride: term
-            .map_get(atoms::stride())
-            .ok()
-            .and_then(|value| value.decode::<u32>().ok()),
-        data: term
-            .map_get(atoms::data())?
-            .decode::<Binary>()?
-            .as_slice()
-            .to_vec(),
-    })
-}
-
 pub(crate) fn decode_resource_ref(term: Term) -> NifResult<String> {
-    let resource_type = term.map_get(atoms::type_atom())?.atom_to_string()?;
+    let resource = decode_resource_ref_data(term)?;
 
-    if resource_type != "raster" {
+    if resource.resource_type != "raster" {
         return Err(rustler::Error::Term(Box::new("unsupported_resource_type")));
     }
 
-    term.map_get(atoms::id())?.decode::<String>()
+    Ok(resource.id)
 }
 
 impl RasterData {

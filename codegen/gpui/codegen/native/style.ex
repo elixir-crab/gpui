@@ -6,14 +6,13 @@ defmodule GPUI.Codegen.Native.Style do
   alias RustQ.Rust.AST.PatternBuilder, as: P
   alias RustQ.Rust.AST.TypeBuilder, as: T
 
-  @spec source([GPUI.Schema.Style.t()]) :: String.t()
-  def source(style_specs) do
+  @spec items([GPUI.Schema.Style.t()]) :: [AST.item()]
+  def items(style_specs) do
     [
       generated_style_struct(style_specs),
       generated_apply_style_function(style_specs),
       generated_apply_render_style_function(style_specs)
     ]
-    |> Enum.join("\n\n")
   end
 
   defp generated_style_struct(style_specs) do
@@ -27,7 +26,6 @@ defmodule GPUI.Codegen.Native.Style do
           %AST.StructField{name: spec.field, type: rust_style_type(spec.type), vis: :crate}
         end)
     }
-    |> render_item()
   end
 
   defp rust_style_type({:atom_eq, _expected}), do: T.path(:bool)
@@ -51,7 +49,6 @@ defmodule GPUI.Codegen.Native.Style do
            |> Enum.map(&render_style_statement/1)) ++
           [A.return_stmt(A.var(:element))]
     }
-    |> render_item()
   end
 
   defp render_style_statement(%{field: field, render: :flex_if_true}) do
@@ -135,7 +132,6 @@ defmodule GPUI.Codegen.Native.Style do
       returns: T.path(:bool),
       body: [A.return_stmt(A.match_expr(A.var(:key), arms))]
     }
-    |> render_item()
   end
 
   defp style_decode_call({:atom_eq, expected}),
@@ -146,6 +142,4 @@ defmodule GPUI.Codegen.Native.Style do
   defp style_decode_call(:number), do: A.call(:number_value, [A.var(:term)])
   defp style_decode_call(:px), do: A.call(:px_value, [A.var(:term)])
   defp style_decode_call(:radius), do: A.call(:radius_value, [A.var(:term)])
-
-  defp render_item(item), do: RustQ.Rust.render(item)
 end

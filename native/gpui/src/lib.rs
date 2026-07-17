@@ -27,6 +27,7 @@ use runtime::{RuntimeResource, SharedRuntime};
 
 include!("generated/atoms.rs");
 include!("generated/schema.rs");
+include!("generated/disabled_nifs.rs");
 include!("generated/nifs.rs");
 
 #[cfg(feature = "real-gpui")]

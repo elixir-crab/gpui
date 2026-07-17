@@ -1,9 +1,9 @@
-mod accordion;
-mod overlay;
-mod radio;
-mod slider;
-mod switch;
-mod tabs;
+pub(crate) mod accordion;
+pub(crate) mod overlay;
+pub(crate) mod radio;
+pub(crate) mod slider;
+pub(crate) mod switch;
+pub(crate) mod tabs;
 
 #[cfg(feature = "components")]
 use super::component_registry::{
@@ -17,13 +17,8 @@ use super::InputNode;
 #[cfg(feature = "components")]
 use super::SelectOptionNode;
 use super::{
-    apply_generated_render_styles, AccordionComponentNode, AccordionItemComponentNode,
-    ButtonComponentNode, CheckboxComponentNode, ComboboxComponentNode, DialogComponentNode,
-    DialogContentComponentNode, DialogTriggerComponentNode, DropdownMenuComponentNode,
-    DropdownMenuItemComponentNode, DropdownMenuTriggerComponentNode, ElementRenderContext,
-    InputComponentNode, PopoverComponentNode, PopoverContentComponentNode,
-    PopoverTriggerComponentNode, RadioGroupComponentNode, SelectComponentNode, SliderComponentNode,
-    SwitchComponentNode, TabsComponentNode, TooltipComponentNode, TooltipTriggerComponentNode,
+    apply_generated_render_styles, ButtonComponentNode, CheckboxComponentNode,
+    ComboboxComponentNode, ElementRenderContext, InputComponentNode, SelectComponentNode,
 };
 use crate::gpui;
 #[cfg(feature = "components")]
@@ -609,125 +604,6 @@ pub(super) fn constrain_full_size_component(
         .h(gpui::px(height))
         .child(component)
         .into_any_element()
-}
-
-pub(crate) fn render_dropdown_menu_component(
-    node: DropdownMenuComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    overlay::render_dropdown_menu(node, context)
-}
-
-pub(crate) fn render_dropdown_menu_trigger_component(
-    node: DropdownMenuTriggerComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    overlay::render_dropdown_menu_trigger(node, context)
-}
-
-pub(crate) fn render_dropdown_menu_item_component(
-    node: DropdownMenuItemComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    overlay::render_dropdown_menu_item(node, context)
-}
-
-pub(crate) fn render_dialog_component(
-    node: DialogComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    overlay::render_dialog(node, context)
-}
-
-pub(crate) fn render_dialog_trigger_component(
-    node: DialogTriggerComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    overlay::render_dialog_trigger(node, context)
-}
-
-pub(crate) fn render_dialog_content_component(
-    node: DialogContentComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    overlay::render_dialog_content(node, context)
-}
-
-pub(crate) fn render_tooltip_component(
-    node: TooltipComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    overlay::render_tooltip(node, context)
-}
-
-pub(crate) fn render_tooltip_trigger_component(
-    node: TooltipTriggerComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    overlay::render_tooltip_trigger(node, context)
-}
-
-pub(crate) fn render_popover_component(
-    node: PopoverComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    overlay::render(node, context)
-}
-
-pub(crate) fn render_popover_trigger_component(
-    node: PopoverTriggerComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    overlay::render_trigger(node, context)
-}
-
-pub(crate) fn render_popover_content_component(
-    node: PopoverContentComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    overlay::render_content(node, context)
-}
-
-pub(crate) fn render_switch_component(
-    node: SwitchComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    switch::render(node, context)
-}
-
-pub(crate) fn render_radio_group_component(
-    node: RadioGroupComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    radio::render(node, context)
-}
-
-pub(crate) fn render_accordion_component(
-    node: AccordionComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    accordion::render(node, context)
-}
-
-pub(crate) fn render_accordion_item_component(
-    node: AccordionItemComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    accordion::render_item(node, context)
-}
-
-pub(crate) fn render_tabs_component(
-    node: TabsComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    tabs::render(node, context)
-}
-
-pub(crate) fn render_slider_component(
-    node: SliderComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    slider::render(node, context)
 }
 
 #[cfg(not(feature = "components"))]

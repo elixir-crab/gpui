@@ -4,7 +4,7 @@ use crate::{
 };
 
 #[cfg(feature = "components")]
-pub(super) fn render(
+pub(crate) fn render(
     node: DropdownMenuComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
@@ -340,7 +340,7 @@ fn item_config(
 }
 
 #[cfg(not(feature = "components"))]
-pub(super) fn render(
+pub(crate) fn render(
     node: DropdownMenuComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {

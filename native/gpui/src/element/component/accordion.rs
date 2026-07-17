@@ -9,7 +9,7 @@ use super::apply_component_styles;
 use super::render_component_fallback;
 
 #[cfg(feature = "components")]
-pub(super) fn render(
+pub(crate) fn render(
     node: AccordionComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
@@ -88,7 +88,7 @@ pub(super) fn render(
 }
 
 #[cfg(feature = "components")]
-pub(super) fn render_item(
+pub(crate) fn render_item(
     node: AccordionItemComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
@@ -105,7 +105,7 @@ pub(super) fn render_item(
 }
 
 #[cfg(not(feature = "components"))]
-pub(super) fn render(
+pub(crate) fn render(
     node: AccordionComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
@@ -113,7 +113,7 @@ pub(super) fn render(
 }
 
 #[cfg(not(feature = "components"))]
-pub(super) fn render_item(
+pub(crate) fn render_item(
     node: AccordionItemComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {

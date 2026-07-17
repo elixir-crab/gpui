@@ -200,7 +200,13 @@ fn complete_frame(window_state: &SharedWindow, generation: u64, frame_generation
         .completed_frame_generation
         .fetch_max(frame_generation, Ordering::AcqRel);
 
-    if let Ok(mut waiters) = window_state.frame_waiters.lock() {
+    complete_waiters(&window_state.frame_waiters, generation);
+    complete_waiters(&window_state.next_frame_waiters, frame_generation);
+}
+
+#[cfg(feature = "real-gpui")]
+fn complete_waiters(waiters: &Mutex<Vec<(u64, WindowCommandReply)>>, generation: u64) {
+    if let Ok(mut waiters) = waiters.lock() {
         let mut pending = Vec::new();
         for (target, reply) in std::mem::take(&mut *waiters) {
             if target <= generation {
@@ -211,17 +217,31 @@ fn complete_frame(window_state: &SharedWindow, generation: u64, frame_generation
         }
         *waiters = pending;
     }
+}
 
-    if let Ok(mut waiters) = window_state.next_frame_waiters.lock() {
-        let mut pending = Vec::new();
-        for (target, reply) in std::mem::take(&mut *waiters) {
-            if target <= frame_generation {
+#[cfg(feature = "real-gpui")]
+fn await_generation(
+    completed: &std::sync::atomic::AtomicU64,
+    waiters: &Mutex<Vec<(u64, WindowCommandReply)>>,
+    target: u64,
+    reply: WindowCommandReply,
+) {
+    use std::sync::atomic::Ordering;
+
+    if completed.load(Ordering::Acquire) >= target {
+        send_reply(reply, Ok(()));
+        return;
+    }
+
+    match waiters.lock() {
+        Ok(mut waiters) => {
+            if completed.load(Ordering::Acquire) >= target {
                 send_reply(reply, Ok(()));
             } else {
-                pending.push((target, reply));
+                waiters.push((target, reply));
             }
         }
-        *waiters = pending;
+        Err(_error) => send_reply(reply, Err("runtime_lock_failed".to_string())),
     }
 }
 
@@ -539,21 +559,12 @@ fn await_gpui_frame(
     };
 
     let target = window.state.requested_generation.load(Ordering::Acquire);
-    if window.state.rendered_generation.load(Ordering::Acquire) >= target {
-        send_reply(reply, Ok(()));
-        return;
-    }
-
-    match window.state.frame_waiters.lock() {
-        Ok(mut waiters) => {
-            if window.state.rendered_generation.load(Ordering::Acquire) >= target {
-                send_reply(reply, Ok(()));
-            } else {
-                waiters.push((target, reply));
-            }
-        }
-        Err(_error) => send_reply(reply, Err("runtime_lock_failed".to_string())),
-    }
+    await_generation(
+        &window.state.rendered_generation,
+        &window.state.frame_waiters,
+        target,
+        reply,
+    );
 }
 
 #[cfg(feature = "real-gpui")]
@@ -583,39 +594,17 @@ fn await_gpui_frame_after(
     generation: u64,
     reply: WindowCommandReply,
 ) {
-    use std::sync::atomic::Ordering;
-
     let Some(window) = windows.get(&key) else {
         send_reply(reply, Err("unknown_window".to_string()));
         return;
     };
 
-    let target = generation.saturating_add(1);
-    if window
-        .state
-        .completed_frame_generation
-        .load(Ordering::Acquire)
-        >= target
-    {
-        send_reply(reply, Ok(()));
-        return;
-    }
-
-    match window.state.next_frame_waiters.lock() {
-        Ok(mut waiters) => {
-            if window
-                .state
-                .completed_frame_generation
-                .load(Ordering::Acquire)
-                >= target
-            {
-                send_reply(reply, Ok(()));
-            } else {
-                waiters.push((target, reply));
-            }
-        }
-        Err(_error) => send_reply(reply, Err("runtime_lock_failed".to_string())),
-    }
+    await_generation(
+        &window.state.completed_frame_generation,
+        &window.state.next_frame_waiters,
+        generation.saturating_add(1),
+        reply,
+    );
 }
 
 #[cfg(feature = "real-gpui")]

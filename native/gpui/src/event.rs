@@ -1,6 +1,8 @@
 use crate::{atoms, SharedRuntime};
 use rustler::{Atom, Encoder, Env, NifResult, Term};
 
+include!("generated/events.rs");
+
 #[derive(Clone, Debug)]
 pub(crate) enum EventValue {
     String(String),
@@ -19,30 +21,6 @@ impl EventValue {
             Self::Boolean(value) => value.encode(env),
             Self::Number(value) => value.encode(env),
             Self::Nil => atoms::nil().encode(env),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub(crate) enum InputKind {
-    Change,
-    #[cfg_attr(not(feature = "components"), allow(dead_code))]
-    Select,
-    Release,
-    Search,
-    KeyDown,
-    KeyUp,
-}
-
-impl InputKind {
-    fn atom(self) -> Atom {
-        match self {
-            Self::Change => atoms::change(),
-            Self::Select => atoms::select(),
-            Self::Release => atoms::release(),
-            Self::Search => atoms::search(),
-            Self::KeyDown => atoms::keydown(),
-            Self::KeyUp => atoms::keyup(),
         }
     }
 }

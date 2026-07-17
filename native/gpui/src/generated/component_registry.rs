@@ -10,8 +10,6 @@ enum ComponentKind {
     Combobox,
     Slider,
 }
-
-
 enum StatefulComponent {
     Popover(ComponentPopover),
     Dialog(ComponentDialog),
@@ -21,8 +19,6 @@ enum StatefulComponent {
     Combobox(ComponentCombobox),
     Slider(ComponentSlider),
 }
-
-
 impl ComponentRegistry {
     pub(crate) fn popover_mut(&mut self, id: &str) -> Option<&mut ComponentPopover> {
         let key = ComponentKey::new(ComponentKind::Popover, id);
@@ -143,4 +139,3 @@ impl ComponentRegistry {
         self.entries.insert(key, StatefulComponent::Slider(component)).is_none()
     }
 }
-

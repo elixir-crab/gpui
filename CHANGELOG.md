@@ -2,7 +2,8 @@
 
 ## 0.1.1
 
-- Upgraded generation to RustQ `1.0.0-rc.1` and migrated compiled `defrust` access to the documented `RustQ.Meta.AST` API.
+- Upgraded generation to RustQ `1.0.0-rc.3` and migrated compiled `defrust` access to the documented `RustQ.Meta.AST` API.
+- Derived native atoms, resources, event kinds, renderer routing, disabled-feature NIFs, and boundary policy structurally through RustQ and Rust source metadata.
 - Added alias-aware component tags, HEEx named slots, and controlled `GPUI.UI.Overlay.popover/1` with keyboard and dismissal focus behavior.
 - Added `GPUI.UI.Overlay.tooltip/1` with textual named-slot content, configurable native show delay, and hoverable lifecycle support.
 - Added controlled `GPUI.UI.Overlay.dialog/1` with arbitrary GPUI content, optional triggers, focus trapping/restoration, keyboard and overlay dismissal, and local/remote native coverage.

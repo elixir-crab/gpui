@@ -7,7 +7,7 @@ use super::apply_component_styles;
 use super::render_component_fallback;
 
 #[cfg(feature = "components")]
-pub(super) fn render(
+pub(crate) fn render(
     node: SwitchComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
@@ -104,7 +104,7 @@ fn emit_change(
 }
 
 #[cfg(not(feature = "components"))]
-pub(super) fn render(
+pub(crate) fn render(
     node: SwitchComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {

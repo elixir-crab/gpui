@@ -1,4 +1,4 @@
-mod dropdown;
+pub(crate) mod dropdown;
 
 use crate::{
     gpui, DialogComponentNode, DialogContentComponentNode, DialogTriggerComponentNode,
@@ -7,7 +7,7 @@ use crate::{
 };
 
 #[cfg(feature = "components")]
-pub(super) fn render_dialog(
+pub(crate) fn render_dialog(
     node: DialogComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
@@ -272,7 +272,7 @@ pub(super) fn render_dialog(
 }
 
 #[cfg(not(feature = "components"))]
-pub(super) fn render_dialog(
+pub(crate) fn render_dialog(
     node: DialogComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
@@ -322,14 +322,14 @@ fn dialog_content_tree(content: DialogContentComponentNode) -> crate::ElementNod
     })
 }
 
-pub(super) fn render_dialog_trigger(
+pub(crate) fn render_dialog_trigger(
     node: DialogTriggerComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     render_slot(node.style, node.children, context)
 }
 
-pub(super) fn render_dialog_content(
+pub(crate) fn render_dialog_content(
     node: DialogContentComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
@@ -337,7 +337,7 @@ pub(super) fn render_dialog_content(
 }
 
 #[cfg(feature = "components")]
-pub(super) fn render_tooltip(
+pub(crate) fn render_tooltip(
     node: TooltipComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
@@ -373,7 +373,7 @@ pub(super) fn render_tooltip(
 }
 
 #[cfg(not(feature = "components"))]
-pub(super) fn render_tooltip(
+pub(crate) fn render_tooltip(
     node: TooltipComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
@@ -391,7 +391,7 @@ fn tooltip_trigger(children: Vec<crate::ElementNode>) -> Option<TooltipTriggerCo
     }
 }
 
-pub(super) fn render_tooltip_trigger(
+pub(crate) fn render_tooltip_trigger(
     node: TooltipTriggerComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
@@ -399,7 +399,7 @@ pub(super) fn render_tooltip_trigger(
 }
 
 #[cfg(feature = "components")]
-pub(super) fn render(
+pub(crate) fn render(
     node: PopoverComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
@@ -664,35 +664,28 @@ fn popover_slots(
     Some((trigger?, content?))
 }
 
-pub(super) fn render_trigger(
+pub(crate) fn render_trigger(
     node: PopoverTriggerComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     render_slot(node.style, node.children, context)
 }
 
-pub(super) fn render_content(
+pub(crate) fn render_content(
     node: PopoverContentComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     render_slot(node.style, node.children, context)
 }
 
-pub(super) fn render_dropdown_menu(
-    node: crate::DropdownMenuComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    dropdown::render(node, context)
-}
-
-pub(super) fn render_dropdown_menu_trigger(
+pub(crate) fn render_dropdown_menu_trigger(
     node: crate::DropdownMenuTriggerComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     render_slot(node.style, node.children, context)
 }
 
-pub(super) fn render_dropdown_menu_item(
+pub(crate) fn render_dropdown_menu_item(
     node: crate::DropdownMenuItemComponentNode,
     _context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
@@ -726,7 +719,7 @@ fn invalid_slots() -> gpui::AnyElement {
 }
 
 #[cfg(not(feature = "components"))]
-pub(super) fn render(
+pub(crate) fn render(
     node: PopoverComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {

@@ -107,10 +107,12 @@ rejected before crossing the display boundary.
 
 RustQ generates repetitive native boundaries from GPUI's internal schema:
 
-- atoms and Rustler NIF exports;
-- component props and decoders;
-- element variants and decoder/render dispatch;
+- source-discovered atoms and Rustler NIF exports;
+- resource contracts and decoders;
+- component props, event kinds, and decoders;
+- source-derived renderer routing and element dispatch;
 - style dispatch;
+- disabled-feature NIF implementations;
 - stateful registry kinds and typed accessors.
 
 GPUI lifecycle, entities, focus, callbacks, reconciliation behavior, and

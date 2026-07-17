@@ -99,22 +99,7 @@ defmodule GPUI.Display.Native do
   end
 
   def handle_call({:await_frame, window_id, timeout}, from, state) do
-    runtime = state.runtime
-
-    Task.start(fn ->
-      reply =
-        case GPUI.Native.await_frame(runtime, window_id, timeout) do
-          {:ok, ^window_id} -> :ok
-          {:error, "unknown_window"} -> {:error, :window_not_found}
-          {:error, "window_closed"} -> {:error, :window_closed}
-          {:error, "gpui_command_timeout"} -> {:error, :timeout}
-          {:error, "gpui_runtime_stopped"} -> {:error, :runtime_stopped}
-          {:error, reason} -> {:error, reason}
-        end
-
-      GenServer.reply(from, reply)
-    end)
-
+    async_frame_reply(from, fn -> GPUI.Native.await_frame(state.runtime, window_id, timeout) end)
     {:noreply, state}
   end
 
@@ -132,19 +117,8 @@ defmodule GPUI.Display.Native do
   end
 
   def handle_call({:await_frame_after, window_id, generation, timeout}, from, state) do
-    runtime = state.runtime
-
-    Task.start(fn ->
-      reply =
-        case GPUI.Native.await_frame_after(runtime, window_id, generation, timeout) do
-          {:ok, ^window_id} -> :ok
-          {:error, "unknown_window"} -> {:error, :window_not_found}
-          {:error, "gpui_command_timeout"} -> {:error, :timeout}
-          {:error, "gpui_runtime_stopped"} -> {:error, :runtime_stopped}
-          {:error, reason} -> {:error, reason}
-        end
-
-      GenServer.reply(from, reply)
+    async_frame_reply(from, fn ->
+      GPUI.Native.await_frame_after(state.runtime, window_id, generation, timeout)
     end)
 
     {:noreply, state}
@@ -159,6 +133,17 @@ defmodule GPUI.Display.Native do
 
     {:reply, reply, state}
   end
+
+  defp async_frame_reply(from, call) do
+    Task.start(fn -> GenServer.reply(from, call.() |> normalize_frame_reply()) end)
+  end
+
+  defp normalize_frame_reply({:ok, _window_id}), do: :ok
+  defp normalize_frame_reply({:error, "unknown_window"}), do: {:error, :window_not_found}
+  defp normalize_frame_reply({:error, "window_closed"}), do: {:error, :window_closed}
+  defp normalize_frame_reply({:error, "gpui_command_timeout"}), do: {:error, :timeout}
+  defp normalize_frame_reply({:error, "gpui_runtime_stopped"}), do: {:error, :runtime_stopped}
+  defp normalize_frame_reply({:error, reason}), do: {:error, reason}
 
   defp initialize_theme(_runtime, nil), do: :ok
 

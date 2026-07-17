@@ -30,8 +30,6 @@ pub enum GeneratedComponentKind {
     Image,
     Unknown,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn atom_eq<'a>(term: Term<'a>, expected: &str) -> bool {
     match term.atom_to_string() {
@@ -39,14 +37,10 @@ pub(crate) fn atom_eq<'a>(term: Term<'a>, expected: &str) -> bool {
         Err(_reason) => false,
     }
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn atom_string<'a>(term: Term<'a>) -> Option<String> {
     term.atom_to_string().ok()
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn number_value<'a>(term: Term<'a>) -> Option<f32> {
     match term.decode::<f64>() {
@@ -59,8 +53,6 @@ pub(crate) fn number_value<'a>(term: Term<'a>) -> Option<f32> {
         }
     }
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn rgb_value<'a>(term: Term<'a>) -> Option<u32> {
     match term.decode::<Vec<Term<'a>>>() {
@@ -74,8 +66,6 @@ pub(crate) fn rgb_value<'a>(term: Term<'a>) -> Option<u32> {
         Err(_reason) => None,
     }
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn px_value<'a>(term: Term<'a>) -> Option<f32> {
     match term.decode::<Vec<Term<'a>>>() {
@@ -92,14 +82,10 @@ pub(crate) fn px_value<'a>(term: Term<'a>) -> Option<f32> {
         Err(_reason) => None,
     }
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn radius_value<'a>(term: Term<'a>) -> Option<f32> {
     if atom_eq(term, "full") { Some(9999.0) } else { px_value(term) }
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn text_fragment<'a>(term: Term<'a>) -> NifResult<String> {
     match term.decode::<String>() {
@@ -117,8 +103,6 @@ pub(crate) fn text_fragment<'a>(term: Term<'a>) -> NifResult<String> {
         }
     }
 }
-
-
 #[derive(Clone, Debug, Default)]
 #[cfg(feature = "real-gpui")]
 pub(crate) struct StyleAttrs {
@@ -160,8 +144,6 @@ pub(crate) struct StyleAttrs {
     pub(crate) border_width: Option<f32>,
     pub(crate) border_color: Option<u32>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn apply_generated_style_attr(
     attrs: &mut StyleAttrs,
@@ -320,8 +302,6 @@ pub(crate) fn apply_generated_style_attr(
         _ => false,
     }
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn apply_generated_render_styles(
     element: gpui::Div,
@@ -522,16 +502,12 @@ pub(crate) fn apply_generated_render_styles(
     }
     element
 }
-
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg(feature = "real-gpui")]
 pub(crate) struct SelectOptionNode {
     pub(crate) label: String,
     pub(crate) value: String,
 }
-
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg(feature = "real-gpui")]
 pub(crate) struct RadioOptionNode {
@@ -539,8 +515,6 @@ pub(crate) struct RadioOptionNode {
     pub(crate) value: String,
     pub(crate) disabled: bool,
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -558,8 +532,6 @@ pub(crate) struct ButtonComponentNode {
     pub(crate) children: Vec<ElementNode>,
     pub(crate) click: Option<String>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_button_component(
     term: Term,
@@ -594,8 +566,6 @@ pub(crate) fn decode_generated_button_component(
         click: component_string_attr(term, atoms::phx_click())?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -609,8 +579,6 @@ pub(crate) struct PopoverComponentNode {
     pub(crate) children: Vec<ElementNode>,
     pub(crate) change: Option<String>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_popover_component(
     term: Term,
@@ -639,8 +607,6 @@ pub(crate) fn decode_generated_popover_component(
         change: component_string_attr(term, atoms::phx_change())?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -648,8 +614,6 @@ pub(crate) struct PopoverTriggerComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) children: Vec<ElementNode>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_popover_trigger_component(
     term: Term,
@@ -659,8 +623,6 @@ pub(crate) fn decode_generated_popover_trigger_component(
         children: decode_children(term)?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -668,8 +630,6 @@ pub(crate) struct PopoverContentComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) children: Vec<ElementNode>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_popover_content_component(
     term: Term,
@@ -679,8 +639,6 @@ pub(crate) fn decode_generated_popover_content_component(
         children: decode_children(term)?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -692,8 +650,6 @@ pub(crate) struct TooltipComponentNode {
     pub(crate) hoverable: bool,
     pub(crate) children: Vec<ElementNode>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_tooltip_component(
     term: Term,
@@ -707,8 +663,6 @@ pub(crate) fn decode_generated_tooltip_component(
         children: decode_children(term)?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -716,8 +670,6 @@ pub(crate) struct TooltipTriggerComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) children: Vec<ElementNode>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_tooltip_trigger_component(
     term: Term,
@@ -727,8 +679,6 @@ pub(crate) fn decode_generated_tooltip_trigger_component(
         children: decode_children(term)?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -745,8 +695,6 @@ pub(crate) struct DialogComponentNode {
     pub(crate) children: Vec<ElementNode>,
     pub(crate) change: Option<String>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_dialog_component(
     term: Term,
@@ -765,8 +713,6 @@ pub(crate) fn decode_generated_dialog_component(
         change: component_string_attr(term, atoms::phx_change())?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -774,8 +720,6 @@ pub(crate) struct DialogTriggerComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) children: Vec<ElementNode>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_dialog_trigger_component(
     term: Term,
@@ -785,8 +729,6 @@ pub(crate) fn decode_generated_dialog_trigger_component(
         children: decode_children(term)?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -794,8 +736,6 @@ pub(crate) struct DialogContentComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) children: Vec<ElementNode>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_dialog_content_component(
     term: Term,
@@ -805,8 +745,6 @@ pub(crate) fn decode_generated_dialog_content_component(
         children: decode_children(term)?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -820,8 +758,6 @@ pub(crate) struct DropdownMenuComponentNode {
     pub(crate) change: Option<String>,
     pub(crate) select: Option<String>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_dropdown_menu_component(
     term: Term,
@@ -850,8 +786,6 @@ pub(crate) fn decode_generated_dropdown_menu_component(
         select: component_string_attr(term, atoms::phx_select())?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -859,8 +793,6 @@ pub(crate) struct DropdownMenuTriggerComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) children: Vec<ElementNode>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_dropdown_menu_trigger_component(
     term: Term,
@@ -870,8 +802,6 @@ pub(crate) fn decode_generated_dropdown_menu_trigger_component(
         children: decode_children(term)?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -882,8 +812,6 @@ pub(crate) struct DropdownMenuItemComponentNode {
     pub(crate) disabled: bool,
     pub(crate) checked: bool,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_dropdown_menu_item_component(
     term: Term,
@@ -896,8 +824,6 @@ pub(crate) fn decode_generated_dropdown_menu_item_component(
         checked: component_bool_attr(term, atoms::checked())?.unwrap_or(false),
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -911,8 +837,6 @@ pub(crate) struct CheckboxComponentNode {
     pub(crate) children: Vec<ElementNode>,
     pub(crate) change: Option<String>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_checkbox_component(
     term: Term,
@@ -928,8 +852,6 @@ pub(crate) fn decode_generated_checkbox_component(
         change: component_string_attr(term, atoms::phx_change())?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -945,8 +867,6 @@ pub(crate) struct InputComponentNode {
     pub(crate) loading: bool,
     pub(crate) change: Option<String>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_input_component(
     term: Term,
@@ -964,8 +884,6 @@ pub(crate) fn decode_generated_input_component(
         change: component_string_attr(term, atoms::phx_change())?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -980,8 +898,6 @@ pub(crate) struct SelectComponentNode {
     pub(crate) cleanable: bool,
     pub(crate) change: Option<String>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_select_component(
     term: Term,
@@ -998,8 +914,6 @@ pub(crate) fn decode_generated_select_component(
         change: component_string_attr(term, atoms::phx_change())?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -1017,8 +931,6 @@ pub(crate) struct ComboboxComponentNode {
     pub(crate) change: Option<String>,
     pub(crate) search: Option<String>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_combobox_component(
     term: Term,
@@ -1038,8 +950,6 @@ pub(crate) fn decode_generated_combobox_component(
         search: component_string_attr(term, atoms::phx_search())?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -1053,8 +963,6 @@ pub(crate) struct SwitchComponentNode {
     pub(crate) loading: bool,
     pub(crate) change: Option<String>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_switch_component(
     term: Term,
@@ -1070,8 +978,6 @@ pub(crate) fn decode_generated_switch_component(
         change: component_string_attr(term, atoms::phx_change())?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -1085,8 +991,6 @@ pub(crate) struct RadioGroupComponentNode {
     pub(crate) disabled: bool,
     pub(crate) change: Option<String>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_radio_group_component(
     term: Term,
@@ -1106,8 +1010,6 @@ pub(crate) fn decode_generated_radio_group_component(
         change: component_string_attr(term, atoms::phx_change())?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -1122,8 +1024,6 @@ pub(crate) struct AccordionComponentNode {
     pub(crate) children: Vec<ElementNode>,
     pub(crate) change: Option<String>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_accordion_component(
     term: Term,
@@ -1140,8 +1040,6 @@ pub(crate) fn decode_generated_accordion_component(
         change: component_string_attr(term, atoms::phx_change())?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -1152,8 +1050,6 @@ pub(crate) struct AccordionItemComponentNode {
     pub(crate) disabled: bool,
     pub(crate) children: Vec<ElementNode>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_accordion_item_component(
     term: Term,
@@ -1166,8 +1062,6 @@ pub(crate) fn decode_generated_accordion_item_component(
         children: decode_children(term)?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -1182,8 +1076,6 @@ pub(crate) struct TabsComponentNode {
     pub(crate) menu: bool,
     pub(crate) change: Option<String>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_tabs_component(
     term: Term,
@@ -1204,8 +1096,6 @@ pub(crate) fn decode_generated_tabs_component(
         change: component_string_attr(term, atoms::phx_change())?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
@@ -1223,8 +1113,6 @@ pub(crate) struct SliderComponentNode {
     pub(crate) change: Option<String>,
     pub(crate) release: Option<String>,
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_slider_component(
     term: Term,
@@ -1248,8 +1136,6 @@ pub(crate) fn decode_generated_slider_component(
         release: component_string_attr(term, atoms::phx_release())?,
     })
 }
-
-
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 pub(crate) enum ElementNode {
@@ -1280,8 +1166,6 @@ pub(crate) enum ElementNode {
     Image(ImageNode),
     Text(TextNode),
 }
-
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GeneratedElementTag {
     Div,
@@ -1318,8 +1202,6 @@ pub enum GeneratedElementTag {
     Text,
     Unknown,
 }
-
-
 pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
     match tag {
         "div" => GeneratedElementTag::Div,
@@ -1357,8 +1239,6 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         _ => GeneratedElementTag::Unknown,
     }
 }
-
-
 pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentKind {
     match tag {
         GeneratedElementTag::Div => GeneratedComponentKind::Container,
@@ -1414,8 +1294,6 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::Unknown => GeneratedComponentKind::Unknown,
     }
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_element_node(
     term: Term,
@@ -1506,8 +1384,6 @@ pub(crate) fn decode_generated_element_node(
         GeneratedComponentKind::Unknown => Err(rustler::Error::BadArg),
     }
 }
-
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn render_generated_component_node(
     node: ElementNode,
@@ -1519,37 +1395,37 @@ pub(crate) fn render_generated_component_node(
             element::component::render_button_component(node, context)
         }
         ElementNode::PopoverComponent(node) => {
-            element::component::render_popover_component(node, context)
+            element::component::overlay::render(node, context)
         }
         ElementNode::PopoverTriggerComponent(node) => {
-            element::component::render_popover_trigger_component(node, context)
+            element::component::overlay::render_trigger(node, context)
         }
         ElementNode::PopoverContentComponent(node) => {
-            element::component::render_popover_content_component(node, context)
+            element::component::overlay::render_content(node, context)
         }
         ElementNode::TooltipComponent(node) => {
-            element::component::render_tooltip_component(node, context)
+            element::component::overlay::render_tooltip(node, context)
         }
         ElementNode::TooltipTriggerComponent(node) => {
-            element::component::render_tooltip_trigger_component(node, context)
+            element::component::overlay::render_tooltip_trigger(node, context)
         }
         ElementNode::DialogComponent(node) => {
-            element::component::render_dialog_component(node, context)
+            element::component::overlay::render_dialog(node, context)
         }
         ElementNode::DialogTriggerComponent(node) => {
-            element::component::render_dialog_trigger_component(node, context)
+            element::component::overlay::render_dialog_trigger(node, context)
         }
         ElementNode::DialogContentComponent(node) => {
-            element::component::render_dialog_content_component(node, context)
+            element::component::overlay::render_dialog_content(node, context)
         }
         ElementNode::DropdownMenuComponent(node) => {
-            element::component::render_dropdown_menu_component(node, context)
+            element::component::overlay::dropdown::render(node, context)
         }
         ElementNode::DropdownMenuTriggerComponent(node) => {
-            element::component::render_dropdown_menu_trigger_component(node, context)
+            element::component::overlay::render_dropdown_menu_trigger(node, context)
         }
         ElementNode::DropdownMenuItemComponent(node) => {
-            element::component::render_dropdown_menu_item_component(node, context)
+            element::component::overlay::render_dropdown_menu_item(node, context)
         }
         ElementNode::CheckboxComponent(node) => {
             element::component::render_checkbox_component(node, context)
@@ -1564,24 +1440,23 @@ pub(crate) fn render_generated_component_node(
             element::component::render_combobox_component(node, context)
         }
         ElementNode::SwitchComponent(node) => {
-            element::component::render_switch_component(node, context)
+            element::component::switch::render(node, context)
         }
         ElementNode::RadioGroupComponent(node) => {
-            element::component::render_radio_group_component(node, context)
+            element::component::radio::render(node, context)
         }
         ElementNode::AccordionComponent(node) => {
-            element::component::render_accordion_component(node, context)
+            element::component::accordion::render(node, context)
         }
         ElementNode::AccordionItemComponent(node) => {
-            element::component::render_accordion_item_component(node, context)
+            element::component::accordion::render_item(node, context)
         }
         ElementNode::TabsComponent(node) => {
-            element::component::render_tabs_component(node, context)
+            element::component::tabs::render(node, context)
         }
         ElementNode::SliderComponent(node) => {
-            element::component::render_slider_component(node, context)
+            element::component::slider::render(node, context)
         }
         _ => unreachable!(),
     }
 }
-

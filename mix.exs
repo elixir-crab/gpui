@@ -145,7 +145,7 @@ defmodule GPUI.MixProject do
       {:phoenix_live_view, "~> 1.2.6"},
       {:rustler, "~> 0.38.0", runtime: false},
       {:rustler_precompiled, "~> 0.9"},
-      {:rustq, "~> 1.0.0-rc.1", only: :dev, runtime: false},
+      {:rustq, "~> 1.0.0-rc.3", only: :dev, runtime: false},
       {:safe_rpc, "~> 0.1.14"},
       {:igniter, "~> 0.8.2", only: [:dev, :test]}
     ]

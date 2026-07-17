@@ -36,19 +36,10 @@ pub(crate) fn open_window_impl<'a>(
         reply,
     };
 
-    match execute_window_command(&runtime, command, receiver) {
-        Ok(()) => Ok((atoms::ok(), title).encode(env)),
-        Err(reason) => Ok((atoms::error(), reason).encode(env)),
-    }
-}
-
-#[cfg(not(feature = "real-gpui"))]
-pub(crate) fn open_window_impl<'a>(
-    _env: Env<'a>,
-    _runtime: ResourceArc<RuntimeResource>,
-    _window: Term<'a>,
-) -> NifResult<Term<'a>> {
-    Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
+    encode_command_result(
+        env,
+        execute_window_command(&runtime, command, receiver).map(|()| title),
+    )
 }
 
 pub(crate) fn drain_events_impl<'a>(
@@ -84,20 +75,10 @@ pub(crate) fn update_window_impl<'a>(
         reply,
     };
 
-    match execute_window_command(&runtime, command, receiver) {
-        Ok(()) => Ok((atoms::ok(), window_id).encode(env)),
-        Err(reason) => Ok((atoms::error(), reason).encode(env)),
-    }
-}
-
-#[cfg(not(feature = "real-gpui"))]
-pub(crate) fn update_window_impl<'a>(
-    _env: Env<'a>,
-    _runtime: ResourceArc<RuntimeResource>,
-    _window_id: u64,
-    _tree: Term<'a>,
-) -> NifResult<Term<'a>> {
-    Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
+    encode_command_result(
+        env,
+        execute_window_command(&runtime, command, receiver).map(|()| window_id),
+    )
 }
 
 #[cfg(feature = "real-gpui")]
@@ -113,19 +94,10 @@ pub(crate) fn close_window_impl<'a>(
         reply,
     };
 
-    match execute_window_command(&runtime, command, receiver) {
-        Ok(()) => Ok((atoms::ok(), window_id).encode(env)),
-        Err(reason) => Ok((atoms::error(), reason).encode(env)),
-    }
-}
-
-#[cfg(not(feature = "real-gpui"))]
-pub(crate) fn close_window_impl<'a>(
-    _env: Env<'a>,
-    _runtime: ResourceArc<RuntimeResource>,
-    _window_id: u64,
-) -> NifResult<Term<'a>> {
-    Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
+    encode_command_result(
+        env,
+        execute_window_command(&runtime, command, receiver).map(|()| window_id),
+    )
 }
 
 #[cfg(feature = "real-gpui")]
@@ -142,25 +114,16 @@ pub(crate) fn await_frame_impl<'a>(
         reply,
     };
 
-    match execute_window_command_with_timeout(
-        &runtime,
-        command,
-        receiver,
-        std::time::Duration::from_millis(timeout_ms),
-    ) {
-        Ok(()) => Ok((atoms::ok(), window_id).encode(env)),
-        Err(reason) => Ok((atoms::error(), reason).encode(env)),
-    }
-}
-
-#[cfg(not(feature = "real-gpui"))]
-pub(crate) fn await_frame_impl<'a>(
-    _env: Env<'a>,
-    _runtime: ResourceArc<RuntimeResource>,
-    _window_id: u64,
-    _timeout_ms: u64,
-) -> NifResult<Term<'a>> {
-    Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
+    encode_command_result(
+        env,
+        execute_window_command_with_timeout(
+            &runtime,
+            command,
+            receiver,
+            std::time::Duration::from_millis(timeout_ms),
+        )
+        .map(|()| window_id),
+    )
 }
 
 #[cfg(feature = "real-gpui")]
@@ -176,24 +139,15 @@ pub(crate) fn frame_token_impl<'a>(
         reply,
     };
 
-    match execute_window_command_with_timeout(
-        &runtime,
-        command,
-        receiver,
-        std::time::Duration::from_secs(5),
-    ) {
-        Ok(generation) => Ok((atoms::ok(), generation).encode(env)),
-        Err(reason) => Ok((atoms::error(), reason).encode(env)),
-    }
-}
-
-#[cfg(not(feature = "real-gpui"))]
-pub(crate) fn frame_token_impl<'a>(
-    _env: Env<'a>,
-    _runtime: ResourceArc<RuntimeResource>,
-    _window_id: u64,
-) -> NifResult<Term<'a>> {
-    Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
+    encode_command_result(
+        env,
+        execute_window_command_with_timeout(
+            &runtime,
+            command,
+            receiver,
+            std::time::Duration::from_secs(5),
+        ),
+    )
 }
 
 #[cfg(feature = "real-gpui")]
@@ -212,26 +166,16 @@ pub(crate) fn await_frame_after_impl<'a>(
         reply,
     };
 
-    match execute_window_command_with_timeout(
-        &runtime,
-        command,
-        receiver,
-        std::time::Duration::from_millis(timeout_ms),
-    ) {
-        Ok(()) => Ok((atoms::ok(), window_id).encode(env)),
-        Err(reason) => Ok((atoms::error(), reason).encode(env)),
-    }
-}
-
-#[cfg(not(feature = "real-gpui"))]
-pub(crate) fn await_frame_after_impl<'a>(
-    _env: Env<'a>,
-    _runtime: ResourceArc<RuntimeResource>,
-    _window_id: u64,
-    _generation: u64,
-    _timeout_ms: u64,
-) -> NifResult<Term<'a>> {
-    Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
+    encode_command_result(
+        env,
+        execute_window_command_with_timeout(
+            &runtime,
+            command,
+            receiver,
+            std::time::Duration::from_millis(timeout_ms),
+        )
+        .map(|()| window_id),
+    )
 }
 
 #[cfg(feature = "real-gpui")]
@@ -299,19 +243,18 @@ pub(crate) fn set_theme_impl<'a>(
         reply,
     };
 
-    match execute_window_command(&runtime, command, receiver) {
-        Ok(()) => Ok((atoms::ok(), mode).encode(env)),
-        Err(reason) => Ok((atoms::error(), reason).encode(env)),
-    }
+    encode_command_result(
+        env,
+        execute_window_command(&runtime, command, receiver).map(|()| mode),
+    )
 }
 
-#[cfg(not(feature = "real-gpui"))]
-pub(crate) fn set_theme_impl<'a>(
-    _env: Env<'a>,
-    _runtime: ResourceArc<RuntimeResource>,
-    _mode: Atom,
-) -> NifResult<Term<'a>> {
-    Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
+#[cfg(feature = "real-gpui")]
+fn encode_command_result<T: Encoder>(env: Env, result: Result<T, String>) -> NifResult<Term> {
+    match result {
+        Ok(value) => Ok((atoms::ok(), value).encode(env)),
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+    }
 }
 
 #[cfg(feature = "real-gpui")]
@@ -373,16 +316,6 @@ pub(crate) fn put_resource_impl<'a>(
     Ok((atoms::ok(), resource_id).encode(env))
 }
 
-#[cfg(not(feature = "real-gpui"))]
-pub(crate) fn put_resource_impl<'a>(
-    _env: Env<'a>,
-    _runtime: ResourceArc<RuntimeResource>,
-    _resource_id: String,
-    _resource: Term<'a>,
-) -> NifResult<Term<'a>> {
-    Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
-}
-
 #[cfg(feature = "real-gpui")]
 pub(crate) fn drop_resource_impl<'a>(
     env: Env<'a>,
@@ -396,15 +329,6 @@ pub(crate) fn drop_resource_impl<'a>(
         .map_err(|_| rustler::Error::Term(Box::new("runtime_lock_failed")))?
         .remove(&resource_id);
     Ok((atoms::ok(), resource_id).encode(env))
-}
-
-#[cfg(not(feature = "real-gpui"))]
-pub(crate) fn drop_resource_impl<'a>(
-    _env: Env<'a>,
-    _runtime: ResourceArc<RuntimeResource>,
-    _resource_id: String,
-) -> NifResult<Term<'a>> {
-    Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
 }
 
 pub(crate) fn inject_event_impl<'a>(
