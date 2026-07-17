@@ -109,7 +109,7 @@ RustQ generates repetitive native boundaries from GPUI's internal schema:
 
 - source-discovered atoms and Rustler NIF exports;
 - resource contracts and decoders;
-- component props, event kinds, and decoders;
+- window/component decoders and event values/kinds;
 - source-derived renderer routing and element dispatch;
 - style dispatch;
 - disabled-feature NIF implementations;

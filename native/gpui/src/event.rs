@@ -4,28 +4,6 @@ use rustler::{Atom, Encoder, Env, NifResult, Term};
 include!("generated/events.rs");
 
 #[derive(Clone, Debug)]
-pub(crate) enum EventValue {
-    String(String),
-    Strings(Vec<String>),
-    Boolean(bool),
-    Number(f64),
-    #[cfg_attr(not(feature = "components"), allow(dead_code))]
-    Nil,
-}
-
-impl EventValue {
-    fn encode<'a>(self, env: Env<'a>) -> Term<'a> {
-        match self {
-            Self::String(value) => value.encode(env),
-            Self::Strings(value) => value.encode(env),
-            Self::Boolean(value) => value.encode(env),
-            Self::Number(value) => value.encode(env),
-            Self::Nil => atoms::nil().encode(env),
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
 pub(crate) enum NativeEvent {
     Click {
         window_id: u64,

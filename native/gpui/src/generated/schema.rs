@@ -87,6 +87,127 @@ pub(crate) fn radius_value<'a>(term: Term<'a>) -> Option<f32> {
     if atom_eq(term, "full") { Some(9999.0) } else { px_value(term) }
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn window_id<'a>(window: Term<'a>) -> NifResult<u64> {
+    window.map_get(atoms::id())?.decode::<u64>()
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn window_title<'a>(window: Term<'a>) -> NifResult<String> {
+    window.map_get(atoms::title())?.decode::<String>()
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn window_size<'a>(window: Term<'a>) -> NifResult<(f32, f32)> {
+    match window.map_get(atoms::size()) {
+        Ok(size) => {
+            match size.decode::<Vec<u32>>()?.as_slice() {
+                [width, height] if *width > 0 && *height > 0 => {
+                    Ok((*width as f32, *height as f32))
+                }
+                _other => Err(rustler::Error::BadArg),
+            }
+        }
+        Err(_missing) => Ok((800.0, 600.0)),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn window_tree<'a>(window: Term<'a>) -> NifResult<ElementNode> {
+    let root = window.map_get(atoms::root())?;
+    match root.map_get(atoms::tree()) {
+        Ok(tree) => decode_element_node(tree),
+        Err(_missing) => Ok(ElementNode::empty_root()),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn string_attr<'a>(term: Term<'a>, attr: Atom) -> Option<String> {
+    match term.map_get(atoms::attrs()) {
+        Ok(attrs) => {
+            match attrs.map_get(attr) {
+                Ok(value) => value.decode::<String>().ok(),
+                Err(_missing) => None,
+            }
+        }
+        Err(_missing) => None,
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn component_string_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+) -> NifResult<Option<String>> {
+    let attrs = term.map_get(atoms::attrs())?;
+    match attrs.map_get(attr) {
+        Ok(value) => Ok(Some(value.decode::<String>()?)),
+        Err(_missing) => Ok(None),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn component_bool_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+) -> NifResult<Option<bool>> {
+    let attrs = term.map_get(atoms::attrs())?;
+    match attrs.map_get(attr) {
+        Ok(value) => Ok(Some(value.decode::<bool>()?)),
+        Err(_missing) => Ok(None),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn component_number_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+) -> NifResult<Option<f64>> {
+    let attrs = term.map_get(atoms::attrs())?;
+    match attrs.map_get(attr) {
+        Ok(value) => {
+            let number = match value.decode::<f64>() {
+                Ok(number) => number,
+                Err(_reason) => value.decode::<i64>()? as f64,
+            };
+            if number.is_finite() {
+                Ok(Some(number))
+            } else {
+                Err(rustler::Error::BadArg)
+            }
+        }
+        Err(_missing) => Ok(None),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn component_string_list_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+) -> NifResult<Vec<String>> {
+    let attrs = term.map_get(atoms::attrs())?;
+    match attrs.map_get(attr) {
+        Ok(value) => Ok(value.decode::<Vec<String>>()?),
+        Err(_missing) => Ok(vec![]),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn component_enum_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+    allowed: &[&str],
+) -> NifResult<Option<String>> {
+    match component_string_attr(term, attr) {
+        Ok(Some(value)) => {
+            if allowed.contains(&value.as_str()) {
+                Ok(Some(value))
+            } else {
+                Err(rustler::Error::BadArg)
+            }
+        }
+        Ok(None) => Ok(None),
+        Err(reason) => Err(reason),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn component_id<'a>(term: Term<'a>) -> NifResult<String> {
+    match component_string_attr(term, atoms::id()) {
+        Ok(Some(id)) if !id.is_empty() => Ok(id),
+        _other => Err(rustler::Error::BadArg),
+    }
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn text_fragment<'a>(term: Term<'a>) -> NifResult<String> {
     match term.decode::<String>() {
         Ok(value) => Ok(value),

@@ -405,39 +405,6 @@ pub(crate) fn inject_event_impl<'a>(
 }
 
 #[cfg(feature = "real-gpui")]
-pub(crate) fn window_id(window: Term) -> NifResult<u64> {
-    window.map_get(atoms::id())?.decode::<u64>()
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn window_size(window: Term) -> NifResult<(f32, f32)> {
-    let Ok(size) = window.map_get(atoms::size()) else {
-        return Ok((800.0, 600.0));
-    };
-    let size = size.decode::<Vec<u32>>()?;
-
-    match size.as_slice() {
-        [width, height] if *width > 0 && *height > 0 => Ok((*width as f32, *height as f32)),
-        _other => Err(rustler::Error::BadArg),
-    }
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn window_title(window: Term) -> NifResult<String> {
-    window.map_get(atoms::title())?.decode::<String>()
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn window_tree(window: Term) -> NifResult<ElementNode> {
-    let root = window.map_get(atoms::root())?;
-
-    match root.map_get(atoms::tree()) {
-        Ok(tree) => decode_element_node(tree),
-        Err(_error) => Ok(ElementNode::empty_root()),
-    }
-}
-
-#[cfg(feature = "real-gpui")]
 pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
     if let Ok(text) = term.decode::<String>() {
         return Ok(ElementNode::Text(TextNode {
@@ -544,78 +511,6 @@ pub(crate) fn decode_text_children(term: Term) -> NifResult<String> {
     }
 
     Ok(text)
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn string_attr(term: Term, attr: Atom) -> Option<String> {
-    let attrs = term.map_get(atoms::attrs()).ok()?;
-    attrs.map_get(attr).ok()?.decode::<String>().ok()
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn component_id(term: Term) -> NifResult<String> {
-    match component_string_attr(term, atoms::id())? {
-        Some(id) if !id.is_empty() => Ok(id),
-        _other => Err(rustler::Error::BadArg),
-    }
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn component_string_attr(term: Term, attr: Atom) -> NifResult<Option<String>> {
-    let attrs = term.map_get(atoms::attrs())?;
-    match attrs.map_get(attr) {
-        Ok(value) => value.decode::<String>().map(Some),
-        Err(_missing) => Ok(None),
-    }
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn component_bool_attr(term: Term, attr: Atom) -> NifResult<Option<bool>> {
-    let attrs = term.map_get(atoms::attrs())?;
-    match attrs.map_get(attr) {
-        Ok(value) => value.decode::<bool>().map(Some),
-        Err(_missing) => Ok(None),
-    }
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn component_number_attr(term: Term, attr: Atom) -> NifResult<Option<f64>> {
-    let attrs = term.map_get(atoms::attrs())?;
-    match attrs.map_get(attr) {
-        Ok(value) => {
-            let number = value
-                .decode::<f64>()
-                .or_else(|_| value.decode::<i64>().map(|number| number as f64))?;
-            if number.is_finite() {
-                Ok(Some(number))
-            } else {
-                Err(rustler::Error::BadArg)
-            }
-        }
-        Err(_missing) => Ok(None),
-    }
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn component_string_list_attr(term: Term, attr: Atom) -> NifResult<Vec<String>> {
-    let attrs = term.map_get(atoms::attrs())?;
-    match attrs.map_get(attr) {
-        Ok(value) => value.decode::<Vec<String>>(),
-        Err(_missing) => Ok(Vec::new()),
-    }
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn component_enum_attr(
-    term: Term,
-    attr: Atom,
-    allowed: &[&str],
-) -> NifResult<Option<String>> {
-    match component_string_attr(term, attr)? {
-        Some(value) if allowed.contains(&value.as_str()) => Ok(Some(value)),
-        Some(_invalid) => Err(rustler::Error::BadArg),
-        None => Ok(None),
-    }
 }
 
 #[cfg(feature = "real-gpui")]

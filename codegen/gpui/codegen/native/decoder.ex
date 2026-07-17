@@ -1,7 +1,8 @@
 defmodule GPUI.Codegen.Native.Decoder do
   @moduledoc false
 
-  use RustQ.Meta
+  use RustQ.Meta,
+    rust_sources: ["native/gpui/src/nif.rs"]
 
   alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST.Builder, as: A
@@ -73,6 +74,137 @@ defmodule GPUI.Codegen.Native.Decoder do
       9999.0
     else
       px_value(term)
+    end
+  end
+
+  @spec window_id(term()) :: R.nif_result(R.u64())
+  defrust window_id(window) do
+    decode_as(window.map_get(Atoms.id()), R.u64())
+  end
+
+  @spec window_title(term()) :: R.nif_result(String.t())
+  defrust window_title(window) do
+    decode_as(window.map_get(Atoms.title()), String.t())
+  end
+
+  @spec window_size(term()) :: R.nif_result({R.f32(), R.f32()})
+  defrust window_size(window) do
+    case window.map_get(Atoms.size()) do
+      {:ok, size} ->
+        case decode_as!(size, R.vec(R.u32())) do
+          [width, height] when deref(width) > 0 and deref(height) > 0 ->
+            {:ok, {cast(deref(width), R.f32()), cast(deref(height), R.f32())}}
+
+          _other ->
+            {:error, badarg()}
+        end
+
+      {:error, _missing} ->
+        {:ok, {800.0, 600.0}}
+    end
+  end
+
+  @spec window_tree(term()) :: R.nif_result(R.raw(:ElementNode))
+  defrust window_tree(window) do
+    root = unwrap!(window.map_get(Atoms.root()))
+
+    case root.map_get(Atoms.tree()) do
+      {:ok, tree} -> decode_element_node(tree)
+      {:error, _missing} -> {:ok, ElementNode.empty_root()}
+    end
+  end
+
+  @spec string_attr(term(), atom()) :: R.option(String.t())
+  defrust string_attr(term, attr) do
+    case term.map_get(Atoms.attrs()) do
+      {:ok, attrs} ->
+        case attrs.map_get(attr) do
+          {:ok, value} -> decode_as(value, String.t()).ok()
+          {:error, _missing} -> nil
+        end
+
+      {:error, _missing} ->
+        nil
+    end
+  end
+
+  @spec component_string_attr(term(), atom()) :: R.nif_result(R.option(String.t()))
+  defrust component_string_attr(term, attr) do
+    attrs = unwrap!(term.map_get(Atoms.attrs()))
+
+    case attrs.map_get(attr) do
+      {:ok, value} -> {:ok, some(decode_as!(value, String.t()))}
+      {:error, _missing} -> {:ok, nil}
+    end
+  end
+
+  @spec component_bool_attr(term(), atom()) :: R.nif_result(R.option(boolean()))
+  defrust component_bool_attr(term, attr) do
+    attrs = unwrap!(term.map_get(Atoms.attrs()))
+
+    case attrs.map_get(attr) do
+      {:ok, value} -> {:ok, some(decode_as!(value, boolean()))}
+      {:error, _missing} -> {:ok, nil}
+    end
+  end
+
+  @spec component_number_attr(term(), atom()) :: R.nif_result(R.option(R.f64()))
+  defrust component_number_attr(term, attr) do
+    attrs = unwrap!(term.map_get(Atoms.attrs()))
+
+    case attrs.map_get(attr) do
+      {:ok, value} ->
+        number =
+          case decode_as(value, R.f64()) do
+            {:ok, number} -> number
+            {:error, _reason} -> cast(decode_as!(value, R.i64()), R.f64())
+          end
+
+        if number.is_finite() do
+          {:ok, some(number)}
+        else
+          {:error, badarg()}
+        end
+
+      {:error, _missing} ->
+        {:ok, nil}
+    end
+  end
+
+  @spec component_string_list_attr(term(), atom()) :: R.nif_result(R.vec(String.t()))
+  defrust component_string_list_attr(term, attr) do
+    attrs = unwrap!(term.map_get(Atoms.attrs()))
+
+    case attrs.map_get(attr) do
+      {:ok, value} -> {:ok, decode_as!(value, R.vec(String.t()))}
+      {:error, _missing} -> {:ok, []}
+    end
+  end
+
+  @spec component_enum_attr(term(), atom(), R.slice(R.str())) ::
+          R.nif_result(R.option(String.t()))
+  defrust component_enum_attr(term, attr, allowed) do
+    case component_string_attr(term, attr) do
+      {:ok, {:some, value}} ->
+        if allowed.contains(ref(value.as_str())) do
+          {:ok, some(value)}
+        else
+          {:error, badarg()}
+        end
+
+      {:ok, nil} ->
+        {:ok, nil}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @spec component_id(term()) :: R.nif_result(String.t())
+  defrust component_id(term) do
+    case component_string_attr(term, Atoms.id()) do
+      {:ok, {:some, id}} when not id.is_empty() -> {:ok, id}
+      _other -> {:error, badarg()}
     end
   end
 
