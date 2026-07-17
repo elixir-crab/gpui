@@ -100,20 +100,36 @@ Install the Linux E2E dependencies with:
 sudo apt-get install xvfb xdotool libxkbcommon-dev libxkbcommon-x11-dev
 ```
 
-Behavioral E2E assertions are not a substitute for visual review. Before a
-release that changes rendering, capture the synchronized component gallery:
+Behavioral E2E assertions are not a substitute for visual review. Visual
+scenarios live under `test/visual/scenarios/`, separate from application
+examples, and provide deterministic data plus declarative state transitions.
+Capture one scenario or the complete suite with:
 
 ```bash
-RUST_FONTCONFIG_DLOPEN=1 mix gpui.visual.capture --theme dark --output tmp/gpui-visual-dark
-RUST_FONTCONFIG_DLOPEN=1 mix gpui.visual.capture --theme light --output tmp/gpui-visual-light
+RUST_FONTCONFIG_DLOPEN=1 mix gpui.visual.capture \
+  --scenario component_gallery \
+  --theme dark \
+  --output tmp/gpui-visual-dark
+
+RUST_FONTCONFIG_DLOPEN=1 mix gpui.visual.capture \
+  --scenario process_explorer \
+  --theme dark \
+  --output tmp/process-explorer-visual
+
+RUST_FONTCONFIG_DLOPEN=1 mix gpui.visual.capture --all --output tmp/gpui-visual
 ```
 
-The task runs under Xvfb, requests an explicit platform frame, waits on the
-native generation barriers, and captures components, tooltips, popovers,
-dialogs, and menus. Inspect the resulting images for spacing, clipping, contrast, popup
-placement, and state variants. `GPUITest.E2E.Desktop.capture!/2` remains a
-single-purpose explicit capture helper for repository E2E tests; it does not
-wait, inspect environment variables, or choose paths.
+Each module implements the repository's visual scenario behaviour and declares
+its application, initial arguments, window title, capture names, and actions such as event
+dispatch, root-view messages, and synchronized hover. The generic runner owns
+Xvfb startup, completed-frame barriers, pointer movement, file naming, and
+cleanup. Scenarios must not sample live state when stable screenshots are
+required.
+
+Inspect the resulting images for spacing, clipping, contrast, popup placement,
+and state variants. `GPUITest.E2E.Desktop.capture!/2` remains a single-purpose
+explicit capture helper for repository E2E tests; it does not wait, inspect
+environment variables, or choose paths.
 
 ## Full quality gate
 

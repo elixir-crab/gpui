@@ -53,11 +53,12 @@ defmodule GPUI.MixProject do
 
   defp ignore_test_file?(path) do
     String.contains?(path, "support/") or
+      String.contains?(path, "test/visual/scenarios/") or
       (System.get_env("GPUI_E2E") != "1" and String.contains?(path, "e2e/"))
   end
 
   defp elixirc_paths(env) when env in [:dev, :test, :e2e, :release],
-    do: ["lib", "dev/mix/tasks"]
+    do: ["lib", "dev"]
 
   defp elixirc_paths(_env), do: ["lib"]
 

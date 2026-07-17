@@ -16,15 +16,6 @@ The application demonstrates a larger GPUI architecture:
 - tests use synthetic process snapshots through `GPUI.Test` and do not need a
   native window.
 
-Capture deterministic overview and selected-process screenshots with:
-
-```bash
-RUST_FONTCONFIG_DLOPEN=1 mix gpui.visual.capture \
-  --example process_explorer \
-  --theme dark \
-  --output tmp/process-explorer-visual
-```
-
 The renderer caps the visible result set at 500 rows. Filtering happens before
 the cap, so large nodes remain inspectable without constructing an unbounded
 native element tree. This is deliberately a normal collection rather than a
