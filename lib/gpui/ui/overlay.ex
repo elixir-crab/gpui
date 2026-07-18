@@ -9,6 +9,7 @@ defmodule GPUI.UI.Overlay do
 
   alias GPUI.Component.Slot
   alias GPUI.Element
+  alias GPUI.Schema
 
   @anchors ~w(top_left top_center top_right bottom_left bottom_center bottom_right left_center right_center)
 
@@ -20,10 +21,7 @@ defmodule GPUI.UI.Overlay do
   """
   @spec tooltip(map()) :: Element.t()
   def tooltip(assigns) when is_map(assigns) do
-    assigns =
-      assigns
-      |> Map.put_new(:delay, 500.0)
-      |> Map.put_new(:hoverable, false)
+    assigns = Schema.apply_defaults(assigns, :ui_tooltip)
 
     trigger = one_slot!(assigns, :trigger, :tooltip)
     content = one_slot!(assigns, :content, :tooltip)
@@ -65,14 +63,7 @@ defmodule GPUI.UI.Overlay do
   """
   @spec dialog(map()) :: Element.t()
   def dialog(assigns) when is_map(assigns) do
-    assigns =
-      assigns
-      |> Map.put_new(:open, false)
-      |> Map.put_new(:width, 448.0)
-      |> Map.put_new(:overlay, true)
-      |> Map.put_new(:closable, true)
-      |> Map.put_new(:keyboard, true)
-      |> Map.put_new(:close_button, true)
+    assigns = Schema.apply_defaults(assigns, :ui_dialog)
 
     trigger = optional_slot!(assigns, :trigger, :dialog)
     content = one_slot!(assigns, :content, :dialog)
@@ -108,11 +99,7 @@ defmodule GPUI.UI.Overlay do
   """
   @spec dropdown_menu(map()) :: Element.t()
   def dropdown_menu(assigns) when is_map(assigns) do
-    assigns =
-      assigns
-      |> Map.put_new(:open, false)
-      |> Map.put_new(:anchor, "top_left")
-      |> Map.put_new(:disabled, false)
+    assigns = Schema.apply_defaults(assigns, :ui_dropdown_menu)
 
     trigger = one_slot!(assigns, :trigger, :dropdown_menu)
     items = Map.get(assigns, :item, [])
@@ -149,12 +136,7 @@ defmodule GPUI.UI.Overlay do
   """
   @spec popover(map()) :: Element.t()
   def popover(assigns) when is_map(assigns) do
-    assigns =
-      assigns
-      |> Map.put_new(:open, false)
-      |> Map.put_new(:anchor, "top_left")
-      |> Map.put_new(:appearance, true)
-      |> Map.put_new(:closable, true)
+    assigns = Schema.apply_defaults(assigns, :ui_popover)
 
     trigger = one_slot!(assigns, :trigger, :popover)
     content = one_slot!(assigns, :content, :popover)

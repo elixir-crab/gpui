@@ -165,6 +165,9 @@ defmodule GPUI.UITest do
     assert attrs[:total_count] == 10_000
     assert attrs[:selected_index] == 1
     assert attrs[:overscan] == 8
+
+    assert %Element{attrs: root_attrs} = UI.tree_item(%{id: "root", parent_id: nil})
+    assert root_attrs[:parent_id] == nil
   end
 
   test "validates tree hierarchy and accessibility positions" do

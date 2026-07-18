@@ -126,10 +126,14 @@ pub(crate) fn window_size<'a>(window: Term<'a>) -> NifResult<(f32, f32)> {
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn window_tree<'a>(window: Term<'a>) -> NifResult<ElementNode> {
-    let root = window.map_get(atoms::root())?;
-    match root.map_get(atoms::tree()) {
-        Ok(tree) => decode_element_node(tree),
-        Err(_missing) => Ok(ElementNode::empty_root()),
+    match window.map_get(atoms::root()) {
+        Ok(root) => {
+            match root.map_get(atoms::tree()) {
+                Ok(tree) => decode_element_node(tree),
+                Err(_missing) => Ok(ElementNode::empty_root()),
+            }
+        }
+        Err(reason) => Err(reason),
     }
 }
 #[cfg(feature = "real-gpui")]
@@ -145,14 +149,31 @@ pub(crate) fn string_attr<'a>(term: Term<'a>, attr: Atom) -> Option<String> {
     }
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn component_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+) -> NifResult<Option<Term<'a>>> {
+    match term.map_get(atoms::attrs()) {
+        Ok(attrs) => {
+            match attrs.map_get(attr) {
+                Ok(value) => {
+                    if atom_eq(value, "nil") { Ok(None) } else { Ok(Some(value)) }
+                }
+                Err(_missing) => Ok(None),
+            }
+        }
+        Err(reason) => Err(reason),
+    }
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn component_string_attr<'a>(
     term: Term<'a>,
     attr: Atom,
 ) -> NifResult<Option<String>> {
-    let attrs = term.map_get(atoms::attrs())?;
-    match attrs.map_get(attr) {
-        Ok(value) => Ok(Some(value.decode::<String>()?)),
-        Err(_missing) => Ok(None),
+    match component_attr(term, attr) {
+        Ok(Some(value)) => Ok(Some(value.decode::<String>()?)),
+        Ok(None) => Ok(None),
+        Err(reason) => Err(reason),
     }
 }
 #[cfg(feature = "real-gpui")]
@@ -160,10 +181,10 @@ pub(crate) fn component_bool_attr<'a>(
     term: Term<'a>,
     attr: Atom,
 ) -> NifResult<Option<bool>> {
-    let attrs = term.map_get(atoms::attrs())?;
-    match attrs.map_get(attr) {
-        Ok(value) => Ok(Some(value.decode::<bool>()?)),
-        Err(_missing) => Ok(None),
+    match component_attr(term, attr) {
+        Ok(Some(value)) => Ok(Some(value.decode::<bool>()?)),
+        Ok(None) => Ok(None),
+        Err(reason) => Err(reason),
     }
 }
 #[cfg(feature = "real-gpui")]
@@ -171,9 +192,8 @@ pub(crate) fn component_number_attr<'a>(
     term: Term<'a>,
     attr: Atom,
 ) -> NifResult<Option<f64>> {
-    let attrs = term.map_get(atoms::attrs())?;
-    match attrs.map_get(attr) {
-        Ok(value) => {
+    match component_attr(term, attr) {
+        Ok(Some(value)) => {
             let number = match value.decode::<f64>() {
                 Ok(number) => number,
                 Err(_reason) => value.decode::<i64>()? as f64,
@@ -184,7 +204,8 @@ pub(crate) fn component_number_attr<'a>(
                 Err(rustler::Error::BadArg)
             }
         }
-        Err(_missing) => Ok(None),
+        Ok(None) => Ok(None),
+        Err(reason) => Err(reason),
     }
 }
 #[cfg(feature = "real-gpui")]
@@ -203,10 +224,21 @@ pub(crate) fn component_non_negative_integer_attr<'a>(
     term: Term<'a>,
     attr: Atom,
 ) -> NifResult<Option<u64>> {
-    let attrs = term.map_get(atoms::attrs())?;
-    match attrs.map_get(attr) {
-        Ok(value) => Ok(Some(value.decode::<u64>()?)),
-        Err(_missing) => Ok(None),
+    match component_attr(term, attr) {
+        Ok(Some(value)) => Ok(Some(value.decode::<u64>()?)),
+        Ok(None) => Ok(None),
+        Err(reason) => Err(reason),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn component_positive_integer_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+) -> NifResult<Option<u64>> {
+    match component_non_negative_integer_attr(term, attr) {
+        Ok(Some(value)) if value > 0 => Ok(Some(value)),
+        Ok(None) => Ok(None),
+        _invalid => Err(rustler::Error::BadArg),
     }
 }
 #[cfg(feature = "real-gpui")]
@@ -214,10 +246,10 @@ pub(crate) fn component_string_list_attr<'a>(
     term: Term<'a>,
     attr: Atom,
 ) -> NifResult<Vec<String>> {
-    let attrs = term.map_get(atoms::attrs())?;
-    match attrs.map_get(attr) {
-        Ok(value) => Ok(value.decode::<Vec<String>>()?),
-        Err(_missing) => Ok(vec![]),
+    match component_attr(term, attr) {
+        Ok(Some(value)) => Ok(value.decode::<Vec<String>>()?),
+        Ok(None) => Ok(vec![]),
+        Err(reason) => Err(reason),
     }
 }
 #[cfg(feature = "real-gpui")]
@@ -832,7 +864,7 @@ pub(crate) struct FilePickerComponentNode {
     pub(crate) id: String,
     pub(crate) label: Option<String>,
     pub(crate) prompt: Option<String>,
-    pub(crate) max_bytes: f64,
+    pub(crate) max_bytes: u64,
     pub(crate) disabled: bool,
     pub(crate) change: Option<String>,
 }
@@ -845,8 +877,8 @@ pub(crate) fn decode_generated_file_picker_component(
         id: component_id(term)?,
         label: component_string_attr(term, atoms::label())?,
         prompt: component_string_attr(term, atoms::prompt())?,
-        max_bytes: component_positive_number_attr(term, atoms::max_bytes())?
-            .unwrap_or(26214400.0),
+        max_bytes: component_positive_integer_attr(term, atoms::max_bytes())?
+            .unwrap_or(26214400),
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         change: component_string_attr(term, atoms::phx_change())?,
     })
@@ -897,19 +929,20 @@ pub(crate) fn decode_generated_popover_component(
         id: component_id(term)?,
         open: component_bool_attr(term, atoms::open())?.unwrap_or(false),
         anchor: component_enum_attr(
-            term,
-            atoms::anchor(),
-            &[
-                "top_left",
-                "top_center",
-                "top_right",
-                "bottom_left",
-                "bottom_center",
-                "bottom_right",
-                "left_center",
-                "right_center",
-            ],
-        )?,
+                term,
+                atoms::anchor(),
+                &[
+                    "top_left",
+                    "top_center",
+                    "top_right",
+                    "bottom_left",
+                    "bottom_center",
+                    "bottom_right",
+                    "left_center",
+                    "right_center",
+                ],
+            )?
+            .or(Some("top_left".to_string())),
         appearance: component_bool_attr(term, atoms::appearance())?.unwrap_or(true),
         closable: component_bool_attr(term, atoms::closable())?.unwrap_or(true),
         children: decode_children(term)?,
@@ -1076,19 +1109,20 @@ pub(crate) fn decode_generated_dropdown_menu_component(
         id: component_id(term)?,
         open: component_bool_attr(term, atoms::open())?.unwrap_or(false),
         anchor: component_enum_attr(
-            term,
-            atoms::anchor(),
-            &[
-                "top_left",
-                "top_center",
-                "top_right",
-                "bottom_left",
-                "bottom_center",
-                "bottom_right",
-                "left_center",
-                "right_center",
-            ],
-        )?,
+                term,
+                atoms::anchor(),
+                &[
+                    "top_left",
+                    "top_center",
+                    "top_right",
+                    "bottom_left",
+                    "bottom_center",
+                    "bottom_right",
+                    "left_center",
+                    "right_center",
+                ],
+            )?
+            .or(Some("top_left".to_string())),
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         children: decode_children(term)?,
         change: component_string_attr(term, atoms::phx_change())?,
@@ -1408,10 +1442,11 @@ pub(crate) fn decode_generated_virtual_list_component(
         reveal: component_string_attr(term, atoms::reveal())?,
         reveal_index: component_non_negative_integer_attr(term, atoms::reveal_index())?,
         reveal_strategy: component_enum_attr(
-            term,
-            atoms::reveal_strategy(),
-            &["nearest", "top", "center", "bottom"],
-        )?,
+                term,
+                atoms::reveal_strategy(),
+                &["nearest", "top", "center", "bottom"],
+            )?
+            .or(Some("nearest".to_string())),
         total_count: component_non_negative_integer_attr(term, atoms::total_count())?
             .unwrap_or(0),
         offset: component_non_negative_integer_attr(term, atoms::offset())?.unwrap_or(0),
@@ -1483,10 +1518,11 @@ pub(crate) fn decode_generated_tree_component(
         reveal: component_string_attr(term, atoms::reveal())?,
         reveal_index: component_non_negative_integer_attr(term, atoms::reveal_index())?,
         reveal_strategy: component_enum_attr(
-            term,
-            atoms::reveal_strategy(),
-            &["nearest", "top", "center", "bottom"],
-        )?,
+                term,
+                atoms::reveal_strategy(),
+                &["nearest", "top", "center", "bottom"],
+            )?
+            .or(Some("nearest".to_string())),
         total_count: component_non_negative_integer_attr(term, atoms::total_count())?
             .unwrap_or(0),
         offset: component_non_negative_integer_attr(term, atoms::offset())?.unwrap_or(0),
@@ -1596,11 +1632,13 @@ pub(crate) fn decode_generated_slider_component(
         max: component_number_attr(term, atoms::max())?.unwrap_or(100.0),
         step: component_number_attr(term, atoms::step())?.unwrap_or(1.0),
         orientation: component_enum_attr(
-            term,
-            atoms::orientation(),
-            &["horizontal", "vertical"],
-        )?,
-        scale: component_enum_attr(term, atoms::scale(), &["linear", "logarithmic"])?,
+                term,
+                atoms::orientation(),
+                &["horizontal", "vertical"],
+            )?
+            .or(Some("horizontal".to_string())),
+        scale: component_enum_attr(term, atoms::scale(), &["linear", "logarithmic"])?
+            .or(Some("linear".to_string())),
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         reverse: component_bool_attr(term, atoms::reverse())?.unwrap_or(false),
         change: component_string_attr(term, atoms::phx_change())?,

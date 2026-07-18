@@ -45,7 +45,7 @@ defmodule GPUI.Schema do
         id: :string,
         label: :string,
         prompt: :string,
-        max_bytes: {:default, :positive_number, 26_214_400.0},
+        max_bytes: {:default, :positive_integer, 26_214_400},
         disabled: :boolean
       ]
     },
@@ -65,8 +65,10 @@ defmodule GPUI.Schema do
         id: :string,
         open: :boolean,
         anchor:
-          {:enum,
-           ~w(top_left top_center top_right bottom_left bottom_center bottom_right left_center right_center)},
+          {:default,
+           {:enum,
+            ~w(top_left top_center top_right bottom_left bottom_center bottom_right left_center right_center)},
+           "top_left"},
         appearance: {:default, :boolean, true},
         closable: {:default, :boolean, true}
       ]
@@ -114,8 +116,10 @@ defmodule GPUI.Schema do
         id: :string,
         open: :boolean,
         anchor:
-          {:enum,
-           ~w(top_left top_center top_right bottom_left bottom_center bottom_right left_center right_center)},
+          {:default,
+           {:enum,
+            ~w(top_left top_center top_right bottom_left bottom_center bottom_right left_center right_center)},
+           "top_left"},
         disabled: :boolean
       ]
     },
@@ -254,7 +258,7 @@ defmodule GPUI.Schema do
         selected_index: :non_negative_integer,
         reveal: :string,
         reveal_index: :non_negative_integer,
-        reveal_strategy: {:enum, ~w(nearest top center bottom)},
+        reveal_strategy: {:default, {:enum, ~w(nearest top center bottom)}, "nearest"},
         total_count: {:default, :non_negative_integer, 0},
         offset: {:default, :non_negative_integer, 0},
         overscan: {:default, :non_negative_integer, 8},
@@ -281,7 +285,7 @@ defmodule GPUI.Schema do
         selected_index: :non_negative_integer,
         reveal: :string,
         reveal_index: :non_negative_integer,
-        reveal_strategy: {:enum, ~w(nearest top center bottom)},
+        reveal_strategy: {:default, {:enum, ~w(nearest top center bottom)}, "nearest"},
         total_count: {:default, :non_negative_integer, 0},
         offset: {:default, :non_negative_integer, 0},
         overscan: {:default, :non_negative_integer, 8},
@@ -329,8 +333,8 @@ defmodule GPUI.Schema do
         min: {:default, :number, 0.0},
         max: {:default, :number, 100.0},
         step: {:default, :number, 1.0},
-        orientation: {:enum, ~w(horizontal vertical)},
-        scale: {:enum, ~w(linear logarithmic)},
+        orientation: {:default, {:enum, ~w(horizontal vertical)}, "horizontal"},
+        scale: {:default, {:enum, ~w(linear logarithmic)}, "linear"},
         disabled: :boolean,
         reverse: :boolean
       ]
@@ -563,6 +567,29 @@ defmodule GPUI.Schema do
   ]
 
   def components, do: @components
+
+  def component!(tag) do
+    Enum.find(@components, &(&1.tag == tag)) ||
+      raise ArgumentError, "unknown GPUI component #{inspect(tag)}"
+  end
+
+  def defaults(tag) do
+    tag
+    |> component!()
+    |> Map.fetch!(:attrs)
+    |> Enum.reduce(%{}, fn
+      {name, {:default, _type, value}}, defaults -> Map.put(defaults, name, value)
+      {name, :boolean}, defaults -> Map.merge(defaults, Map.new([{name, false}]))
+      {name, :string_list}, defaults -> Map.put(defaults, name, [])
+      {_name, _type}, defaults -> defaults
+    end)
+  end
+
+  def apply_defaults(assigns, tag) when is_map(assigns) do
+    defaults(tag)
+    |> Map.merge(assigns)
+  end
+
   def stateful_components, do: Enum.filter(@components, & &1.stateful)
   def styles, do: Enum.map(@styles, & &1.name)
   def style_specs, do: @styles

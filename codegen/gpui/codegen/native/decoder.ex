@@ -121,13 +121,17 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
-  @spec window_tree(term()) :: R.nif_result(R.raw(:ElementNode))
+  @spec window_tree(term()) :: R.nif_result(R.path(:ElementNode))
   defrust window_tree(window) do
-    root = unwrap!(window.map_get(Atoms.root()))
+    case window.map_get(Atoms.root()) do
+      {:ok, root} ->
+        case root.map_get(Atoms.tree()) do
+          {:ok, tree} -> decode_element_node(tree)
+          {:error, _missing} -> {:ok, ElementNode.empty_root()}
+        end
 
-    case root.map_get(Atoms.tree()) do
-      {:ok, tree} -> decode_element_node(tree)
-      {:error, _missing} -> {:ok, ElementNode.empty_root()}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -145,32 +149,49 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
+  @spec component_attr(term(), atom()) :: R.nif_result(R.option(term()))
+  defrust component_attr(term, attr) do
+    case term.map_get(Atoms.attrs()) do
+      {:ok, attrs} ->
+        case attrs.map_get(attr) do
+          {:ok, value} ->
+            if atom_eq(value, "nil") do
+              {:ok, nil}
+            else
+              {:ok, some(value)}
+            end
+
+          {:error, _missing} ->
+            {:ok, nil}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   @spec component_string_attr(term(), atom()) :: R.nif_result(R.option(String.t()))
   defrust component_string_attr(term, attr) do
-    attrs = unwrap!(term.map_get(Atoms.attrs()))
-
-    case attrs.map_get(attr) do
-      {:ok, value} -> {:ok, some(decode_as!(value, String.t()))}
-      {:error, _missing} -> {:ok, nil}
+    case component_attr(term, attr) do
+      {:ok, {:some, value}} -> {:ok, some(decode_as!(value, String.t()))}
+      {:ok, nil} -> {:ok, nil}
+      {:error, reason} -> {:error, reason}
     end
   end
 
   @spec component_bool_attr(term(), atom()) :: R.nif_result(R.option(boolean()))
   defrust component_bool_attr(term, attr) do
-    attrs = unwrap!(term.map_get(Atoms.attrs()))
-
-    case attrs.map_get(attr) do
-      {:ok, value} -> {:ok, some(decode_as!(value, boolean()))}
-      {:error, _missing} -> {:ok, nil}
+    case component_attr(term, attr) do
+      {:ok, {:some, value}} -> {:ok, some(decode_as!(value, boolean()))}
+      {:ok, nil} -> {:ok, nil}
+      {:error, reason} -> {:error, reason}
     end
   end
 
   @spec component_number_attr(term(), atom()) :: R.nif_result(R.option(R.f64()))
   defrust component_number_attr(term, attr) do
-    attrs = unwrap!(term.map_get(Atoms.attrs()))
-
-    case attrs.map_get(attr) do
-      {:ok, value} ->
+    case component_attr(term, attr) do
+      {:ok, {:some, value}} ->
         number =
           case decode_as(value, R.f64()) do
             {:ok, number} -> number
@@ -183,8 +204,11 @@ defmodule GPUI.Codegen.Native.Decoder do
           {:error, badarg()}
         end
 
-      {:error, _missing} ->
+      {:ok, nil} ->
         {:ok, nil}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -201,21 +225,29 @@ defmodule GPUI.Codegen.Native.Decoder do
   @spec component_non_negative_integer_attr(term(), atom()) ::
           R.nif_result(R.option(R.u64()))
   defrust component_non_negative_integer_attr(term, attr) do
-    attrs = unwrap!(term.map_get(Atoms.attrs()))
+    case component_attr(term, attr) do
+      {:ok, {:some, value}} -> {:ok, some(decode_as!(value, R.u64()))}
+      {:ok, nil} -> {:ok, nil}
+      {:error, reason} -> {:error, reason}
+    end
+  end
 
-    case attrs.map_get(attr) do
-      {:ok, value} -> {:ok, some(decode_as!(value, R.u64()))}
-      {:error, _missing} -> {:ok, nil}
+  @spec component_positive_integer_attr(term(), atom()) ::
+          R.nif_result(R.option(R.u64()))
+  defrust component_positive_integer_attr(term, attr) do
+    case component_non_negative_integer_attr(term, attr) do
+      {:ok, {:some, value}} when value > 0 -> {:ok, some(value)}
+      {:ok, nil} -> {:ok, nil}
+      _invalid -> {:error, badarg()}
     end
   end
 
   @spec component_string_list_attr(term(), atom()) :: R.nif_result(R.vec(String.t()))
   defrust component_string_list_attr(term, attr) do
-    attrs = unwrap!(term.map_get(Atoms.attrs()))
-
-    case attrs.map_get(attr) do
-      {:ok, value} -> {:ok, decode_as!(value, R.vec(String.t()))}
-      {:error, _missing} -> {:ok, []}
+    case component_attr(term, attr) do
+      {:ok, {:some, value}} -> {:ok, decode_as!(value, R.vec(String.t()))}
+      {:ok, nil} -> {:ok, []}
+      {:error, reason} -> {:error, reason}
     end
   end
 

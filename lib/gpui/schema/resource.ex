@@ -4,5 +4,14 @@ defmodule GPUI.Schema.Resource do
   @enforce_keys [:name, :fields]
   defstruct [:name, :fields]
 
-  @type t :: %__MODULE__{name: atom(), fields: keyword(atom())}
+  @type field_type ::
+          :u32
+          | :string
+          | :atom
+          | :binary
+          | {:field, atom(), field_type()}
+          | {:option, field_type()}
+          | {:default, :atom_string, String.t()}
+
+  @type t :: %__MODULE__{name: atom(), fields: keyword(field_type())}
 end

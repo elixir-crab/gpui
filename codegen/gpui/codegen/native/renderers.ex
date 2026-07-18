@@ -12,18 +12,28 @@ defmodule GPUI.Codegen.Native.Renderers do
 
   @type renderer :: %{path: [atom()], args: [atom()]}
 
-  @spec for_node!(atom()) :: renderer()
-  def for_node!(node) do
-    node_name = Atom.to_string(node)
+  @spec for_nodes!([atom()]) :: %{atom() => renderer()}
+  def for_nodes!(nodes) do
+    renderers =
+      @renderer_globs
+      |> Enum.flat_map(&Path.wildcard/1)
+      |> Enum.uniq()
+      |> Enum.flat_map(&renderers_in/1)
+      |> Enum.group_by(& &1.node)
 
-    @renderer_globs
-    |> Enum.flat_map(&Path.wildcard/1)
-    |> Enum.flat_map(&renderers_in/1)
-    |> Enum.filter(&(&1.node == node_name))
-    |> Enum.max_by(&length(&1.path), fn ->
-      raise ArgumentError, "no native renderer accepts #{node_name}"
+    Map.new(nodes, fn node ->
+      node_name = Atom.to_string(node)
+
+      renderer =
+        renderers
+        |> Map.get(node_name, [])
+        |> Enum.max_by(&length(&1.path), fn ->
+          raise ArgumentError, "no native renderer accepts #{node_name}"
+        end)
+        |> Map.take([:path, :args])
+
+      {node, renderer}
     end)
-    |> Map.take([:path, :args])
   end
 
   defp renderers_in(path) do

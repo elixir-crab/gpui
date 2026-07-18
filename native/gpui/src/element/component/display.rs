@@ -94,7 +94,7 @@ pub(crate) fn render_file_picker(
         .prompt
         .filter(|prompt| !prompt.is_empty())
         .unwrap_or_else(|| "Choose a file".to_string());
-    let max_bytes = node.max_bytes.min(100.0 * 1_024.0 * 1_024.0) as usize;
+    let max_bytes = node.max_bytes.min(100 * 1_024 * 1_024) as usize;
     let button = Button::new(node.id)
         .label(node.label.unwrap_or_else(|| "Choose file".to_string()))
         .disabled(node.disabled)

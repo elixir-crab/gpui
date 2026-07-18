@@ -82,4 +82,27 @@ defmodule GPUI.SchemaTest do
     assert :opacity in GPUI.Schema.styles()
     assert :border_color in GPUI.Schema.styles()
   end
+
+  test "projects component defaults for public builders and native decoders" do
+    assert %{
+             max_bytes: 26_214_400,
+             disabled: false
+           } = GPUI.Schema.defaults(:ui_file_picker)
+
+    assert %{
+             item_height: 40.0,
+             reveal_strategy: "nearest",
+             total_count: 0,
+             offset: 0,
+             overscan: 8,
+             disabled: false
+           } = GPUI.Schema.defaults(:ui_tree)
+
+    assert %{max: 250.0, value: 10.0} =
+             GPUI.Schema.apply_defaults(%{max: 250.0, value: 10.0}, :ui_progress)
+
+    assert_raise ArgumentError, ~r/unknown GPUI component/, fn ->
+      GPUI.Schema.component!(:unknown)
+    end
+  end
 end

@@ -7,6 +7,7 @@ defmodule GPUI.UI do
   """
 
   alias GPUI.Element
+  alias GPUI.Schema
 
   @max_file_bytes 100 * 1_024 * 1_024
 
@@ -33,11 +34,7 @@ defmodule GPUI.UI do
   """
   @spec progress(map()) :: Element.t()
   def progress(assigns) when is_map(assigns) do
-    assigns =
-      assigns
-      |> Map.put_new(:value, 0.0)
-      |> Map.put_new(:max, 100.0)
-      |> Map.put_new(:indeterminate, false)
+    assigns = Schema.apply_defaults(assigns, :ui_progress)
 
     validate_non_empty_label!(:ui_progress, Map.get(assigns, :label))
 
@@ -62,10 +59,7 @@ defmodule GPUI.UI do
   """
   @spec file_picker(map()) :: Element.t()
   def file_picker(assigns) when is_map(assigns) do
-    assigns =
-      assigns
-      |> Map.put_new(:max_bytes, 25 * 1_024 * 1_024)
-      |> Map.put_new(:disabled, false)
+    assigns = Schema.apply_defaults(assigns, :ui_file_picker)
 
     validate_non_empty_label!(:ui_file_picker, Map.get(assigns, :label))
     validate_event!(:ui_file_picker, assigns, :"phx-change")
@@ -86,7 +80,7 @@ defmodule GPUI.UI do
   """
   @spec copy_button(map()) :: Element.t()
   def copy_button(assigns) when is_map(assigns) do
-    assigns = Map.put_new(assigns, :disabled, false)
+    assigns = Schema.apply_defaults(assigns, :ui_copy_button)
     validate_non_empty_label!(:ui_copy_button, Map.get(assigns, :label))
     validate_event!(:ui_copy_button, assigns, :"phx-click")
 
@@ -192,11 +186,7 @@ defmodule GPUI.UI do
   """
   @spec accordion(map()) :: Element.t()
   def accordion(assigns) when is_map(assigns) do
-    assigns =
-      assigns
-      |> Map.put_new(:expanded, [])
-      |> Map.put_new(:multiple, false)
-      |> Map.put_new(:bordered, true)
+    assigns = Schema.apply_defaults(assigns, :ui_accordion)
 
     expanded = assigns.expanded
     children = Map.get(assigns, :children, [])
@@ -259,24 +249,19 @@ defmodule GPUI.UI do
 
     assigns =
       assigns
-      |> Map.put_new(:item_height, 40.0)
-      |> Map.put_new(:reveal_strategy, "nearest")
       |> Map.put_new(:total_count, length(children))
-      |> Map.put_new(:offset, 0)
-      |> Map.put_new(:overscan, 8)
-      |> Map.put_new(:disabled, false)
+      |> Schema.apply_defaults(:ui_virtual_list)
 
     item_ids = collection_item_ids!(:ui_virtual_list, :ui_virtual_list_item, children)
     validate_virtual_collection!(:ui_virtual_list, assigns, item_ids)
 
-    assigns = drop_nil_attrs(assigns, [:selected, :selected_index, :reveal, :reveal_index])
     component(:ui_virtual_list, assigns)
   end
 
   @doc "Builds a stable row for `virtual_list/1`."
   @spec virtual_list_item(map()) :: Element.t()
   def virtual_list_item(assigns) when is_map(assigns),
-    do: component(:ui_virtual_list_item, Map.put_new(assigns, :disabled, false))
+    do: component(:ui_virtual_list_item, Schema.apply_defaults(assigns, :ui_virtual_list_item))
 
   @doc """
   Builds an accessible controlled tree from uniform-height `tree_item/1` children.
@@ -293,32 +278,21 @@ defmodule GPUI.UI do
 
     assigns =
       assigns
-      |> Map.put_new(:item_height, 40.0)
-      |> Map.put_new(:reveal_strategy, "nearest")
       |> Map.put_new(:total_count, length(children))
-      |> Map.put_new(:offset, 0)
-      |> Map.put_new(:overscan, 8)
-      |> Map.put_new(:disabled, false)
+      |> Schema.apply_defaults(:ui_tree)
 
     item_ids = collection_item_ids!(:ui_tree, :ui_tree_item, children)
     validate_virtual_collection!(:ui_tree, assigns, item_ids)
     validate_event!(:ui_tree, assigns, :"phx-change")
     validate_event!(:ui_tree, assigns, :"phx-toggle")
 
-    assigns = drop_nil_attrs(assigns, [:selected, :selected_index, :reveal, :reveal_index])
     component(:ui_tree, assigns)
   end
 
   @doc "Builds one accessible row for `tree/1`."
   @spec tree_item(map()) :: Element.t()
   def tree_item(assigns) when is_map(assigns) do
-    assigns =
-      assigns
-      |> Map.put_new(:level, 1)
-      |> Map.put_new(:branch, false)
-      |> Map.put_new(:expanded, false)
-      |> Map.put_new(:disabled, false)
-      |> drop_nil_attrs([:parent_id, :position, :set_size])
+    assigns = Schema.apply_defaults(assigns, :ui_tree_item)
 
     validate_tree_item!(assigns)
     component(:ui_tree_item, assigns)
@@ -554,12 +528,6 @@ defmodule GPUI.UI do
     end
   end
 
-  defp drop_nil_attrs(attrs, names) do
-    Enum.reduce(names, attrs, fn name, attrs ->
-      if is_nil(Map.get(attrs, name)), do: Map.delete(attrs, name), else: attrs
-    end)
-  end
-
   @doc """
   Builds a controlled GPUI Component tab bar.
 
@@ -588,13 +556,7 @@ defmodule GPUI.UI do
   @spec slider(map()) :: Element.t()
   def slider(assigns) when is_map(assigns) do
     assigns =
-      assigns
-      |> Map.put_new(:value, 0.0)
-      |> Map.put_new(:min, 0.0)
-      |> Map.put_new(:max, 100.0)
-      |> Map.put_new(:step, 1.0)
-      |> Map.put_new(:orientation, "horizontal")
-      |> Map.put_new(:scale, "linear")
+      Schema.apply_defaults(assigns, :ui_slider)
       |> normalize_slider_numbers!()
 
     validate_slider!(assigns)

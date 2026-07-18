@@ -15,6 +15,13 @@ defmodule GPUI.Codegen.Native.Schema do
     components = GPUI.Schema.components()
     elements = GPUI.Schema.tags()
 
+    renderer_nodes =
+      components
+      |> Enum.filter(&component_contract?/1)
+      |> Enum.map(&component_node_name/1)
+
+    renderers = Renderers.for_nodes!(renderer_nodes)
+
     [
       generated_component_specs(components),
       generated_decoder_helpers(),
@@ -31,7 +38,7 @@ defmodule GPUI.Codegen.Native.Schema do
       ),
       generated_component_kind_function(components),
       generated_element_decoder(components),
-      generated_component_renderer(components)
+      generated_component_renderer(components, renderers)
     ]
     |> List.flatten()
   end
@@ -302,8 +309,12 @@ defmodule GPUI.Codegen.Native.Schema do
 
   defp component_field_type(_name, :non_negative_integer), do: T.option(:u64)
 
-  defp component_field_type(_name, {:default, :non_negative_integer, _value}),
-    do: T.path(:u64)
+  defp component_field_type(_name, {:default, type, _value})
+       when type in [:non_negative_integer, :positive_integer],
+       do: T.path(:u64)
+
+  defp component_field_type(_name, :positive_integer), do: T.option(:u64)
+  defp component_field_type(_name, {:default, {:enum, _values}, _default}), do: T.option(:String)
 
   defp component_field_type(_name, :boolean), do: T.path(:bool)
   defp component_field_type(_name, {:default, :boolean, _value}), do: T.path(:bool)
@@ -341,12 +352,21 @@ defmodule GPUI.Codegen.Native.Schema do
   defp component_decoder_expr(name, :non_negative_integer),
     do: A.try(component_attr_call(:component_non_negative_integer_attr, name))
 
-  defp component_decoder_expr(name, {:default, :non_negative_integer, default}) do
-    :component_non_negative_integer_attr
+  defp component_decoder_expr(name, {:default, type, default})
+       when type in [:non_negative_integer, :positive_integer] do
+    helper =
+      if type == :positive_integer,
+        do: :component_positive_integer_attr,
+        else: :component_non_negative_integer_attr
+
+    helper
     |> component_attr_call(name)
     |> A.try()
     |> A.method(:unwrap_or, [A.lit(default)])
   end
+
+  defp component_decoder_expr(name, :positive_integer),
+    do: A.try(component_attr_call(:component_positive_integer_attr, name))
 
   defp component_decoder_expr(name, :boolean) do
     :component_bool_attr
@@ -373,6 +393,12 @@ defmodule GPUI.Codegen.Native.Schema do
         A.slice(Enum.map(values, &A.lit/1))
       ])
     )
+  end
+
+  defp component_decoder_expr(name, {:default, {:enum, values}, default}) do
+    name
+    |> component_decoder_expr({:enum, values})
+    |> A.method(:or, [A.some(A.method(A.lit(default), :to_string))])
   end
 
   defp component_decoder_expr(_name, :select_options),
@@ -430,13 +456,13 @@ defmodule GPUI.Codegen.Native.Schema do
     }
   end
 
-  defp generated_component_renderer(components) do
+  defp generated_component_renderer(components, renderers) do
     arms =
       components
       |> Enum.filter(&component_contract?/1)
       |> Enum.map(fn component ->
         variant = rust_variant(component.kind)
-        renderer = Renderers.for_node!(component_node_name(component))
+        renderer = Map.fetch!(renderers, component_node_name(component))
 
         %AST.Arm{
           pattern: P.path_tuple([:ElementNode, variant], [:node]),
