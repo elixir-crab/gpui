@@ -1,5 +1,5 @@
 for scenario <-
-      ~w(code_viewer component_gallery focus_timer git_repository_browser hello_window image_palette process_explorer settings_form virtual_list) do
+      ~w(code_viewer component_gallery focus_timer git_repository_browser hello_window image_palette log_trace_explorer process_explorer settings_form virtual_list) do
   Code.require_file("../visual/scenarios/#{scenario}.exs", __DIR__)
 end
 
@@ -130,6 +130,22 @@ defmodule GPUI.VisualScenariosTest do
 
     assert {:preview_loaded, 3, 4, %{path: "README.md"}, _slice} =
              preview_builder.(%{preview_job: 3, preview_generation: 4})
+  end
+
+  test "log trace explorer scenario covers live, selected, filtered, paused, and cleared states" do
+    scenario = GPUITest.Visual.LogTraceExplorer.Scenario
+
+    assert Enum.map(scenario.captures(), & &1.name) == [
+             "live-tail",
+             "selected-error",
+             "warning-filter",
+             "paused",
+             "cleared"
+           ]
+
+    %{events: events} = scenario.args(:dark)
+    assert Enum.count_until(events, 121) == 120
+    assert List.last(events).message =~ "connection closed"
   end
 
   test "process explorer scenario uses fixed data and transitions" do

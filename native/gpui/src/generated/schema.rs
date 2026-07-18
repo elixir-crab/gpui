@@ -1772,7 +1772,16 @@ pub(crate) fn decode_generated_code_line_component(
         kind: component_enum_attr(
                 term,
                 atoms::kind(),
-                &["context", "addition", "deletion", "hunk"],
+                &[
+                    "context",
+                    "addition",
+                    "deletion",
+                    "hunk",
+                    "debug",
+                    "info",
+                    "warning",
+                    "error",
+                ],
             )?
             .or(Some("context".to_string())),
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),

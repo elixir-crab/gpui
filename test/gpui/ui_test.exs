@@ -223,6 +223,11 @@ defmodule GPUI.UITest do
     assert attrs[:show_line_numbers]
     assert attrs[:selected_index] == 500
     assert attrs[:reveal_index] == 500
+
+    assert %Element{attrs: log_line_attrs} =
+             UI.code_line(%{id: "log-1", text: "queue depth high", kind: "warning"})
+
+    assert log_line_attrs[:kind] == "warning"
   end
 
   test "validates code viewer structure and line metadata" do
@@ -241,7 +246,7 @@ defmodule GPUI.UITest do
     end
 
     assert_raise ArgumentError, ~r/kind must be/, fn ->
-      UI.code_line(%{id: "line", text: "bad", kind: "warning"})
+      UI.code_line(%{id: "line", text: "bad", kind: "fatal"})
     end
   end
 

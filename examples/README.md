@@ -33,6 +33,20 @@ sorting, a virtualized process collection, explicit empty/filter states,
 selection, and a details pane. See
 [`process_explorer/README.md`](process_explorer/README.md) for its architecture.
 
+## Log and trace explorer
+
+The log explorer attaches a lightweight OTP Logger handler to a supervised,
+bounded source process. It supports asynchronous filtering, pause/resume,
+follow-tail, source-backed native virtualization, retained-event details, and
+display-side message copying:
+
+```bash
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/log_trace_explorer/run.exs
+```
+
+See [`log_trace_explorer/README.md`](log_trace_explorer/README.md) for its
+retention, Logger-handler, and stale-filter semantics.
+
 ## Image palette
 
 The image palette application decodes a local image in supervised background

@@ -159,7 +159,12 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
             id: "line-#{number}",
             number: number,
             text: if(rem(number, 2) == 0, do: "+remote #{number}", else: " remote #{number}"),
-            kind: if(rem(number, 2) == 0, do: "addition", else: "context")
+            kind:
+              cond do
+                number == 2 -> "warning"
+                rem(number, 2) == 0 -> "addition"
+                true -> "context"
+              end
           })
         end)
 

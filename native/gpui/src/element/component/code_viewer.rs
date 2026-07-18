@@ -53,6 +53,7 @@ struct VisibleCode {
     show_line_numbers: bool,
     tab_width: usize,
     item_height: f32,
+    gutter_width: f32,
     dark: bool,
     background: gpui::Hsla,
     foreground: gpui::Hsla,
@@ -163,8 +164,15 @@ pub(crate) fn render(
         .unwrap_or(20_000)
         .min(20_000)
         .max(loaded_columns.min(20_000));
+    let line_number_basis = lines
+        .iter()
+        .filter_map(|line| line.number)
+        .max()
+        .and_then(|number| usize::try_from(number).ok())
+        .unwrap_or(0)
+        .max(total_count);
     let gutter_width = if node.show_line_numbers {
-        line_number_width(total_count)
+        line_number_width(line_number_basis)
     } else {
         12.0
     };
@@ -188,6 +196,7 @@ pub(crate) fn render(
         show_line_numbers: node.show_line_numbers,
         tab_width,
         item_height: (node.item_height as f32).max(1.0),
+        gutter_width,
         dark: theme.is_dark(),
         background: theme.background,
         foreground: theme.foreground,
@@ -361,11 +370,7 @@ fn render_loaded_line(
     let selected = code.selected.as_deref() == Some(line.id.as_str());
     let background = line_background(code, &line.kind, selected);
     let text_color = line_text_color(code, &line.kind, selected);
-    let gutter_width = if code.show_line_numbers {
-        line_number_width(code.total_count)
-    } else {
-        12.0
-    };
+    let gutter_width = code.gutter_width;
     let expanded = expand_tabs(&line.text, code.tab_width);
     let accessibility_label = match line.number {
         Some(number) => format!("Line {number}: {expanded}"),
@@ -507,16 +512,17 @@ fn line_background(code: &VisibleCode, kind: &str, selected: bool) -> gpui::Hsla
     if selected {
         return code.selected_background;
     }
-    if code.mode != "diff" {
-        return code.background;
-    }
-    let color = match (code.dark, kind) {
-        (true, "addition") => 0x0F3D2A,
-        (true, "deletion") => 0x4A1D24,
-        (true, "hunk") => 0x1E3A5F,
-        (false, "addition") => 0xDCFCE7,
-        (false, "deletion") => 0xFEE2E2,
-        (false, "hunk") => 0xDBEAFE,
+    let color = match (code.mode.as_str(), code.dark, kind) {
+        ("plain", true, "warning") => 0x3D2E0F,
+        ("plain", true, "error") => 0x3F1D24,
+        ("plain", false, "warning") => 0xFEF3C7,
+        ("plain", false, "error") => 0xFEE2E2,
+        ("diff", true, "addition") => 0x0F3D2A,
+        ("diff", true, "deletion") => 0x4A1D24,
+        ("diff", true, "hunk") => 0x1E3A5F,
+        ("diff", false, "addition") => 0xDCFCE7,
+        ("diff", false, "deletion") => 0xFEE2E2,
+        ("diff", false, "hunk") => 0xDBEAFE,
         _other => return code.background,
     };
     gpui::rgb(color).into()
@@ -527,16 +533,20 @@ fn line_text_color(code: &VisibleCode, kind: &str, selected: bool) -> gpui::Hsla
     if selected {
         return code.selected_foreground;
     }
-    if code.mode != "diff" {
-        return code.foreground;
+    if code.mode == "plain" && kind == "debug" {
+        return code.muted_foreground;
     }
-    let color = match (code.dark, kind) {
-        (true, "addition") => 0xA7F3D0,
-        (true, "deletion") => 0xFECACA,
-        (true, "hunk") => 0xBFDBFE,
-        (false, "addition") => 0x166534,
-        (false, "deletion") => 0x991B1B,
-        (false, "hunk") => 0x1E40AF,
+    let color = match (code.mode.as_str(), code.dark, kind) {
+        ("plain", true, "warning") => 0xFDE68A,
+        ("plain", true, "error") => 0xFECACA,
+        ("plain", false, "warning") => 0x92400E,
+        ("plain", false, "error") => 0x991B1B,
+        ("diff", true, "addition") => 0xA7F3D0,
+        ("diff", true, "deletion") => 0xFECACA,
+        ("diff", true, "hunk") => 0xBFDBFE,
+        ("diff", false, "addition") => 0x166534,
+        ("diff", false, "deletion") => 0x991B1B,
+        ("diff", false, "hunk") => 0x1E40AF,
         _other => return code.foreground,
     };
     gpui::rgb(color).into()

@@ -340,7 +340,9 @@ defmodule GPUI.Schema do
         id: :string,
         text: {:default, :string},
         number: :non_negative_integer,
-        kind: {:default, {:enum, ~w(context addition deletion hunk)}, "context"},
+        kind:
+          {:default, {:enum, ~w(context addition deletion hunk debug info warning error)},
+           "context"},
         disabled: :boolean
       ]
     },

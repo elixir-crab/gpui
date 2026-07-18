@@ -340,7 +340,9 @@ loaded slice, while `tab_width` controls deterministic tab expansion.
 ```
 
 Modes are `plain` and `diff`. Diff line kinds are `addition`, `deletion`,
-`context`, and `hunk`. Line numbers are optional. Up/Down, Page Up/Page Down,
+`context`, and `hunk`; plain viewers can additionally use `debug`, `info`,
+`warning`, and `error` for theme-aware semantic log presentation. Line numbers
+are optional. Up/Down, Page Up/Page Down,
 Home/End, Enter, and Space use one accessible listbox tab stop and preserve the
 source-backed endpoint rules. Pointer selection emits the stable line ID.
 

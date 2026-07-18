@@ -355,8 +355,9 @@ defmodule GPUI.UI do
       raise ArgumentError, "ui_code_line number must be a non-negative integer"
     end
 
-    unless assigns.kind in ~w(context addition deletion hunk) do
-      raise ArgumentError, "ui_code_line kind must be context, addition, deletion, or hunk"
+    unless assigns.kind in ~w(context addition deletion hunk debug info warning error) do
+      raise ArgumentError,
+            "ui_code_line kind must be context, addition, deletion, hunk, debug, info, warning, or error"
     end
 
     component(:ui_code_line, assigns)

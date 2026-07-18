@@ -193,7 +193,7 @@ defmodule GPUI.Native.LifecycleE2ETest do
         children: [
           %{
             type: :ui_code_line,
-            attrs: %{id: "line", text: "bad", kind: "warning"},
+            attrs: %{id: "line", text: "bad", kind: "fatal"},
             children: []
           }
         ]
