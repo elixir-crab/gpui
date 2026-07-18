@@ -5,7 +5,11 @@ defmodule GPUI.Codegen.Native.Atoms do
 
   @spec all() :: [{atom(), String.t()}]
   def all do
-    source_atoms = Enum.map(source_atoms() ++ generated_atoms(), &{String.to_atom(&1), &1})
+    source_atoms =
+      Enum.map(
+        source_atoms() ++ generated_atoms() ++ GPUI.Codegen.Native.Events.atom_names(),
+        &{String.to_atom(&1), &1}
+      )
 
     (@renamed_atoms ++ schema_atoms() ++ source_atoms)
     |> Enum.uniq_by(fn {name, _value} -> name end)
@@ -28,7 +32,8 @@ defmodule GPUI.Codegen.Native.Atoms do
   defp generated_atoms do
     [
       GPUI.Codegen.Native.Decoder.asts(),
-      GPUI.Codegen.Native.Elements.asts()
+      GPUI.Codegen.Native.Elements.asts(),
+      GPUI.Codegen.Native.Events.items()
     ]
     |> collect_atom_references()
     |> Enum.uniq()

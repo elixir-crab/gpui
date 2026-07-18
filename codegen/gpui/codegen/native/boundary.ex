@@ -6,33 +6,21 @@ defmodule GPUI.Codegen.Native.Boundary do
   alias RustQ.Rust.Identifier
   alias RustQ.Syn.Type
 
-  @real_only_nifs [
-    :open_window,
-    :update_window,
-    :close_window,
-    :await_frame,
-    :frame_token,
-    :await_frame_after,
-    :set_theme,
-    :put_resource,
-    :drop_resource
-  ]
-
   @spec nifs() :: keyword(keyword())
   def nifs do
     [
       start_runtime: [],
       decode_image: [schedule: :dirty_cpu],
-      open_window: [schedule: :dirty_cpu],
-      update_window: [schedule: :dirty_cpu],
-      close_window: [schedule: :dirty_cpu],
-      await_frame: [schedule: :dirty_cpu],
-      frame_token: [schedule: :dirty_cpu],
-      await_frame_after: [schedule: :dirty_cpu],
+      open_window: [schedule: :dirty_cpu, real_only: true],
+      update_window: [schedule: :dirty_cpu, real_only: true],
+      close_window: [schedule: :dirty_cpu, real_only: true],
+      await_frame: [schedule: :dirty_cpu, real_only: true],
+      frame_token: [schedule: :dirty_cpu, real_only: true],
+      await_frame_after: [schedule: :dirty_cpu, real_only: true],
       stop_runtime: [schedule: :dirty_cpu],
-      set_theme: [schedule: :dirty_cpu],
-      put_resource: [schedule: :dirty_cpu],
-      drop_resource: [],
+      set_theme: [schedule: :dirty_cpu, real_only: true],
+      put_resource: [schedule: :dirty_cpu, real_only: true],
+      drop_resource: [real_only: true],
       drain_events: [],
       inject_event: []
     ]
@@ -45,7 +33,9 @@ defmodule GPUI.Codegen.Native.Boundary do
       |> RustQ.Syn.parse_file!()
       |> RustQ.Syn.functions()
 
-    Enum.map(@real_only_nifs, fn name ->
+    nifs()
+    |> Enum.filter(fn {_name, opts} -> Keyword.get(opts, :real_only, false) end)
+    |> Enum.map(fn {name, _opts} ->
       source_name = "#{name}_impl"
       function = Enum.find(functions, &(&1.name == source_name)) || missing_function!(source_name)
 

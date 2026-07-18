@@ -371,27 +371,10 @@ pub(crate) fn inject_event_impl<'a>(
         }
         "change" | "release" | "search" | "keydown" | "keyup" => {
             let event_name = event.map_get(atoms::event())?.decode::<String>()?;
-            let value = event.map_get(atoms::value()).ok().and_then(|term| {
-                term.decode::<String>()
-                    .map(EventValue::String)
-                    .or_else(|_| term.decode::<Vec<String>>().map(EventValue::Strings))
-                    .or_else(|_| term.decode::<bool>().map(EventValue::Boolean))
-                    .or_else(|_| term.decode::<f64>().map(EventValue::Number))
-                    .or_else(|_| {
-                        term.decode::<i64>()
-                            .map(|value| EventValue::Number(value as f64))
-                    })
-                    .or_else(|_| {
-                        term.decode::<Atom>().and_then(|atom| {
-                            if atom == atoms::nil() {
-                                Ok(EventValue::Nil)
-                            } else {
-                                Err(rustler::Error::BadArg)
-                            }
-                        })
-                    })
-                    .ok()
-            });
+            let value = event
+                .map_get(atoms::value())
+                .ok()
+                .and_then(decode_event_value);
             let kind = match event_type.as_str() {
                 "change" => InputKind::Change,
                 "release" => InputKind::Release,

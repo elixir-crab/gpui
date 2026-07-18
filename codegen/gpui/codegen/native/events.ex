@@ -1,11 +1,63 @@
 defmodule GPUI.Codegen.Native.Events do
   @moduledoc false
 
+  use RustQ.Meta
+
+  alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Rust.AST.PatternBuilder, as: P
   alias RustQ.Rust.AST.TypeBuilder, as: T
   alias RustQ.Rust.Identifier
+  alias RustQ.Type, as: R
+
+  @spec decode_event_value(term()) :: R.option(R.path(:EventValue))
+  defrust decode_event_value(term) do
+    case decode_as(term, String.t()) do
+      {:ok, value} ->
+        some(enum_variant(EventValue, :string, value))
+
+      {:error, _reason} ->
+        case decode_as(term, R.vec(String.t())) do
+          {:ok, value} ->
+            some(enum_variant(EventValue, :strings, value))
+
+          {:error, _reason} ->
+            case decode_as(term, boolean()) do
+              {:ok, value} ->
+                some(enum_variant(EventValue, :boolean, value))
+
+              {:error, _reason} ->
+                case decode_as(term, R.f64()) do
+                  {:ok, value} ->
+                    some(enum_variant(EventValue, :number, value))
+
+                  {:error, _reason} ->
+                    case decode_as(term, R.i64()) do
+                      {:ok, value} ->
+                        some(enum_variant(EventValue, :number, cast(value, R.f64())))
+
+                      {:error, _reason} ->
+                        case term.atom_to_string() do
+                          {:ok, value} ->
+                            if value == "nil" do
+                              some(enum_variant(EventValue, nil))
+                            else
+                              nil
+                            end
+
+                          {:error, _reason} ->
+                            nil
+                        end
+                    end
+                end
+            end
+        end
+    end
+  end
+
+  @spec atom_names() :: [String.t()]
+  def atom_names, do: ["nil"]
 
   @spec items() :: [AST.item()]
   def items do
@@ -15,7 +67,19 @@ defmodule GPUI.Codegen.Native.Events do
       |> Enum.uniq()
       |> Enum.reject(&(&1 == :click))
 
-    [event_value(), event_value_impl(), input_kind(kinds), input_kind_impl(kinds)]
+    [
+      event_value(),
+      event_value_impl(),
+      input_kind(kinds),
+      input_kind_impl(kinds),
+      rusty_items()
+    ]
+  end
+
+  def rusty_items do
+    __MODULE__
+    |> MetaAST.functions()
+    |> Enum.map(&%{&1 | vis: :crate})
   end
 
   defp event_value do
