@@ -1,6 +1,7 @@
 defmodule GPUI.Codegen.Native.Schema do
   @moduledoc false
 
+  alias GPUI.Codegen.Native.ComponentContracts
   alias GPUI.Codegen.Native.Decoder
   alias GPUI.Codegen.Native.Elements
   alias GPUI.Codegen.Native.Renderers
@@ -65,22 +66,10 @@ defmodule GPUI.Codegen.Native.Schema do
   defp generated_component_contracts(components) do
     components = Enum.filter(components, &component_contract?/1)
 
-    option_structs =
-      [
-        if(Enum.any?(components, &uses_select_options?/1),
-          do: generated_select_option_struct()
-        ),
-        if(Enum.any?(components, &uses_radio_options?/1),
-          do: generated_radio_option_struct()
-        )
-      ]
-      |> Enum.reject(&is_nil/1)
-
-    (option_structs ++
-       Enum.flat_map(components, fn component ->
-         [generated_component_struct(component), generated_component_decoder(component)]
-       end))
-    |> Enum.reject(&is_nil/1)
+    ComponentContracts.items() ++
+      Enum.flat_map(components, fn component ->
+        [generated_component_struct(component), generated_component_decoder(component)]
+      end)
   end
 
   defp generated_registry_kind(components) do
@@ -184,39 +173,6 @@ defmodule GPUI.Codegen.Native.Schema do
 
   defp registry_type(component),
     do: component |> registry_variant() |> then(&String.to_atom("Component#{&1}"))
-
-  defp uses_select_options?(component),
-    do: Enum.any?(component.attrs, fn {_name, type} -> type == :select_options end)
-
-  defp uses_radio_options?(component),
-    do: Enum.any?(component.attrs, fn {_name, type} -> type == :radio_options end)
-
-  defp generated_select_option_struct do
-    %AST.Struct{
-      name: :SelectOptionNode,
-      vis: :crate,
-      derive: [:Clone, :Debug, :Eq, :PartialEq],
-      attrs: [A.attr(:cfg, feature: "real-gpui")],
-      fields: [
-        %AST.StructField{name: :label, type: T.path(:String), vis: :crate},
-        %AST.StructField{name: :value, type: T.path(:String), vis: :crate}
-      ]
-    }
-  end
-
-  defp generated_radio_option_struct do
-    %AST.Struct{
-      name: :RadioOptionNode,
-      vis: :crate,
-      derive: [:Clone, :Debug, :Eq, :PartialEq],
-      attrs: [A.attr(:cfg, feature: "real-gpui")],
-      fields: [
-        %AST.StructField{name: :label, type: T.path(:String), vis: :crate},
-        %AST.StructField{name: :value, type: T.path(:String), vis: :crate},
-        %AST.StructField{name: :disabled, type: T.path(:bool), vis: :crate}
-      ]
-    }
-  end
 
   defp generated_component_struct(component) do
     fields =
@@ -539,7 +495,7 @@ defmodule GPUI.Codegen.Native.Schema do
 
   defp primitive_decoder_path(:container), do: [:decode_container_node]
   defp primitive_decoder_path(:input), do: [:decode_input_node]
-  defp primitive_decoder_path(:image), do: [:nif, :decode_image_node]
+  defp primitive_decoder_path(:image), do: [:decode_image_node]
   defp primitive_decoder_path(:text), do: [:decode_text_node]
 
   defp generated_enum_decl(name, variants) do

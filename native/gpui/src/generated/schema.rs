@@ -369,6 +369,45 @@ pub(crate) fn decode_container_node<'a>(
     )
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn decode_image_node<'a>(
+    term: Term<'a>,
+    _tag: GeneratedElementTag,
+) -> NifResult<ElementNode> {
+    let attrs = term.map_get(atoms::attrs())?;
+    let raster = attrs.map_get(atoms::raster())?;
+    let resource_ref = match raster.map_get(atoms::__type__()) {
+        Ok(type_term) => atom_eq(type_term, "resource_ref"),
+        Err(_missing) => false,
+    };
+    if resource_ref {
+        let id = decode_resource_ref(raster)?;
+        Ok(
+            ElementNode::Image(ImageNode {
+                image: ImageData::Ref(id),
+                style: decode_style(term)?,
+                label: non_empty_string_attr(term, atoms::label()),
+            }),
+        )
+    } else {
+        let raster = decode_raster_resource(raster)?;
+        raster.validate()?;
+        Ok(
+            ElementNode::Image(ImageNode {
+                image: ImageData::Raster(raster),
+                style: decode_style(term)?,
+                label: non_empty_string_attr(term, atoms::label()),
+            }),
+        )
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn non_empty_string_attr<'a>(term: Term<'a>, attr: Atom) -> Option<String> {
+    match string_attr(term, attr) {
+        Some(value) => if value.is_empty() { None } else { Some(value) }
+        None => None,
+    }
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn decode_input_node<'a>(
     term: Term<'a>,
     _tag: GeneratedElementTag,
@@ -388,6 +427,27 @@ pub(crate) fn decode_input_node<'a>(
 pub(crate) fn decode_children<'a>(term: Term<'a>) -> NifResult<Vec<ElementNode>> {
     let children = term.map_get(atoms::children())?.decode::<Vec<Term<'a>>>()?;
     children.into_iter().map(|child| decode_element_node(child)).collect()
+}
+#[cfg(feature = "real-gpui")]
+#[allow(unreachable_patterns)]
+pub(crate) fn decode_text_children<'a>(term: Term<'a>) -> NifResult<String> {
+    let children = term.map_get(atoms::children())?.decode::<Vec<Term<'a>>>()?;
+    {
+        let mut __rustq_reduce = Ok(String::new());
+        for child in children {
+            __rustq_reduce = match __rustq_reduce {
+                Ok(text) => {
+                    match text_fragment(child) {
+                        Ok(fragment) => Ok(text + fragment.as_str()),
+                        Err(reason) => Err(reason),
+                    }
+                }
+                Err(reason) => Err(reason),
+                __rustq_reduce_value => __rustq_reduce_value,
+            };
+        }
+        __rustq_reduce
+    }
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_text_node<'a>(
@@ -445,6 +505,32 @@ pub(crate) struct StyleAttrs {
 #[cfg(feature = "real-gpui")]
 pub(crate) fn default_style() -> StyleAttrs {
     StyleAttrs::default()
+}
+#[cfg(feature = "real-gpui")]
+#[allow(unreachable_patterns)]
+pub(crate) fn decode_style<'a>(term: Term<'a>) -> NifResult<StyleAttrs> {
+    let attrs = term.map_get(atoms::attrs())?;
+    match attrs.map_get(atoms::style()) {
+        Ok(style) => {
+            let entries = style.decode::<Vec<(Atom, Term<'a>)>>()?;
+            let mut decoded = default_style();
+            let valid = {
+                let mut __rustq_reduce = true;
+                for entry in entries {
+                    __rustq_reduce = match __rustq_reduce {
+                        valid => {
+                            let (key, value) = entry;
+                            apply_generated_style_attr(&mut decoded, key, value) && valid
+                        }
+                        __rustq_reduce_value => __rustq_reduce_value,
+                    };
+                }
+                __rustq_reduce
+            };
+            if valid { Ok(decoded) } else { Err(rustler::Error::BadArg) }
+        }
+        Err(_missing) => Ok(default_style()),
+    }
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn apply_generated_style_attr(
@@ -880,16 +966,156 @@ pub(crate) fn apply_generated_render_styles(
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg(feature = "real-gpui")]
-pub(crate) struct SelectOptionNode {
-    pub(crate) label: String,
-    pub(crate) value: String,
-}
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg(feature = "real-gpui")]
 pub(crate) struct RadioOptionNode {
     pub(crate) label: String,
     pub(crate) value: String,
     pub(crate) disabled: bool,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct SelectOptionNode {
+    pub(crate) label: String,
+    pub(crate) value: String,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(unreachable_patterns)]
+#[allow(clippy::redundant_field_names)]
+pub(crate) fn decode_select_options<'a>(
+    term: Term<'a>,
+) -> NifResult<Vec<SelectOptionNode>> {
+    let attrs = term.map_get(atoms::attrs())?;
+    let options = attrs.map_get(atoms::options())?.decode::<Vec<Term<'a>>>()?;
+    let result = {
+        let mut __rustq_reduce = Ok((HashSet::new(), vec![]));
+        for option in options {
+            __rustq_reduce = match __rustq_reduce {
+                Ok((values, decoded_options)) => {
+                    let label = option.map_get(atoms::label())?.decode::<String>()?;
+                    let value = option.map_get(atoms::value())?.decode::<String>()?;
+                    accumulate_select_option(values, decoded_options, label, value)
+                }
+                Err(reason) => Err(reason),
+                __rustq_reduce_value => __rustq_reduce_value,
+            };
+        }
+        __rustq_reduce
+    };
+    match result {
+        Ok((_values, decoded)) => Ok(decoded),
+        Err(reason) => Err(reason),
+    }
+}
+#[cfg(feature = "real-gpui")]
+#[allow(unreachable_patterns)]
+#[allow(clippy::redundant_field_names)]
+pub(crate) fn decode_radio_options<'a>(
+    term: Term<'a>,
+) -> NifResult<Vec<RadioOptionNode>> {
+    let attrs = term.map_get(atoms::attrs())?;
+    let options = attrs.map_get(atoms::options())?.decode::<Vec<Term<'a>>>()?;
+    let result = {
+        let mut __rustq_reduce = Ok((HashSet::new(), vec![]));
+        for option in options {
+            __rustq_reduce = match __rustq_reduce {
+                Ok((values, decoded_options)) => {
+                    let label = option.map_get(atoms::label())?.decode::<String>()?;
+                    let value = option.map_get(atoms::value())?.decode::<String>()?;
+                    let disabled = match option.map_get(atoms::disabled()) {
+                        Ok(disabled) => disabled.decode::<bool>()?,
+                        Err(_missing) => false,
+                    };
+                    accumulate_radio_option(
+                        values,
+                        decoded_options,
+                        label,
+                        value,
+                        disabled,
+                    )
+                }
+                Err(reason) => Err(reason),
+                __rustq_reduce_value => __rustq_reduce_value,
+            };
+        }
+        __rustq_reduce
+    };
+    match result {
+        Ok((_values, decoded)) => Ok(decoded),
+        Err(reason) => Err(reason),
+    }
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+pub(crate) fn accumulate_select_option(
+    values: HashSet<String>,
+    options: Vec<SelectOptionNode>,
+    label: String,
+    value: String,
+) -> NifResult<(HashSet<String>, Vec<SelectOptionNode>)> {
+    if label.is_empty() {
+        Err(rustler::Error::BadArg)
+    } else {
+        match remember_value(values, value.clone()) {
+            Some(values) => {
+                let option = SelectOptionNode {
+                    label: label,
+                    value: value,
+                };
+                Ok((values, append_select_option(options, option)))
+            }
+            None => Err(rustler::Error::BadArg),
+        }
+    }
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+pub(crate) fn accumulate_radio_option(
+    values: HashSet<String>,
+    options: Vec<RadioOptionNode>,
+    label: String,
+    value: String,
+    disabled: bool,
+) -> NifResult<(HashSet<String>, Vec<RadioOptionNode>)> {
+    if label.is_empty() {
+        Err(rustler::Error::BadArg)
+    } else {
+        match remember_value(values, value.clone()) {
+            Some(values) => {
+                let option = RadioOptionNode {
+                    label: label,
+                    value: value,
+                    disabled: disabled,
+                };
+                Ok((values, append_radio_option(options, option)))
+            }
+            None => Err(rustler::Error::BadArg),
+        }
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn remember_value(
+    values: HashSet<String>,
+    value: String,
+) -> Option<HashSet<String>> {
+    let mut values = values;
+    if value.is_empty() || !values.insert(value) { None } else { Some(values) }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn append_select_option(
+    options: Vec<SelectOptionNode>,
+    option: SelectOptionNode,
+) -> Vec<SelectOptionNode> {
+    let mut options = options;
+    options.push(option);
+    options
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn append_radio_option(
+    options: Vec<RadioOptionNode>,
+    option: RadioOptionNode,
+) -> Vec<RadioOptionNode> {
+    let mut options = options;
+    options.push(option);
+    options
 }
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
@@ -2181,7 +2407,7 @@ pub(crate) fn decode_generated_element_node(
         }
         GeneratedComponentKind::Text => decode_text_node(term, tag),
         GeneratedComponentKind::Input => decode_input_node(term, tag),
-        GeneratedComponentKind::Image => nif::decode_image_node(term, tag),
+        GeneratedComponentKind::Image => decode_image_node(term, tag),
         GeneratedComponentKind::Unknown => Err(rustler::Error::BadArg),
     }
 }

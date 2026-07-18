@@ -1,19 +1,59 @@
 defmodule GPUI.Codegen.Native.Style do
   @moduledoc false
 
+  use RustQ.Meta
+
+  alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Rust.AST.PatternBuilder, as: P
   alias RustQ.Rust.AST.TypeBuilder, as: T
+  alias RustQ.Type, as: R
+
+  @allow :unreachable_patterns
+  @spec decode_style(term()) :: R.nif_result(R.path(:StyleAttrs))
+  defrust decode_style(term) do
+    attrs = unwrap!(term.map_get(Atoms.attrs()))
+
+    case attrs.map_get(Atoms.style()) do
+      {:ok, style} ->
+        entries = decode_as!(style, R.vec({atom(), term()}))
+        decoded = default_style()
+
+        valid =
+          for entry <- entries, reduce: true do
+            valid ->
+              {key, value} = entry
+              apply_generated_style_attr(mut_ref(decoded), key, value) and valid
+          end
+
+        if valid do
+          {:ok, decoded}
+        else
+          {:error, badarg()}
+        end
+
+      {:error, _missing} ->
+        {:ok, default_style()}
+    end
+  end
 
   @spec items([GPUI.Schema.Style.t()]) :: [AST.item()]
   def items(style_specs) do
     [
       generated_style_struct(style_specs),
       generated_default_style_function(),
+      rusty_items(),
       generated_apply_style_function(style_specs),
       generated_apply_render_style_function(style_specs)
     ]
+    |> List.flatten()
+  end
+
+  defp rusty_items do
+    Enum.map(MetaAST.functions(__MODULE__), fn ast ->
+      %{ast | vis: :crate, attrs: [A.attr(:cfg, feature: "real-gpui") | ast.attrs]}
+    end)
   end
 
   defp generated_style_struct(style_specs) do

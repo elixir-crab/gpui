@@ -4,6 +4,7 @@ defmodule GPUI.Codegen.Native.Elements do
   use RustQ.Meta,
     rust_sources: [
       "native/gpui/src/nif.rs",
+      "native/gpui/src/resource.rs",
       "native/gpui/src/element/mod.rs"
     ]
 
@@ -111,6 +112,56 @@ defmodule GPUI.Codegen.Native.Elements do
      )}
   end
 
+  @spec decode_image_node(term(), R.path(:GeneratedElementTag)) ::
+          R.nif_result(R.path(:ElementNode))
+  defrust decode_image_node(term, _tag) do
+    attrs = unwrap!(term.map_get(Atoms.attrs()))
+    raster = unwrap!(attrs.map_get(Atoms.raster()))
+
+    resource_ref =
+      case raster.map_get(Atoms.__type__()) do
+        {:ok, type_term} -> atom_eq(type_term, "resource_ref")
+        {:error, _missing} -> false
+      end
+
+    if resource_ref do
+      id = unwrap!(decode_resource_ref(raster))
+
+      {:ok,
+       enum_variant(
+         ElementNode,
+         :image,
+         struct_literal(ImageNode,
+           image: enum_variant(ImageData, :ref, id),
+           style: unwrap!(decode_style(term)),
+           label: non_empty_string_attr(term, Atoms.label())
+         )
+       )}
+    else
+      raster = unwrap!(decode_raster_resource(raster))
+      unwrap!(raster.validate())
+
+      {:ok,
+       enum_variant(
+         ElementNode,
+         :image,
+         struct_literal(ImageNode,
+           image: enum_variant(ImageData, :raster, raster),
+           style: unwrap!(decode_style(term)),
+           label: non_empty_string_attr(term, Atoms.label())
+         )
+       )}
+    end
+  end
+
+  @spec non_empty_string_attr(term(), atom()) :: R.option(String.t())
+  defrustp non_empty_string_attr(term, attr) do
+    case string_attr(term, attr) do
+      {:some, value} -> if value.is_empty(), do: nil, else: some(value)
+      nil -> nil
+    end
+  end
+
   @spec decode_input_node(term(), R.path(:GeneratedElementTag)) ::
           R.nif_result(R.path(:ElementNode))
   defrust decode_input_node(term, _tag) do
@@ -135,6 +186,23 @@ defmodule GPUI.Codegen.Native.Elements do
 
     for child <- children do
       decode_element_node(child)
+    end
+  end
+
+  @allow :unreachable_patterns
+  @spec decode_text_children(term()) :: R.nif_result(String.t())
+  defrust decode_text_children(term) do
+    children = decode_as!(term.map_get(Atoms.children()), R.vec(term()))
+
+    for child <- children, reduce: {:ok, String.new()} do
+      {:ok, text} ->
+        case text_fragment(child) do
+          {:ok, fragment} -> {:ok, text + fragment.as_str()}
+          {:error, reason} -> {:error, reason}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

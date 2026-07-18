@@ -30,9 +30,11 @@ defmodule GPUI.Codegen.Native.Atoms do
 
   defp generated_atoms do
     [
+      GPUI.Codegen.Native.ComponentContracts.items(),
       GPUI.Codegen.Native.Decoder.asts(),
       GPUI.Codegen.Native.Elements.asts(),
-      GPUI.Codegen.Native.Events.items()
+      GPUI.Codegen.Native.Events.items(),
+      GPUI.Codegen.Native.Style.items(GPUI.Schema.style_specs())
     ]
     |> Walk.reduce(MapSet.new(), fn
       %AST.PathCall{path: %AST.Path{parts: [:atoms, name]}}, atoms ->
