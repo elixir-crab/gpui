@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Hardened internal display frame replies, explicit session callback contracts, event-history consistency, idempotent native window reconciliation, and shared collection keyboard navigation.
 - Added accessible source-backed data tables with fixed sortable headers, horizontal scrolling, controlled row/cell navigation, numeric alignment, grid metadata, and 100,000-row native coverage; migrated Process Explorer to the shared table.
 - Added a supervised ETS Table Explorer with bounded server-local discovery, asynchronous stale-safe object loading, source-owned models, small table slices, filtering, sorting, and selected-object details.
 - Moved option, image, text-child, and style decoding from handwritten Rust into typespec-derived contracts, ordinary Elixir macros, and typed Rusty-Elixir.

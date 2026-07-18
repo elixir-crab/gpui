@@ -368,22 +368,17 @@ fn key_action(
     total_count: usize,
 ) -> Option<TreeAction> {
     match key {
-        "down" => next_enabled(items, selected).map(TreeAction::Select),
-        "up" => previous_enabled(items, selected).map(TreeAction::Select),
-        "home" => items
-            .iter()
-            .position(|item| item.index == 0 && !item.disabled)
-            .map(TreeAction::Select),
-        "end" => items
-            .iter()
-            .rposition(|item| item.index.saturating_add(1) == total_count && !item.disabled)
-            .map(TreeAction::Select),
         "left" => left_action(items, selected),
         "right" => right_action(items, selected),
-        "enter" | "space" => selected
-            .filter(|position| !items[*position].disabled)
-            .map(TreeAction::Select),
-        _other => None,
+        _other => super::uniform_collection::linear_key_target(
+            key,
+            items,
+            selected,
+            total_count,
+            |item| item.index,
+            |item| item.disabled,
+        )
+        .map(TreeAction::Select),
     }
 }
 
@@ -424,18 +419,6 @@ fn right_action(items: &[TreeKey], selected: Option<usize>) -> Option<TreeAction
                 && !candidate.disabled
         })
         .map(|(position, _candidate)| TreeAction::Select(position))
-}
-
-#[cfg(feature = "components")]
-fn next_enabled(items: &[TreeKey], selected: Option<usize>) -> Option<usize> {
-    let start = selected.map_or(0, |index| index.saturating_add(1));
-    (start..items.len()).find(|index| !items[*index].disabled)
-}
-
-#[cfg(feature = "components")]
-fn previous_enabled(items: &[TreeKey], selected: Option<usize>) -> Option<usize> {
-    let end = selected.unwrap_or(items.len());
-    (0..end).rev().find(|index| !items[*index].disabled)
 }
 
 #[cfg(not(feature = "components"))]

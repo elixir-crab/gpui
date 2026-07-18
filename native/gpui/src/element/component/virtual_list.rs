@@ -304,30 +304,14 @@ fn key_target(
     selected: Option<usize>,
     total_count: usize,
 ) -> Option<usize> {
-    match key {
-        "down" => next_enabled(items, selected),
-        "up" => previous_enabled(items, selected),
-        "home" => items
-            .iter()
-            .position(|(_id, disabled, index)| *index == 0 && !disabled),
-        "end" => items.iter().rposition(|(_id, disabled, index)| {
-            index.saturating_add(1) == total_count && !disabled
-        }),
-        "enter" | "space" => selected.filter(|index| !items[*index].1),
-        _other => None,
-    }
-}
-
-#[cfg(feature = "components")]
-fn next_enabled(items: &[(String, bool, usize)], selected: Option<usize>) -> Option<usize> {
-    let start = selected.map_or(0, |index| index.saturating_add(1));
-    (start..items.len()).find(|index| !items[*index].1)
-}
-
-#[cfg(feature = "components")]
-fn previous_enabled(items: &[(String, bool, usize)], selected: Option<usize>) -> Option<usize> {
-    let end = selected.unwrap_or(items.len());
-    (0..end).rev().find(|index| !items[*index].1)
+    super::uniform_collection::linear_key_target(
+        key,
+        items,
+        selected,
+        total_count,
+        |item| item.2,
+        |item| item.1,
+    )
 }
 
 #[cfg(not(feature = "components"))]

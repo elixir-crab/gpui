@@ -560,28 +560,14 @@ fn key_target(
     selected: Option<usize>,
     total_count: usize,
 ) -> Option<usize> {
-    match key {
-        "down" => next_enabled(rows, selected),
-        "up" => previous_enabled(rows, selected),
-        "home" => rows.iter().position(|row| row.index == 0 && !row.disabled),
-        "end" => rows
-            .iter()
-            .rposition(|row| row.index.saturating_add(1) == total_count && !row.disabled),
-        "enter" | "space" => selected.filter(|index| !rows[*index].disabled),
-        _other => None,
-    }
-}
-
-#[cfg(feature = "components")]
-fn next_enabled(rows: &[TableKey], selected: Option<usize>) -> Option<usize> {
-    let start = selected.map_or(0, |index| index.saturating_add(1));
-    (start..rows.len()).find(|index| !rows[*index].disabled)
-}
-
-#[cfg(feature = "components")]
-fn previous_enabled(rows: &[TableKey], selected: Option<usize>) -> Option<usize> {
-    let end = selected.unwrap_or(rows.len());
-    (0..end).rev().find(|index| !rows[*index].disabled)
+    super::uniform_collection::linear_key_target(
+        key,
+        rows,
+        selected,
+        total_count,
+        |row| row.index,
+        |row| row.disabled,
+    )
 }
 
 #[cfg(not(feature = "components"))]

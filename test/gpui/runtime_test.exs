@@ -44,6 +44,34 @@ defmodule GPUI.RuntimeTest do
     def mount(_args), do: {:ok, []}
   end
 
+  defmodule InvalidMountApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(_args), do: :invalid
+  end
+
+  defmodule RaisingFrameDisplay do
+    @behaviour GPUI.Display
+
+    use Agent
+
+    @impl GPUI.Display
+    def start_link(_opts), do: Agent.start_link(fn -> nil end)
+
+    @impl GPUI.Display
+    def sync(_display, _snapshot), do: :ok
+
+    @impl GPUI.Display
+    def drain_events(_display), do: {:ok, []}
+
+    @impl GPUI.Display
+    def inject_event(_display, _event), do: {:ok, :ok}
+
+    @impl GPUI.Display
+    def await_frame(_display, _window_id, _timeout), do: raise("frame failed")
+  end
+
   defmodule BlockingFrameDisplay do
     @behaviour GPUI.Display
 
@@ -206,6 +234,16 @@ defmodule GPUI.RuntimeTest do
     assert {:error, :window_not_found} = GPUI.Runtime.await_frame_after(runtime, 999, 0)
   end
 
+  test "display callback failures reply without blocking or crashing the runtime" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(app: DemoApp, display: RaisingFrameDisplay)
+
+    assert {:error, {:display_callback_failed, :error, %RuntimeError{message: "frame failed"}}} =
+             GPUI.Runtime.await_frame(runtime, 1)
+
+    assert Process.alive?(runtime)
+  end
+
   test "waiting for a frame does not block the runtime" do
     {:ok, runtime} =
       GPUI.Runtime.start_link(
@@ -220,6 +258,15 @@ defmodule GPUI.RuntimeTest do
 
     send(frame_task, :release_frame)
     assert :ok = Task.await(waiter)
+  end
+
+  test "sessions reject invalid application mount results explicitly" do
+    previous = Process.flag(:trap_exit, true)
+
+    assert {:error, {:invalid_mount_return, :invalid}} =
+             GPUI.Session.start_link(app: InvalidMountApp)
+
+    Process.flag(:trap_exit, previous)
   end
 
   test "applications can mount an empty window set without placeholder state" do

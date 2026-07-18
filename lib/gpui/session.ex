@@ -67,6 +67,9 @@ defmodule GPUI.Session do
     case app.mount(args) do
       {:ok, windows} when is_list(windows) ->
         {:ok, new_state(assign_window_ids(windows))}
+
+      invalid ->
+        {:stop, {:invalid_mount_return, invalid}}
     end
   end
 
@@ -102,13 +105,21 @@ defmodule GPUI.Session do
       %WindowSpec{root: {module, assigns}} = window ->
         assigns = Map.new(assigns)
 
-        {:noreply, new_assigns} =
+        result =
           if function_exported?(module, :handle_info, 2),
             do: module.handle_info(message, assigns),
             else: {:noreply, assigns}
 
-        {_message, state} = update_window(message, state, window, module, new_assigns)
-        {:reply, {:ok, snapshot_from_state(state)}, state}
+        case result do
+          {:noreply, new_assigns} when is_map(new_assigns) ->
+            {_message, state} = update_window(message, state, window, module, new_assigns)
+            {:reply, {:ok, snapshot_from_state(state)}, state}
+
+          invalid ->
+            raise ArgumentError,
+                  "#{inspect(module)}.handle_info/2 returned #{inspect(invalid)}; " <>
+                    "expected {:noreply, assigns}"
+        end
 
       nil ->
         {:reply, {:error, :window_not_found}, state}
@@ -165,11 +176,16 @@ defmodule GPUI.Session do
         assigns = Map.new(assigns)
 
         case module.handle_event(event, native_event, assigns) do
-          {:noreply, new_assigns} ->
+          {:noreply, new_assigns} when is_map(new_assigns) ->
             update_window(native_event, state, window, module, new_assigns)
 
-          {:reply, _reply, new_assigns} ->
+          {:reply, _reply, new_assigns} when is_map(new_assigns) ->
             update_window(native_event, state, window, module, new_assigns)
+
+          invalid ->
+            raise ArgumentError,
+                  "#{inspect(module)}.handle_event/3 returned #{inspect(invalid)}; " <>
+                    "expected {:noreply, assigns} or {:reply, reply, assigns}"
         end
 
       nil ->

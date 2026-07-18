@@ -134,9 +134,8 @@ defmodule GPUI.Display.Native do
     {:reply, reply, state}
   end
 
-  defp async_frame_reply(from, call) do
-    Task.start(fn -> GenServer.reply(from, call.() |> normalize_frame_reply()) end)
-  end
+  defp async_frame_reply(from, call),
+    do: GPUI.Display.async_reply(from, call, &normalize_frame_reply/1)
 
   defp normalize_frame_reply({:ok, _window_id}), do: :ok
   defp normalize_frame_reply({:error, "unknown_window"}), do: {:error, :window_not_found}
@@ -216,6 +215,7 @@ defmodule GPUI.Display.Native do
   defp close_window(runtime, window_id) do
     case GPUI.Native.close_window(runtime, window_id) do
       {:ok, ^window_id} -> :ok
+      {:error, "unknown_window"} -> :ok
       {:error, reason} -> {:error, reason}
     end
   end
@@ -223,7 +223,7 @@ defmodule GPUI.Display.Native do
   defp sync_window(state, %{id: id} = window) do
     result =
       if MapSet.member?(state.windows, id) do
-        GPUI.Native.update_window(state.runtime, id, get_in(window, [:root, :tree]))
+        update_or_reopen_window(state.runtime, window)
       else
         GPUI.Native.open_window(state.runtime, window)
       end
@@ -231,6 +231,13 @@ defmodule GPUI.Display.Native do
     case result do
       {:ok, _value} -> :ok
       {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp update_or_reopen_window(runtime, %{id: id} = window) do
+    case GPUI.Native.update_window(runtime, id, get_in(window, [:root, :tree])) do
+      {:error, "unknown_window"} -> GPUI.Native.open_window(runtime, window)
+      result -> result
     end
   end
 

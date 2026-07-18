@@ -441,36 +441,25 @@ fn key_target(
     total_count: usize,
 ) -> Option<usize> {
     match key {
-        "down" => next_enabled(
+        "pageup" => super::uniform_collection::previous_enabled(
             lines,
-            selected.map_or(0, |position| position.saturating_add(1)),
+            selected.unwrap_or(lines.len()).saturating_sub(10),
+            |line| line.disabled,
         ),
-        "up" => previous_enabled(lines, selected.unwrap_or(lines.len())),
-        "pageup" => previous_enabled(lines, selected.unwrap_or(lines.len()).saturating_sub(10)),
-        "pagedown" => next_enabled(
+        "pagedown" => super::uniform_collection::next_enabled(
             lines,
             selected.map_or(0, |position| position.saturating_add(10).min(lines.len())),
+            |line| line.disabled,
         ),
-        "home" => lines
-            .iter()
-            .position(|line| line.index == 0 && !line.disabled),
-        "end" => lines
-            .iter()
-            .rposition(|line| line.index.saturating_add(1) == total_count && !line.disabled),
-        "enter" | "space" => selected.filter(|position| !lines[*position].disabled),
-        _other => None,
+        _other => super::uniform_collection::linear_key_target(
+            key,
+            lines,
+            selected,
+            total_count,
+            |line| line.index,
+            |line| line.disabled,
+        ),
     }
-}
-
-#[cfg(feature = "components")]
-fn next_enabled(lines: &[CodeKey], start: usize) -> Option<usize> {
-    (start..lines.len()).find(|position| !lines[*position].disabled)
-}
-
-#[cfg(feature = "components")]
-fn previous_enabled(lines: &[CodeKey], end: usize) -> Option<usize> {
-    let end = end.min(lines.len());
-    (0..end).rev().find(|position| !lines[*position].disabled)
 }
 
 #[cfg(feature = "components")]

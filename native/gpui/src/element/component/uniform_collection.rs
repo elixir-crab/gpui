@@ -64,6 +64,51 @@ pub(crate) fn controlled_index(
         .or_else(|| value.and_then(find_loaded))
 }
 
+pub(crate) fn linear_key_target<T>(
+    key: &str,
+    items: &[T],
+    selected: Option<usize>,
+    total_count: usize,
+    index: impl Fn(&T) -> usize,
+    disabled: impl Fn(&T) -> bool,
+) -> Option<usize> {
+    match key {
+        "down" => next_enabled(
+            items,
+            selected.map_or(0, |position| position.saturating_add(1)),
+            &disabled,
+        ),
+        "up" => previous_enabled(items, selected.unwrap_or(items.len()), &disabled),
+        "home" => items
+            .iter()
+            .position(|item| index(item) == 0 && !disabled(item)),
+        "end" => items
+            .iter()
+            .rposition(|item| index(item).saturating_add(1) == total_count && !disabled(item)),
+        "enter" | "space" => {
+            selected.filter(|position| items.get(*position).is_some_and(|item| !disabled(item)))
+        }
+        _other => None,
+    }
+}
+
+pub(crate) fn next_enabled<T>(
+    items: &[T],
+    start: usize,
+    disabled: impl Fn(&T) -> bool,
+) -> Option<usize> {
+    (start..items.len()).find(|position| !disabled(&items[*position]))
+}
+
+pub(crate) fn previous_enabled<T>(
+    items: &[T],
+    end: usize,
+    disabled: impl Fn(&T) -> bool,
+) -> Option<usize> {
+    let end = end.min(items.len());
+    (0..end).rev().find(|position| !disabled(&items[*position]))
+}
+
 pub(crate) fn controlled_reveal(
     total_count: usize,
     index: Option<u64>,
@@ -227,5 +272,50 @@ fn scroll_strategy(strategy: Option<&str>) -> gpui::ScrollStrategy {
         Some("center") => gpui::ScrollStrategy::Center,
         Some("bottom") => gpui::ScrollStrategy::Bottom,
         _other => gpui::ScrollStrategy::Nearest,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(Clone, Copy)]
+    struct Item {
+        index: usize,
+        disabled: bool,
+    }
+
+    #[test]
+    fn linear_navigation_skips_disabled_items_and_requires_loaded_endpoints() {
+        let items = [
+            Item {
+                index: 40,
+                disabled: false,
+            },
+            Item {
+                index: 41,
+                disabled: true,
+            },
+            Item {
+                index: 42,
+                disabled: false,
+            },
+        ];
+        let target = |key, selected| {
+            linear_key_target(
+                key,
+                &items,
+                selected,
+                100,
+                |item| item.index,
+                |item| item.disabled,
+            )
+        };
+
+        assert_eq!(target("down", Some(0)), Some(2));
+        assert_eq!(target("up", Some(2)), Some(0));
+        assert_eq!(target("enter", Some(1)), None);
+        assert_eq!(target("home", None), None);
+        assert_eq!(target("end", None), None);
     }
 }

@@ -74,17 +74,30 @@ defmodule GPUI.Display do
   @spec reply_from_display(module(), GenServer.server(), atom(), [term()], GenServer.from()) ::
           :ok
   def reply_from_display(display_module, display, callback, args, from) do
-    Task.start(fn ->
-      reply =
-        if function_exported?(display_module, callback, length(args) + 1) do
-          apply(display_module, callback, [display | args])
-        else
-          {:error, :unsupported}
-        end
-
-      GenServer.reply(from, reply)
+    async_reply(from, fn ->
+      if function_exported?(display_module, callback, length(args) + 1) do
+        apply(display_module, callback, [display | args])
+      else
+        {:error, :unsupported}
+      end
     end)
+  end
+
+  @doc false
+  @spec async_reply(GenServer.from(), (-> term()), (term() -> term())) :: :ok
+  def async_reply(from, callback, normalize \\ &Function.identity/1) do
+    {:ok, _pid} =
+      Task.start(fn ->
+        reply = invoke_async(callback, normalize)
+        GenServer.reply(from, reply)
+      end)
 
     :ok
+  end
+
+  defp invoke_async(callback, normalize) do
+    callback.() |> normalize.()
+  catch
+    kind, reason -> {:error, {:display_callback_failed, kind, reason}}
   end
 end

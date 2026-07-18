@@ -141,7 +141,12 @@ defmodule GPUI.Runtime do
   def handle_call({:dispatch_event, event}, _from, state) do
     {handled, snapshot} = GPUI.Session.dispatch_event(state.session, event)
     :ok = state.display_module.sync(state.display, snapshot)
-    state = GPUI.UpdateSubscribers.publish_update(state, self(), [handled], snapshot)
+
+    state =
+      state
+      |> GPUI.UpdateSubscribers.publish_update(self(), [handled], snapshot)
+      |> record_events([handled])
+
     {:reply, {handled, snapshot}, state}
   end
 
@@ -217,9 +222,7 @@ defmodule GPUI.Runtime do
   end
 
   def handle_info(:poll_display, state) do
-    {handled, state} = drain_display_events(state)
-    events = handled |> Enum.reverse(state.events) |> Enum.take(@event_history_limit)
-    state = %{state | events: events}
+    {_handled, state} = drain_display_events(state)
     schedule_poll(state)
     {:noreply, state}
   end
@@ -240,10 +243,20 @@ defmodule GPUI.Runtime do
         state
       else
         :ok = state.display_module.sync(state.display, snapshot)
-        GPUI.UpdateSubscribers.publish_update(state, self(), handled, snapshot)
+
+        state
+        |> GPUI.UpdateSubscribers.publish_update(self(), handled, snapshot)
+        |> record_events(handled)
       end
 
     {handled, state}
+  end
+
+  defp record_events(state, []), do: state
+
+  defp record_events(state, handled) do
+    events = handled |> Enum.reverse(state.events) |> Enum.take(@event_history_limit)
+    %{state | events: events}
   end
 
   defp sync_and_publish(state) do
