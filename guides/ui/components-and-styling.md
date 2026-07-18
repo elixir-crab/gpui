@@ -254,6 +254,55 @@ Use `GPUI.Test.range/5` to request ranges without a native display. Native range
 events are coalesced per render cycle and use the same protocol over remote
 displays.
 
+### Accessible trees
+
+`tree/1` and `tree_item/1` apply the same uniform-height, source-backed range,
+selection, and reveal contracts to hierarchical collections. The source emits a
+flattened visible slice; each item declares its hierarchy and accessibility
+metadata:
+
+```elixir
+<UI.tree
+  id="files"
+  label="Repository files"
+  total_count={assigns.total_count}
+  offset={assigns.loaded_offset}
+  selected={assigns.selected_id}
+  selected_index={assigns.selected_index}
+  reveal={assigns.selected_id}
+  reveal_index={assigns.selected_index}
+  phx-change="file_selected"
+  phx-toggle="directory_toggled"
+  phx-range="file_range"
+  class="h-[480px]"
+>
+  {Enum.map(assigns.loaded_entries, fn entry ->
+    UI.tree_item(%{
+      id: entry.id,
+      parent_id: entry.parent_id,
+      level: entry.level,
+      branch: entry.branch?,
+      expanded: entry.expanded?,
+      position: entry.position,
+      set_size: entry.set_size,
+      children: [entry.label]
+    })
+  end)}
+</UI.tree>
+```
+
+`phx-change` emits the selected item ID. `phx-toggle` requests controlled branch
+expansion or collapse; the application updates its source model and visible
+slice. Left collapses an expanded branch or selects its loaded parent. Right
+expands a collapsed branch or selects its first loaded, enabled child. Up and
+Down skip disabled items, while Home and End retain the source-backed endpoint
+rules. Native accessibility exposes tree and tree-item roles plus level,
+expanded, selected, position-in-set, and set-size metadata.
+
+Use `GPUI.Test.tree_toggle/4`, `GPUI.Test.select/4`, and `GPUI.Test.range/5` for
+deterministic tree tests. All three event paths are forwarded unchanged by
+remote displays.
+
 ## Button variants and sizes
 
 Button variants are `default`, `primary`, `secondary`, `danger`, `warning`,

@@ -30,6 +30,8 @@ defmodule GPUI.SchemaTest do
              :ui_accordion_item,
              :ui_virtual_list,
              :ui_virtual_list_item,
+             :ui_tree,
+             :ui_tree_item,
              :ui_tabs,
              :ui_slider,
              :span,
@@ -47,6 +49,7 @@ defmodule GPUI.SchemaTest do
     assert :"phx-release" in GPUI.Schema.events()
     assert :"phx-select" in GPUI.Schema.events()
     assert :"phx-range" in GPUI.Schema.events()
+    assert :"phx-toggle" in GPUI.Schema.events()
     assert :ui_progress in GPUI.Schema.identified_tags()
     assert :ui_file_picker in GPUI.Schema.identified_tags()
     assert :ui_copy_button in GPUI.Schema.identified_tags()
@@ -57,6 +60,8 @@ defmodule GPUI.SchemaTest do
     assert :ui_dropdown_menu in GPUI.Schema.identified_tags()
     assert :ui_virtual_list in GPUI.Schema.identified_tags()
     assert :ui_virtual_list_item in GPUI.Schema.identified_tags()
+    assert :ui_tree in GPUI.Schema.identified_tags()
+    assert :ui_tree_item in GPUI.Schema.identified_tags()
 
     assert Enum.map(GPUI.Schema.stateful_components(), & &1.kind) == [
              :popover_component,
@@ -66,6 +71,7 @@ defmodule GPUI.SchemaTest do
              :select_component,
              :combobox_component,
              :virtual_list_component,
+             :tree_component,
              :slider_component
            ]
 

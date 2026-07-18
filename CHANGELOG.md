@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Added accessible source-backed trees with controlled expansion, hierarchical keyboard navigation, structural accessibility metadata, and 100,000-item native coverage; migrated the Git Repository Browser to tree semantics.
 - Added accessible controlled progress, bounded display-side file selection with operation IDs and remote-safe byte payloads, and display-side clipboard buttons.
 - Updated Image Palette to use native file selection, reusable progress, user-side CSS clipboard copying, cancellable analysis, and stale-result-safe replacement.
 - Added source-backed virtual-list ranges with overscan, unloaded selection/reveal indexes, coalesced native range events, remote forwarding, and deterministic 100,000-row coverage.

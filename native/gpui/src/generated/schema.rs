@@ -28,6 +28,8 @@ pub enum GeneratedComponentKind {
     AccordionItemComponent,
     VirtualListComponent,
     VirtualListItemComponent,
+    TreeComponent,
+    TreeItemComponent,
     TabsComponent,
     SliderComponent,
     Text,
@@ -1446,6 +1448,94 @@ pub(crate) fn decode_generated_virtual_list_item_component(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct TreeComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) label: Option<String>,
+    pub(crate) selected: Option<String>,
+    pub(crate) selected_index: Option<u64>,
+    pub(crate) reveal: Option<String>,
+    pub(crate) reveal_index: Option<u64>,
+    pub(crate) reveal_strategy: Option<String>,
+    pub(crate) total_count: u64,
+    pub(crate) offset: u64,
+    pub(crate) overscan: u64,
+    pub(crate) item_height: f64,
+    pub(crate) disabled: bool,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) change: Option<String>,
+    pub(crate) toggle: Option<String>,
+    pub(crate) range: Option<String>,
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_tree_component(
+    term: Term,
+) -> NifResult<TreeComponentNode> {
+    Ok(TreeComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        label: component_string_attr(term, atoms::label())?,
+        selected: component_string_attr(term, atoms::selected())?,
+        selected_index: component_non_negative_integer_attr(
+            term,
+            atoms::selected_index(),
+        )?,
+        reveal: component_string_attr(term, atoms::reveal())?,
+        reveal_index: component_non_negative_integer_attr(term, atoms::reveal_index())?,
+        reveal_strategy: component_enum_attr(
+            term,
+            atoms::reveal_strategy(),
+            &["nearest", "top", "center", "bottom"],
+        )?,
+        total_count: component_non_negative_integer_attr(term, atoms::total_count())?
+            .unwrap_or(0),
+        offset: component_non_negative_integer_attr(term, atoms::offset())?.unwrap_or(0),
+        overscan: component_non_negative_integer_attr(term, atoms::overscan())?
+            .unwrap_or(8),
+        item_height: component_positive_number_attr(term, atoms::item_height())?
+            .unwrap_or(40.0),
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        children: decode_children(term)?,
+        change: component_string_attr(term, atoms::phx_change())?,
+        toggle: component_string_attr(term, atoms::phx_toggle())?,
+        range: component_string_attr(term, atoms::phx_range())?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct TreeItemComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) parent_id: Option<String>,
+    pub(crate) level: u64,
+    pub(crate) branch: bool,
+    pub(crate) expanded: bool,
+    pub(crate) position: Option<u64>,
+    pub(crate) set_size: Option<u64>,
+    pub(crate) disabled: bool,
+    pub(crate) children: Vec<ElementNode>,
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_tree_item_component(
+    term: Term,
+) -> NifResult<TreeItemComponentNode> {
+    Ok(TreeItemComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        parent_id: component_string_attr(term, atoms::parent_id())?,
+        level: component_non_negative_integer_attr(term, atoms::level())?.unwrap_or(1),
+        branch: component_bool_attr(term, atoms::branch())?.unwrap_or(false),
+        expanded: component_bool_attr(term, atoms::expanded())?.unwrap_or(false),
+        position: component_non_negative_integer_attr(term, atoms::position())?,
+        set_size: component_non_negative_integer_attr(term, atoms::set_size())?,
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        children: decode_children(term)?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct TabsComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -1547,6 +1637,8 @@ pub(crate) enum ElementNode {
     AccordionItemComponent(AccordionItemComponentNode),
     VirtualListComponent(VirtualListComponentNode),
     VirtualListItemComponent(VirtualListItemComponentNode),
+    TreeComponent(TreeComponentNode),
+    TreeItemComponent(TreeItemComponentNode),
     TabsComponent(TabsComponentNode),
     SliderComponent(SliderComponentNode),
     Image(ImageNode),
@@ -1581,6 +1673,8 @@ pub enum GeneratedElementTag {
     UiAccordionItem,
     UiVirtualList,
     UiVirtualListItem,
+    UiTree,
+    UiTreeItem,
     UiTabs,
     UiSlider,
     Span,
@@ -1622,6 +1716,8 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_accordion_item" => GeneratedElementTag::UiAccordionItem,
         "ui_virtual_list" => GeneratedElementTag::UiVirtualList,
         "ui_virtual_list_item" => GeneratedElementTag::UiVirtualListItem,
+        "ui_tree" => GeneratedElementTag::UiTree,
+        "ui_tree_item" => GeneratedElementTag::UiTreeItem,
         "ui_tabs" => GeneratedElementTag::UiTabs,
         "ui_slider" => GeneratedElementTag::UiSlider,
         "span" => GeneratedElementTag::Span,
@@ -1686,6 +1782,8 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::UiVirtualListItem => {
             GeneratedComponentKind::VirtualListItemComponent
         }
+        GeneratedElementTag::UiTree => GeneratedComponentKind::TreeComponent,
+        GeneratedElementTag::UiTreeItem => GeneratedComponentKind::TreeItemComponent,
         GeneratedElementTag::UiTabs => GeneratedComponentKind::TabsComponent,
         GeneratedElementTag::UiSlider => GeneratedComponentKind::SliderComponent,
         GeneratedElementTag::Span => GeneratedComponentKind::Container,
@@ -1796,6 +1894,13 @@ pub(crate) fn decode_generated_element_node(
             decode_generated_virtual_list_item_component(term)
                 .map(ElementNode::VirtualListItemComponent)
         }
+        GeneratedComponentKind::TreeComponent => {
+            decode_generated_tree_component(term).map(ElementNode::TreeComponent)
+        }
+        GeneratedComponentKind::TreeItemComponent => {
+            decode_generated_tree_item_component(term)
+                .map(ElementNode::TreeItemComponent)
+        }
         GeneratedComponentKind::TabsComponent => {
             decode_generated_tabs_component(term).map(ElementNode::TabsComponent)
         }
@@ -1889,6 +1994,12 @@ pub(crate) fn render_generated_component_node(
         }
         ElementNode::VirtualListItemComponent(node) => {
             element::component::virtual_list::render_item(node, context)
+        }
+        ElementNode::TreeComponent(node) => {
+            element::component::tree::render(node, context)
+        }
+        ElementNode::TreeItemComponent(node) => {
+            element::component::tree::render_item(node, context)
         }
         ElementNode::TabsComponent(node) => {
             element::component::tabs::render(node, context)

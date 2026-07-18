@@ -46,7 +46,7 @@ defmodule GPUITest.Visual.GitRepositoryBrowser.Scenario do
                 "",
                 "untracked",
                 Examples.GitRepositoryBrowser.Model.initial_range(),
-                "lib/gpui/runtime.ex"
+                "file:lib/gpui/runtime.ex"
               )}
            end}
         ]
@@ -65,7 +65,7 @@ defmodule GPUITest.Visual.GitRepositoryBrowser.Scenario do
                 "",
                 "all",
                 Examples.GitRepositoryBrowser.Model.initial_range(),
-                "lib/gpui/runtime.ex"
+                "file:lib/gpui/runtime.ex"
               )}
            end},
           {:dispatch,
@@ -79,7 +79,7 @@ defmodule GPUITest.Visual.GitRepositoryBrowser.Scenario do
                 "",
                 "all",
                 Examples.GitRepositoryBrowser.Model.initial_range(),
-                "README.md"
+                "file:README.md"
               )}
            end},
           {:send_view_from, 1,

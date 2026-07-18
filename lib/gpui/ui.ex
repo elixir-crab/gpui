@@ -266,8 +266,8 @@ defmodule GPUI.UI do
       |> Map.put_new(:overscan, 8)
       |> Map.put_new(:disabled, false)
 
-    item_ids = virtual_list_item_ids!(children)
-    validate_virtual_list!(assigns, item_ids)
+    item_ids = collection_item_ids!(:ui_virtual_list, :ui_virtual_list_item, children)
+    validate_virtual_collection!(:ui_virtual_list, assigns, item_ids)
 
     assigns = drop_nil_attrs(assigns, [:selected, :selected_index, :reveal, :reveal_index])
     component(:ui_virtual_list, assigns)
@@ -278,159 +278,274 @@ defmodule GPUI.UI do
   def virtual_list_item(assigns) when is_map(assigns),
     do: component(:ui_virtual_list_item, Map.put_new(assigns, :disabled, false))
 
-  defp virtual_list_item_ids!(children) do
+  @doc """
+  Builds an accessible controlled tree from uniform-height `tree_item/1` children.
+
+  Trees support the same source-backed `total_count`, `offset`, `overscan`,
+  selection-index, reveal-index, and `phx-range` contract as `virtual_list/1`.
+  Selection emits an item ID through `phx-change`; branch expansion requests
+  emit the branch ID through `phx-toggle`.
+  """
+  @spec tree(map()) :: Element.t()
+  def tree(assigns) when is_map(assigns) do
+    assigns = normalize_attr_key(assigns, :"phx-range")
+    children = Map.get(assigns, :children, [])
+
+    assigns =
+      assigns
+      |> Map.put_new(:item_height, 40.0)
+      |> Map.put_new(:reveal_strategy, "nearest")
+      |> Map.put_new(:total_count, length(children))
+      |> Map.put_new(:offset, 0)
+      |> Map.put_new(:overscan, 8)
+      |> Map.put_new(:disabled, false)
+
+    item_ids = collection_item_ids!(:ui_tree, :ui_tree_item, children)
+    validate_virtual_collection!(:ui_tree, assigns, item_ids)
+    validate_event!(:ui_tree, assigns, :"phx-change")
+    validate_event!(:ui_tree, assigns, :"phx-toggle")
+
+    assigns = drop_nil_attrs(assigns, [:selected, :selected_index, :reveal, :reveal_index])
+    component(:ui_tree, assigns)
+  end
+
+  @doc "Builds one accessible row for `tree/1`."
+  @spec tree_item(map()) :: Element.t()
+  def tree_item(assigns) when is_map(assigns) do
+    assigns =
+      assigns
+      |> Map.put_new(:level, 1)
+      |> Map.put_new(:branch, false)
+      |> Map.put_new(:expanded, false)
+      |> Map.put_new(:disabled, false)
+      |> drop_nil_attrs([:parent_id, :position, :set_size])
+
+    validate_tree_item!(assigns)
+    component(:ui_tree_item, assigns)
+  end
+
+  defp collection_item_ids!(component, item_type, children) do
     item_ids =
       Enum.map(children, fn
-        %Element{type: :ui_virtual_list_item, attrs: attrs} ->
+        %Element{type: ^item_type, attrs: attrs} ->
           Map.fetch!(Map.new(attrs), :id)
 
         child ->
           raise ArgumentError,
-                "ui_virtual_list only accepts virtual_list_item children, got: #{inspect(child)}"
+                "#{component} only accepts #{item_type} children, got: #{inspect(child)}"
       end)
 
     if item_ids != Enum.uniq(item_ids) do
-      raise ArgumentError, "ui_virtual_list item IDs must be unique"
+      raise ArgumentError, "#{component} item IDs must be unique"
     end
 
     item_ids
   end
 
-  defp validate_virtual_list!(assigns, item_ids) do
-    validate_virtual_list_label!(Map.get(assigns, :label))
-    validate_item_height!(assigns.item_height)
-    validate_reveal_strategy!(assigns.reveal_strategy)
-    validate_source_range!(assigns, item_ids)
+  defp validate_virtual_collection!(component, assigns, item_ids) do
+    validate_collection_label!(component, Map.get(assigns, :label))
+    validate_item_height!(component, assigns.item_height)
+    validate_reveal_strategy!(component, assigns.reveal_strategy)
+    validate_source_range!(component, assigns, item_ids)
 
-    if source_backed_virtual_list?(assigns, item_ids) do
-      validate_source_selection!(assigns, item_ids, :selected, :selected_index)
-      validate_source_selection!(assigns, item_ids, :reveal, :reveal_index)
+    if source_backed_collection?(assigns, item_ids) do
+      validate_source_selection!(component, assigns, item_ids, :selected, :selected_index)
+      validate_source_selection!(component, assigns, item_ids, :reveal, :reveal_index)
     else
-      if Map.get(assigns, :selected_index) || Map.get(assigns, :reveal_index) do
-        raise ArgumentError,
-              "ui_virtual_list controlled indexes require a source-backed list with phx-range"
-      end
-
-      validate_controlled_item!(:selected, Map.get(assigns, :selected), item_ids)
-      validate_controlled_item!(:reveal, Map.get(assigns, :reveal), item_ids)
+      validate_full_collection!(component, assigns, item_ids)
     end
   end
 
-  defp validate_virtual_list_label!(label) when is_binary(label) and label != "", do: :ok
-
-  defp validate_virtual_list_label!(_label),
-    do: raise(ArgumentError, "ui_virtual_list requires a non-empty string label")
-
-  defp validate_item_height!(height) when is_number(height) and height > 0, do: :ok
-
-  defp validate_item_height!(_height),
-    do: raise(ArgumentError, "ui_virtual_list item_height must be greater than zero")
-
-  defp validate_reveal_strategy!(strategy) when strategy in ~w(nearest top center bottom), do: :ok
-
-  defp validate_reveal_strategy!(_strategy) do
-    raise ArgumentError, "ui_virtual_list reveal_strategy must be nearest, top, center, or bottom"
-  end
-
-  defp validate_source_range!(assigns, item_ids) do
-    validate_non_negative_integer!(:total_count, assigns.total_count)
-    validate_non_negative_integer!(:overscan, assigns.overscan)
-    validate_source_offset!(assigns.offset, assigns.total_count)
-    validate_loaded_count!(assigns.offset, length(item_ids), assigns.total_count)
-
-    if source_backed_virtual_list?(assigns, item_ids) do
-      validate_event!(:ui_virtual_list, assigns, :"phx-range")
-    end
-  end
-
-  defp validate_non_negative_integer!(_name, value) when is_integer(value) and value >= 0,
+  defp validate_collection_label!(_component, label) when is_binary(label) and label != "",
     do: :ok
 
-  defp validate_non_negative_integer!(name, _value),
-    do: raise(ArgumentError, "ui_virtual_list #{name} must be a non-negative integer")
+  defp validate_collection_label!(component, _label),
+    do: raise(ArgumentError, "#{component} requires a non-empty string label")
 
-  defp validate_source_offset!(offset, total_count)
+  defp validate_item_height!(_component, height) when is_number(height) and height > 0, do: :ok
+
+  defp validate_item_height!(component, _height),
+    do: raise(ArgumentError, "#{component} item_height must be greater than zero")
+
+  defp validate_reveal_strategy!(_component, strategy)
+       when strategy in ~w(nearest top center bottom),
+       do: :ok
+
+  defp validate_reveal_strategy!(component, _strategy) do
+    raise ArgumentError,
+          "#{component} reveal_strategy must be nearest, top, center, or bottom"
+  end
+
+  defp validate_source_range!(component, assigns, item_ids) do
+    validate_non_negative_integer!(component, :total_count, assigns.total_count)
+    validate_non_negative_integer!(component, :overscan, assigns.overscan)
+    validate_source_offset!(component, assigns.offset, assigns.total_count)
+    validate_loaded_count!(component, assigns.offset, length(item_ids), assigns.total_count)
+
+    if source_backed_collection?(assigns, item_ids) do
+      validate_event!(component, assigns, :"phx-range")
+    end
+  end
+
+  defp validate_non_negative_integer!(_component, _name, value)
+       when is_integer(value) and value >= 0,
+       do: :ok
+
+  defp validate_non_negative_integer!(component, name, _value),
+    do: raise(ArgumentError, "#{component} #{name} must be a non-negative integer")
+
+  defp validate_source_offset!(_component, offset, total_count)
        when is_integer(offset) and offset >= 0 and offset <= total_count,
        do: :ok
 
-  defp validate_source_offset!(_offset, _total_count),
-    do: raise(ArgumentError, "ui_virtual_list offset must be between zero and total_count")
+  defp validate_source_offset!(component, _offset, _total_count),
+    do: raise(ArgumentError, "#{component} offset must be between zero and total_count")
 
-  defp validate_loaded_count!(offset, count, total_count) when offset + count <= total_count,
-    do: :ok
+  defp validate_loaded_count!(_component, offset, count, total_count)
+       when offset + count <= total_count,
+       do: :ok
 
-  defp validate_loaded_count!(_offset, _count, _total_count),
-    do: raise(ArgumentError, "ui_virtual_list loaded slice exceeds total_count")
+  defp validate_loaded_count!(component, _offset, _count, _total_count),
+    do: raise(ArgumentError, "#{component} loaded slice exceeds total_count")
 
-  defp source_backed_virtual_list?(assigns, item_ids),
+  defp source_backed_collection?(assigns, item_ids),
     do:
       not is_nil(Map.get(assigns, :"phx-range")) or assigns.offset != 0 or
         assigns.total_count != length(item_ids)
 
-  defp validate_source_selection!(assigns, item_ids, value_name, index_name) do
+  defp validate_source_selection!(component, assigns, item_ids, value_name, index_name) do
     value = Map.get(assigns, value_name)
     index = Map.get(assigns, index_name)
 
-    validate_source_value!(value_name, value)
-    validate_source_index!(index_name, index, assigns.total_count)
-    validate_source_pair!(value_name, index_name, value, index)
-    validate_loaded_identity!(assigns, item_ids, value_name, index_name, value, index)
+    validate_source_value!(component, value_name, value)
+    validate_source_index!(component, index_name, index, assigns.total_count)
+    validate_source_pair!(component, value_name, index_name, value, index)
+    validate_loaded_identity!(component, assigns, item_ids, value_name, index_name, value, index)
   end
 
-  defp validate_source_value!(_name, nil), do: :ok
-  defp validate_source_value!(_name, value) when is_binary(value) and value != "", do: :ok
+  defp validate_source_value!(_component, _name, nil), do: :ok
 
-  defp validate_source_value!(name, _value),
-    do: raise(ArgumentError, "ui_virtual_list #{name} must be a non-empty string")
+  defp validate_source_value!(_component, _name, value) when is_binary(value) and value != "",
+    do: :ok
 
-  defp validate_source_index!(_name, nil, _total_count), do: :ok
+  defp validate_source_value!(component, name, _value),
+    do: raise(ArgumentError, "#{component} #{name} must be a non-empty string")
 
-  defp validate_source_index!(_name, index, total_count)
+  defp validate_source_index!(_component, _name, nil, _total_count), do: :ok
+
+  defp validate_source_index!(_component, _name, index, total_count)
        when is_integer(index) and index >= 0 and index < total_count,
        do: :ok
 
-  defp validate_source_index!(name, _index, _total_count),
+  defp validate_source_index!(component, name, _index, _total_count),
+    do: raise(ArgumentError, "#{component} #{name} must identify an index below total_count")
+
+  defp validate_source_pair!(_component, _value_name, _index_name, nil, nil), do: :ok
+
+  defp validate_source_pair!(_component, _value_name, _index_name, value, index)
+       when not is_nil(value) and not is_nil(index),
+       do: :ok
+
+  defp validate_source_pair!(component, value_name, index_name, _value, _index),
     do:
       raise(
         ArgumentError,
-        "ui_virtual_list #{name} must identify an index below total_count"
+        "#{component} #{value_name} and #{index_name} must be provided together"
       )
 
-  defp validate_source_pair!(_value_name, _index_name, nil, nil), do: :ok
-
-  defp validate_source_pair!(_value_name, _index_name, value, index)
-       when not is_nil(value) and not is_nil(index), do: :ok
-
-  defp validate_source_pair!(value_name, index_name, _value, _index),
-    do:
-      raise(
-        ArgumentError,
-        "ui_virtual_list #{value_name} and #{index_name} must be provided together"
-      )
-
-  defp validate_loaded_identity!(assigns, item_ids, value_name, index_name, value, index) do
+  defp validate_loaded_identity!(
+         component,
+         assigns,
+         item_ids,
+         value_name,
+         index_name,
+         value,
+         index
+       ) do
     loaded? =
       is_integer(index) and index >= assigns.offset and
         index < assigns.offset + length(item_ids)
 
     if loaded? and Enum.at(item_ids, index - assigns.offset) != value do
       raise ArgumentError,
-            "ui_virtual_list #{value_name} does not match the loaded item at #{index_name}"
+            "#{component} #{value_name} does not match the loaded item at #{index_name}"
     end
   end
 
-  defp validate_controlled_item!(_name, nil, _item_ids), do: :ok
+  defp validate_full_collection!(component, assigns, item_ids) do
+    if Map.get(assigns, :selected_index) || Map.get(assigns, :reveal_index) do
+      raise ArgumentError,
+            "#{component} controlled indexes require a source-backed collection with phx-range"
+    end
 
-  defp validate_controlled_item!(name, value, item_ids) when is_binary(value) do
+    validate_controlled_item!(component, :selected, Map.get(assigns, :selected), item_ids)
+    validate_controlled_item!(component, :reveal, Map.get(assigns, :reveal), item_ids)
+  end
+
+  defp validate_controlled_item!(_component, _name, nil, _item_ids), do: :ok
+
+  defp validate_controlled_item!(component, name, value, item_ids) when is_binary(value) do
     if value in item_ids do
       :ok
     else
-      raise ArgumentError, "ui_virtual_list #{name} must identify a virtual_list_item child"
+      raise ArgumentError, "#{component} #{name} must identify a loaded child"
     end
   end
 
-  defp validate_controlled_item!(name, _value, _item_ids),
-    do: raise(ArgumentError, "ui_virtual_list #{name} must identify a virtual_list_item child")
+  defp validate_controlled_item!(component, name, _value, _item_ids),
+    do: raise(ArgumentError, "#{component} #{name} must identify a loaded child")
+
+  defp validate_tree_item!(assigns) do
+    validate_tree_item_id!(Map.get(assigns, :id))
+    validate_tree_item_flags!(assigns.branch, assigns.expanded, assigns.disabled)
+    validate_tree_item_level!(assigns.level)
+    validate_tree_parent!(assigns.level, Map.get(assigns, :parent_id))
+    validate_tree_expansion!(assigns.branch, assigns.expanded)
+    validate_tree_set_position!(Map.get(assigns, :position), Map.get(assigns, :set_size))
+  end
+
+  defp validate_tree_item_id!(id) when is_binary(id) and id != "", do: :ok
+
+  defp validate_tree_item_id!(_id),
+    do: raise(ArgumentError, "ui_tree_item requires a non-empty string id")
+
+  defp validate_tree_item_flags!(branch, expanded, disabled)
+       when is_boolean(branch) and is_boolean(expanded) and is_boolean(disabled),
+       do: :ok
+
+  defp validate_tree_item_flags!(_branch, _expanded, _disabled),
+    do: raise(ArgumentError, "ui_tree_item branch, expanded, and disabled must be booleans")
+
+  defp validate_tree_item_level!(level) when is_integer(level) and level > 0, do: :ok
+
+  defp validate_tree_item_level!(_level),
+    do: raise(ArgumentError, "ui_tree_item level must be a positive integer")
+
+  defp validate_tree_parent!(1, nil), do: :ok
+
+  defp validate_tree_parent!(_level, parent_id) when is_binary(parent_id) and parent_id != "",
+    do: :ok
+
+  defp validate_tree_parent!(level, nil) when level > 1,
+    do: raise(ArgumentError, "ui_tree_item nested items require a non-empty parent_id")
+
+  defp validate_tree_parent!(_level, _parent_id),
+    do: raise(ArgumentError, "ui_tree_item parent_id must be a non-empty string")
+
+  defp validate_tree_expansion!(false, true),
+    do: raise(ArgumentError, "ui_tree_item leaves cannot be expanded")
+
+  defp validate_tree_expansion!(_branch, _expanded), do: :ok
+
+  defp validate_tree_set_position!(nil, nil), do: :ok
+
+  defp validate_tree_set_position!(position, set_size)
+       when is_integer(position) and is_integer(set_size) and position > 0 and
+              position <= set_size,
+       do: :ok
+
+  defp validate_tree_set_position!(_position, _set_size),
+    do: raise(ArgumentError, "ui_tree_item position and set_size must be valid one-based peers")
 
   defp normalize_attr_key(assigns, key) do
     case Map.pop(assigns, Atom.to_string(key)) do

@@ -101,6 +101,9 @@ defmodule GPUI.TestTest do
     def handle_event("language_changed", %{value: language}, assigns),
       do: {:noreply, %{assigns | language: language}}
 
+    def handle_event("tree_toggled", %{value: id}, assigns),
+      do: {:noreply, %{assigns | tree_branch: id}}
+
     def handle_event("framework_changed", %{value: framework}, assigns),
       do: {:noreply, %{assigns | framework: framework}}
 
@@ -163,7 +166,8 @@ defmodule GPUI.TestTest do
              released_volume: nil,
              overlay_open: false,
              menu_open: false,
-             menu_selection: nil
+             menu_selection: nil,
+             tree_branch: nil
            )
          end
        ]}
@@ -188,7 +192,8 @@ defmodule GPUI.TestTest do
         released_volume: nil,
         overlay_open: false,
         menu_open: false,
-        menu_selection: nil
+        menu_selection: nil,
+        tree_branch: nil
       )
 
     assert %GPUI.Element{type: :ui_button} = find!(tree, id: "increment")
@@ -214,7 +219,8 @@ defmodule GPUI.TestTest do
              released_volume: nil,
              overlay_open: false,
              menu_open: false,
-             menu_selection: nil
+             menu_selection: nil,
+             tree_branch: nil
            } = assigns(runtime)
 
     assert %{title: "Primary"} = window_snapshot(runtime, "Primary")
@@ -235,6 +241,9 @@ defmodule GPUI.TestTest do
 
     range(runtime, "records_range", 120, 160)
     assert %{range: %{first: 120, last: 160}} = assigns(runtime)
+
+    tree_toggle(runtime, "tree_toggled", "dir:lib")
+    assert %{tree_branch: "dir:lib"} = assigns(runtime)
 
     select(runtime, "language_changed", "elixir")
     assert %{count: 2, name: "Ada", language: "elixir"} = assigns(runtime)

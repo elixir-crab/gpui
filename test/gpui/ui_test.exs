@@ -125,6 +125,71 @@ defmodule GPUI.UITest do
     end
   end
 
+  test "builds accessible source-backed trees with structural metadata" do
+    branch =
+      UI.tree_item(%{
+        id: "lib",
+        level: 1,
+        branch: true,
+        expanded: true,
+        position: 1,
+        set_size: 1,
+        children: ["lib"]
+      })
+
+    child =
+      UI.tree_item(%{
+        id: "lib/runtime.ex",
+        parent_id: "lib",
+        level: 2,
+        position: 1,
+        set_size: 1,
+        children: ["runtime.ex"]
+      })
+
+    assert %Element{type: :ui_tree, attrs: attrs, children: [^branch, ^child]} =
+             UI.tree(%{
+               :"phx-change" => "selected",
+               :"phx-toggle" => "toggled",
+               :"phx-range" => "range",
+               id: "files",
+               label: "Repository files",
+               total_count: 10_000,
+               selected: "lib/runtime.ex",
+               selected_index: 1,
+               reveal: "lib/runtime.ex",
+               reveal_index: 1,
+               children: [branch, child]
+             })
+
+    assert attrs[:total_count] == 10_000
+    assert attrs[:selected_index] == 1
+    assert attrs[:overscan] == 8
+  end
+
+  test "validates tree hierarchy and accessibility positions" do
+    assert_raise ArgumentError, ~r/nested items require/, fn ->
+      UI.tree_item(%{id: "child", level: 2})
+    end
+
+    assert_raise ArgumentError, ~r/leaves cannot be expanded/, fn ->
+      UI.tree_item(%{id: "leaf", expanded: true})
+    end
+
+    assert_raise ArgumentError, ~r/position and set_size/, fn ->
+      UI.tree_item(%{id: "leaf", position: 2, set_size: 1})
+    end
+
+    assert_raise ArgumentError, ~r/requires phx-toggle/, fn ->
+      UI.tree(%{
+        :"phx-change" => "selected",
+        id: "files",
+        label: "Files",
+        children: [UI.tree_item(%{id: "file"})]
+      })
+    end
+  end
+
   test "validates virtual list structure and controlled IDs" do
     item = UI.virtual_list_item(%{id: "first"})
 
@@ -149,7 +214,7 @@ defmodule GPUI.UITest do
       UI.virtual_list(%{id: "records", label: "Records", item_height: 0, children: [item]})
     end
 
-    assert_raise ArgumentError, ~r/only accepts virtual_list_item/, fn ->
+    assert_raise ArgumentError, ~r/only accepts .*virtual_list_item/, fn ->
       UI.virtual_list(%{
         id: "records",
         label: "Records",

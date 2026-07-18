@@ -182,6 +182,24 @@ defmodule GPUI.Native.LifecycleE2ETest do
         attrs: %{id: "invalid-count", label: "Invalid list", total_count: -1},
         children: []
       },
+      invalid_tree_parent: %{
+        type: :ui_tree,
+        attrs: %{id: "invalid-tree", label: "Invalid tree", total_count: 1},
+        children: [
+          %{
+            type: :ui_tree_item,
+            attrs: %{id: "child", parent_id: 42, level: 2},
+            children: []
+          }
+        ]
+      },
+      invalid_tree_position: %{
+        type: :ui_tree,
+        attrs: %{id: "invalid-tree-position", label: "Invalid tree", total_count: 1},
+        children: [
+          %{type: :ui_tree_item, attrs: %{id: "child", position: -1}, children: []}
+        ]
+      },
       invalid_progress_max: %{
         type: :ui_progress,
         attrs: %{id: "invalid-progress", label: "Invalid progress", max: 0},

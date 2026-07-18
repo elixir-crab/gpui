@@ -24,6 +24,9 @@ defmodule GPUI.Remote.ServerTest do
 
     def handle_event("records_range", %{value: value}, assigns),
       do: {:noreply, %{assigns | range: value}}
+
+    def handle_event("tree_toggled", %{value: value}, assigns),
+      do: {:noreply, %{assigns | tree_branch: value}}
   end
 
   defmodule FormApp do
@@ -32,7 +35,13 @@ defmodule GPUI.Remote.ServerTest do
     @impl GPUI.Application
     def mount(args) do
       name = Map.get(Map.new(args), :name, "old")
-      {:ok, [window("Remote Form", do: root(FormView, name: name, file: nil, range: nil))]}
+
+      {:ok,
+       [
+         window("Remote Form",
+           do: root(FormView, name: name, file: nil, range: nil, tree_branch: nil)
+         )
+       ]}
     end
   end
 
@@ -216,6 +225,20 @@ defmodule GPUI.Remote.ServerTest do
                     %GPUI.Runtime.Update{
                       events: [%{type: :range, value: ^range}],
                       snapshot: %{windows: [%{root: %{assigns: %{range: ^range}}}]}
+                    }}
+
+    assert {:ok, :ok} =
+             GPUI.Test.Display.inject_event(display_name, %{
+               type: :change,
+               window_id: 1,
+               event: "tree_toggled",
+               value: "dir:lib"
+             })
+
+    assert_receive {:gpui, ^client,
+                    %GPUI.Runtime.Update{
+                      events: [%{type: :change, value: "dir:lib"}],
+                      snapshot: %{windows: [%{root: %{assigns: %{tree_branch: "dir:lib"}}}]}
                     }}
   end
 

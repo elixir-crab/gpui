@@ -17,7 +17,7 @@ When no path is supplied, it opens the current repository.
 - supervised and cancellable repository scans and previews;
 - bounded Git command output and bounded regular-file reads;
 - status and path filtering across large repositories;
-- a flattened expandable hierarchy backed by source-backed `GPUI.UI.virtual_list/1`;
+- an accessible expandable hierarchy backed by source-backed `GPUI.UI.tree/1`;
 - stable file and directory identities;
 - source-owned repository and preview models, so snapshots contain only loaded slices;
 - virtualized large diffs with distinct added, deleted, and hunk rows;

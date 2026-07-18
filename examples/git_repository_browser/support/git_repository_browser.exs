@@ -10,6 +10,7 @@ defmodule Examples.GitRepositoryBrowser.Tree do
     (directories ++ Enum.map(files, &file_entry/1))
     |> Enum.sort_by(&sort_key/1)
     |> Enum.filter(&visible?(&1, expanded))
+    |> annotate_accessibility()
   end
 
   def default_expanded(files) do
@@ -20,9 +21,8 @@ defmodule Examples.GitRepositoryBrowser.Tree do
     |> MapSet.new()
   end
 
-  def selected_id(entries, selected_path) do
-    id = if selected_path, do: "file:" <> selected_path
-    if Enum.any?(entries, &(&1.id == id)), do: id
+  def selected_id(entries, selected_id) do
+    if Enum.any?(entries, &(&1.id == selected_id)), do: selected_id
   end
 
   defp filter_files(files, filter, status_filter) do
@@ -103,6 +103,31 @@ defmodule Examples.GitRepositoryBrowser.Tree do
     |> Enum.map(fn {_part, index} -> parts |> Enum.take(index + 1) |> Path.join() end)
   end
 
+  defp annotate_accessibility(entries) do
+    set_sizes = Enum.frequencies_by(entries, &parent_id/1)
+
+    {entries, _positions} =
+      Enum.map_reduce(entries, %{}, fn entry, positions ->
+        parent_id = parent_id(entry)
+        position = Map.get(positions, parent_id, 0) + 1
+
+        entry =
+          Map.merge(entry, %{
+            parent_id: parent_id,
+            level: entry.depth + 1,
+            position: position,
+            set_size: Map.fetch!(set_sizes, parent_id)
+          })
+
+        {entry, Map.put(positions, parent_id, position)}
+      end)
+
+    entries
+  end
+
+  defp parent_id(%{depth: 0}), do: nil
+  defp parent_id(entry), do: "dir:" <> Path.dirname(entry.path)
+
   defp changed_count(:clean), do: 0
   defp changed_count(_status), do: 1
 end
@@ -112,9 +137,9 @@ defmodule Examples.GitRepositoryBrowser.Model do
 
   alias Examples.GitRepositoryBrowser.Tree
 
-  def tree_slice(repository, expanded, filter, status_filter, range, selected_path) do
+  def tree_slice(repository, expanded, filter, status_filter, range, selected_id) do
     entries = Tree.visible(repository.files, expanded, filter, status_filter)
-    selected = Tree.selected_id(entries, selected_path)
+    selected = Tree.selected_id(entries, selected_id)
     selected_index = Enum.find_index(entries, &(&1.id == selected))
     {offset, items} = loaded_slice(entries, range)
 
@@ -136,8 +161,13 @@ defmodule Examples.GitRepositoryBrowser.Model do
 
   def retain_selection(nil, _files), do: nil
 
-  def retain_selection(path, files) do
-    if Enum.any?(files, &(&1.path == path)), do: path
+  def retain_selection("file:" <> path = id, files) do
+    if Enum.any?(files, &(&1.path == path)), do: id
+  end
+
+  def retain_selection("dir:" <> path = id, files) do
+    prefix = path <> "/"
+    if Enum.any?(files, &String.starts_with?(&1.path, prefix)), do: id
   end
 
   def initial_range, do: %{first: 0, last: 48}
@@ -159,7 +189,7 @@ defmodule Examples.GitRepositoryBrowser.View do
   @impl GPUI.View
   def render(assigns) do
     selected =
-      if is_integer(assigns.selected_index), do: "file:" <> assigns.selected_path
+      if is_integer(assigns.selected_index), do: assigns.selected_id
 
     ~GPUI"""
     <div class="flex flex-col w-[1200px] h-[760px] bg-slate-900">
@@ -201,7 +231,7 @@ defmodule Examples.GitRepositoryBrowser.View do
             <text class="text-white font-semibold">Files</text>
             <text style={[color: {:rgb, 0x94A3B8}]}>{assigns.tree_total} visible</text>
           </div>
-          <UI.virtual_list
+          <UI.tree
             id="repository-tree"
             label="Repository files"
             selected={selected}
@@ -213,11 +243,12 @@ defmodule Examples.GitRepositoryBrowser.View do
             overscan={8}
             item_height={38}
             phx-change="tree_selected"
+            phx-toggle="tree_toggled"
             phx-range="tree_range_changed"
             class="h-[540px]"
           >
             {Enum.map(assigns.tree_items, &tree_row(&1, assigns))}
-          </UI.virtual_list>
+          </UI.tree>
         </div>
 
         <div class="flex flex-col w-[770px] h-[590px]" style={[background: {:rgb, 0x111827}]}>
@@ -271,7 +302,17 @@ defmodule Examples.GitRepositoryBrowser.View do
      }}
   end
 
-  def handle_event("tree_selected", %{value: "dir:" <> path}, assigns) do
+  def handle_event("tree_selected", %{value: "dir:" <> _path = selected_id}, assigns) do
+    {:noreply,
+     %{
+       assigns
+       | selected_id: selected_id,
+         selected_index: nil,
+         tree_generation: assigns.tree_generation + 1
+     }}
+  end
+
+  def handle_event("tree_toggled", %{value: "dir:" <> path}, assigns) do
     expanded =
       if MapSet.member?(assigns.expanded, path) do
         MapSet.delete(assigns.expanded, path)
@@ -288,11 +329,12 @@ defmodule Examples.GitRepositoryBrowser.View do
      }}
   end
 
-  def handle_event("tree_selected", %{value: "file:" <> path}, assigns) do
+  def handle_event("tree_selected", %{value: "file:" <> path = selected_id}, assigns) do
     {:noreply,
      %{
        assigns
-       | selected_path: path,
+       | selected_id: selected_id,
+         selected_path: path,
          selected_index: nil,
          preview: nil,
          preview_lines: [],
@@ -308,7 +350,7 @@ defmodule Examples.GitRepositoryBrowser.View do
 
   @impl GPUI.View
   def handle_info(
-        {:repository_loaded, scan_id, repository, expanded, selected_path, tree},
+        {:repository_loaded, scan_id, repository, expanded, selected_id, selected_path, tree},
         %{scan_id: scan_id} = assigns
       ) do
     {:noreply,
@@ -323,6 +365,7 @@ defmodule Examples.GitRepositoryBrowser.View do
          tree_total: tree.total,
          tree_offset: tree.offset,
          tree_items: tree.items,
+         selected_id: selected_id,
          selected_path: selected_path,
          selected_index: tree.selected_index,
          preview: nil,
@@ -398,19 +441,28 @@ defmodule Examples.GitRepositoryBrowser.View do
   def handle_info(_message, assigns), do: {:noreply, assigns}
 
   defp tree_row(entry, assigns) do
-    selected = entry.kind == :file and entry.path == assigns.selected_path
+    selected = entry.id == assigns.selected_id
     expanded = entry.kind == :directory and MapSet.member?(assigns.expanded, entry.path)
     row_assigns = %{entry: entry, selected: selected, expanded: expanded}
 
     ~GPUI"""
-    <UI.virtual_list_item id={row_assigns.entry.id} style={tree_row_style(row_assigns.selected)}>
+    <UI.tree_item
+      id={row_assigns.entry.id}
+      parent_id={row_assigns.entry.parent_id}
+      level={row_assigns.entry.level}
+      branch={row_assigns.entry.kind == :directory}
+      expanded={row_assigns.expanded}
+      position={row_assigns.entry.position}
+      set_size={row_assigns.entry.set_size}
+      style={tree_row_style(row_assigns.selected)}
+    >
       <div class="flex items-center gap-2 p-2">
         <div style={[width: {:px, row_assigns.entry.depth * 16}, height: {:px, 1}]} />
         <text class="text-white w-[18px]">{entry_marker(row_assigns.entry, row_assigns.expanded)}</text>
         <text class="text-white w-[245px]">{row_assigns.entry.name}</text>
         <text style={[color: status_color(row_assigns.entry.status)]}>{status_label(row_assigns.entry)}</text>
       </div>
-    </UI.virtual_list_item>
+    </UI.tree_item>
     """
   end
 
@@ -571,13 +623,14 @@ defmodule Examples.GitRepositoryBrowser.App do
     repository = Map.get(args, :repository)
     files = if repository, do: repository.files, else: []
     selected_path = Map.get(args, :selected_path)
+    selected_id = if selected_path, do: "file:" <> selected_path
     preview = Map.get(args, :preview)
     expanded = Map.get_lazy(args, :expanded, fn -> Tree.default_expanded(files) end)
     range = Model.initial_range()
 
     tree =
       if repository do
-        Model.tree_slice(repository, expanded, "", "all", range, selected_path)
+        Model.tree_slice(repository, expanded, "", "all", range, selected_id)
       else
         %{total: 0, offset: 0, items: [], selected_index: nil}
       end
@@ -597,6 +650,7 @@ defmodule Examples.GitRepositoryBrowser.App do
            scan_error: nil,
            scan_id: 1,
            expanded: expanded,
+           selected_id: selected_id,
            selected_path: selected_path,
            selected_index: tree.selected_index,
            tree_items: tree.items,
@@ -675,7 +729,8 @@ defmodule Examples.GitRepositoryBrowser.Coordinator do
                "filter_changed",
                "status_filter_changed",
                "tree_range_changed",
-               "tree_selected"
+               "tree_selected",
+               "tree_toggled"
              ] ->
           publish_tree(state, assigns)
 
@@ -692,7 +747,12 @@ defmodule Examples.GitRepositoryBrowser.Coordinator do
   def handle_info({:scan_complete, scan_id, {:ok, repository}}, state) do
     if active_job?(state.scan_task, scan_id) do
       assigns = state.runtime |> Runtime.snapshot() |> root_assigns()
-      selected_path = Model.retain_selection(assigns.selected_path, repository.files)
+      selected_id = Model.retain_selection(assigns.selected_id, repository.files)
+
+      selected_path =
+        if selected_id && String.starts_with?(selected_id, "file:"),
+          do: String.replace_prefix(selected_id, "file:", "")
+
       expanded = Tree.default_expanded(repository.files)
 
       tree =
@@ -702,7 +762,7 @@ defmodule Examples.GitRepositoryBrowser.Coordinator do
           assigns.filter,
           assigns.status_filter,
           Model.initial_range(),
-          selected_path
+          selected_id
         )
 
       {:ok, snapshot} =
@@ -710,7 +770,7 @@ defmodule Examples.GitRepositoryBrowser.Coordinator do
           state.runtime,
           1,
           {:repository_loaded, scan_id, Model.repository_summary(repository), expanded,
-           selected_path, tree}
+           selected_id, selected_path, tree}
         )
 
       state = %{
@@ -811,7 +871,7 @@ defmodule Examples.GitRepositoryBrowser.Coordinator do
         assigns.filter,
         assigns.status_filter,
         assigns.tree_range,
-        assigns.selected_path
+        assigns.selected_id
       )
 
     {:ok, _snapshot} =

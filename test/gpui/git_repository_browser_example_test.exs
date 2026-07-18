@@ -120,10 +120,11 @@ defmodule GPUI.GitRepositoryBrowserExampleTest do
         }
       )
 
-    assert %{type: :ui_virtual_list} = runtime |> tree() |> find!(id: "repository-tree")
+    assert %{type: :ui_tree} = runtime |> tree() |> find!(id: "repository-tree")
     assert %{type: :ui_virtual_list} = runtime |> tree() |> find!(id: "preview-lines")
     refute Map.has_key?(assigns(runtime).repository, :files)
     refute Map.has_key?(assigns(runtime).preview, :lines)
+    assert runtime |> tree() |> all(type: :ui_tree_item) |> length() < 100
     assert runtime |> tree() |> all(type: :ui_virtual_list_item) |> length() < 100
     assert runtime |> tree() |> all(id: "line-1501") == []
 
@@ -137,7 +138,7 @@ defmodule GPUI.GitRepositoryBrowserExampleTest do
     assert runtime |> tree() |> all(id: "line-1501") |> length() == 1
     assert runtime |> tree() |> all(id: "line-1") == []
 
-    select(runtime, "tree_selected", "dir:lib/core")
+    select(runtime, "tree_toggled", "dir:lib/core")
     assigns = assigns(runtime)
 
     send_view(
@@ -149,7 +150,7 @@ defmodule GPUI.GitRepositoryBrowserExampleTest do
          assigns.filter,
          assigns.status_filter,
          assigns.tree_range,
-         assigns.selected_path
+         assigns.selected_id
        )}
     )
 
@@ -167,7 +168,7 @@ defmodule GPUI.GitRepositoryBrowserExampleTest do
          assigns.filter,
          assigns.status_filter,
          assigns.tree_range,
-         assigns.selected_path
+         assigns.selected_id
        )}
     )
 
