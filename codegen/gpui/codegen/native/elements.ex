@@ -11,6 +11,33 @@ defmodule GPUI.Codegen.Native.Elements do
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Type, as: R
 
+  @type container_node :: %{
+          required(:tag) => R.path(:GeneratedElementTag),
+          required(:style) => R.path(:StyleAttrs),
+          required(:children) => R.vec(R.path(:ElementNode)),
+          required(:click) => R.option(String.t())
+        }
+
+  @type image_node :: %{
+          required(:image) => R.path(:ImageData),
+          required(:style) => R.path(:StyleAttrs),
+          required(:label) => R.option(String.t())
+        }
+
+  @type text_node :: %{
+          required(:text) => String.t(),
+          required(:style) => R.path(:StyleAttrs)
+        }
+
+  @type input_node :: %{
+          required(:style) => R.path(:StyleAttrs),
+          required(:value) => String.t(),
+          required(:placeholder) => R.option(String.t()),
+          required(:change) => R.option(String.t()),
+          required(:keydown) => R.option(String.t()),
+          required(:keyup) => R.option(String.t())
+        }
+
   @spec decode_element_node(term()) :: R.nif_result(R.path(:ElementNode))
   defrust decode_element_node(term) do
     case decode_as(term, String.t()) do
@@ -123,6 +150,20 @@ defmodule GPUI.Codegen.Native.Elements do
          style: unwrap!(decode_style(term))
        )
      )}
+  end
+
+  def items do
+    structs =
+      MetaAST.struct_type_items(
+        __MODULE__,
+        [:container_node, :image_node, :text_node, :input_node],
+        derive: [:Clone, :Debug],
+        attrs: [A.attr(:cfg, feature: "real-gpui")],
+        vis: :crate,
+        field_vis: :crate
+      )
+
+    structs ++ asts()
   end
 
   def asts do

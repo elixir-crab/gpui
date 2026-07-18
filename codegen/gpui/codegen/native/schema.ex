@@ -55,7 +55,7 @@ defmodule GPUI.Codegen.Native.Schema do
     ]
   end
 
-  defp generated_decoder_helpers, do: Decoder.asts() ++ Elements.asts()
+  defp generated_decoder_helpers, do: Decoder.asts() ++ Elements.items()
 
   defp generated_component_specs(components) do
     kinds = components |> Enum.map(& &1.kind) |> Enum.uniq()

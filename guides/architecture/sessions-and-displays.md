@@ -119,15 +119,21 @@ RustQ generates repetitive native boundaries from GPUI's internal schema:
 
 - source-discovered atoms and Rustler NIF exports;
 - resource contracts and decoders;
-- window/component decoders and event values/kinds;
+- window, primitive-element, component, and event-value decoders authored as typed Rusty-Elixir where their behavior is renderer-independent;
 - source-derived renderer routing and element dispatch;
 - style dispatch;
 - disabled-feature NIF implementations;
 - stateful registry kinds and typed accessors.
 
+Component defaults and attribute constraints come from the same schema used by
+public builders and native decoding. Renderer metadata is indexed from the real
+Rust functions in one pass instead of maintained in a parallel route table.
+
 GPUI lifecycle, entities, focus, callbacks, reconciliation behavior, and
-platform integration remain handwritten Rust. This keeps generated code
-structural while preserving readable native behavior.
+platform integration remain handwritten Rust. Shared native collection
+mechanics live in a handwritten uniform-collection core; listbox and tree
+keyboard and accessibility semantics remain in their focused renderers. This
+keeps generated code structural while preserving readable native behavior.
 
 See [Remote displays](remote-displays.html) for transport topology and
 [Testing GPUI applications](testing.html) for renderer-independent testing.

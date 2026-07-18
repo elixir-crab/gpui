@@ -9,41 +9,6 @@ pub(crate) mod event;
 use event::{apply_click_event, apply_input_events};
 
 #[cfg(feature = "real-gpui")]
-#[derive(Clone, Debug)]
-pub(crate) struct ContainerNode {
-    pub(crate) tag: GeneratedElementTag,
-    pub(crate) style: StyleAttrs,
-    pub(crate) children: Vec<ElementNode>,
-    pub(crate) click: Option<String>,
-}
-
-#[cfg(feature = "real-gpui")]
-#[derive(Clone, Debug)]
-pub(crate) struct ImageNode {
-    pub(crate) image: ImageData,
-    pub(crate) style: StyleAttrs,
-    pub(crate) label: Option<String>,
-}
-
-#[cfg(feature = "real-gpui")]
-#[derive(Clone, Debug)]
-pub(crate) struct TextNode {
-    pub(crate) text: String,
-    pub(crate) style: StyleAttrs,
-}
-
-#[cfg(feature = "real-gpui")]
-#[derive(Clone, Debug)]
-pub(crate) struct InputNode {
-    pub(crate) style: StyleAttrs,
-    pub(crate) value: String,
-    pub(crate) placeholder: Option<String>,
-    pub(crate) change: Option<String>,
-    pub(crate) keydown: Option<String>,
-    pub(crate) keyup: Option<String>,
-}
-
-#[cfg(feature = "real-gpui")]
 pub(crate) struct ElementRenderContext<'a, 'cx> {
     pub(crate) runtime: SharedRuntime,
     pub(crate) window_id: u64,

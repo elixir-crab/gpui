@@ -270,6 +270,37 @@ pub(crate) fn text_fragment<'a>(term: Term<'a>) -> NifResult<String> {
         }
     }
 }
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct ContainerNode {
+    pub(crate) tag: GeneratedElementTag,
+    pub(crate) style: StyleAttrs,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) click: Option<String>,
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct ImageNode {
+    pub(crate) image: ImageData,
+    pub(crate) style: StyleAttrs,
+    pub(crate) label: Option<String>,
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct InputNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) value: String,
+    pub(crate) placeholder: Option<String>,
+    pub(crate) change: Option<String>,
+    pub(crate) keydown: Option<String>,
+    pub(crate) keyup: Option<String>,
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct TextNode {
+    pub(crate) text: String,
+    pub(crate) style: StyleAttrs,
+}
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_element_node<'a>(term: Term<'a>) -> NifResult<ElementNode> {
     match term.decode::<String>() {
