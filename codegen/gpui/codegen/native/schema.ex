@@ -2,6 +2,7 @@ defmodule GPUI.Codegen.Native.Schema do
   @moduledoc false
 
   alias GPUI.Codegen.Native.Decoder
+  alias GPUI.Codegen.Native.Elements
   alias GPUI.Codegen.Native.Renderers
   alias GPUI.Codegen.Native.Style
   alias RustQ.Rust.AST
@@ -54,7 +55,7 @@ defmodule GPUI.Codegen.Native.Schema do
     ]
   end
 
-  defp generated_decoder_helpers, do: Decoder.asts()
+  defp generated_decoder_helpers, do: Decoder.asts() ++ Elements.asts()
 
   defp generated_component_specs(components) do
     kinds = components |> Enum.map(& &1.kind) |> Enum.uniq()
@@ -527,7 +528,7 @@ defmodule GPUI.Codegen.Native.Schema do
         |> A.call([:term])
         |> A.method(:map, [A.path([:ElementNode, kind])])
       else
-        A.path_call([:nif, primitive_decoder(component.kind)], [:term, :tag])
+        A.path_call(primitive_decoder_path(component.kind), [:term, :tag])
       end
 
     %AST.Arm{
@@ -536,10 +537,10 @@ defmodule GPUI.Codegen.Native.Schema do
     }
   end
 
-  defp primitive_decoder(:container), do: :decode_container_node
-  defp primitive_decoder(:input), do: :decode_input_node
-  defp primitive_decoder(:image), do: :decode_image_node
-  defp primitive_decoder(:text), do: :decode_text_node
+  defp primitive_decoder_path(:container), do: [:decode_container_node]
+  defp primitive_decoder_path(:input), do: [:decode_input_node]
+  defp primitive_decoder_path(:image), do: [:nif, :decode_image_node]
+  defp primitive_decoder_path(:text), do: [:decode_text_node]
 
   defp generated_enum_decl(name, variants) do
     %AST.Enum{

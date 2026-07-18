@@ -125,30 +125,6 @@ pub(crate) fn window_size<'a>(window: Term<'a>) -> NifResult<(f32, f32)> {
     }
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn window_tree<'a>(window: Term<'a>) -> NifResult<ElementNode> {
-    match window.map_get(atoms::root()) {
-        Ok(root) => {
-            match root.map_get(atoms::tree()) {
-                Ok(tree) => decode_element_node(tree),
-                Err(_missing) => Ok(ElementNode::empty_root()),
-            }
-        }
-        Err(reason) => Err(reason),
-    }
-}
-#[cfg(feature = "real-gpui")]
-pub(crate) fn string_attr<'a>(term: Term<'a>, attr: Atom) -> Option<String> {
-    match term.map_get(atoms::attrs()) {
-        Ok(attrs) => {
-            match attrs.map_get(attr) {
-                Ok(value) => value.decode::<String>().ok(),
-                Err(_missing) => None,
-            }
-        }
-        Err(_missing) => None,
-    }
-}
-#[cfg(feature = "real-gpui")]
 pub(crate) fn component_attr<'a>(
     term: Term<'a>,
     attr: Atom,
@@ -294,6 +270,104 @@ pub(crate) fn text_fragment<'a>(term: Term<'a>) -> NifResult<String> {
         }
     }
 }
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_element_node<'a>(term: Term<'a>) -> NifResult<ElementNode> {
+    match term.decode::<String>() {
+        Ok(decoded_text) => {
+            Ok(
+                ElementNode::Text(TextNode {
+                    text: decoded_text,
+                    style: default_style(),
+                }),
+            )
+        }
+        Err(_reason) => {
+            match term.map_get(atoms::type_atom()) {
+                Ok(type_term) => {
+                    match type_term.atom_to_string() {
+                        Ok(node_type) => {
+                            let tag = decode_generated_element_tag(node_type.as_str());
+                            decode_generated_element_node(term, tag)
+                        }
+                        Err(reason) => Err(reason),
+                    }
+                }
+                Err(reason) => Err(reason),
+            }
+        }
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn window_tree<'a>(window: Term<'a>) -> NifResult<ElementNode> {
+    match window.map_get(atoms::root()) {
+        Ok(root) => {
+            match root.map_get(atoms::tree()) {
+                Ok(tree) => decode_element_node(tree),
+                Err(_missing) => Ok(ElementNode::empty_root()),
+            }
+        }
+        Err(reason) => Err(reason),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn string_attr<'a>(term: Term<'a>, attr: Atom) -> Option<String> {
+    match term.map_get(atoms::attrs()) {
+        Ok(attrs) => {
+            match attrs.map_get(attr) {
+                Ok(value) => value.decode::<String>().ok(),
+                Err(_missing) => None,
+            }
+        }
+        Err(_missing) => None,
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_container_node<'a>(
+    term: Term<'a>,
+    element_tag: GeneratedElementTag,
+) -> NifResult<ElementNode> {
+    Ok(
+        ElementNode::Div(ContainerNode {
+            tag: element_tag,
+            style: decode_style(term)?,
+            children: decode_children(term)?,
+            click: string_attr(term, atoms::phx_click()),
+        }),
+    )
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_input_node<'a>(
+    term: Term<'a>,
+    _tag: GeneratedElementTag,
+) -> NifResult<ElementNode> {
+    Ok(
+        ElementNode::Input(InputNode {
+            style: decode_style(term)?,
+            value: string_attr(term, atoms::value()).unwrap_or_default(),
+            placeholder: string_attr(term, atoms::placeholder()),
+            change: string_attr(term, atoms::phx_change()),
+            keydown: string_attr(term, atoms::phx_keydown()),
+            keyup: string_attr(term, atoms::phx_keyup()),
+        }),
+    )
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_children<'a>(term: Term<'a>) -> NifResult<Vec<ElementNode>> {
+    let children = term.map_get(atoms::children())?.decode::<Vec<Term<'a>>>()?;
+    children.into_iter().map(|child| decode_element_node(child)).collect()
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_text_node<'a>(
+    term: Term<'a>,
+    _tag: GeneratedElementTag,
+) -> NifResult<ElementNode> {
+    Ok(
+        ElementNode::Text(TextNode {
+            text: decode_text_children(term)?,
+            style: decode_style(term)?,
+        }),
+    )
+}
 #[derive(Clone, Debug, Default)]
 #[cfg(feature = "real-gpui")]
 pub(crate) struct StyleAttrs {
@@ -334,6 +408,10 @@ pub(crate) struct StyleAttrs {
     pub(crate) border_radius: Option<f32>,
     pub(crate) border_width: Option<f32>,
     pub(crate) border_color: Option<u32>,
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn default_style() -> StyleAttrs {
+    StyleAttrs::default()
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn apply_generated_style_attr(
@@ -1841,7 +1919,7 @@ pub(crate) fn decode_generated_element_node(
     tag: GeneratedElementTag,
 ) -> NifResult<ElementNode> {
     match generated_component_kind(tag) {
-        GeneratedComponentKind::Container => nif::decode_container_node(term, tag),
+        GeneratedComponentKind::Container => decode_container_node(term, tag),
         GeneratedComponentKind::ButtonComponent => {
             decode_generated_button_component(term).map(ElementNode::ButtonComponent)
         }
@@ -1945,8 +2023,8 @@ pub(crate) fn decode_generated_element_node(
         GeneratedComponentKind::SliderComponent => {
             decode_generated_slider_component(term).map(ElementNode::SliderComponent)
         }
-        GeneratedComponentKind::Text => nif::decode_text_node(term, tag),
-        GeneratedComponentKind::Input => nif::decode_input_node(term, tag),
+        GeneratedComponentKind::Text => decode_text_node(term, tag),
+        GeneratedComponentKind::Input => decode_input_node(term, tag),
         GeneratedComponentKind::Image => nif::decode_image_node(term, tag),
         GeneratedComponentKind::Unknown => Err(rustler::Error::BadArg),
     }

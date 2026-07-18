@@ -26,7 +26,10 @@ defmodule GPUI.Codegen.Native.Atoms do
   end
 
   defp generated_atoms do
-    GPUI.Codegen.Native.Decoder.asts()
+    [
+      GPUI.Codegen.Native.Decoder.asts(),
+      GPUI.Codegen.Native.Elements.asts()
+    ]
     |> collect_atom_references()
     |> Enum.uniq()
   end

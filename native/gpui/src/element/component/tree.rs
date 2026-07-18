@@ -14,7 +14,7 @@ use std::ops::Range;
 use std::sync::Arc;
 
 #[cfg(feature = "components")]
-pub(crate) type ComponentTree = super::virtual_list::ComponentVirtualList;
+pub(crate) type ComponentTree = super::uniform_collection::ComponentUniformCollection;
 
 #[cfg(feature = "components")]
 #[derive(Clone, Debug)]
@@ -107,17 +107,16 @@ pub(crate) fn render(
             index: offset.saturating_add(local_index),
         })
         .collect::<Vec<_>>();
-    let selected_index = node
-        .selected_index
-        .and_then(|index| usize::try_from(index).ok())
-        .filter(|index| *index < total_count)
-        .or_else(|| {
-            node.selected.as_ref().and_then(|selected| {
-                keys.iter()
-                    .find(|key| key.id == *selected)
-                    .map(|key| key.index)
-            })
-        });
+    let selected_index = super::uniform_collection::controlled_index(
+        total_count,
+        node.selected_index,
+        node.selected.as_deref(),
+        |selected| {
+            keys.iter()
+                .find(|key| key.id == selected)
+                .map(|key| key.index)
+        },
+    );
 
     if context.components.tree_mut(&node.id).is_none() {
         let component = ComponentTree::new(context.cx);
@@ -128,37 +127,18 @@ pub(crate) fn render(
         .components
         .tree_mut(&node.id)
         .expect("tree component must exist after insertion");
-    let reveal = node
-        .reveal_index
-        .and_then(|index| usize::try_from(index).ok())
-        .filter(|index| *index < total_count)
-        .map(|index| {
-            (
-                node.reveal
-                    .clone()
-                    .unwrap_or_else(|| format!("index-{index}")),
-                index,
-            )
-        })
-        .or_else(|| {
-            node.reveal.as_ref().and_then(|reveal| {
-                keys.iter()
-                    .find(|key| key.id == *reveal)
-                    .map(|key| (reveal.clone(), key.index))
-            })
-        });
-    if component.last_reveal != reveal {
-        component.last_reveal = reveal.clone();
-        if let Some((_id, index)) = reveal {
-            component.scroll_handle.scroll_to_item(
-                index,
-                super::virtual_list::scroll_strategy(node.reveal_strategy.as_deref()),
-            );
-        }
-    }
-    if node.range.is_none() {
-        component.last_requested_range = None;
-    }
+    let reveal = super::uniform_collection::controlled_reveal(
+        total_count,
+        node.reveal_index,
+        node.reveal.as_deref(),
+        |reveal| {
+            keys.iter()
+                .find(|key| key.id == reveal)
+                .map(|key| key.index)
+        },
+    );
+    component.reconcile_reveal(reveal, node.reveal_strategy.as_deref());
+    component.reset_range_without_event(node.range.as_deref());
     let scroll_handle = component.scroll_handle.clone();
     let focus_handle = component.focus_handle.clone();
 
@@ -208,19 +188,19 @@ pub(crate) fn render(
             match action {
                 TreeAction::Select(position) => {
                     let item = &key_items[position];
-                    super::virtual_list::emit_change(
+                    super::uniform_collection::emit_change(
                         &runtime,
                         window_id,
-                        Some(&change_event),
+                        Some(change_event.as_str()),
                         &item.id,
                     );
                     key_scroll.scroll_to_item(item.index, gpui::ScrollStrategy::Nearest);
                 }
                 TreeAction::Toggle(position) => {
-                    super::virtual_list::emit_change(
+                    super::uniform_collection::emit_change(
                         &runtime,
                         window_id,
-                        Some(&toggle_event),
+                        Some(toggle_event.as_str()),
                         &key_items[position].id,
                     );
                 }
@@ -264,9 +244,9 @@ fn render_visible(
             .end
             .saturating_add(tree.overscan)
             .min(tree.total_count);
-    super::virtual_list::schedule_range(
+    super::uniform_collection::schedule_range(
         component,
-        super::virtual_list::VirtualCollectionKind::Tree,
+        super::uniform_collection::CollectionKind::Tree,
         &tree.id,
         requested_range,
         tree.range_event.as_deref(),
@@ -339,17 +319,17 @@ fn render_visible(
                 move |event, window, cx| {
                     item_focus.focus(window, cx);
                     if branch && event.click_count() == 2 {
-                        super::virtual_list::emit_change(
+                        super::uniform_collection::emit_change(
                             &item_runtime,
                             window_id,
-                            Some(&toggle_event),
+                            Some(toggle_event.as_str()),
                             &event_id,
                         );
                     } else {
-                        super::virtual_list::emit_change(
+                        super::uniform_collection::emit_change(
                             &item_runtime,
                             window_id,
-                            Some(&select_event),
+                            Some(select_event.as_str()),
                             &event_id,
                         );
                     }

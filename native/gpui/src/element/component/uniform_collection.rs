@@ -1,0 +1,195 @@
+#![cfg(feature = "components")]
+
+use crate::element::component_registry::ComponentRegistry;
+use crate::{gpui, NativeTextInput};
+use std::collections::HashMap;
+use std::ops::Range;
+
+pub(crate) struct ComponentUniformCollection {
+    pub(crate) scroll_handle: gpui::UniformListScrollHandle,
+    pub(crate) focus_handle: gpui::FocusHandle,
+    pub(crate) last_reveal: Option<(String, usize)>,
+    pub(crate) last_requested_range: Option<Range<usize>>,
+    pub(crate) pending_requested_range: Option<Range<usize>>,
+    pub(crate) range_emit_scheduled: bool,
+    pub(crate) input_entities: HashMap<String, gpui::Entity<NativeTextInput>>,
+    pub(crate) components: ComponentRegistry,
+}
+
+impl ComponentUniformCollection {
+    pub(crate) fn new(cx: &mut gpui::Context<'_, crate::ElixirRoot>) -> Self {
+        Self {
+            scroll_handle: gpui::UniformListScrollHandle::new(),
+            focus_handle: cx.focus_handle(),
+            last_reveal: None,
+            last_requested_range: None,
+            pending_requested_range: None,
+            range_emit_scheduled: false,
+            input_entities: HashMap::new(),
+            components: ComponentRegistry::default(),
+        }
+    }
+
+    pub(crate) fn reconcile_reveal(
+        &mut self,
+        reveal: Option<(String, usize)>,
+        strategy: Option<&str>,
+    ) {
+        if self.last_reveal == reveal {
+            return;
+        }
+        self.last_reveal = reveal.clone();
+        if let Some((_id, index)) = reveal {
+            self.scroll_handle
+                .scroll_to_item(index, scroll_strategy(strategy));
+        }
+    }
+
+    pub(crate) fn reset_range_without_event(&mut self, range_event: Option<&str>) {
+        if range_event.is_none() {
+            self.last_requested_range = None;
+        }
+    }
+}
+
+pub(crate) fn controlled_index(
+    total_count: usize,
+    index: Option<u64>,
+    value: Option<&str>,
+    find_loaded: impl FnOnce(&str) -> Option<usize>,
+) -> Option<usize> {
+    index
+        .and_then(|index| usize::try_from(index).ok())
+        .filter(|index| *index < total_count)
+        .or_else(|| value.and_then(find_loaded))
+}
+
+pub(crate) fn controlled_reveal(
+    total_count: usize,
+    index: Option<u64>,
+    value: Option<&str>,
+    find_loaded: impl FnOnce(&str) -> Option<usize>,
+) -> Option<(String, usize)> {
+    index
+        .and_then(|index| usize::try_from(index).ok())
+        .filter(|index| *index < total_count)
+        .map(|index| {
+            (
+                value
+                    .map(str::to_string)
+                    .unwrap_or_else(|| format!("index-{index}")),
+                index,
+            )
+        })
+        .or_else(|| {
+            value.and_then(|value| find_loaded(value).map(|index| (value.to_string(), index)))
+        })
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum CollectionKind {
+    List,
+    Tree,
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn schedule_range(
+    component: &mut ComponentUniformCollection,
+    kind: CollectionKind,
+    collection_id: &str,
+    requested_range: Range<usize>,
+    event: Option<&str>,
+    runtime: &crate::SharedRuntime,
+    window_id: u64,
+    window: &gpui::Window,
+    cx: &mut gpui::Context<'_, crate::ElixirRoot>,
+) {
+    let Some(event) = event else {
+        return;
+    };
+
+    component.pending_requested_range = Some(requested_range);
+    if component.range_emit_scheduled {
+        return;
+    }
+    component.range_emit_scheduled = true;
+
+    let collection_id = collection_id.to_string();
+    let event = event.to_string();
+    let runtime = runtime.clone();
+    cx.defer_in(window, move |root, _window, _cx| {
+        let component = match kind {
+            CollectionKind::List => root.components.virtual_list_mut(&collection_id),
+            CollectionKind::Tree => root.components.tree_mut(&collection_id),
+        };
+        let Some(component) = component else {
+            return;
+        };
+        component.range_emit_scheduled = false;
+        let Some(requested_range) = component.pending_requested_range.take() else {
+            return;
+        };
+        if component.last_requested_range.as_ref() == Some(&requested_range) {
+            return;
+        }
+        component.last_requested_range = Some(requested_range.clone());
+        emit_range(
+            &runtime,
+            window_id,
+            &event,
+            requested_range.start,
+            requested_range.end,
+        );
+    });
+}
+
+pub(crate) fn emit_change(
+    runtime: &crate::SharedRuntime,
+    window_id: u64,
+    event: Option<&str>,
+    value: &str,
+) {
+    use crate::{push_event, EventValue, InputKind, NativeEvent};
+
+    let Some(event) = event else {
+        return;
+    };
+    let _ = push_event(
+        runtime,
+        NativeEvent::Input {
+            kind: InputKind::Change,
+            window_id,
+            event: event.to_string(),
+            value: Some(EventValue::String(value.to_string())),
+        },
+    );
+}
+
+fn emit_range(
+    runtime: &crate::SharedRuntime,
+    window_id: u64,
+    event: &str,
+    first: usize,
+    last: usize,
+) {
+    use crate::{push_event, NativeEvent};
+
+    let _ = push_event(
+        runtime,
+        NativeEvent::VirtualRange {
+            window_id,
+            event: event.to_string(),
+            first: first as u64,
+            last: last as u64,
+        },
+    );
+}
+
+fn scroll_strategy(strategy: Option<&str>) -> gpui::ScrollStrategy {
+    match strategy {
+        Some("top") => gpui::ScrollStrategy::Top,
+        Some("center") => gpui::ScrollStrategy::Center,
+        Some("bottom") => gpui::ScrollStrategy::Bottom,
+        _other => gpui::ScrollStrategy::Nearest,
+    }
+}

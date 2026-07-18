@@ -417,36 +417,6 @@ pub(crate) fn inject_event_impl<'a>(
 }
 
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_element_node(term: Term) -> NifResult<ElementNode> {
-    if let Ok(text) = term.decode::<String>() {
-        return Ok(ElementNode::Text(TextNode {
-            text,
-            style: StyleAttrs::default(),
-        }));
-    }
-
-    let type_term = term.map_get(atoms::type_atom())?;
-    let node_type = type_term.atom_to_string()?;
-
-    let tag = decode_generated_element_tag(node_type.as_str());
-
-    decode_generated_element_node(term, tag)
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn decode_container_node(
-    term: Term,
-    tag: GeneratedElementTag,
-) -> NifResult<ElementNode> {
-    Ok(ElementNode::Div(ContainerNode {
-        tag,
-        style: decode_style(term)?,
-        children: decode_children(term)?,
-        click: string_attr(term, atoms::phx_click()),
-    }))
-}
-
-#[cfg(feature = "real-gpui")]
 pub(crate) fn decode_select_options(term: Term) -> NifResult<Vec<SelectOptionNode>> {
     let attrs = term.map_get(atoms::attrs())?;
     let options = attrs.map_get(atoms::options())?.decode::<Vec<Term>>()?;
@@ -494,25 +464,6 @@ pub(crate) fn decode_radio_options(term: Term) -> NifResult<Vec<RadioOptionNode>
 }
 
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_input_node(term: Term, _tag: GeneratedElementTag) -> NifResult<ElementNode> {
-    Ok(ElementNode::Input(InputNode {
-        style: decode_style(term)?,
-        value: string_attr(term, atoms::value()).unwrap_or_default(),
-        placeholder: string_attr(term, atoms::placeholder()),
-        change: string_attr(term, atoms::phx_change()),
-        keydown: string_attr(term, atoms::phx_keydown()),
-        keyup: string_attr(term, atoms::phx_keyup()),
-    }))
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn decode_children(term: Term) -> NifResult<Vec<ElementNode>> {
-    let children = term.map_get(atoms::children())?.decode::<Vec<Term>>()?;
-
-    children.into_iter().map(decode_element_node).collect()
-}
-
-#[cfg(feature = "real-gpui")]
 pub(crate) fn decode_text_children(term: Term) -> NifResult<String> {
     let children = term.map_get(atoms::children())?.decode::<Vec<Term>>()?;
 
@@ -550,14 +501,6 @@ pub(crate) fn decode_image_node(term: Term, _tag: GeneratedElementTag) -> NifRes
         image: ImageData::Raster(raster),
         style: decode_style(term)?,
         label: string_attr(term, atoms::label()).filter(|label| !label.is_empty()),
-    }))
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn decode_text_node(term: Term, _tag: GeneratedElementTag) -> NifResult<ElementNode> {
-    Ok(ElementNode::Text(TextNode {
-        text: decode_text_children(term)?,
-        style: decode_style(term)?,
     }))
 }
 

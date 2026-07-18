@@ -10,6 +10,7 @@ defmodule GPUI.Codegen.Native.Style do
   def items(style_specs) do
     [
       generated_style_struct(style_specs),
+      generated_default_style_function(),
       generated_apply_style_function(style_specs),
       generated_apply_render_style_function(style_specs)
     ]
@@ -34,6 +35,16 @@ defmodule GPUI.Codegen.Native.Style do
   defp rust_style_type(:number), do: %AST.TypeOption{inner: T.path(:f32)}
   defp rust_style_type(:px), do: %AST.TypeOption{inner: T.path(:f32)}
   defp rust_style_type(:radius), do: %AST.TypeOption{inner: T.path(:f32)}
+
+  defp generated_default_style_function do
+    %AST.Function{
+      name: :default_style,
+      vis: :crate,
+      attrs: [A.attr(:cfg, feature: "real-gpui")],
+      returns: T.path(:StyleAttrs),
+      body: [A.return_stmt(A.path_call([:StyleAttrs, :default]))]
+    }
+  end
 
   defp generated_apply_render_style_function(style_specs) do
     %AST.Function{

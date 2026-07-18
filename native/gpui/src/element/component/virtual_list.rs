@@ -4,44 +4,17 @@ use crate::{gpui, VirtualListComponentNode, VirtualListItemComponentNode};
 #[cfg(not(feature = "components"))]
 use super::render_component_fallback;
 #[cfg(feature = "components")]
-use crate::element::{component_registry::ComponentRegistry, ElementNode};
-#[cfg(feature = "components")]
-use crate::NativeTextInput;
+use crate::element::ElementNode;
 
 #[cfg(feature = "components")]
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 #[cfg(feature = "components")]
 use std::ops::Range;
 #[cfg(feature = "components")]
 use std::sync::Arc;
 
 #[cfg(feature = "components")]
-pub(crate) struct ComponentVirtualList {
-    pub(crate) scroll_handle: gpui::UniformListScrollHandle,
-    pub(crate) focus_handle: gpui::FocusHandle,
-    pub(crate) last_reveal: Option<(String, usize)>,
-    pub(crate) last_requested_range: Option<Range<usize>>,
-    pub(crate) pending_requested_range: Option<Range<usize>>,
-    pub(crate) range_emit_scheduled: bool,
-    pub(crate) input_entities: HashMap<String, gpui::Entity<NativeTextInput>>,
-    pub(crate) components: ComponentRegistry,
-}
-
-#[cfg(feature = "components")]
-impl ComponentVirtualList {
-    pub(crate) fn new(cx: &mut gpui::Context<'_, crate::ElixirRoot>) -> Self {
-        Self {
-            scroll_handle: gpui::UniformListScrollHandle::new(),
-            focus_handle: cx.focus_handle(),
-            last_reveal: None,
-            last_requested_range: None,
-            pending_requested_range: None,
-            range_emit_scheduled: false,
-            input_entities: HashMap::new(),
-            components: ComponentRegistry::default(),
-        }
-    }
-}
+pub(crate) type ComponentVirtualList = super::uniform_collection::ComponentUniformCollection;
 
 #[cfg(feature = "components")]
 #[derive(Clone, Debug)]
@@ -107,18 +80,17 @@ pub(crate) fn render(
             )
         })
         .collect::<Vec<_>>();
-    let selected_index = node
-        .selected_index
-        .and_then(|index| usize::try_from(index).ok())
-        .filter(|index| *index < total_count)
-        .or_else(|| {
-            node.selected.as_ref().and_then(|selected| {
-                item_keys
-                    .iter()
-                    .find(|(id, _disabled, _index)| id == selected)
-                    .map(|(_id, _disabled, index)| *index)
-            })
-        });
+    let selected_index = super::uniform_collection::controlled_index(
+        total_count,
+        node.selected_index,
+        node.selected.as_deref(),
+        |selected| {
+            item_keys
+                .iter()
+                .find(|(id, _disabled, _index)| id == selected)
+                .map(|(_id, _disabled, index)| *index)
+        },
+    );
 
     if context.components.virtual_list_mut(&node.id).is_none() {
         let component = ComponentVirtualList::new(context.cx);
@@ -129,37 +101,19 @@ pub(crate) fn render(
         .components
         .virtual_list_mut(&node.id)
         .expect("virtual list component must exist after insertion");
-    let reveal = node
-        .reveal_index
-        .and_then(|index| usize::try_from(index).ok())
-        .filter(|index| *index < total_count)
-        .map(|index| {
-            (
-                node.reveal
-                    .clone()
-                    .unwrap_or_else(|| format!("index-{index}")),
-                index,
-            )
-        })
-        .or_else(|| {
-            node.reveal.as_ref().and_then(|reveal| {
-                item_keys
-                    .iter()
-                    .find(|(id, _disabled, _index)| id == reveal)
-                    .map(|(_id, _disabled, index)| (reveal.clone(), *index))
-            })
-        });
-    if component.last_reveal != reveal {
-        component.last_reveal = reveal.clone();
-        if let Some((_id, index)) = reveal {
-            component
-                .scroll_handle
-                .scroll_to_item(index, scroll_strategy(node.reveal_strategy.as_deref()));
-        }
-    }
-    if node.range.is_none() {
-        component.last_requested_range = None;
-    }
+    let reveal = super::uniform_collection::controlled_reveal(
+        total_count,
+        node.reveal_index,
+        node.reveal.as_deref(),
+        |reveal| {
+            item_keys
+                .iter()
+                .find(|(id, _disabled, _index)| id == reveal)
+                .map(|(_id, _disabled, index)| *index)
+        },
+    );
+    component.reconcile_reveal(reveal, node.reveal_strategy.as_deref());
+    component.reset_range_without_event(node.range.as_deref());
     let scroll_handle = component.scroll_handle.clone();
     let focus_handle = component.focus_handle.clone();
 
@@ -208,10 +162,10 @@ pub(crate) fn render(
             let Some(target) = target else {
                 return;
             };
-            emit_change(
+            super::uniform_collection::emit_change(
                 &runtime,
                 window_id,
-                change_event.as_ref(),
+                change_event.as_deref(),
                 &key_items[target].0,
             );
             key_scroll.scroll_to_item(key_items[target].2, gpui::ScrollStrategy::Nearest);
@@ -255,9 +209,9 @@ fn render_visible_items(
             .end
             .saturating_add(list.overscan)
             .min(list.total_count);
-    schedule_range(
+    super::uniform_collection::schedule_range(
         component,
-        VirtualCollectionKind::List,
+        super::uniform_collection::CollectionKind::List,
         &list.id,
         requested_range,
         list.range_event.as_deref(),
@@ -317,7 +271,12 @@ fn render_visible_items(
             element = element.cursor(gpui::CursorStyle::PointingHand).on_click(
                 move |_event, window, cx| {
                     item_focus.focus(window, cx);
-                    emit_change(&item_runtime, window_id, event_name.as_ref(), &event_id);
+                    super::uniform_collection::emit_change(
+                        &item_runtime,
+                        window_id,
+                        event_name.as_deref(),
+                        &event_id,
+                    );
                 },
             );
         }
@@ -336,109 +295,6 @@ fn render_visible_items(
         });
     }
     rendered
-}
-
-#[cfg(feature = "components")]
-pub(crate) fn emit_change(
-    runtime: &crate::SharedRuntime,
-    window_id: u64,
-    event: Option<&String>,
-    value: &str,
-) {
-    use crate::{push_event, EventValue, InputKind, NativeEvent};
-
-    let Some(event) = event else {
-        return;
-    };
-    let _ = push_event(
-        runtime,
-        NativeEvent::Input {
-            kind: InputKind::Change,
-            window_id,
-            event: event.clone(),
-            value: Some(EventValue::String(value.to_string())),
-        },
-    );
-}
-
-#[cfg(feature = "components")]
-#[derive(Clone, Copy)]
-pub(crate) enum VirtualCollectionKind {
-    List,
-    Tree,
-}
-
-#[cfg(feature = "components")]
-#[allow(clippy::too_many_arguments)]
-pub(crate) fn schedule_range(
-    component: &mut ComponentVirtualList,
-    kind: VirtualCollectionKind,
-    collection_id: &str,
-    requested_range: Range<usize>,
-    event: Option<&str>,
-    runtime: &crate::SharedRuntime,
-    window_id: u64,
-    window: &gpui::Window,
-    cx: &mut gpui::Context<'_, crate::ElixirRoot>,
-) {
-    let Some(event) = event else {
-        return;
-    };
-
-    component.pending_requested_range = Some(requested_range);
-    if component.range_emit_scheduled {
-        return;
-    }
-    component.range_emit_scheduled = true;
-
-    let collection_id = collection_id.to_string();
-    let event = event.to_string();
-    let runtime = runtime.clone();
-    cx.defer_in(window, move |root, _window, _cx| {
-        let component = match kind {
-            VirtualCollectionKind::List => root.components.virtual_list_mut(&collection_id),
-            VirtualCollectionKind::Tree => root.components.tree_mut(&collection_id),
-        };
-        let Some(component) = component else {
-            return;
-        };
-        component.range_emit_scheduled = false;
-        let Some(requested_range) = component.pending_requested_range.take() else {
-            return;
-        };
-        if component.last_requested_range.as_ref() == Some(&requested_range) {
-            return;
-        }
-        component.last_requested_range = Some(requested_range.clone());
-        emit_range(
-            &runtime,
-            window_id,
-            &event,
-            requested_range.start,
-            requested_range.end,
-        );
-    });
-}
-
-#[cfg(feature = "components")]
-pub(crate) fn emit_range(
-    runtime: &crate::SharedRuntime,
-    window_id: u64,
-    event: &str,
-    first: usize,
-    last: usize,
-) {
-    use crate::{push_event, NativeEvent};
-
-    let _ = push_event(
-        runtime,
-        NativeEvent::VirtualRange {
-            window_id,
-            event: event.to_string(),
-            first: first as u64,
-            last: last as u64,
-        },
-    );
 }
 
 #[cfg(feature = "components")]
@@ -472,16 +328,6 @@ fn next_enabled(items: &[(String, bool, usize)], selected: Option<usize>) -> Opt
 fn previous_enabled(items: &[(String, bool, usize)], selected: Option<usize>) -> Option<usize> {
     let end = selected.unwrap_or(items.len());
     (0..end).rev().find(|index| !items[*index].1)
-}
-
-#[cfg(feature = "components")]
-pub(crate) fn scroll_strategy(strategy: Option<&str>) -> gpui::ScrollStrategy {
-    match strategy {
-        Some("top") => gpui::ScrollStrategy::Top,
-        Some("center") => gpui::ScrollStrategy::Center,
-        Some("bottom") => gpui::ScrollStrategy::Bottom,
-        _other => gpui::ScrollStrategy::Nearest,
-    }
 }
 
 #[cfg(not(feature = "components"))]
