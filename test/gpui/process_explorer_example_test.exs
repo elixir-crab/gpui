@@ -20,13 +20,19 @@ defmodule GPUI.ProcessExplorerExampleTest do
     assert runtime |> tree() |> all(id: "<0.20.0>") |> length() == 1
     assert runtime |> tree() |> all(id: "<0.10.0>") |> length() == 0
 
+    assert text_present?(
+             runtime,
+             "1 of 2 processes · 10.0 KB total process memory · live updates"
+           )
+
     select(runtime, "process_selected", "<0.20.0>")
     assert %{selected_pid: "<0.20.0>"} = assigns(runtime)
 
-    assert runtime
-           |> tree()
-           |> all(type: :text)
-           |> Enum.any?(&match?(%{children: ["Elixir.Worker.loop/1"]}, &1))
+    assert text_present?(runtime, "Elixir.Worker.loop/1")
+
+    change(runtime, "filter_changed", "missing")
+    assert text_present?(runtime, "No matching processes")
+    assert text_present?(runtime, "Hidden by the current filter")
   end
 
   test "pauses and resumes snapshots while reconciling terminated selections" do
@@ -50,6 +56,13 @@ defmodule GPUI.ProcessExplorerExampleTest do
     assert rows != []
     assert Enum.any?(rows, &(&1.pid == inspect(self())))
     assert Enum.all?(rows, &is_integer(&1.memory))
+  end
+
+  defp text_present?(runtime, text) do
+    runtime
+    |> tree()
+    |> all(type: :text)
+    |> Enum.any?(&match?(%{children: [^text]}, &1))
   end
 
   defp processes do

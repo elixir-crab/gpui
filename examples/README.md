@@ -29,7 +29,8 @@ RUST_FONTCONFIG_DLOPEN=1 mix run examples/process_explorer/run.exs
 ```
 
 It combines a supervised sampler, periodic root-view messages, filtering,
-sorting, a virtualized process collection, selection, and a details pane. See
+sorting, a virtualized process collection, explicit empty/filter states,
+selection, and a details pane. See
 [`process_explorer/README.md`](process_explorer/README.md) for its architecture.
 
 ## Image palette
@@ -48,8 +49,8 @@ analysis architecture.
 ## Git repository browser
 
 The repository browser scans a server-local Git working tree, presents an
-expandable virtualized hierarchy, filters by path and status, and virtualizes
-bounded file and diff previews:
+expandable virtualized hierarchy, filters by path and status, and presents
+bounded source-backed file and diff previews:
 
 ```bash
 RUST_FONTCONFIG_DLOPEN=1 mix run examples/git_repository_browser/run.exs -- path/to/repository
@@ -60,7 +61,8 @@ its supervision, bounds, and local/remote filesystem semantics.
 
 ## Feature examples
 
-`features/resource_ref_image.exs` demonstrates reusable raster resources:
+`features/resource_ref_image.exs` demonstrates installing a raster once and
+rendering a lightweight reusable resource reference:
 
 ```bash
 RUST_FONTCONFIG_DLOPEN=1 mix run examples/features/resource_ref_image.exs

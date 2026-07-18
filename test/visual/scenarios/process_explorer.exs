@@ -28,6 +28,13 @@ defmodule GPUITest.Visual.ProcessExplorer.Scenario do
           {:dispatch,
            %{type: :change, window_id: 1, event: "process_selected", value: "<0.50.0>"}}
         ]
+      },
+      %{
+        name: "filtered-empty",
+        actions: [
+          {:dispatch,
+           %{type: :change, window_id: 1, event: "filter_changed", value: "no matches"}}
+        ]
       }
     ]
   end

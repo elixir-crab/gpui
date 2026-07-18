@@ -34,7 +34,7 @@ defmodule Examples.ImagePalette.View do
         <div class="flex items-center justify-center w-[620px] h-[540px] p-5" style={[background: {:rgb, 0x0F172A}]}>
           {preview(assigns)}
         </div>
-        <div class="flex flex-col w-[380px] h-[540px] gap-4 p-5" style={[background: {:rgb, 0x111827}]}>
+        <div class="flex flex-col w-[380px] h-[540px] gap-3 p-5" style={[background: {:rgb, 0x111827}]}>
           {palette_panel(assigns)}
         </div>
       </div>
@@ -105,12 +105,16 @@ defmodule Examples.ImagePalette.View do
     do: {:noreply, %{assigns | status: :copied, stage: "CSS copied to clipboard", error: nil}}
 
   def handle_event("select_color:" <> hex, _event, assigns) do
-    selected = if Enum.any?(assigns.palette, &(&1.hex == hex)), do: hex, else: assigns.selected
+    selected =
+      if palette_interactive?(assigns) and Enum.any?(assigns.palette, &(&1.hex == hex)),
+        do: hex,
+        else: assigns.selected
+
     {:noreply, %{assigns | selected: selected}}
   end
 
   def handle_event("export_palette", _event, assigns) do
-    if assigns.status in [:ready, :exported] and assigns.palette != [] do
+    if palette_interactive?(assigns) and String.trim(assigns.export_path) != "" do
       {:noreply, %{assigns | status: :exporting, error: nil}}
     else
       {:noreply, assigns}
@@ -221,11 +225,12 @@ defmodule Examples.ImagePalette.View do
     ~GPUI"""
     <div class="flex flex-col gap-3">
       <text class="text-white text-xl font-semibold">Dominant colors</text>
-      <div class="flex flex-col gap-2">
-        {Enum.map(assigns.palette, &swatch(&1, assigns.selected))}
+      <div class="flex flex-col gap-1">
+        {Enum.map(assigns.palette, &swatch(&1, assigns))}
       </div>
+      {selected_color(assigns)}
       <div class="flex flex-col gap-2">
-        <text style={[color: {:rgb, 0x94A3B8}]}>CSS export path</text>
+        <text style={[color: {:rgb, 0x94A3B8}]}>Application-side CSS path</text>
         <UI.input
           id="export-path"
           value={assigns.export_path}
@@ -237,14 +242,14 @@ defmodule Examples.ImagePalette.View do
             id="export-palette"
             label={export_label(assigns.status)}
             variant="primary"
-            disabled={assigns.status == :exporting or String.trim(assigns.export_path) == ""}
+            disabled={not palette_interactive?(assigns) or String.trim(assigns.export_path) == ""}
             phx-click="export_palette"
           />
           <UI.copy_button
             id="copy-palette-css"
             label="Copy CSS"
             text={Analysis.css(assigns.palette)}
-            disabled={assigns.status == :exporting}
+            disabled={not palette_interactive?(assigns)}
             phx-click="palette_copied"
           />
         </div>
@@ -254,8 +259,12 @@ defmodule Examples.ImagePalette.View do
     """
   end
 
-  defp swatch(color, selected) do
-    assigns = %{color: color, selected: selected == color.hex}
+  defp swatch(color, palette_assigns) do
+    assigns = %{
+      color: color,
+      selected: palette_assigns.selected == color.hex,
+      disabled: not palette_interactive?(palette_assigns)
+    }
 
     ~GPUI"""
     <div class="flex items-center gap-3">
@@ -264,12 +273,30 @@ defmodule Examples.ImagePalette.View do
         id={"color-" <> assigns.color.hex}
         label={assigns.color.hex}
         variant={if(assigns.selected, do: "primary", else: "default")}
+        disabled={assigns.disabled}
         phx-click={"select_color:" <> assigns.color.hex}
       />
       <text style={[color: {:rgb, 0x94A3B8}]}>{assigns.color.count} samples</text>
     </div>
     """
   end
+
+  defp selected_color(assigns) do
+    color = Enum.find(assigns.palette, &(&1.hex == assigns.selected))
+    selected_assigns = %{color: color}
+
+    ~GPUI"""
+    <text style={[color: {:rgb, 0x94A3B8}]}>{selected_color_label(selected_assigns.color)}</text>
+    """
+  end
+
+  defp selected_color_label(nil), do: "No color selected"
+
+  defp selected_color_label(color),
+    do: "Selected #{color.hex} · RGB #{color.red}, #{color.green}, #{color.blue}"
+
+  defp palette_interactive?(assigns),
+    do: assigns.palette != [] and assigns.status not in [:loading, :exporting]
 
   defp color_rgb(color), do: color.red * 65_536 + color.green * 256 + color.blue
   defp picker_label(:loading), do: "Choose replacement"

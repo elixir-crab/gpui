@@ -145,6 +145,13 @@ defmodule GPUI.GitRepositoryBrowserExampleTest do
     copy_selected_line(runtime, "preview_line_copied")
     assert %{preview_copy_count: 1} = assigns(runtime)
 
+    assert runtime
+           |> tree()
+           |> all(type: :text)
+           |> Enum.any?(
+             &match?(%{children: ["Copied selected line · Ctrl/Cmd+C to copy again"]}, &1)
+           )
+
     select(runtime, "tree_toggled", "dir:lib/core")
     assigns = assigns(runtime)
 

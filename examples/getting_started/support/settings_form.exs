@@ -11,20 +11,26 @@ defmodule GettingStarted.SettingsForm.View do
       <text class="text-white text-2xl font-semibold">Workspace settings</text>
       <text style={[color: {:rgb, 0x94A3B8}]}>A controlled form whose source of truth stays in Elixir.</text>
 
-      <UI.input
-        id="display-name"
-        value={assigns.name}
-        placeholder="Display name"
-        cleanable={true}
-        phx-change="name_changed"
-      />
+      <div class="flex flex-col gap-2">
+        <text style={[color: {:rgb, 0xCBD5E1}]}>Display name</text>
+        <UI.input
+          id="display-name"
+          value={assigns.name}
+          placeholder="Display name"
+          cleanable={true}
+          phx-change="name_changed"
+        />
+      </div>
 
-      <UI.select
-        id="preview"
-        value={assigns.preview}
-        options={[{"Midnight", "midnight"}, {"Paper", "paper"}]}
-        phx-change="preview_changed"
-      />
+      <div class="flex flex-col gap-2">
+        <text style={[color: {:rgb, 0xCBD5E1}]}>Appearance</text>
+        <UI.select
+          id="preview"
+          value={assigns.preview}
+          options={[{"Midnight", "midnight"}, {"Paper", "paper"}]}
+          phx-change="preview_changed"
+        />
+      </div>
 
       <div class="flex flex-col gap-2 p-4 rounded-md" style={preview_style(assigns.preview)}>
         <text style={preview_text_style(assigns.preview)}>Live appearance preview</text>
@@ -38,13 +44,16 @@ defmodule GettingStarted.SettingsForm.View do
         phx-change="notifications_changed"
       />
 
-      <UI.radio_group
-        id="density"
-        value={assigns.density}
-        options={[{"Comfortable", "comfortable"}, {"Compact", "compact"}]}
-        orientation="horizontal"
-        phx-change="density_changed"
-      />
+      <div class="flex flex-col gap-2">
+        <text style={[color: {:rgb, 0xCBD5E1}]}>Interface density</text>
+        <UI.radio_group
+          id="density"
+          value={assigns.density}
+          options={[{"Comfortable", "comfortable"}, {"Compact", "compact"}]}
+          orientation="horizontal"
+          phx-change="density_changed"
+        />
+      </div>
 
       <div class="flex flex-col gap-2">
         <text class="text-white">Notification volume: {round(assigns.volume)}%</text>
@@ -59,7 +68,7 @@ defmodule GettingStarted.SettingsForm.View do
       </div>
 
       <div class="flex gap-3">
-        <UI.button id="review" label="Review changes" variant="primary" phx-click="review" />
+        <UI.button id="review" label={review_label(assigns.saved)} variant="primary" phx-click="review" />
         <text style={status_style(assigns)}>{status_label(assigns)}</text>
       </div>
 
@@ -73,10 +82,11 @@ defmodule GettingStarted.SettingsForm.View do
         <:content>
           <div class="flex flex-col gap-3 p-2">
             <text>Name: {display_name(assigns.name)}</text>
-            <text>Preview: {assigns.preview}</text>
-            <text>Density: {assigns.density}</text>
+            <text>Appearance: {humanize(assigns.preview)}</text>
+            <text>Density: {humanize(assigns.density)}</text>
             <text>Notifications: {on_off(assigns.notifications)}</text>
-            <UI.button id="apply" label="Apply settings" variant="primary" phx-click="apply" />
+            <text>Notification volume: {round(assigns.volume)}%</text>
+            <UI.button id="apply" label="Apply changes" variant="primary" phx-click="apply" />
           </div>
         </:content>
       </Overlay.dialog>
@@ -118,12 +128,15 @@ defmodule GettingStarted.SettingsForm.View do
   defp preview_text_style("paper"), do: [color: {:rgb, 0x111827}]
   defp status_style(%{saved: true}), do: [color: {:rgb, 0x22C55E}]
   defp status_style(_assigns), do: [color: {:rgb, 0x94A3B8}]
-  defp status_label(%{saved: true}), do: "Saved"
+  defp status_label(%{saved: true}), do: "Settings up to date"
   defp status_label(_assigns), do: "Unsaved changes"
+  defp review_label(true), do: "Review settings"
+  defp review_label(false), do: "Review changes"
   defp display_name(""), do: "Anonymous"
   defp display_name(name), do: name
   defp on_off(true), do: "On"
   defp on_off(false), do: "Off"
+  defp humanize(value), do: value |> String.replace("_", " ") |> String.capitalize()
 end
 
 defmodule GettingStarted.SettingsForm.App do

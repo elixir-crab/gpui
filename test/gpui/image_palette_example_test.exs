@@ -66,6 +66,25 @@ defmodule GPUI.ImagePaletteExampleTest do
 
     click(runtime, "palette_copied")
     assert %{status: :copied, stage: "CSS copied to clipboard"} = assigns(runtime)
+
+    click(runtime, "export_palette")
+    assert_receive {:css_written, "/tmp/palette.css", _css}
+    assert_receive {:image_palette, :exported, "/tmp/palette.css"}
+  end
+
+  test "disables retained palette actions while a replacement is loading" do
+    result = Analysis.analyze(source_raster(), colors: 3)
+
+    runtime =
+      start_gpui!(App,
+        args: %{path: "/fixtures/colors.bmp", export_path: "palette.css", result: result}
+      )
+
+    click(runtime, "load_image")
+    assert %{status: :loading} = assigns(runtime)
+    assert %{attrs: %{disabled: true}} = runtime |> tree() |> find!(id: "export-palette")
+    assert %{attrs: %{disabled: true}} = runtime |> tree() |> find!(id: "copy-palette-css")
+    assert %{attrs: %{disabled: true}} = runtime |> tree() |> find!(id: "color-#FF0000")
   end
 
   test "cancels active analysis and ignores its stale messages" do

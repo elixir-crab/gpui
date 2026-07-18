@@ -15,7 +15,7 @@ defmodule Examples.ProcessExplorer.View do
         <div class="flex items-center justify-between gap-4">
           <div class="flex flex-col">
             <text class="text-white text-2xl font-semibold">BEAM process explorer</text>
-            <text style={[color: {:rgb, 0x94A3B8}]}>{summary(assigns.processes, assigns.paused)}</text>
+            <text style={[color: {:rgb, 0x94A3B8}]}>{summary(assigns.processes, processes, assigns.paused)}</text>
           </div>
           <UI.button
             id="pause-updates"
@@ -28,7 +28,7 @@ defmodule Examples.ProcessExplorer.View do
           <UI.input
             id="process-filter"
             value={assigns.filter}
-            placeholder="Filter by PID, name, or function"
+            placeholder="Filter processes by PID, name, or function"
             cleanable={true}
             phx-change="filter_changed"
           />
@@ -50,21 +50,11 @@ defmodule Examples.ProcessExplorer.View do
             <text class="text-white w-[100px]">Mailbox</text>
             <text class="text-white w-[110px]">Reductions</text>
           </div>
-          <UI.virtual_list
-            id="processes"
-            label="BEAM processes"
-            selected={visible_selection}
-            reveal={visible_selection}
-            item_height={76}
-            phx-change="process_selected"
-            class="h-[520px]"
-          >
-            {Enum.map(processes, &process_row(&1, assigns.selected_pid))}
-          </UI.virtual_list>
+          {process_collection(processes, visible_selection, assigns)}
         </div>
 
         <div class="flex flex-col w-[380px] h-[570px] gap-3 p-5" style={[background: {:rgb, 0x111827}]}>
-          {inspector(selected)}
+          {inspector(selected, not is_nil(selected) and is_nil(visible_selection))}
         </div>
       </div>
     </div>
@@ -156,7 +146,38 @@ defmodule Examples.ProcessExplorer.View do
     """
   end
 
-  defp inspector(nil) do
+  defp process_collection([], _visible_selection, assigns) do
+    ~GPUI"""
+    <div class="flex flex-col items-center justify-center h-[520px] gap-2 p-6">
+      <text class="text-white text-lg">{empty_title(assigns)}</text>
+      <text style={[color: {:rgb, 0x94A3B8}]}>{empty_message(assigns)}</text>
+    </div>
+    """
+  end
+
+  defp process_collection(processes, visible_selection, assigns) do
+    collection_assigns = %{
+      processes: processes,
+      selected_pid: assigns.selected_pid,
+      visible_selection: visible_selection
+    }
+
+    ~GPUI"""
+    <UI.virtual_list
+      id="processes"
+      label="BEAM processes"
+      selected={collection_assigns.visible_selection}
+      reveal={collection_assigns.visible_selection}
+      item_height={76}
+      phx-change="process_selected"
+      class="h-[520px]"
+    >
+      {Enum.map(collection_assigns.processes, &process_row(&1, collection_assigns.selected_pid))}
+    </UI.virtual_list>
+    """
+  end
+
+  defp inspector(nil, _hidden) do
     ~GPUI"""
     <div class="flex flex-col gap-3">
       <text class="text-white text-xl font-semibold">Process details</text>
@@ -165,13 +186,14 @@ defmodule Examples.ProcessExplorer.View do
     """
   end
 
-  defp inspector(process) do
-    assigns = %{process: process}
+  defp inspector(process, hidden) do
+    assigns = %{process: process, hidden: hidden}
 
     ~GPUI"""
     <div class="flex flex-col gap-3">
       <text class="text-white text-xl font-semibold">{assigns.process.pid}</text>
       <text style={[color: {:rgb, 0x94A3B8}]}>{assigns.process.name}</text>
+      {hidden_selection_notice(assigns.hidden)}
       {detail("Status", assigns.process.status)}
       {detail("Current function", assigns.process.current_function)}
       {detail("Initial call", assigns.process.initial_call)}
@@ -193,6 +215,30 @@ defmodule Examples.ProcessExplorer.View do
     """
   end
 
+  defp hidden_selection_notice(true) do
+    ~GPUI"""
+    <text style={[color: {:rgb, 0xFBBF24}]}>Hidden by the current filter</text>
+    """
+  end
+
+  defp hidden_selection_notice(false) do
+    ~GPUI"""
+    <div />
+    """
+  end
+
+  defp empty_title(assigns) do
+    if String.trim(assigns.filter) == "",
+      do: "No processes available",
+      else: "No matching processes"
+  end
+
+  defp empty_message(assigns) do
+    if String.trim(assigns.filter) == "",
+      do: "The next sampler update will appear here.",
+      else: "Try a different PID, name, or function."
+  end
+
   defp row_style(true), do: [background: {:rgb, 0x1D4ED8}]
   defp row_style(false), do: [background: {:rgb, 0x111827}]
   defp pause_label(true), do: "Resume updates"
@@ -200,12 +246,19 @@ defmodule Examples.ProcessExplorer.View do
   defp pause_variant(true), do: "primary"
   defp pause_variant(false), do: "default"
 
-  defp summary(processes, true),
-    do: "#{length(processes)} processes · updates paused"
-
-  defp summary(processes, false) do
+  defp summary(processes, visible, paused) do
+    count = length(processes)
+    visible_count = length(visible)
     memory = Enum.reduce(processes, 0, &(&1.memory + &2))
-    "#{length(processes)} processes · #{format_bytes(memory)} total process memory"
+
+    scope =
+      if visible_count == count,
+        do: "#{count} processes",
+        else: "#{visible_count} of #{count} processes"
+
+    update_state = if paused, do: "updates paused", else: "live updates"
+
+    "#{scope} · #{format_bytes(memory)} total process memory · #{update_state}"
   end
 
   defp sort_options do

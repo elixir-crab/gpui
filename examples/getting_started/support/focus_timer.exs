@@ -9,7 +9,14 @@ defmodule GettingStarted.FocusTimer.View do
     <div class="flex flex-col items-center justify-center w-[480px] h-[360px] gap-4 p-8 bg-slate-900">
       <text class="text-white text-xl font-semibold">Focus session</text>
       <text class="text-white text-3xl">{format_time(assigns.remaining)}</text>
-      <text class={status_class(assigns.status)}>{status_label(assigns.status)}</text>
+      <UI.progress
+        id="focus-progress"
+        label="Session progress"
+        value={assigns.duration - assigns.remaining}
+        max={assigns.duration}
+        class="w-[320px]"
+      />
+      <text style={[color: status_color(assigns.status)]}>{status_label(assigns.status)}</text>
       <div class="flex gap-3">
         <UI.button id="start" label={start_label(assigns.status)} variant="primary" phx-click="start" />
         <UI.button id="pause" label="Pause" disabled={assigns.status != :running} phx-click="pause" />
@@ -57,8 +64,10 @@ defmodule GettingStarted.FocusTimer.View do
   defp status_label(:paused), do: "Paused"
   defp status_label(:complete), do: "Session complete"
 
-  defp status_class(:complete), do: "text-green-500"
-  defp status_class(_status), do: "text-white"
+  defp status_color(:running), do: {:rgb, 0x7DD3FC}
+  defp status_color(:paused), do: {:rgb, 0xFBBF24}
+  defp status_color(:complete), do: {:rgb, 0x86EFAC}
+  defp status_color(_status), do: {:rgb, 0xCBD5E1}
 end
 
 defmodule GettingStarted.FocusTimer.App do
@@ -66,7 +75,11 @@ defmodule GettingStarted.FocusTimer.App do
 
   @impl GPUI.Application
   def mount(args) do
-    duration = args |> Map.new() |> Map.get(:seconds, 5 * 60)
+    duration =
+      case args |> Map.new() |> Map.get(:seconds, 5 * 60) do
+        seconds when is_integer(seconds) and seconds > 0 -> seconds
+        _invalid -> 5 * 60
+      end
 
     {:ok,
      [

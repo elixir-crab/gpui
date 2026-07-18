@@ -22,6 +22,10 @@ defmodule GPUI.GettingStartedExamplesTest do
       )
 
     assert %{remaining: 2, status: :ready} = assigns(runtime)
+
+    assert %{type: :ui_progress, attrs: %{value: 0, max: 2}} =
+             runtime |> tree() |> find!(id: "focus-progress")
+
     click(runtime, "start")
     send(ticker, :tick)
     _ticker_state = :sys.get_state(ticker)
@@ -29,6 +33,9 @@ defmodule GPUI.GettingStartedExamplesTest do
 
     send_view(runtime, :tick)
     assert %{remaining: 0, status: :complete} = assigns(runtime)
+
+    assert %{attrs: %{value: 2, max: 2}} =
+             runtime |> tree() |> find!(id: "focus-progress")
 
     click(runtime, "start")
     assert %{remaining: 2, status: :running} = assigns(runtime)
@@ -57,6 +64,14 @@ defmodule GPUI.GettingStartedExamplesTest do
 
     click(runtime, "review")
     assert %{dialog_open: true} = assigns(runtime)
+
+    assert runtime
+           |> tree()
+           |> all(type: :text)
+           |> Enum.any?(fn %{children: children} ->
+             Enum.join(children) == "Notification volume: 40%"
+           end)
+
     click(runtime, "apply")
     assert %{dialog_open: false, saved: true} = assigns(runtime)
   end

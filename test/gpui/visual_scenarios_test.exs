@@ -1,5 +1,5 @@
 for scenario <-
-      ~w(code_viewer component_gallery git_repository_browser image_palette process_explorer virtual_list) do
+      ~w(code_viewer component_gallery focus_timer git_repository_browser hello_window image_palette process_explorer settings_form virtual_list) do
   Code.require_file("../visual/scenarios/#{scenario}.exs", __DIR__)
 end
 
@@ -37,6 +37,23 @@ defmodule GPUI.VisualScenariosTest do
     runtime = start_gpui!(scenario.app(), args: scenario.args(:dark))
     assert %{mode: :code, selected: nil} = assigns(runtime)
     assert %{type: :ui_code_viewer} = runtime |> tree() |> find!(id: "visual-code")
+  end
+
+  test "getting-started scenarios expose deterministic polished states" do
+    assert [%{name: "hello-window"}] = GPUITest.Visual.HelloWindow.Scenario.captures()
+
+    assert Enum.map(GPUITest.Visual.FocusTimer.Scenario.captures(), & &1.name) == [
+             "ready",
+             "running",
+             "paused",
+             "complete"
+           ]
+
+    assert Enum.map(GPUITest.Visual.SettingsForm.Scenario.captures(), & &1.name) == [
+             "settings",
+             "unsaved-paper-theme",
+             "review-dialog"
+           ]
   end
 
   test "virtual list scenario reveals a deterministic distant selection" do
@@ -130,9 +147,13 @@ defmodule GPUI.VisualScenariosTest do
              "<0.72.0>"
            ]
 
-    assert [%{name: "processes"}, %{name: "selected-process", actions: [action]}] =
-             scenario.captures()
+    assert [
+             %{name: "processes"},
+             %{name: "selected-process", actions: [selection]},
+             %{name: "filtered-empty", actions: [filter]}
+           ] = scenario.captures()
 
-    assert {:dispatch, %{event: "process_selected", value: "<0.50.0>"}} = action
+    assert {:dispatch, %{event: "process_selected", value: "<0.50.0>"}} = selection
+    assert {:dispatch, %{event: "filter_changed", value: "no matches"}} = filter
   end
 end

@@ -38,8 +38,10 @@ The palette algorithm samples at most about 80,000 pixels, groups colors into
 4-bit RGB bins, and sorts deterministically by frequency and color. The preview
 is resized to fit within 520 × 420 pixels before being sent to the display.
 
-CSS can be written to the application-side export path or copied directly to
-the display-side clipboard. Exported variables look like:
+CSS can be written to the explicitly labeled application-side export path or
+copied directly to the display-side clipboard. Palette actions are disabled
+while replacement analysis is active, then become available again for retained
+results after cancellation or failure. Exported variables look like:
 
 ```css
 :root {

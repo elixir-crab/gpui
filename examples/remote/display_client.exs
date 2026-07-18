@@ -1,6 +1,6 @@
-# Run with:
-#   PATH="$HOME/.cargo/bin:$PATH" mix compile
-#   GPUI_APP_HOST=127.0.0.1 GPUI_APP_PORT=5050 mix run examples/remote/display_client.exs
+# Run from the GPUI repository with:
+#   GPUI_APP_HOST=127.0.0.1 GPUI_APP_PORT=5050 \
+#     RUST_FONTCONFIG_DLOPEN=1 mix run examples/remote/display_client.exs
 
 host = System.get_env("GPUI_APP_HOST", "127.0.0.1")
 port = System.get_env("GPUI_APP_PORT", "5050") |> String.to_integer()

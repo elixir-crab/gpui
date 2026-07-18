@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Polished the example suite with clearer controlled-state feedback, filtered and empty process states, safe palette action availability, explicit local/remote path semantics, richer settings review, and modernized resource-reference rendering.
 - Added an accessible source-backed monospaced code and unified-diff viewer with line numbers, controlled selection/reveal, horizontal scrolling, tab expansion, display-side copying, and 100,000-line native coverage; migrated Git Repository Browser previews to it.
 - Consolidated component defaults and native attribute types in the shared schema, normalized explicit nil attributes, indexed renderer metadata in one pass, and derived disabled NIF signatures and generated atom references through RustQ metadata.
 - Moved primitive element and event-value decoding into typed Rusty-Elixir and centralized source-backed list/tree mechanics in a handwritten uniform-collection core.

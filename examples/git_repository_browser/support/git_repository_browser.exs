@@ -322,7 +322,8 @@ defmodule Examples.GitRepositoryBrowser.View do
          %{
            assigns
            | preview_selected_id: selected_id,
-             preview_selected_index: assigns.preview_offset + local_index
+             preview_selected_index: assigns.preview_offset + local_index,
+             preview_copy_count: 0
          }}
     end
   end
@@ -542,7 +543,10 @@ defmodule Examples.GitRepositoryBrowser.View do
     <div class="flex flex-col h-[590px]">
       <div class="flex items-center justify-between p-3">
         <text class="text-white text-lg font-semibold">{assigns.preview.path}</text>
-        <text style={[color: status_color(assigns.preview.status)]}>{preview_label(assigns.preview)}</text>
+        <div class="flex flex-col items-end gap-1">
+          <text style={[color: status_color(assigns.preview.status)]}>{preview_label(assigns.preview)}</text>
+          <text style={[color: {:rgb, 0x94A3B8}]}>{preview_help(assigns)}</text>
+        </div>
       </div>
       <UI.code_viewer
         id="preview-lines"
@@ -560,7 +564,7 @@ defmodule Examples.GitRepositoryBrowser.View do
         phx-change="preview_line_selected"
         phx-range="preview_range_changed"
         phx-copy="preview_line_copied"
-        class="h-[540px]"
+        class="h-[520px]"
       >
         {Enum.map(assigns.preview_lines, &preview_line/1)}
       </UI.code_viewer>
@@ -623,6 +627,14 @@ defmodule Examples.GitRepositoryBrowser.View do
   defp preview_label(%{mode: :diff, status: status}), do: "#{status} diff"
   defp preview_label(%{mode: :file}), do: "file content"
   defp preview_label(%{mode: :notice}), do: "preview notice"
+
+  defp preview_help(%{preview_copy_count: count}) when count > 0,
+    do: "Copied selected line · Ctrl/Cmd+C to copy again"
+
+  defp preview_help(%{preview_selected_index: index}) when is_integer(index),
+    do: "Line #{index + 1} selected · Ctrl/Cmd+C to copy"
+
+  defp preview_help(_assigns), do: "Select a line · Ctrl/Cmd+C to copy"
 
   defp status_color(:clean), do: {:rgb, 0x64748B}
   defp status_color(:directory), do: {:rgb, 0x94A3B8}

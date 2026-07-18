@@ -53,7 +53,6 @@ struct VisibleCode {
     show_line_numbers: bool,
     tab_width: usize,
     item_height: f32,
-    content_width: f32,
     dark: bool,
     background: gpui::Hsla,
     foreground: gpui::Hsla,
@@ -189,7 +188,6 @@ pub(crate) fn render(
         show_line_numbers: node.show_line_numbers,
         tab_width,
         item_height: (node.item_height as f32).max(1.0),
-        content_width,
         dark: theme.is_dark(),
         background: theme.background,
         foreground: theme.foreground,
@@ -214,15 +212,19 @@ pub(crate) fn render(
     let disabled = node.disabled;
     let code_id = node.id.clone();
 
-    let content = gpui::div().w(gpui::px(content_width)).h_full().child(
-        uniform_list(
-            format!("gpui-elixir-code-viewer-list-{window_id}-{code_id}"),
-            total_count,
-            processor,
-        )
-        .track_scroll(&vertical_scroll)
-        .size_full(),
-    );
+    let content = gpui::div()
+        .w(gpui::px(content_width))
+        .min_w_full()
+        .h_full()
+        .child(
+            uniform_list(
+                format!("gpui-elixir-code-viewer-list-{window_id}-{code_id}"),
+                total_count,
+                processor,
+            )
+            .track_scroll(&vertical_scroll)
+            .size_full(),
+        );
     let viewport = gpui::div()
         .id(format!(
             "gpui-elixir-code-viewer-horizontal-{window_id}-{code_id}"
@@ -327,7 +329,7 @@ fn render_visible_lines(
             let Some(line) = line else {
                 return gpui::div()
                     .h(gpui::px(code.item_height))
-                    .w(gpui::px(code.content_width))
+                    .w_full()
                     .into_any_element();
             };
             render_loaded_line(
@@ -393,7 +395,7 @@ fn render_loaded_line(
         .child(expanded);
     let mut element = apply_generated_render_styles(gpui::div().bg(background), line.style)
         .h(gpui::px(code.item_height))
-        .w(gpui::px(code.content_width))
+        .w_full()
         .id(format!(
             "gpui-elixir-code-line-{window_id}-{}-{}",
             code.id, line.id
