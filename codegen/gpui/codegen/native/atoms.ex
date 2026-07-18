@@ -1,15 +1,14 @@
 defmodule GPUI.Codegen.Native.Atoms do
   @moduledoc false
 
+  alias RustQ.Rust.AST
+  alias RustQ.Rust.AST.Walk
+
   @renamed_atoms [{:type_atom, "type"}]
 
   @spec all() :: [{atom(), String.t()}]
   def all do
-    source_atoms =
-      Enum.map(
-        source_atoms() ++ generated_atoms() ++ GPUI.Codegen.Native.Events.atom_names(),
-        &{String.to_atom(&1), &1}
-      )
+    source_atoms = Enum.map(source_atoms() ++ generated_atoms(), &{String.to_atom(&1), &1})
 
     (@renamed_atoms ++ schema_atoms() ++ source_atoms)
     |> Enum.uniq_by(fn {name, _value} -> name end)
@@ -35,32 +34,15 @@ defmodule GPUI.Codegen.Native.Atoms do
       GPUI.Codegen.Native.Elements.asts(),
       GPUI.Codegen.Native.Events.items()
     ]
-    |> collect_atom_references()
-    |> Enum.uniq()
+    |> Walk.reduce(MapSet.new(), fn
+      %AST.PathCall{path: %AST.Path{parts: [:atoms, name]}}, atoms ->
+        MapSet.put(atoms, Atom.to_string(name))
+
+      _node, atoms ->
+        atoms
+    end)
+    |> MapSet.to_list()
   end
-
-  defp collect_atom_references(%RustQ.Rust.AST.PathCall{
-         path: %RustQ.Rust.AST.Path{parts: [:atoms, name]}
-       }),
-       do: [Atom.to_string(name)]
-
-  defp collect_atom_references(%module{} = node) when is_atom(module) do
-    node
-    |> Map.from_struct()
-    |> Map.values()
-    |> Enum.flat_map(&collect_atom_references/1)
-  end
-
-  defp collect_atom_references(values) when is_list(values),
-    do: Enum.flat_map(values, &collect_atom_references/1)
-
-  defp collect_atom_references(value) when is_tuple(value),
-    do: value |> Tuple.to_list() |> Enum.flat_map(&collect_atom_references/1)
-
-  defp collect_atom_references(value) when is_map(value),
-    do: value |> Map.values() |> Enum.flat_map(&collect_atom_references/1)
-
-  defp collect_atom_references(_value), do: []
 
   defp schema_atoms do
     component_atoms =

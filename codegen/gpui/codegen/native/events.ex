@@ -56,9 +56,6 @@ defmodule GPUI.Codegen.Native.Events do
     end
   end
 
-  @spec atom_names() :: [String.t()]
-  def atom_names, do: ["nil"]
-
   @spec items() :: [AST.item()]
   def items do
     kinds =
