@@ -16,32 +16,35 @@ mod atoms {
         "gap", height = "height", hoverable = "hoverable", id = "id", indeterminate =
         "indeterminate", item_height = "item_height", justify_content =
         "justify_content", keyboard = "keyboard", keydown = "keydown", keyup = "keyup",
-        label = "label", last = "last", level = "level", light = "light", line_height =
-        "line_height", loading = "loading", margin = "margin", margin_bottom =
-        "margin_bottom", margin_left = "margin_left", margin_right = "margin_right",
-        margin_top = "margin_top", margin_x = "margin_x", margin_y = "margin_y", masked =
-        "masked", max = "max", max_bytes = "max_bytes", max_height = "max_height",
-        max_width = "max_width", menu = "menu", min = "min", min_height = "min_height",
-        min_width = "min_width", missing_resource = "missing_resource", multiple =
-        "multiple", name = "name", nil = "nil", offset = "offset", ok = "ok", opacity =
+        kind = "kind", label = "label", last = "last", level = "level", light = "light",
+        line_height = "line_height", loading = "loading", margin = "margin",
+        margin_bottom = "margin_bottom", margin_left = "margin_left", margin_right =
+        "margin_right", margin_top = "margin_top", margin_x = "margin_x", margin_y =
+        "margin_y", masked = "masked", max = "max", max_bytes = "max_bytes", max_columns
+        = "max_columns", max_height = "max_height", max_width = "max_width", menu =
+        "menu", min = "min", min_height = "min_height", min_width = "min_width",
+        missing_resource = "missing_resource", mode = "mode", multiple = "multiple", name
+        = "name", nil = "nil", number = "number", offset = "offset", ok = "ok", opacity =
         "opacity", open = "open", operation_id = "operation_id", options = "options",
         orientation = "orientation", outline = "outline", overlay = "overlay", overscan =
         "overscan", padding = "padding", padding_bottom = "padding_bottom", padding_left
         = "padding_left", padding_right = "padding_right", padding_top = "padding_top",
         padding_x = "padding_x", padding_y = "padding_y", parent_id = "parent_id",
-        phx_change = "phx-change", phx_click = "phx-click", phx_keydown = "phx-keydown",
-        phx_keyup = "phx-keyup", phx_range = "phx-range", phx_release = "phx-release",
-        phx_search = "phx-search", phx_select = "phx-select", phx_toggle = "phx-toggle",
-        placeholder = "placeholder", position = "position", prompt = "prompt", range =
-        "range", raster = "raster", reason = "reason", release = "release", resource_ref
-        = "resource_ref", resource_type = "resource_type", reveal = "reveal",
-        reveal_index = "reveal_index", reveal_strategy = "reveal_strategy", reverse =
-        "reverse", root = "root", scale = "scale", search = "search", search_placeholder
-        = "search_placeholder", select = "select", selected = "selected", selected_index
-        = "selected_index", set_size = "set_size", size = "size", status = "status", step
-        = "step", stride = "stride", style = "style", text = "text", title = "title",
-        toggle = "toggle", total_count = "total_count", tree = "tree", type_atom =
-        "type", value = "value", variant = "variant", width = "width", window_closed =
-        "window_closed", window_id = "window_id"
+        phx_change = "phx-change", phx_click = "phx-click", phx_copy = "phx-copy",
+        phx_keydown = "phx-keydown", phx_keyup = "phx-keyup", phx_range = "phx-range",
+        phx_release = "phx-release", phx_search = "phx-search", phx_select =
+        "phx-select", phx_toggle = "phx-toggle", placeholder = "placeholder", position =
+        "position", prompt = "prompt", range = "range", raster = "raster", reason =
+        "reason", release = "release", resource_ref = "resource_ref", resource_type =
+        "resource_type", reveal = "reveal", reveal_index = "reveal_index",
+        reveal_strategy = "reveal_strategy", reverse = "reverse", root = "root", scale =
+        "scale", search = "search", search_placeholder = "search_placeholder", select =
+        "select", selected = "selected", selected_index = "selected_index", set_size =
+        "set_size", show_line_numbers = "show_line_numbers", size = "size", status =
+        "status", step = "step", stride = "stride", style = "style", tab_width =
+        "tab_width", text = "text", title = "title", toggle = "toggle", total_count =
+        "total_count", tree = "tree", type_atom = "type", value = "value", variant =
+        "variant", width = "width", window_closed = "window_closed", window_id =
+        "window_id"
     }
 }

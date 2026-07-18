@@ -121,11 +121,12 @@ defmodule GPUI.GitRepositoryBrowserExampleTest do
       )
 
     assert %{type: :ui_tree} = runtime |> tree() |> find!(id: "repository-tree")
-    assert %{type: :ui_virtual_list} = runtime |> tree() |> find!(id: "preview-lines")
+    assert %{type: :ui_code_viewer} = runtime |> tree() |> find!(id: "preview-lines")
     refute Map.has_key?(assigns(runtime).repository, :files)
     refute Map.has_key?(assigns(runtime).preview, :lines)
+    assert assigns(runtime).preview.max_columns > 0
     assert runtime |> tree() |> all(type: :ui_tree_item) |> length() < 100
-    assert runtime |> tree() |> all(type: :ui_virtual_list_item) |> length() < 100
+    assert runtime |> tree() |> all(type: :ui_code_line) |> length() < 100
     assert runtime |> tree() |> all(id: "line-1501") == []
 
     range(runtime, "preview_range_changed", 1_500, 1_550)
@@ -137,6 +138,12 @@ defmodule GPUI.GitRepositoryBrowserExampleTest do
 
     assert runtime |> tree() |> all(id: "line-1501") |> length() == 1
     assert runtime |> tree() |> all(id: "line-1") == []
+
+    select(runtime, "preview_line_selected", "line-1501")
+    assert %{preview_selected_id: "line-1501", preview_selected_index: 1_500} = assigns(runtime)
+
+    copy_selected_line(runtime, "preview_line_copied")
+    assert %{preview_copy_count: 1} = assigns(runtime)
 
     select(runtime, "tree_toggled", "dir:lib/core")
     assigns = assigns(runtime)

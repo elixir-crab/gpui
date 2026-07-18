@@ -309,6 +309,42 @@ defmodule GPUI.Schema do
       ]
     },
     %Component{
+      tag: :ui_code_viewer,
+      kind: :code_viewer_component,
+      stateful: true,
+      events: [change: :"phx-change", range: :"phx-range", click: :"phx-copy"],
+      children: true,
+      attrs: [
+        id: :string,
+        label: :string,
+        mode: {:default, {:enum, ~w(plain diff)}, "plain"},
+        selected: :string,
+        selected_index: :non_negative_integer,
+        reveal: :string,
+        reveal_index: :non_negative_integer,
+        reveal_strategy: {:default, {:enum, ~w(nearest top center bottom)}, "nearest"},
+        total_count: {:default, :non_negative_integer, 0},
+        offset: {:default, :non_negative_integer, 0},
+        overscan: {:default, :non_negative_integer, 12},
+        item_height: {:default, :positive_number, 24.0},
+        max_columns: {:default, :non_negative_integer, 0},
+        tab_width: {:default, :positive_integer, 4},
+        show_line_numbers: {:default, :boolean, true},
+        disabled: :boolean
+      ]
+    },
+    %Component{
+      tag: :ui_code_line,
+      kind: :code_line_component,
+      attrs: [
+        id: :string,
+        text: {:default, :string},
+        number: :non_negative_integer,
+        kind: {:default, {:enum, ~w(context addition deletion hunk)}, "context"},
+        disabled: :boolean
+      ]
+    },
+    %Component{
       tag: :ui_tabs,
       kind: :tabs_component,
       events: [change: :"phx-change"],

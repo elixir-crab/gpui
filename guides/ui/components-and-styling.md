@@ -303,6 +303,54 @@ Use `GPUI.Test.tree_toggle/4`, `GPUI.Test.select/4`, and `GPUI.Test.range/5` for
 deterministic tree tests. All three event paths are forwarded unchanged by
 remote displays.
 
+### Source-backed code and diff viewers
+
+`code_viewer/1` specializes the uniform source-backed collection contract for
+monospaced source text and unified diffs. Lines do not wrap. `max_columns`
+provides stable horizontal geometry even when the longest line is not in the
+loaded slice, while `tab_width` controls deterministic tab expansion.
+
+```elixir
+<UI.code_viewer
+  id="preview"
+  label="File preview"
+  mode="diff"
+  total_count={assigns.total_count}
+  offset={assigns.loaded_offset}
+  selected={assigns.selected_id}
+  selected_index={assigns.selected_index}
+  reveal={assigns.selected_id}
+  reveal_index={assigns.selected_index}
+  max_columns={assigns.max_columns}
+  tab_width={4}
+  phx-change="line_selected"
+  phx-range="preview_range"
+  phx-copy="line_copied"
+  class="h-[480px]"
+>
+  {Enum.map(assigns.loaded_lines, fn line ->
+    UI.code_line(%{
+      id: line.id,
+      number: line.number,
+      text: line.text,
+      kind: line.kind
+    })
+  end)}
+</UI.code_viewer>
+```
+
+Modes are `plain` and `diff`. Diff line kinds are `addition`, `deletion`,
+`context`, and `hunk`. Line numbers are optional. Up/Down, Page Up/Page Down,
+Home/End, Enter, and Space use one accessible listbox tab stop and preserve the
+source-backed endpoint rules. Pointer selection emits the stable line ID.
+
+Ctrl/Cmd+C writes the selected loaded line to the clipboard on the display
+machine. This is intentionally display-local for remote sessions. If
+`phx-copy` is set, the viewer emits an acknowledgement after requesting the
+platform write. Tests use `GPUI.Test.select/4`, `GPUI.Test.range/5`, and
+`GPUI.Test.copy_selected_line/3`; deterministic helpers do not access the host
+clipboard.
+
 ## Button variants and sizes
 
 Button variants are `default`, `primary`, `secondary`, `danger`, `warning`,

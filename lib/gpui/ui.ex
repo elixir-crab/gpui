@@ -298,6 +298,70 @@ defmodule GPUI.UI do
     component(:ui_tree_item, assigns)
   end
 
+  @doc """
+  Builds a source-backed monospaced code or unified-diff viewer.
+
+  Lines are uniform-height `code_line/1` children. The viewer shares the
+  selection, reveal, overscan, and exclusive `phx-range` contract used by
+  `virtual_list/1`. `max_columns` preserves stable horizontal geometry for
+  unloaded lines; Ctrl/Cmd+C copies the selected loaded line on the display
+  machine and acknowledges `phx-copy` when configured.
+  """
+  @spec code_viewer(map()) :: Element.t()
+  def code_viewer(assigns) when is_map(assigns) do
+    assigns = normalize_attr_key(assigns, :"phx-range")
+    children = Map.get(assigns, :children, [])
+
+    assigns =
+      assigns
+      |> Map.put_new(:total_count, length(children))
+      |> Schema.apply_defaults(:ui_code_viewer)
+
+    item_ids = collection_item_ids!(:ui_code_viewer, :ui_code_line, children)
+    validate_virtual_collection!(:ui_code_viewer, assigns, item_ids)
+    validate_non_negative_integer!(:ui_code_viewer, :max_columns, assigns.max_columns)
+
+    if assigns.max_columns > 20_000 do
+      raise ArgumentError, "ui_code_viewer max_columns must be at most 20000"
+    end
+
+    unless assigns.mode in ~w(plain diff) do
+      raise ArgumentError, "ui_code_viewer mode must be plain or diff"
+    end
+
+    unless is_integer(assigns.tab_width) and assigns.tab_width in 1..16 do
+      raise ArgumentError, "ui_code_viewer tab_width must be between 1 and 16"
+    end
+
+    component(:ui_code_viewer, assigns)
+  end
+
+  @doc "Builds one native line for `code_viewer/1`."
+  @spec code_line(map()) :: Element.t()
+  def code_line(assigns) when is_map(assigns) do
+    assigns = Schema.apply_defaults(assigns, :ui_code_line)
+
+    unless is_binary(Map.get(assigns, :id)) and assigns.id != "" and
+             is_binary(assigns.text) do
+      raise ArgumentError, "ui_code_line requires non-empty string id and string text"
+    end
+
+    if byte_size(assigns.text) > 100_000 do
+      raise ArgumentError, "ui_code_line text must be at most 100000 bytes"
+    end
+
+    unless is_nil(Map.get(assigns, :number)) or
+             (is_integer(assigns.number) and assigns.number >= 0) do
+      raise ArgumentError, "ui_code_line number must be a non-negative integer"
+    end
+
+    unless assigns.kind in ~w(context addition deletion hunk) do
+      raise ArgumentError, "ui_code_line kind must be context, addition, deletion, or hunk"
+    end
+
+    component(:ui_code_line, assigns)
+  end
+
   defp collection_item_ids!(component, item_type, children) do
     item_ids =
       Enum.map(children, fn

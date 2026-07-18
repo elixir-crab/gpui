@@ -90,6 +90,7 @@ pub(crate) fn controlled_reveal(
 pub(crate) enum CollectionKind {
     List,
     Tree,
+    CodeViewer,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -121,6 +122,10 @@ pub(crate) fn schedule_range(
         let component = match kind {
             CollectionKind::List => root.components.virtual_list_mut(&collection_id),
             CollectionKind::Tree => root.components.tree_mut(&collection_id),
+            CollectionKind::CodeViewer => root
+                .components
+                .code_viewer_mut(&collection_id)
+                .map(|component| &mut component.collection),
         };
         let Some(component) = component else {
             return;

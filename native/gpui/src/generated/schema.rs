@@ -30,6 +30,8 @@ pub enum GeneratedComponentKind {
     VirtualListItemComponent,
     TreeComponent,
     TreeItemComponent,
+    CodeViewerComponent,
+    CodeLineComponent,
     TabsComponent,
     SliderComponent,
     Text,
@@ -1681,6 +1683,104 @@ pub(crate) fn decode_generated_tree_item_component(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct CodeViewerComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) label: Option<String>,
+    pub(crate) mode: Option<String>,
+    pub(crate) selected: Option<String>,
+    pub(crate) selected_index: Option<u64>,
+    pub(crate) reveal: Option<String>,
+    pub(crate) reveal_index: Option<u64>,
+    pub(crate) reveal_strategy: Option<String>,
+    pub(crate) total_count: u64,
+    pub(crate) offset: u64,
+    pub(crate) overscan: u64,
+    pub(crate) item_height: f64,
+    pub(crate) max_columns: u64,
+    pub(crate) tab_width: u64,
+    pub(crate) show_line_numbers: bool,
+    pub(crate) disabled: bool,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) change: Option<String>,
+    pub(crate) range: Option<String>,
+    pub(crate) click: Option<String>,
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_code_viewer_component(
+    term: Term,
+) -> NifResult<CodeViewerComponentNode> {
+    Ok(CodeViewerComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        label: component_string_attr(term, atoms::label())?,
+        mode: component_enum_attr(term, atoms::mode(), &["plain", "diff"])?
+            .or(Some("plain".to_string())),
+        selected: component_string_attr(term, atoms::selected())?,
+        selected_index: component_non_negative_integer_attr(
+            term,
+            atoms::selected_index(),
+        )?,
+        reveal: component_string_attr(term, atoms::reveal())?,
+        reveal_index: component_non_negative_integer_attr(term, atoms::reveal_index())?,
+        reveal_strategy: component_enum_attr(
+                term,
+                atoms::reveal_strategy(),
+                &["nearest", "top", "center", "bottom"],
+            )?
+            .or(Some("nearest".to_string())),
+        total_count: component_non_negative_integer_attr(term, atoms::total_count())?
+            .unwrap_or(0),
+        offset: component_non_negative_integer_attr(term, atoms::offset())?.unwrap_or(0),
+        overscan: component_non_negative_integer_attr(term, atoms::overscan())?
+            .unwrap_or(12),
+        item_height: component_positive_number_attr(term, atoms::item_height())?
+            .unwrap_or(24.0),
+        max_columns: component_non_negative_integer_attr(term, atoms::max_columns())?
+            .unwrap_or(0),
+        tab_width: component_positive_integer_attr(term, atoms::tab_width())?
+            .unwrap_or(4),
+        show_line_numbers: component_bool_attr(term, atoms::show_line_numbers())?
+            .unwrap_or(true),
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        children: decode_children(term)?,
+        change: component_string_attr(term, atoms::phx_change())?,
+        range: component_string_attr(term, atoms::phx_range())?,
+        click: component_string_attr(term, atoms::phx_copy())?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct CodeLineComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) text: String,
+    pub(crate) number: Option<u64>,
+    pub(crate) kind: Option<String>,
+    pub(crate) disabled: bool,
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_generated_code_line_component(
+    term: Term,
+) -> NifResult<CodeLineComponentNode> {
+    Ok(CodeLineComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        text: component_string_attr(term, atoms::text())?.unwrap_or_default(),
+        number: component_non_negative_integer_attr(term, atoms::number())?,
+        kind: component_enum_attr(
+                term,
+                atoms::kind(),
+                &["context", "addition", "deletion", "hunk"],
+            )?
+            .or(Some("context".to_string())),
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct TabsComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -1786,6 +1886,8 @@ pub(crate) enum ElementNode {
     VirtualListItemComponent(VirtualListItemComponentNode),
     TreeComponent(TreeComponentNode),
     TreeItemComponent(TreeItemComponentNode),
+    CodeViewerComponent(CodeViewerComponentNode),
+    CodeLineComponent(CodeLineComponentNode),
     TabsComponent(TabsComponentNode),
     SliderComponent(SliderComponentNode),
     Image(ImageNode),
@@ -1822,6 +1924,8 @@ pub enum GeneratedElementTag {
     UiVirtualListItem,
     UiTree,
     UiTreeItem,
+    UiCodeViewer,
+    UiCodeLine,
     UiTabs,
     UiSlider,
     Span,
@@ -1865,6 +1969,8 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_virtual_list_item" => GeneratedElementTag::UiVirtualListItem,
         "ui_tree" => GeneratedElementTag::UiTree,
         "ui_tree_item" => GeneratedElementTag::UiTreeItem,
+        "ui_code_viewer" => GeneratedElementTag::UiCodeViewer,
+        "ui_code_line" => GeneratedElementTag::UiCodeLine,
         "ui_tabs" => GeneratedElementTag::UiTabs,
         "ui_slider" => GeneratedElementTag::UiSlider,
         "span" => GeneratedElementTag::Span,
@@ -1931,6 +2037,8 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         }
         GeneratedElementTag::UiTree => GeneratedComponentKind::TreeComponent,
         GeneratedElementTag::UiTreeItem => GeneratedComponentKind::TreeItemComponent,
+        GeneratedElementTag::UiCodeViewer => GeneratedComponentKind::CodeViewerComponent,
+        GeneratedElementTag::UiCodeLine => GeneratedComponentKind::CodeLineComponent,
         GeneratedElementTag::UiTabs => GeneratedComponentKind::TabsComponent,
         GeneratedElementTag::UiSlider => GeneratedComponentKind::SliderComponent,
         GeneratedElementTag::Span => GeneratedComponentKind::Container,
@@ -2048,6 +2156,14 @@ pub(crate) fn decode_generated_element_node(
             decode_generated_tree_item_component(term)
                 .map(ElementNode::TreeItemComponent)
         }
+        GeneratedComponentKind::CodeViewerComponent => {
+            decode_generated_code_viewer_component(term)
+                .map(ElementNode::CodeViewerComponent)
+        }
+        GeneratedComponentKind::CodeLineComponent => {
+            decode_generated_code_line_component(term)
+                .map(ElementNode::CodeLineComponent)
+        }
         GeneratedComponentKind::TabsComponent => {
             decode_generated_tabs_component(term).map(ElementNode::TabsComponent)
         }
@@ -2147,6 +2263,12 @@ pub(crate) fn render_generated_component_node(
         }
         ElementNode::TreeItemComponent(node) => {
             element::component::tree::render_item(node, context)
+        }
+        ElementNode::CodeViewerComponent(node) => {
+            element::component::code_viewer::render(node, context)
+        }
+        ElementNode::CodeLineComponent(node) => {
+            element::component::code_viewer::render_line(node, context)
         }
         ElementNode::TabsComponent(node) => {
             element::component::tabs::render(node, context)

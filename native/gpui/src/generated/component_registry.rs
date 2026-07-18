@@ -10,6 +10,7 @@ enum ComponentKind {
     Combobox,
     VirtualList,
     Tree,
+    CodeViewer,
     Slider,
 }
 enum StatefulComponent {
@@ -21,6 +22,7 @@ enum StatefulComponent {
     Combobox(ComponentCombobox),
     VirtualList(ComponentVirtualList),
     Tree(ComponentTree),
+    CodeViewer(ComponentCodeViewer),
     Slider(ComponentSlider),
 }
 impl ComponentRegistry {
@@ -157,6 +159,26 @@ impl ComponentRegistry {
         let key = ComponentKey::new(ComponentKind::Tree, id);
         self.active.insert(key.clone());
         self.entries.insert(key, StatefulComponent::Tree(component)).is_none()
+    }
+    pub(crate) fn code_viewer_mut(
+        &mut self,
+        id: &str,
+    ) -> Option<&mut ComponentCodeViewer> {
+        let key = ComponentKey::new(ComponentKind::CodeViewer, id);
+        self.active.insert(key.clone());
+        match self.entries.get_mut(&key) {
+            Some(StatefulComponent::CodeViewer(component)) => Some(component),
+            _ => None,
+        }
+    }
+    pub(crate) fn insert_code_viewer(
+        &mut self,
+        id: &str,
+        component: ComponentCodeViewer,
+    ) -> bool {
+        let key = ComponentKey::new(ComponentKind::CodeViewer, id);
+        self.active.insert(key.clone());
+        self.entries.insert(key, StatefulComponent::CodeViewer(component)).is_none()
     }
     pub(crate) fn slider_mut(&mut self, id: &str) -> Option<&mut ComponentSlider> {
         let key = ComponentKey::new(ComponentKind::Slider, id);

@@ -157,7 +157,18 @@ defmodule Examples.GitRepositoryBrowser.Model do
   end
 
   def repository_summary(repository), do: Map.drop(repository, [:files])
-  def preview_summary(preview), do: Map.drop(preview, [:lines])
+
+  def preview_summary(preview) do
+    max_columns =
+      preview.lines
+      |> Enum.map(&expanded_columns(&1.text, 4))
+      |> Enum.max(fn -> 0 end)
+      |> min(20_000)
+
+    preview
+    |> Map.drop([:lines])
+    |> Map.put(:max_columns, max_columns)
+  end
 
   def retain_selection(nil, _files), do: nil
 
@@ -171,6 +182,15 @@ defmodule Examples.GitRepositoryBrowser.Model do
   end
 
   def initial_range, do: %{first: 0, last: 48}
+
+  defp expanded_columns(text, tab_width) do
+    text
+    |> String.graphemes()
+    |> Enum.reduce(0, fn
+      "\t", column -> column + tab_width - rem(column, tab_width)
+      _grapheme, column -> column + 1
+    end)
+  end
 
   defp loaded_slice(items, %{first: first, last: last}) do
     count = length(items)
@@ -292,6 +312,24 @@ defmodule Examples.GitRepositoryBrowser.View do
            preview_generation: assigns.preview_generation + 1
        }}
 
+  def handle_event("preview_line_selected", %{value: selected_id}, assigns) do
+    case Enum.find_index(assigns.preview_lines, &(&1.id == selected_id)) do
+      nil ->
+        {:noreply, assigns}
+
+      local_index ->
+        {:noreply,
+         %{
+           assigns
+           | preview_selected_id: selected_id,
+             preview_selected_index: assigns.preview_offset + local_index
+         }}
+    end
+  end
+
+  def handle_event("preview_line_copied", _event, assigns),
+    do: {:noreply, %{assigns | preview_copy_count: assigns.preview_copy_count + 1}}
+
   def handle_event("reload_repository", _event, assigns) do
     {:noreply,
      %{
@@ -342,6 +380,9 @@ defmodule Examples.GitRepositoryBrowser.View do
          preview_offset: 0,
          preview_status: :loading,
          preview_error: nil,
+         preview_selected_id: nil,
+         preview_selected_index: nil,
+         preview_copy_count: 0,
          preview_job: assigns.preview_job + 1,
          preview_range: Model.initial_range(),
          preview_generation: assigns.preview_generation + 1
@@ -373,6 +414,9 @@ defmodule Examples.GitRepositoryBrowser.View do
          preview_total: 0,
          preview_offset: 0,
          preview_status: if(selected_path, do: :loading, else: :idle),
+         preview_selected_id: nil,
+         preview_selected_index: nil,
+         preview_copy_count: 0,
          preview_job: if(selected_path, do: assigns.preview_job + 1, else: assigns.preview_job),
          preview_generation: assigns.preview_generation + 1
      }}
@@ -500,18 +544,26 @@ defmodule Examples.GitRepositoryBrowser.View do
         <text class="text-white text-lg font-semibold">{assigns.preview.path}</text>
         <text style={[color: status_color(assigns.preview.status)]}>{preview_label(assigns.preview)}</text>
       </div>
-      <UI.virtual_list
+      <UI.code_viewer
         id="preview-lines"
         label="File preview lines"
+        mode={preview_mode(assigns.preview.mode)}
         total_count={assigns.preview_total}
         offset={assigns.preview_offset}
         overscan={12}
         item_height={24}
+        max_columns={assigns.preview.max_columns}
+        selected={assigns.preview_selected_id}
+        selected_index={assigns.preview_selected_index}
+        reveal={assigns.preview_selected_id}
+        reveal_index={assigns.preview_selected_index}
+        phx-change="preview_line_selected"
         phx-range="preview_range_changed"
+        phx-copy="preview_line_copied"
         class="h-[540px]"
       >
         {Enum.map(assigns.preview_lines, &preview_line/1)}
-      </UI.virtual_list>
+      </UI.code_viewer>
     </div>
     """
   end
@@ -520,12 +572,12 @@ defmodule Examples.GitRepositoryBrowser.View do
     assigns = %{line: line}
 
     ~GPUI"""
-    <UI.virtual_list_item id={assigns.line.id}>
-      <div class="flex items-center" style={[background: line_background(assigns.line.kind)]}>
-        <text class="w-[58px]" style={[color: {:rgb, 0x64748B}]}>{line_number(assigns.line.number)}</text>
-        <text style={[color: line_color(assigns.line.kind)]}>{assigns.line.text}</text>
-      </div>
-    </UI.virtual_list_item>
+    <UI.code_line
+      id={assigns.line.id}
+      number={assigns.line.number}
+      text={assigns.line.text}
+      kind={line_kind(assigns.line.kind)}
+    />
     """
   end
 
@@ -583,20 +635,13 @@ defmodule Examples.GitRepositoryBrowser.View do
   defp tree_row_style(true), do: [background: {:rgb, 0x1D4ED8}]
   defp tree_row_style(false), do: [background: {:rgb, 0x0F172A}]
 
-  defp line_background(:added), do: {:rgb, 0x123524}
-  defp line_background(:deleted), do: {:rgb, 0x3F1D24}
-  defp line_background(:hunk), do: {:rgb, 0x1E3A5F}
-  defp line_background(_kind), do: {:rgb, 0x111827}
+  defp preview_mode(:diff), do: "diff"
+  defp preview_mode(_mode), do: "plain"
 
-  defp line_color(:added), do: {:rgb, 0xBBF7D0}
-  defp line_color(:deleted), do: {:rgb, 0xFECACA}
-  defp line_color(:hunk), do: {:rgb, 0xBFDBFE}
-  defp line_color(:header), do: {:rgb, 0xC4B5FD}
-  defp line_color(:notice), do: {:rgb, 0xFDE68A}
-  defp line_color(_kind), do: {:rgb, 0xE2E8F0}
-
-  defp line_number(nil), do: ""
-  defp line_number(number), do: Integer.to_string(number)
+  defp line_kind(:added), do: "addition"
+  defp line_kind(:deleted), do: "deletion"
+  defp line_kind(:hunk), do: "hunk"
+  defp line_kind(_kind), do: "context"
 
   defp status_options do
     [
@@ -664,6 +709,9 @@ defmodule Examples.GitRepositoryBrowser.App do
            preview_offset: preview_slice.offset,
            preview_status: if(preview, do: :ready, else: :idle),
            preview_error: nil,
+           preview_selected_id: nil,
+           preview_selected_index: nil,
+           preview_copy_count: 0,
            preview_job: 0,
            preview_range: range,
            preview_generation: 0,

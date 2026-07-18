@@ -193,6 +193,58 @@ defmodule GPUI.UITest do
     end
   end
 
+  test "builds source-backed code and diff viewers" do
+    lines = [
+      UI.code_line(%{id: "line-501", number: 501, text: "def render(assigns) do"}),
+      UI.code_line(%{id: "line-502", number: 502, text: "+  :ok", kind: "addition"})
+    ]
+
+    assert %Element{type: :ui_code_viewer, attrs: attrs, children: ^lines} =
+             UI.code_viewer(%{
+               :"phx-change" => "line_selected",
+               :"phx-range" => "code_range",
+               :"phx-copy" => "line_copied",
+               id: "source",
+               label: "Source code",
+               mode: "diff",
+               total_count: 100_000,
+               offset: 500,
+               max_columns: 240,
+               selected: "line-501",
+               selected_index: 500,
+               reveal: "line-501",
+               reveal_index: 500,
+               children: lines
+             })
+
+    assert attrs[:mode] == "diff"
+    assert attrs[:max_columns] == 240
+    assert attrs[:tab_width] == 4
+    assert attrs[:show_line_numbers]
+    assert attrs[:selected_index] == 500
+    assert attrs[:reveal_index] == 500
+  end
+
+  test "validates code viewer structure and line metadata" do
+    line = UI.code_line(%{id: "line-1", number: 1, text: "hello"})
+
+    assert_raise ArgumentError, ~r/only accepts .*code_line/, fn ->
+      UI.code_viewer(%{id: "code", label: "Code", children: [UI.tree_item(%{id: "bad"})]})
+    end
+
+    assert_raise ArgumentError, ~r/tab_width must be between/, fn ->
+      UI.code_viewer(%{id: "code", label: "Code", tab_width: 32, children: [line]})
+    end
+
+    assert_raise ArgumentError, ~r/max_columns must be at most/, fn ->
+      UI.code_viewer(%{id: "code", label: "Code", max_columns: 20_001, children: [line]})
+    end
+
+    assert_raise ArgumentError, ~r/kind must be/, fn ->
+      UI.code_line(%{id: "line", text: "bad", kind: "warning"})
+    end
+  end
+
   test "validates virtual list structure and controlled IDs" do
     item = UI.virtual_list_item(%{id: "first"})
 

@@ -182,6 +182,22 @@ defmodule GPUI.Native.LifecycleE2ETest do
         attrs: %{id: "invalid-count", label: "Invalid list", total_count: -1},
         children: []
       },
+      invalid_code_viewer_tab_width: %{
+        type: :ui_code_viewer,
+        attrs: %{id: "invalid-code", label: "Invalid code", tab_width: 0},
+        children: []
+      },
+      invalid_code_line_kind: %{
+        type: :ui_code_viewer,
+        attrs: %{id: "invalid-code-line", label: "Invalid code"},
+        children: [
+          %{
+            type: :ui_code_line,
+            attrs: %{id: "line", text: "bad", kind: "warning"},
+            children: []
+          }
+        ]
+      },
       invalid_tree_parent: %{
         type: :ui_tree,
         attrs: %{id: "invalid-tree", label: "Invalid tree", total_count: 1},

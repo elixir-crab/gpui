@@ -1,8 +1,8 @@
 # Git Repository Browser
 
 This substantial example browses a server-local Git working tree with a
-hierarchical virtualized file list and a separately virtualized file or diff
-preview.
+hierarchical virtualized file list and a source-backed monospaced file or diff
+viewer.
 
 Run it from the repository root:
 
@@ -20,7 +20,8 @@ When no path is supplied, it opens the current repository.
 - an accessible expandable hierarchy backed by source-backed `GPUI.UI.tree/1`;
 - stable file and directory identities;
 - source-owned repository and preview models, so snapshots contain only loaded slices;
-- virtualized large diffs with distinct added, deleted, and hunk rows;
+- `GPUI.UI.code_viewer/1` with line selection, display-side copying, horizontal
+  scrolling, and distinct added, deleted, context, and hunk rows;
 - operation generations that prevent stale scans or previews from winning;
 - deterministic application, repository, and visual tests.
 

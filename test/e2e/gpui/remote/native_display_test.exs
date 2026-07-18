@@ -148,6 +148,64 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
     end
   end
 
+  defmodule CodeView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(assigns) do
+      lines =
+        Enum.map(1..8, fn number ->
+          GPUI.UI.code_line(%{
+            id: "line-#{number}",
+            number: number,
+            text: if(rem(number, 2) == 0, do: "+remote #{number}", else: " remote #{number}"),
+            kind: if(rem(number, 2) == 0, do: "addition", else: "context")
+          })
+        end)
+
+      assigns = Map.put(assigns, :lines, lines)
+
+      ~GPUI"""
+      <div class="w-[420px] h-[220px] bg-slate-900">
+        <GPUI.UI.code_viewer
+          id="remote-code"
+          label="Remote code"
+          mode="diff"
+          selected={assigns.selected}
+          max_columns={80}
+          phx-change="remote_line_selected"
+          phx-copy="remote_line_copied"
+          class="h-[200px]"
+        >
+          {assigns.lines}
+        </GPUI.UI.code_viewer>
+      </div>
+      """
+    end
+
+    @impl GPUI.View
+    def handle_event("remote_line_selected", %{value: selected}, assigns),
+      do: {:noreply, %{assigns | selected: selected}}
+
+    def handle_event("remote_line_copied", _event, assigns),
+      do: {:noreply, %{assigns | copies: assigns.copies + 1}}
+  end
+
+  defmodule CodeApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(_args) do
+      {:ok,
+       [
+         window "GPUI Remote Code E2E" do
+           size(420, 220)
+           root(CodeView, selected: nil, copies: 0)
+         end
+       ]}
+    end
+  end
+
   test "a TCP session renders through the real native display" do
     client = start_remote!(CounterApp)
 
@@ -219,6 +277,27 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
     Desktop.eventually(fn ->
       assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
       assert ["security"] = get_in(updated, [:root, :assigns, :expanded])
+    end)
+  end
+
+  test "code selection and display-side copy acknowledgements cross a remote session" do
+    client = start_remote!(CodeApp)
+
+    assert {:ok, %{windows: [_window]}} = GPUI.Remote.Client.mount(client)
+    :ok = GPUI.Remote.Client.subscribe(client)
+    window_id = Desktop.window_id!("GPUI Remote Code E2E")
+    Desktop.click!(window_id, 120, 36)
+
+    Desktop.eventually(fn ->
+      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
+      assert "line-2" = get_in(updated, [:root, :assigns, :selected])
+    end)
+
+    Desktop.key!(window_id, "ctrl+c")
+
+    Desktop.eventually(fn ->
+      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
+      assert 1 = get_in(updated, [:root, :assigns, :copies])
     end)
   end
 

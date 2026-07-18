@@ -1,5 +1,5 @@
 for scenario <-
-      ~w(component_gallery git_repository_browser image_palette process_explorer virtual_list) do
+      ~w(code_viewer component_gallery git_repository_browser image_palette process_explorer virtual_list) do
   Code.require_file("../visual/scenarios/#{scenario}.exs", __DIR__)
 end
 
@@ -22,6 +22,21 @@ defmodule GPUI.VisualScenariosTest do
 
     runtime = start_gpui!(scenario.app(), args: scenario.args(:dark))
     assert %{overlay: nil, theme: :dark} = assigns(runtime)
+  end
+
+  test "code viewer scenario covers code, diff, selection, and long lines" do
+    scenario = GPUITest.Visual.CodeViewer.Scenario
+
+    assert Enum.map(scenario.captures(), & &1.name) == [
+             "code",
+             "diff",
+             "selection",
+             "long-lines"
+           ]
+
+    runtime = start_gpui!(scenario.app(), args: scenario.args(:dark))
+    assert %{mode: :code, selected: nil} = assigns(runtime)
+    assert %{type: :ui_code_viewer} = runtime |> tree() |> find!(id: "visual-code")
   end
 
   test "virtual list scenario reveals a deterministic distant selection" do

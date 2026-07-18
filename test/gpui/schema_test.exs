@@ -32,6 +32,8 @@ defmodule GPUI.SchemaTest do
              :ui_virtual_list_item,
              :ui_tree,
              :ui_tree_item,
+             :ui_code_viewer,
+             :ui_code_line,
              :ui_tabs,
              :ui_slider,
              :span,
@@ -50,6 +52,7 @@ defmodule GPUI.SchemaTest do
     assert :"phx-select" in GPUI.Schema.events()
     assert :"phx-range" in GPUI.Schema.events()
     assert :"phx-toggle" in GPUI.Schema.events()
+    assert :"phx-copy" in GPUI.Schema.events()
     assert :ui_progress in GPUI.Schema.identified_tags()
     assert :ui_file_picker in GPUI.Schema.identified_tags()
     assert :ui_copy_button in GPUI.Schema.identified_tags()
@@ -62,6 +65,8 @@ defmodule GPUI.SchemaTest do
     assert :ui_virtual_list_item in GPUI.Schema.identified_tags()
     assert :ui_tree in GPUI.Schema.identified_tags()
     assert :ui_tree_item in GPUI.Schema.identified_tags()
+    assert :ui_code_viewer in GPUI.Schema.identified_tags()
+    assert :ui_code_line in GPUI.Schema.identified_tags()
 
     assert Enum.map(GPUI.Schema.stateful_components(), & &1.kind) == [
              :popover_component,
@@ -72,6 +77,7 @@ defmodule GPUI.SchemaTest do
              :combobox_component,
              :virtual_list_component,
              :tree_component,
+             :code_viewer_component,
              :slider_component
            ]
 
@@ -97,6 +103,13 @@ defmodule GPUI.SchemaTest do
              overscan: 8,
              disabled: false
            } = GPUI.Schema.defaults(:ui_tree)
+
+    assert %{
+             mode: "plain",
+             max_columns: 0,
+             tab_width: 4,
+             show_line_numbers: true
+           } = GPUI.Schema.defaults(:ui_code_viewer)
 
     assert %{max: 250.0, value: 10.0} =
              GPUI.Schema.apply_defaults(%{max: 250.0, value: 10.0}, :ui_progress)
