@@ -240,7 +240,17 @@ defmodule GPUI.Remote.Client do
   end
 
   defp forward_display_event(%{type: type} = event, state)
-       when type in [:click, :change, :keydown, :keyup, :window_closed] do
+       when type in [
+              :click,
+              :change,
+              :select,
+              :release,
+              :search,
+              :range,
+              :keydown,
+              :keyup,
+              :window_closed
+            ] do
     payload = event |> GPUI.Event.normalize() |> Map.put(:session_id, state.session_id)
 
     case call_with_reconnect(state, :event, payload) do

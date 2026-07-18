@@ -107,17 +107,59 @@ defmodule Examples.GitRepositoryBrowser.Tree do
   defp changed_count(_status), do: 1
 end
 
+defmodule Examples.GitRepositoryBrowser.Model do
+  @moduledoc false
+
+  alias Examples.GitRepositoryBrowser.Tree
+
+  def tree_slice(repository, expanded, filter, status_filter, range, selected_path) do
+    entries = Tree.visible(repository.files, expanded, filter, status_filter)
+    selected = Tree.selected_id(entries, selected_path)
+    selected_index = Enum.find_index(entries, &(&1.id == selected))
+    {offset, items} = loaded_slice(entries, range)
+
+    %{
+      total: length(entries),
+      offset: offset,
+      items: items,
+      selected_index: selected_index
+    }
+  end
+
+  def preview_slice(preview, range) do
+    {offset, lines} = loaded_slice(preview.lines, range)
+    %{total: length(preview.lines), offset: offset, lines: lines}
+  end
+
+  def repository_summary(repository), do: Map.drop(repository, [:files])
+  def preview_summary(preview), do: Map.drop(preview, [:lines])
+
+  def retain_selection(nil, _files), do: nil
+
+  def retain_selection(path, files) do
+    if Enum.any?(files, &(&1.path == path)), do: path
+  end
+
+  def initial_range, do: %{first: 0, last: 48}
+
+  defp loaded_slice(items, %{first: first, last: last}) do
+    count = length(items)
+    first = first |> max(0) |> min(count)
+    last = last |> max(first) |> min(count)
+    {first, Enum.slice(items, first, last - first)}
+  end
+end
+
 defmodule Examples.GitRepositoryBrowser.View do
   use GPUI.View
 
-  alias Examples.GitRepositoryBrowser.Tree
+  alias Examples.GitRepositoryBrowser.Model
   alias GPUI.UI
 
   @impl GPUI.View
   def render(assigns) do
-    files = if assigns.repository, do: assigns.repository.files, else: []
-    entries = Tree.visible(files, assigns.expanded, assigns.filter, assigns.status_filter)
-    selected = Tree.selected_id(entries, assigns.selected_path)
+    selected =
+      if is_integer(assigns.selected_index), do: "file:" <> assigns.selected_path
 
     ~GPUI"""
     <div class="flex flex-col w-[1200px] h-[760px] bg-slate-900">
@@ -157,18 +199,24 @@ defmodule Examples.GitRepositoryBrowser.View do
         <div class="flex flex-col w-[430px] h-[590px]" style={[background: {:rgb, 0x0F172A}]}>
           <div class="flex items-center justify-between p-3">
             <text class="text-white font-semibold">Files</text>
-            <text style={[color: {:rgb, 0x94A3B8}]}>{length(entries)} visible</text>
+            <text style={[color: {:rgb, 0x94A3B8}]}>{assigns.tree_total} visible</text>
           </div>
           <UI.virtual_list
             id="repository-tree"
             label="Repository files"
             selected={selected}
+            selected_index={assigns.selected_index}
             reveal={selected}
+            reveal_index={assigns.selected_index}
+            total_count={assigns.tree_total}
+            offset={assigns.tree_offset}
+            overscan={8}
             item_height={38}
             phx-change="tree_selected"
+            phx-range="tree_range_changed"
             class="h-[540px]"
           >
-            {Enum.map(entries, &tree_row(&1, assigns))}
+            {Enum.map(assigns.tree_items, &tree_row(&1, assigns))}
           </UI.virtual_list>
         </div>
 
@@ -182,10 +230,36 @@ defmodule Examples.GitRepositoryBrowser.View do
 
   @impl GPUI.View
   def handle_event("filter_changed", %{value: filter}, assigns),
-    do: {:noreply, %{assigns | filter: filter}}
+    do:
+      {:noreply,
+       %{
+         assigns
+         | filter: filter,
+           tree_range: Model.initial_range(),
+           tree_generation: assigns.tree_generation + 1
+       }}
 
   def handle_event("status_filter_changed", %{value: status_filter}, assigns),
-    do: {:noreply, %{assigns | status_filter: status_filter}}
+    do:
+      {:noreply,
+       %{
+         assigns
+         | status_filter: status_filter,
+           tree_range: Model.initial_range(),
+           tree_generation: assigns.tree_generation + 1
+       }}
+
+  def handle_event("tree_range_changed", %{value: range}, assigns),
+    do: {:noreply, %{assigns | tree_range: range, tree_generation: assigns.tree_generation + 1}}
+
+  def handle_event("preview_range_changed", %{value: range}, assigns),
+    do:
+      {:noreply,
+       %{
+         assigns
+         | preview_range: range,
+           preview_generation: assigns.preview_generation + 1
+       }}
 
   def handle_event("reload_repository", _event, assigns) do
     {:noreply,
@@ -205,7 +279,13 @@ defmodule Examples.GitRepositoryBrowser.View do
         MapSet.put(assigns.expanded, path)
       end
 
-    {:noreply, %{assigns | expanded: expanded}}
+    {:noreply,
+     %{
+       assigns
+       | expanded: expanded,
+         tree_range: Model.initial_range(),
+         tree_generation: assigns.tree_generation + 1
+     }}
   end
 
   def handle_event("tree_selected", %{value: "file:" <> path}, assigns) do
@@ -213,36 +293,104 @@ defmodule Examples.GitRepositoryBrowser.View do
      %{
        assigns
        | selected_path: path,
+         selected_index: nil,
          preview: nil,
+         preview_lines: [],
+         preview_total: 0,
+         preview_offset: 0,
          preview_status: :loading,
          preview_error: nil,
-         preview_job: assigns.preview_job + 1
+         preview_job: assigns.preview_job + 1,
+         preview_range: Model.initial_range(),
+         preview_generation: assigns.preview_generation + 1
      }}
   end
 
   @impl GPUI.View
-  def handle_info({:repository_loaded, scan_id, repository}, %{scan_id: scan_id} = assigns) do
-    selected_path = retain_selection(assigns.selected_path, repository.files)
-
+  def handle_info(
+        {:repository_loaded, scan_id, repository, expanded, selected_path, tree},
+        %{scan_id: scan_id} = assigns
+      ) do
     {:noreply,
      %{
        assigns
        | repository: repository,
          scan_status: :ready,
          scan_error: nil,
-         expanded: Tree.default_expanded(repository.files),
+         expanded: expanded,
+         tree_range: Model.initial_range(),
+         tree_generation: assigns.tree_generation + 1,
+         tree_total: tree.total,
+         tree_offset: tree.offset,
+         tree_items: tree.items,
          selected_path: selected_path,
+         selected_index: tree.selected_index,
          preview: nil,
+         preview_lines: [],
+         preview_total: 0,
+         preview_offset: 0,
          preview_status: if(selected_path, do: :loading, else: :idle),
-         preview_job: if(selected_path, do: assigns.preview_job + 1, else: assigns.preview_job)
+         preview_job: if(selected_path, do: assigns.preview_job + 1, else: assigns.preview_job),
+         preview_generation: assigns.preview_generation + 1
      }}
   end
 
   def handle_info({:repository_failed, scan_id, message}, %{scan_id: scan_id} = assigns),
     do: {:noreply, %{assigns | scan_status: :error, scan_error: message}}
 
-  def handle_info({:preview_loaded, job_id, preview}, %{preview_job: job_id} = assigns),
-    do: {:noreply, %{assigns | preview: preview, preview_status: :ready, preview_error: nil}}
+  def handle_info(
+        {:tree_slice, generation, tree},
+        %{tree_generation: generation} = assigns
+      ) do
+    {:noreply,
+     %{
+       assigns
+       | tree_total: tree.total,
+         tree_offset: tree.offset,
+         tree_items: tree.items,
+         selected_index: tree.selected_index
+     }}
+  end
+
+  def handle_info(
+        {:preview_loaded, job_id, generation, preview, slice},
+        %{preview_job: job_id} = assigns
+      ) do
+    assigns =
+      %{
+        assigns
+        | preview: preview,
+          preview_status: :ready,
+          preview_error: nil
+      }
+
+    assigns =
+      if assigns.preview_generation == generation do
+        %{
+          assigns
+          | preview_lines: slice.lines,
+            preview_total: slice.total,
+            preview_offset: slice.offset
+        }
+      else
+        assigns
+      end
+
+    {:noreply, assigns}
+  end
+
+  def handle_info(
+        {:preview_slice, generation, slice},
+        %{preview_generation: generation} = assigns
+      ) do
+    {:noreply,
+     %{
+       assigns
+       | preview_lines: slice.lines,
+         preview_total: slice.total,
+         preview_offset: slice.offset
+     }}
+  end
 
   def handle_info({:preview_failed, job_id, message}, %{preview_job: job_id} = assigns),
     do: {:noreply, %{assigns | preview_status: :error, preview_error: message}}
@@ -303,10 +451,14 @@ defmodule Examples.GitRepositoryBrowser.View do
       <UI.virtual_list
         id="preview-lines"
         label="File preview lines"
+        total_count={assigns.preview_total}
+        offset={assigns.preview_offset}
+        overscan={12}
         item_height={24}
+        phx-range="preview_range_changed"
         class="h-[540px]"
       >
-        {Enum.map(assigns.preview.lines, &preview_line/1)}
+        {Enum.map(assigns.preview_lines, &preview_line/1)}
       </UI.virtual_list>
     </div>
     """
@@ -354,12 +506,6 @@ defmodule Examples.GitRepositoryBrowser.View do
 
   defp refresh_label(:scanning), do: "Scanning…"
   defp refresh_label(_status), do: "Refresh"
-
-  defp retain_selection(nil, _files), do: nil
-
-  defp retain_selection(path, files) do
-    if Enum.any?(files, &(&1.path == path)), do: path
-  end
 
   defp entry_marker(%{kind: :file}, _expanded), do: "·"
   defp entry_marker(%{kind: :directory}, true), do: "▾"
@@ -416,6 +562,7 @@ end
 defmodule Examples.GitRepositoryBrowser.App do
   use GPUI.Application
 
+  alias Examples.GitRepositoryBrowser.Model
   alias Examples.GitRepositoryBrowser.Tree
 
   @impl GPUI.Application
@@ -425,6 +572,18 @@ defmodule Examples.GitRepositoryBrowser.App do
     files = if repository, do: repository.files, else: []
     selected_path = Map.get(args, :selected_path)
     preview = Map.get(args, :preview)
+    expanded = Map.get_lazy(args, :expanded, fn -> Tree.default_expanded(files) end)
+    range = Model.initial_range()
+
+    tree =
+      if repository do
+        Model.tree_slice(repository, expanded, "", "all", range, selected_path)
+      else
+        %{total: 0, offset: 0, items: [], selected_index: nil}
+      end
+
+    preview_slice =
+      if preview, do: Model.preview_slice(preview, range), else: %{total: 0, offset: 0, lines: []}
 
     {:ok,
      [
@@ -433,16 +592,27 @@ defmodule Examples.GitRepositoryBrowser.App do
 
          root(Examples.GitRepositoryBrowser.View,
            path: Map.get(args, :path, File.cwd!()),
-           repository: repository,
+           repository: if(repository, do: Model.repository_summary(repository)),
            scan_status: if(repository, do: :ready, else: :scanning),
            scan_error: nil,
            scan_id: 1,
-           expanded: Map.get_lazy(args, :expanded, fn -> Tree.default_expanded(files) end),
+           expanded: expanded,
            selected_path: selected_path,
-           preview: preview,
+           selected_index: tree.selected_index,
+           tree_items: tree.items,
+           tree_total: tree.total,
+           tree_offset: tree.offset,
+           tree_range: range,
+           tree_generation: 0,
+           preview: if(preview, do: Model.preview_summary(preview)),
+           preview_lines: preview_slice.lines,
+           preview_total: preview_slice.total,
+           preview_offset: preview_slice.offset,
            preview_status: if(preview, do: :ready, else: :idle),
            preview_error: nil,
            preview_job: 0,
+           preview_range: range,
+           preview_generation: 0,
            filter: "",
            status_filter: "all"
          )
@@ -454,7 +624,9 @@ end
 defmodule Examples.GitRepositoryBrowser.Coordinator do
   use GenServer
 
+  alias Examples.GitRepositoryBrowser.Model
   alias Examples.GitRepositoryBrowser.Repository
+  alias Examples.GitRepositoryBrowser.Tree
   alias GPUI.Runtime
   alias GPUI.Runtime.Update
 
@@ -474,7 +646,8 @@ defmodule Examples.GitRepositoryBrowser.Coordinator do
       owner: Keyword.get(opts, :owner),
       scan_task: nil,
       preview_task: nil,
-      repository: nil
+      repository: nil,
+      preview: nil
     }
 
     send(self(), :initial_scan)
@@ -493,7 +666,21 @@ defmodule Examples.GitRepositoryBrowser.Coordinator do
           start_scan(state, assigns.scan_id)
 
         %{event: "tree_selected", value: "file:" <> path}, state ->
-          start_preview(state, assigns.preview_job, path)
+          state
+          |> publish_tree(assigns)
+          |> start_preview(assigns.preview_job, path)
+
+        %{event: event}, state
+        when event in [
+               "filter_changed",
+               "status_filter_changed",
+               "tree_range_changed",
+               "tree_selected"
+             ] ->
+          publish_tree(state, assigns)
+
+        %{event: "preview_range_changed"}, state ->
+          publish_preview(state, assigns)
 
         _event, state ->
           state
@@ -504,15 +691,40 @@ defmodule Examples.GitRepositoryBrowser.Coordinator do
 
   def handle_info({:scan_complete, scan_id, {:ok, repository}}, state) do
     if active_job?(state.scan_task, scan_id) do
-      {:ok, snapshot} =
-        Runtime.send_view(state.runtime, 1, {:repository_loaded, scan_id, repository})
+      assigns = state.runtime |> Runtime.snapshot() |> root_assigns()
+      selected_path = Model.retain_selection(assigns.selected_path, repository.files)
+      expanded = Tree.default_expanded(repository.files)
 
-      state = %{state | repository: repository, scan_task: finish_task(state.scan_task)}
-      assigns = root_assigns(snapshot)
+      tree =
+        Model.tree_slice(
+          repository,
+          expanded,
+          assigns.filter,
+          assigns.status_filter,
+          Model.initial_range(),
+          selected_path
+        )
+
+      {:ok, snapshot} =
+        Runtime.send_view(
+          state.runtime,
+          1,
+          {:repository_loaded, scan_id, Model.repository_summary(repository), expanded,
+           selected_path, tree}
+        )
+
+      state = %{
+        state
+        | repository: repository,
+          preview: nil,
+          scan_task: finish_task(state.scan_task)
+      }
+
+      updated_assigns = root_assigns(snapshot)
 
       state =
-        if assigns.selected_path do
-          start_preview(state, assigns.preview_job, assigns.selected_path)
+        if updated_assigns.selected_path do
+          start_preview(state, updated_assigns.preview_job, updated_assigns.selected_path)
         else
           state
         end
@@ -538,9 +750,25 @@ defmodule Examples.GitRepositoryBrowser.Coordinator do
 
   def handle_info({:preview_complete, job_id, {:ok, preview}}, state) do
     if active_job?(state.preview_task, job_id) do
-      {:ok, _snapshot} = Runtime.send_view(state.runtime, 1, {:preview_loaded, job_id, preview})
+      assigns = state.runtime |> Runtime.snapshot() |> root_assigns()
+      slice = Model.preview_slice(preview, assigns.preview_range)
+
+      {:ok, _snapshot} =
+        Runtime.send_view(
+          state.runtime,
+          1,
+          {:preview_loaded, job_id, assigns.preview_generation, Model.preview_summary(preview),
+           slice}
+        )
+
       notify(state.owner, {:git_repository_browser, :previewed, job_id})
-      {:noreply, %{state | preview_task: finish_task(state.preview_task)}}
+
+      {:noreply,
+       %{
+         state
+         | preview: preview,
+           preview_task: finish_task(state.preview_task)
+       }}
     else
       {:noreply, state}
     end
@@ -550,7 +778,7 @@ defmodule Examples.GitRepositoryBrowser.Coordinator do
     if active_job?(state.preview_task, job_id) do
       {:ok, _snapshot} = Runtime.send_view(state.runtime, 1, {:preview_failed, job_id, message})
       notify(state.owner, {:git_repository_browser, :preview_failed, job_id, message})
-      {:noreply, %{state | preview_task: finish_task(state.preview_task)}}
+      {:noreply, %{state | preview: nil, preview_task: finish_task(state.preview_task)}}
     else
       {:noreply, state}
     end
@@ -571,6 +799,46 @@ defmodule Examples.GitRepositoryBrowser.Coordinator do
       true ->
         {:noreply, state}
     end
+  end
+
+  defp publish_tree(%{repository: nil} = state, _assigns), do: state
+
+  defp publish_tree(state, assigns) do
+    tree =
+      Model.tree_slice(
+        state.repository,
+        assigns.expanded,
+        assigns.filter,
+        assigns.status_filter,
+        assigns.tree_range,
+        assigns.selected_path
+      )
+
+    {:ok, _snapshot} =
+      Runtime.send_view(
+        state.runtime,
+        1,
+        {:tree_slice, assigns.tree_generation, tree}
+      )
+
+    notify(state.owner, {:git_repository_browser, :tree_slice, assigns.tree_generation})
+    state
+  end
+
+  defp publish_preview(%{preview: nil} = state, _assigns), do: state
+
+  defp publish_preview(state, assigns) do
+    slice = Model.preview_slice(state.preview, assigns.preview_range)
+
+    {:ok, _snapshot} =
+      Runtime.send_view(
+        state.runtime,
+        1,
+        {:preview_slice, assigns.preview_generation, slice}
+      )
+
+    notify(state.owner, {:git_repository_browser, :preview_slice, assigns.preview_generation})
+    state
   end
 
   defp start_scan(state, scan_id) do
@@ -597,7 +865,7 @@ defmodule Examples.GitRepositoryBrowser.Coordinator do
   defp start_preview(%{repository: nil} = state, _job_id, _path), do: state
 
   defp start_preview(state, job_id, path) do
-    state = %{state | preview_task: cancel_task(state.preview_task)}
+    state = %{state | preview: nil, preview_task: cancel_task(state.preview_task)}
     parent = self()
     repository_module = state.repository_module
     repository_opts = state.repository_opts

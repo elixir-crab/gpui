@@ -50,7 +50,9 @@ the application server. Clipboard buttons likewise write to the display
 client's clipboard. Application-side filesystem work has the opposite
 semantics: paths identify files on the application server. The
 `git_repository_browser` example makes that distinction explicit instead of
-presenting a server-local directory as a remote-client directory.
+presenting a server-local directory as a remote-client directory. Source-backed
+virtual-list range requests also originate on the display and cross the same
+event channel, allowing the server to return only an overscanned slice.
 
 Remote display updates use the same typed OTP message shape as local runtimes:
 

@@ -155,6 +155,18 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
     :ok
   end
 
+  defp run_action(runtime, _x11_window_id, {:send_view_from, window_id, build_message}) do
+    assigns =
+      runtime
+      |> GPUI.Runtime.snapshot()
+      |> Map.fetch!(:windows)
+      |> Enum.find(&(&1.id == window_id))
+      |> get_in([:root, :assigns])
+
+    {:ok, _snapshot} = GPUI.Runtime.send_view(runtime, window_id, build_message.(assigns))
+    :ok
+  end
+
   defp run_action(runtime, x11_window_id, {:hover, x, y, frames}) do
     synchronize_current!(runtime, x11_window_id)
     {:ok, generation} = GPUI.Runtime.frame_token(runtime, 1)

@@ -245,19 +245,31 @@ defmodule GPUI.UI do
   controlled selection, while `reveal` requests that an item be scrolled into
   view using `reveal_strategy`. Selection changes are emitted through
   `phx-change`.
+
+  Source-backed lists set `total_count`, `offset`, and `phx-range`. Their
+  children are a contiguous loaded slice beginning at `offset`; native scroll
+  and resize changes emit an overscanned `%{first: first, last: last}` range,
+  where `last` is exclusive. `selected_index` and `reveal_index` preserve
+  controlled identity and scrolling when those rows are not currently loaded.
   """
   @spec virtual_list(map()) :: Element.t()
   def virtual_list(assigns) when is_map(assigns) do
+    assigns = normalize_attr_key(assigns, :"phx-range")
+    children = Map.get(assigns, :children, [])
+
     assigns =
       assigns
       |> Map.put_new(:item_height, 40.0)
       |> Map.put_new(:reveal_strategy, "nearest")
+      |> Map.put_new(:total_count, length(children))
+      |> Map.put_new(:offset, 0)
+      |> Map.put_new(:overscan, 8)
       |> Map.put_new(:disabled, false)
 
-    item_ids = virtual_list_item_ids!(Map.get(assigns, :children, []))
+    item_ids = virtual_list_item_ids!(children)
     validate_virtual_list!(assigns, item_ids)
 
-    assigns = drop_nil_attrs(assigns, [:selected, :reveal])
+    assigns = drop_nil_attrs(assigns, [:selected, :selected_index, :reveal, :reveal_index])
     component(:ui_virtual_list, assigns)
   end
 
@@ -288,8 +300,20 @@ defmodule GPUI.UI do
     validate_virtual_list_label!(Map.get(assigns, :label))
     validate_item_height!(assigns.item_height)
     validate_reveal_strategy!(assigns.reveal_strategy)
-    validate_controlled_item!(:selected, Map.get(assigns, :selected), item_ids)
-    validate_controlled_item!(:reveal, Map.get(assigns, :reveal), item_ids)
+    validate_source_range!(assigns, item_ids)
+
+    if source_backed_virtual_list?(assigns, item_ids) do
+      validate_source_selection!(assigns, item_ids, :selected, :selected_index)
+      validate_source_selection!(assigns, item_ids, :reveal, :reveal_index)
+    else
+      if Map.get(assigns, :selected_index) || Map.get(assigns, :reveal_index) do
+        raise ArgumentError,
+              "ui_virtual_list controlled indexes require a source-backed list with phx-range"
+      end
+
+      validate_controlled_item!(:selected, Map.get(assigns, :selected), item_ids)
+      validate_controlled_item!(:reveal, Map.get(assigns, :reveal), item_ids)
+    end
   end
 
   defp validate_virtual_list_label!(label) when is_binary(label) and label != "", do: :ok
@@ -308,6 +332,93 @@ defmodule GPUI.UI do
     raise ArgumentError, "ui_virtual_list reveal_strategy must be nearest, top, center, or bottom"
   end
 
+  defp validate_source_range!(assigns, item_ids) do
+    validate_non_negative_integer!(:total_count, assigns.total_count)
+    validate_non_negative_integer!(:overscan, assigns.overscan)
+    validate_source_offset!(assigns.offset, assigns.total_count)
+    validate_loaded_count!(assigns.offset, length(item_ids), assigns.total_count)
+
+    if source_backed_virtual_list?(assigns, item_ids) do
+      validate_event!(:ui_virtual_list, assigns, :"phx-range")
+    end
+  end
+
+  defp validate_non_negative_integer!(_name, value) when is_integer(value) and value >= 0,
+    do: :ok
+
+  defp validate_non_negative_integer!(name, _value),
+    do: raise(ArgumentError, "ui_virtual_list #{name} must be a non-negative integer")
+
+  defp validate_source_offset!(offset, total_count)
+       when is_integer(offset) and offset >= 0 and offset <= total_count,
+       do: :ok
+
+  defp validate_source_offset!(_offset, _total_count),
+    do: raise(ArgumentError, "ui_virtual_list offset must be between zero and total_count")
+
+  defp validate_loaded_count!(offset, count, total_count) when offset + count <= total_count,
+    do: :ok
+
+  defp validate_loaded_count!(_offset, _count, _total_count),
+    do: raise(ArgumentError, "ui_virtual_list loaded slice exceeds total_count")
+
+  defp source_backed_virtual_list?(assigns, item_ids),
+    do:
+      not is_nil(Map.get(assigns, :"phx-range")) or assigns.offset != 0 or
+        assigns.total_count != length(item_ids)
+
+  defp validate_source_selection!(assigns, item_ids, value_name, index_name) do
+    value = Map.get(assigns, value_name)
+    index = Map.get(assigns, index_name)
+
+    validate_source_value!(value_name, value)
+    validate_source_index!(index_name, index, assigns.total_count)
+    validate_source_pair!(value_name, index_name, value, index)
+    validate_loaded_identity!(assigns, item_ids, value_name, index_name, value, index)
+  end
+
+  defp validate_source_value!(_name, nil), do: :ok
+  defp validate_source_value!(_name, value) when is_binary(value) and value != "", do: :ok
+
+  defp validate_source_value!(name, _value),
+    do: raise(ArgumentError, "ui_virtual_list #{name} must be a non-empty string")
+
+  defp validate_source_index!(_name, nil, _total_count), do: :ok
+
+  defp validate_source_index!(_name, index, total_count)
+       when is_integer(index) and index >= 0 and index < total_count,
+       do: :ok
+
+  defp validate_source_index!(name, _index, _total_count),
+    do:
+      raise(
+        ArgumentError,
+        "ui_virtual_list #{name} must identify an index below total_count"
+      )
+
+  defp validate_source_pair!(_value_name, _index_name, nil, nil), do: :ok
+
+  defp validate_source_pair!(_value_name, _index_name, value, index)
+       when not is_nil(value) and not is_nil(index), do: :ok
+
+  defp validate_source_pair!(value_name, index_name, _value, _index),
+    do:
+      raise(
+        ArgumentError,
+        "ui_virtual_list #{value_name} and #{index_name} must be provided together"
+      )
+
+  defp validate_loaded_identity!(assigns, item_ids, value_name, index_name, value, index) do
+    loaded? =
+      is_integer(index) and index >= assigns.offset and
+        index < assigns.offset + length(item_ids)
+
+    if loaded? and Enum.at(item_ids, index - assigns.offset) != value do
+      raise ArgumentError,
+            "ui_virtual_list #{value_name} does not match the loaded item at #{index_name}"
+    end
+  end
+
   defp validate_controlled_item!(_name, nil, _item_ids), do: :ok
 
   defp validate_controlled_item!(name, value, item_ids) when is_binary(value) do
@@ -320,6 +431,13 @@ defmodule GPUI.UI do
 
   defp validate_controlled_item!(name, _value, _item_ids),
     do: raise(ArgumentError, "ui_virtual_list #{name} must identify a virtual_list_item child")
+
+  defp normalize_attr_key(assigns, key) do
+    case Map.pop(assigns, Atom.to_string(key)) do
+      {nil, assigns} -> assigns
+      {value, assigns} -> Map.put_new(assigns, key, value)
+    end
+  end
 
   defp drop_nil_attrs(attrs, names) do
     Enum.reduce(names, attrs, fn name, attrs ->

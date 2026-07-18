@@ -300,6 +300,11 @@ defmodule GPUI.Codegen.Native.Schema do
        when type in [:number, :positive_number],
        do: T.path(:f64)
 
+  defp component_field_type(_name, :non_negative_integer), do: T.option(:u64)
+
+  defp component_field_type(_name, {:default, :non_negative_integer, _value}),
+    do: T.path(:u64)
+
   defp component_field_type(_name, :boolean), do: T.path(:bool)
   defp component_field_type(_name, {:default, :boolean, _value}), do: T.path(:bool)
   defp component_field_type(_name, :string_list), do: T.vec(:String)
@@ -328,6 +333,16 @@ defmodule GPUI.Codegen.Native.Schema do
         else: :component_number_attr
 
     helper
+    |> component_attr_call(name)
+    |> A.try()
+    |> A.method(:unwrap_or, [A.lit(default)])
+  end
+
+  defp component_decoder_expr(name, :non_negative_integer),
+    do: A.try(component_attr_call(:component_non_negative_integer_attr, name))
+
+  defp component_decoder_expr(name, {:default, :non_negative_integer, default}) do
+    :component_non_negative_integer_attr
     |> component_attr_call(name)
     |> A.try()
     |> A.method(:unwrap_or, [A.lit(default)])

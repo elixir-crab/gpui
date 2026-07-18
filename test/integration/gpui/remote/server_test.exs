@@ -21,6 +21,9 @@ defmodule GPUI.Remote.ServerTest do
 
     def handle_event("file_selected", %{value: value}, assigns),
       do: {:noreply, %{assigns | file: value}}
+
+    def handle_event("records_range", %{value: value}, assigns),
+      do: {:noreply, %{assigns | range: value}}
   end
 
   defmodule FormApp do
@@ -29,7 +32,7 @@ defmodule GPUI.Remote.ServerTest do
     @impl GPUI.Application
     def mount(args) do
       name = Map.get(Map.new(args), :name, "old")
-      {:ok, [window("Remote Form", do: root(FormView, name: name, file: nil))]}
+      {:ok, [window("Remote Form", do: root(FormView, name: name, file: nil, range: nil))]}
     end
   end
 
@@ -197,6 +200,22 @@ defmodule GPUI.Remote.ServerTest do
     assert_receive {:gpui, ^client,
                     %GPUI.Runtime.Update{
                       snapshot: %{windows: [%{root: %{assigns: %{file: ^selection}}}]}
+                    }}
+
+    range = %{first: 40_000, last: 40_048}
+
+    assert {:ok, :ok} =
+             GPUI.Test.Display.inject_event(display_name, %{
+               type: :range,
+               window_id: 1,
+               event: "records_range",
+               value: range
+             })
+
+    assert_receive {:gpui, ^client,
+                    %GPUI.Runtime.Update{
+                      events: [%{type: :range, value: ^range}],
+                      snapshot: %{windows: [%{root: %{assigns: %{range: ^range}}}]}
                     }}
   end
 

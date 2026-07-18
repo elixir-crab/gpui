@@ -95,6 +95,9 @@ defmodule GPUI.TestTest do
     def handle_event("file_selected", %{value: file}, assigns),
       do: {:noreply, %{assigns | file: file}}
 
+    def handle_event("records_range", %{value: range}, assigns),
+      do: {:noreply, %{assigns | range: range}}
+
     def handle_event("language_changed", %{value: language}, assigns),
       do: {:noreply, %{assigns | language: language}}
 
@@ -148,6 +151,7 @@ defmodule GPUI.TestTest do
              count: 0,
              name: "",
              file: nil,
+             range: nil,
              language: "rust",
              framework: nil,
              query: "",
@@ -172,6 +176,7 @@ defmodule GPUI.TestTest do
         count: 2,
         name: "Ada",
         file: nil,
+        range: nil,
         language: "rust",
         framework: nil,
         query: "",
@@ -197,6 +202,7 @@ defmodule GPUI.TestTest do
     assert %{
              count: 0,
              name: "",
+             range: nil,
              language: "rust",
              framework: nil,
              query: "",
@@ -226,6 +232,9 @@ defmodule GPUI.TestTest do
 
     file_cancel(runtime, "file_selected")
     assert %{file: %{status: :cancelled}} = assigns(runtime)
+
+    range(runtime, "records_range", 120, 160)
+    assert %{range: %{first: 120, last: 160}} = assigns(runtime)
 
     select(runtime, "language_changed", "elixir")
     assert %{count: 2, name: "Ada", language: "elixir"} = assigns(runtime)

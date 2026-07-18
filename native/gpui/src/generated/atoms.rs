@@ -10,34 +10,36 @@ mod atoms {
         closable = "closable", close_button = "close_button", color = "color", compact =
         "compact", dark = "dark", data = "data", delay = "delay", disabled = "disabled",
         display = "display", error = "error", event = "event", expanded = "expanded",
-        flex_direction = "flex_direction", flex_grow = "flex_grow", flex_shrink =
-        "flex_shrink", flex_wrap = "flex_wrap", font_size = "font_size", font_weight =
-        "font_weight", format = "format", gap = "gap", height = "height", hoverable =
-        "hoverable", id = "id", indeterminate = "indeterminate", item_height =
-        "item_height", justify_content = "justify_content", keyboard = "keyboard",
-        keydown = "keydown", keyup = "keyup", label = "label", light = "light",
-        line_height = "line_height", loading = "loading", margin = "margin",
+        first = "first", flex_direction = "flex_direction", flex_grow = "flex_grow",
+        flex_shrink = "flex_shrink", flex_wrap = "flex_wrap", font_size = "font_size",
+        font_weight = "font_weight", format = "format", gap = "gap", height = "height",
+        hoverable = "hoverable", id = "id", indeterminate = "indeterminate", item_height
+        = "item_height", justify_content = "justify_content", keyboard = "keyboard",
+        keydown = "keydown", keyup = "keyup", label = "label", last = "last", light =
+        "light", line_height = "line_height", loading = "loading", margin = "margin",
         margin_bottom = "margin_bottom", margin_left = "margin_left", margin_right =
         "margin_right", margin_top = "margin_top", margin_x = "margin_x", margin_y =
         "margin_y", masked = "masked", max = "max", max_bytes = "max_bytes", max_height =
         "max_height", max_width = "max_width", menu = "menu", min = "min", min_height =
         "min_height", min_width = "min_width", missing_resource = "missing_resource",
-        multiple = "multiple", name = "name", nil = "nil", ok = "ok", opacity =
-        "opacity", open = "open", operation_id = "operation_id", options = "options",
-        orientation = "orientation", outline = "outline", overlay = "overlay", padding =
-        "padding", padding_bottom = "padding_bottom", padding_left = "padding_left",
-        padding_right = "padding_right", padding_top = "padding_top", padding_x =
-        "padding_x", padding_y = "padding_y", phx_change = "phx-change", phx_click =
-        "phx-click", phx_keydown = "phx-keydown", phx_keyup = "phx-keyup", phx_release =
-        "phx-release", phx_search = "phx-search", phx_select = "phx-select", placeholder
-        = "placeholder", prompt = "prompt", raster = "raster", reason = "reason", release
-        = "release", resource_ref = "resource_ref", resource_type = "resource_type",
-        reveal = "reveal", reveal_strategy = "reveal_strategy", reverse = "reverse", root
-        = "root", scale = "scale", search = "search", search_placeholder =
-        "search_placeholder", select = "select", selected = "selected", size = "size",
-        status = "status", step = "step", stride = "stride", style = "style", text =
-        "text", title = "title", tree = "tree", type_atom = "type", value = "value",
-        variant = "variant", width = "width", window_closed = "window_closed", window_id
-        = "window_id"
+        multiple = "multiple", name = "name", nil = "nil", offset = "offset", ok = "ok",
+        opacity = "opacity", open = "open", operation_id = "operation_id", options =
+        "options", orientation = "orientation", outline = "outline", overlay = "overlay",
+        overscan = "overscan", padding = "padding", padding_bottom = "padding_bottom",
+        padding_left = "padding_left", padding_right = "padding_right", padding_top =
+        "padding_top", padding_x = "padding_x", padding_y = "padding_y", phx_change =
+        "phx-change", phx_click = "phx-click", phx_keydown = "phx-keydown", phx_keyup =
+        "phx-keyup", phx_range = "phx-range", phx_release = "phx-release", phx_search =
+        "phx-search", phx_select = "phx-select", placeholder = "placeholder", prompt =
+        "prompt", range = "range", raster = "raster", reason = "reason", release =
+        "release", resource_ref = "resource_ref", resource_type = "resource_type", reveal
+        = "reveal", reveal_index = "reveal_index", reveal_strategy = "reveal_strategy",
+        reverse = "reverse", root = "root", scale = "scale", search = "search",
+        search_placeholder = "search_placeholder", select = "select", selected =
+        "selected", selected_index = "selected_index", size = "size", status = "status",
+        step = "step", stride = "stride", style = "style", text = "text", title =
+        "title", total_count = "total_count", tree = "tree", type_atom = "type", value =
+        "value", variant = "variant", width = "width", window_closed = "window_closed",
+        window_id = "window_id"
     }
 }

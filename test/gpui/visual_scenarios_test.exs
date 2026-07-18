@@ -74,14 +74,30 @@ defmodule GPUI.VisualScenariosTest do
 
     assert [
              %{name: "repository"},
-             %{name: "filtered-untracked", actions: [filter]},
-             %{name: "selected-readme", actions: [all, select, loaded]}
+             %{name: "filtered-untracked", actions: [filter, filtered_slice]},
+             %{
+               name: "selected-readme",
+               actions: [all, all_slice, select, selected_slice, loaded]
+             }
            ] = scenario.captures()
 
     assert {:dispatch, %{event: "status_filter_changed", value: "untracked"}} = filter
+    assert {:send_view_from, 1, filtered_builder} = filtered_slice
+    assert {:tree_slice, 7, %{total: 3}} = filtered_builder.(%{tree_generation: 7})
     assert {:dispatch, %{event: "status_filter_changed", value: "all"}} = all
+    assert {:send_view_from, 1, all_builder} = all_slice
+    assert {:tree_slice, 8, %{total: 21}} = all_builder.(%{tree_generation: 8})
     assert {:dispatch, %{event: "tree_selected", value: "file:README.md"}} = select
-    assert {:send_view, 1, {:preview_loaded, 1, %{path: "README.md"}}} = loaded
+    assert {:send_view_from, 1, selected_builder} = selected_slice
+
+    assert {:tree_slice, 9, %{selected_index: selected_index}} =
+             selected_builder.(%{tree_generation: 9})
+
+    assert is_integer(selected_index)
+    assert {:send_view_from, 1, preview_builder} = loaded
+
+    assert {:preview_loaded, 3, 4, %{path: "README.md"}, _slice} =
+             preview_builder.(%{preview_job: 3, preview_generation: 4})
   end
 
   test "process explorer scenario uses fixed data and transitions" do

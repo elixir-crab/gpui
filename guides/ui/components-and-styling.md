@@ -213,6 +213,47 @@ The list itself must have a fixed or maximum height. Rows that differ from
 replace or reorder children while scroll state remains attached to the list's
 stable ID.
 
+### Source-backed lists
+
+Rendering is not the only cost of a large collection: putting every child—or
+the full source model—into view assigns also serializes it into every local or
+remote snapshot. Source-backed lists keep the full model in a supervised source
+process and put only the current loaded slice in assigns.
+
+```elixir
+<UI.virtual_list
+  id="records"
+  label="Records"
+  total_count={assigns.total_count}
+  offset={assigns.loaded_offset}
+  overscan={8}
+  selected={assigns.selected_id}
+  selected_index={assigns.selected_index}
+  reveal={assigns.selected_id}
+  reveal_index={assigns.selected_index}
+  item_height={40}
+  phx-change="record_selected"
+  phx-range="records_range"
+  class="h-[480px]"
+>
+  {Enum.map(assigns.loaded_rows, &row/1)}
+</UI.virtual_list>
+```
+
+`phx-range` emits `%{first: first, last: last}` with an exclusive `last` index.
+The requested range already includes `overscan`. The source responds by loading
+a contiguous slice, setting `offset` to `first`, and replacing `loaded_rows`.
+`selected_index` and `reveal_index` preserve controlled selection and distant
+reveal while the selected row is unloaded. Placeholder rows retain the correct
+scroll geometry until the requested slice arrives. Arrow navigation uses the
+loaded overscan; Home and End activate only when the corresponding endpoint is
+loaded. Applications can perform global jumps by changing the controlled
+selection and reveal index.
+
+Use `GPUI.Test.range/5` to request ranges without a native display. Native range
+events are coalesced per render cycle and use the same protocol over remote
+displays.
+
 ## Button variants and sizes
 
 Button variants are `default`, `primary`, `secondary`, `danger`, `warning`,

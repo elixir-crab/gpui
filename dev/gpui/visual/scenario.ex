@@ -4,6 +4,7 @@ defmodule GPUI.Dev.Visual.Scenario do
   @type action ::
           {:dispatch, map()}
           | {:send_view, pos_integer(), term()}
+          | {:send_view_from, pos_integer(), (map() -> term())}
           | {:hover, non_neg_integer(), non_neg_integer(), pos_integer()}
           | {:move_mouse, non_neg_integer(), non_neg_integer()}
 

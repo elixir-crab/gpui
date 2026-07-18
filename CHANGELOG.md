@@ -4,7 +4,8 @@
 
 - Added accessible controlled progress, bounded display-side file selection with operation IDs and remote-safe byte payloads, and display-side clipboard buttons.
 - Updated Image Palette to use native file selection, reusable progress, user-side CSS clipboard copying, cancellable analysis, and stale-result-safe replacement.
-- Added a supervised Git Repository Browser with bounded scans, hierarchical and diff virtualization, status filtering, and explicit server-local filesystem semantics.
+- Added source-backed virtual-list ranges with overscan, unloaded selection/reveal indexes, coalesced native range events, remote forwarding, and deterministic 100,000-row coverage.
+- Added a supervised Git Repository Browser with bounded scans, source-owned tree/diff models, small snapshot slices, status filtering, and explicit server-local filesystem semantics.
 - Added accessible virtualized uniform-height collections with stable row identities, controlled selection, keyboard navigation, and programmatic reveal.
 - Added common image decoding into `GPUI.Raster` values and a supervised image-palette application with progress, bounded previews, resource reuse, and CSS export.
 - Upgraded generation to RustQ `1.0.0-rc.3` and migrated compiled `defrust` access to the documented `RustQ.Meta.AST` API.

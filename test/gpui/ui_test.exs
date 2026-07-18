@@ -63,7 +63,66 @@ defmodule GPUI.UITest do
     assert attrs[:selected] == "first"
     assert attrs[:reveal] == "first"
     assert attrs[:reveal_strategy] == "nearest"
+    assert attrs[:total_count] == 2
+    assert attrs[:offset] == 0
+    assert attrs[:overscan] == 8
     assert attrs[:item_height] == 48
+  end
+
+  test "builds source-backed virtual lists from contiguous loaded slices" do
+    items =
+      Enum.map(51..60, fn number ->
+        UI.virtual_list_item(%{id: "item-#{number}", children: ["Item #{number}"]})
+      end)
+
+    assert %Element{attrs: attrs, children: ^items} =
+             UI.virtual_list(%{
+               :"phx-range" => "records_range",
+               id: "records",
+               label: "Records",
+               total_count: 100_000,
+               offset: 50,
+               overscan: 12,
+               selected: "item-75001",
+               selected_index: 75_000,
+               reveal: "item-75001",
+               reveal_index: 75_000,
+               children: items
+             })
+
+    assert attrs[:total_count] == 100_000
+    assert attrs[:offset] == 50
+    assert attrs[:selected_index] == 75_000
+    assert attrs[:reveal_index] == 75_000
+    assert attrs[:"phx-range"] == "records_range"
+  end
+
+  test "validates source-backed virtual list ranges and controlled indexes" do
+    item = UI.virtual_list_item(%{id: "item-11"})
+    base = %{:"phx-range" => "range", id: "records", label: "Records", total_count: 100}
+
+    assert_raise ArgumentError, ~r/offset must be between/, fn ->
+      UI.virtual_list(Map.merge(base, %{offset: 101, children: []}))
+    end
+
+    assert_raise ArgumentError, ~r/loaded slice exceeds/, fn ->
+      UI.virtual_list(Map.merge(base, %{offset: 100, children: [item]}))
+    end
+
+    assert_raise ArgumentError, ~r/selected and selected_index must be provided together/, fn ->
+      UI.virtual_list(Map.merge(base, %{selected: "item-1", children: []}))
+    end
+
+    assert_raise ArgumentError, ~r/does not match the loaded item/, fn ->
+      UI.virtual_list(
+        Map.merge(base, %{
+          offset: 10,
+          selected: "item-other",
+          selected_index: 10,
+          children: [item]
+        })
+      )
+    end
   end
 
   test "validates virtual list structure and controlled IDs" do

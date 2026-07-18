@@ -197,6 +197,17 @@ pub(crate) fn component_positive_number_attr<'a>(
     }
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn component_non_negative_integer_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+) -> NifResult<Option<u64>> {
+    let attrs = term.map_get(atoms::attrs())?;
+    match attrs.map_get(attr) {
+        Ok(value) => Ok(Some(value.decode::<u64>()?)),
+        Err(_missing) => Ok(None),
+    }
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn component_string_list_attr<'a>(
     term: Term<'a>,
     attr: Atom,
@@ -1366,12 +1377,18 @@ pub(crate) struct VirtualListComponentNode {
     pub(crate) id: String,
     pub(crate) label: Option<String>,
     pub(crate) selected: Option<String>,
+    pub(crate) selected_index: Option<u64>,
     pub(crate) reveal: Option<String>,
+    pub(crate) reveal_index: Option<u64>,
     pub(crate) reveal_strategy: Option<String>,
+    pub(crate) total_count: u64,
+    pub(crate) offset: u64,
+    pub(crate) overscan: u64,
     pub(crate) item_height: f64,
     pub(crate) disabled: bool,
     pub(crate) children: Vec<ElementNode>,
     pub(crate) change: Option<String>,
+    pub(crate) range: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_virtual_list_component(
@@ -1382,17 +1399,28 @@ pub(crate) fn decode_generated_virtual_list_component(
         id: component_id(term)?,
         label: component_string_attr(term, atoms::label())?,
         selected: component_string_attr(term, atoms::selected())?,
+        selected_index: component_non_negative_integer_attr(
+            term,
+            atoms::selected_index(),
+        )?,
         reveal: component_string_attr(term, atoms::reveal())?,
+        reveal_index: component_non_negative_integer_attr(term, atoms::reveal_index())?,
         reveal_strategy: component_enum_attr(
             term,
             atoms::reveal_strategy(),
             &["nearest", "top", "center", "bottom"],
         )?,
+        total_count: component_non_negative_integer_attr(term, atoms::total_count())?
+            .unwrap_or(0),
+        offset: component_non_negative_integer_attr(term, atoms::offset())?.unwrap_or(0),
+        overscan: component_non_negative_integer_attr(term, atoms::overscan())?
+            .unwrap_or(8),
         item_height: component_positive_number_attr(term, atoms::item_height())?
             .unwrap_or(40.0),
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         children: decode_children(term)?,
         change: component_string_attr(term, atoms::phx_change())?,
+        range: component_string_attr(term, atoms::phx_range())?,
     })
 }
 #[derive(Clone, Debug)]

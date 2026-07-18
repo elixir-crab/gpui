@@ -61,6 +61,7 @@ open(runtime, "dialog_open_changed", true)
 menu_select(runtime, "file_menu_selected", "new")
 file_select(runtime, "source_selected", "fixture.png", encoded_png)
 file_cancel(runtime, "source_selected")
+range(runtime, "records_range", 1_000, 1_048)
 ```
 
 All helpers return the resulting snapshot. `dispatch/2` is available for custom

@@ -198,6 +198,17 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
+  @spec component_non_negative_integer_attr(term(), atom()) ::
+          R.nif_result(R.option(R.u64()))
+  defrust component_non_negative_integer_attr(term, attr) do
+    attrs = unwrap!(term.map_get(Atoms.attrs()))
+
+    case attrs.map_get(attr) do
+      {:ok, value} -> {:ok, some(decode_as!(value, R.u64()))}
+      {:error, _missing} -> {:ok, nil}
+    end
+  end
+
   @spec component_string_list_attr(term(), atom()) :: R.nif_result(R.vec(String.t()))
   defrust component_string_list_attr(term, attr) do
     attrs = unwrap!(term.map_get(Atoms.attrs()))

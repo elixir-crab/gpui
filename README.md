@@ -50,7 +50,7 @@ native prerequisites, supervision, controlled components, and event handling.
 - Renderer-independent application sessions and typed snapshots.
 - A process-global native GPUI loop that safely owns multiple runtimes and windows.
 - HEEx-style templates with aliases, named slots, and schema-backed styling.
-- Controlled native form controls, progress, display-side file/clipboard actions, overlays, and virtualized collections.
+- Controlled native form controls, progress, display-side file/clipboard actions, overlays, and source-backed virtualized collections.
 - Common image decoding, validated rasters, and reusable local or remote resources.
 - Local native and remote TCP/SSL displays.
 - Public deterministic ExUnit helpers that do not require a native library or display.

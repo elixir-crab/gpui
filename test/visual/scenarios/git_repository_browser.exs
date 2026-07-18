@@ -21,17 +21,7 @@ defmodule GPUITest.Visual.GitRepositoryBrowser.Scenario do
       repository: repository,
       selected_path: "lib/gpui/runtime.ex",
       preview: runtime_preview(),
-      expanded:
-        MapSet.new([
-          ".github",
-          ".github/workflows",
-          "examples",
-          "examples/git_repository_browser",
-          "lib",
-          "lib/gpui",
-          "native",
-          "test"
-        ])
+      expanded: expanded()
     }
   end
 
@@ -46,7 +36,19 @@ defmodule GPUITest.Visual.GitRepositoryBrowser.Scenario do
         name: "filtered-untracked",
         actions: [
           {:dispatch,
-           %{type: :change, window_id: 1, event: "status_filter_changed", value: "untracked"}}
+           %{type: :change, window_id: 1, event: "status_filter_changed", value: "untracked"}},
+          {:send_view_from, 1,
+           fn assigns ->
+             {:tree_slice, assigns.tree_generation,
+              Examples.GitRepositoryBrowser.Model.tree_slice(
+                repository(),
+                expanded(),
+                "",
+                "untracked",
+                Examples.GitRepositoryBrowser.Model.initial_range(),
+                "lib/gpui/runtime.ex"
+              )}
+           end}
         ]
       },
       %{
@@ -54,12 +56,57 @@ defmodule GPUITest.Visual.GitRepositoryBrowser.Scenario do
         actions: [
           {:dispatch,
            %{type: :change, window_id: 1, event: "status_filter_changed", value: "all"}},
+          {:send_view_from, 1,
+           fn assigns ->
+             {:tree_slice, assigns.tree_generation,
+              Examples.GitRepositoryBrowser.Model.tree_slice(
+                repository(),
+                expanded(),
+                "",
+                "all",
+                Examples.GitRepositoryBrowser.Model.initial_range(),
+                "lib/gpui/runtime.ex"
+              )}
+           end},
           {:dispatch,
            %{type: :change, window_id: 1, event: "tree_selected", value: "file:README.md"}},
-          {:send_view, 1, {:preview_loaded, 1, readme_preview()}}
+          {:send_view_from, 1,
+           fn assigns ->
+             {:tree_slice, assigns.tree_generation,
+              Examples.GitRepositoryBrowser.Model.tree_slice(
+                repository(),
+                expanded(),
+                "",
+                "all",
+                Examples.GitRepositoryBrowser.Model.initial_range(),
+                "README.md"
+              )}
+           end},
+          {:send_view_from, 1,
+           fn assigns ->
+             {:preview_loaded, assigns.preview_job, assigns.preview_generation,
+              Examples.GitRepositoryBrowser.Model.preview_summary(readme_preview()),
+              Examples.GitRepositoryBrowser.Model.preview_slice(
+                readme_preview(),
+                Examples.GitRepositoryBrowser.Model.initial_range()
+              )}
+           end}
         ]
       }
     ]
+  end
+
+  defp expanded do
+    MapSet.new([
+      ".github",
+      ".github/workflows",
+      "examples",
+      "examples/git_repository_browser",
+      "lib",
+      "lib/gpui",
+      "native",
+      "test"
+    ])
   end
 
   defp repository do

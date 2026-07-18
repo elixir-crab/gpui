@@ -46,6 +46,7 @@ defmodule GPUI.SchemaTest do
     assert :"phx-search" in GPUI.Schema.events()
     assert :"phx-release" in GPUI.Schema.events()
     assert :"phx-select" in GPUI.Schema.events()
+    assert :"phx-range" in GPUI.Schema.events()
     assert :ui_progress in GPUI.Schema.identified_tags()
     assert :ui_file_picker in GPUI.Schema.identified_tags()
     assert :ui_copy_button in GPUI.Schema.identified_tags()

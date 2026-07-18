@@ -177,6 +177,11 @@ defmodule GPUI.Native.LifecycleE2ETest do
         attrs: %{id: "invalid-list", label: "Invalid list", item_height: 0},
         children: []
       },
+      invalid_virtual_list_count: %{
+        type: :ui_virtual_list,
+        attrs: %{id: "invalid-count", label: "Invalid list", total_count: -1},
+        children: []
+      },
       invalid_progress_max: %{
         type: :ui_progress,
         attrs: %{id: "invalid-progress", label: "Invalid progress", max: 0},

@@ -245,14 +245,19 @@ defmodule GPUI.Schema do
       tag: :ui_virtual_list,
       kind: :virtual_list_component,
       stateful: true,
-      events: [change: :"phx-change"],
+      events: [change: :"phx-change", range: :"phx-range"],
       children: true,
       attrs: [
         id: :string,
         label: :string,
         selected: :string,
+        selected_index: :non_negative_integer,
         reveal: :string,
+        reveal_index: :non_negative_integer,
         reveal_strategy: {:enum, ~w(nearest top center bottom)},
+        total_count: {:default, :non_negative_integer, 0},
+        offset: {:default, :non_negative_integer, 0},
+        overscan: {:default, :non_negative_integer, 8},
         item_height: {:default, :positive_number, 40.0},
         disabled: :boolean
       ]

@@ -27,6 +27,7 @@ defmodule GPUI.GitRepositoryBrowserExampleTest do
 
   alias Examples.GitRepositoryBrowser.App
   alias Examples.GitRepositoryBrowser.Coordinator
+  alias Examples.GitRepositoryBrowser.Model
   alias Examples.GitRepositoryBrowser.Repository
   alias Examples.GitRepositoryBrowser.Tree
   alias GPUI.GitRepositoryBrowserExampleTest.FakeRepository
@@ -121,12 +122,55 @@ defmodule GPUI.GitRepositoryBrowserExampleTest do
 
     assert %{type: :ui_virtual_list} = runtime |> tree() |> find!(id: "repository-tree")
     assert %{type: :ui_virtual_list} = runtime |> tree() |> find!(id: "preview-lines")
-    assert runtime |> tree() |> all(type: :ui_virtual_list_item) |> length() > 2_000
+    refute Map.has_key?(assigns(runtime).repository, :files)
+    refute Map.has_key?(assigns(runtime).preview, :lines)
+    assert runtime |> tree() |> all(type: :ui_virtual_list_item) |> length() < 100
+    assert runtime |> tree() |> all(id: "line-1501") == []
+
+    range(runtime, "preview_range_changed", 1_500, 1_550)
+
+    send_view(
+      runtime,
+      {:preview_slice, 1, Model.preview_slice(preview, %{first: 1_500, last: 1_550})}
+    )
+
+    assert runtime |> tree() |> all(id: "line-1501") |> length() == 1
+    assert runtime |> tree() |> all(id: "line-1") == []
 
     select(runtime, "tree_selected", "dir:lib/core")
+    assigns = assigns(runtime)
+
+    send_view(
+      runtime,
+      {:tree_slice, 1,
+       Model.tree_slice(
+         repository,
+         assigns.expanded,
+         assigns.filter,
+         assigns.status_filter,
+         assigns.tree_range,
+         assigns.selected_path
+       )}
+    )
+
     refute runtime |> tree() |> all(id: "file:lib/core/worker.ex") |> Enum.any?()
 
     change(runtime, "status_filter_changed", "untracked")
+    assigns = assigns(runtime)
+
+    send_view(
+      runtime,
+      {:tree_slice, 2,
+       Model.tree_slice(
+         repository,
+         assigns.expanded,
+         assigns.filter,
+         assigns.status_filter,
+         assigns.tree_range,
+         assigns.selected_path
+       )}
+    )
+
     assert runtime |> tree() |> all(id: "file:test/new_test.exs") |> Enum.any?()
     refute runtime |> tree() |> all(id: "file:lib/slow.ex") |> Enum.any?()
   end
@@ -187,6 +231,20 @@ defmodule GPUI.GitRepositoryBrowserExampleTest do
              preview_job: 3,
              preview: %{path: "lib/core/worker.ex"}
            } = assigns(runtime)
+
+    preview_generation = assigns(runtime).preview_generation + 1
+    range(runtime, "preview_range_changed", 1, 3)
+    assert_receive {:git_repository_browser, :preview_slice, ^preview_generation}
+
+    assert %{preview_offset: 1, preview_lines: [%{id: "line-2"}, %{id: "line-3"}]} =
+             assigns(runtime)
+
+    tree_generation = assigns(runtime).tree_generation + 1
+    change(runtime, "status_filter_changed", "untracked")
+    assert_receive {:git_repository_browser, :tree_slice, ^tree_generation}
+
+    assert %{tree_total: 2, tree_items: [%{id: "dir:test"}, %{status: :untracked}]} =
+             assigns(runtime)
   end
 
   defp start_task_supervisor! do

@@ -13,7 +13,7 @@ defmodule GPUI.Native.GitRepositoryBrowserE2ETest do
 
   test "renders large repository and diff collections through native virtualization" do
     repository = repository(2_000)
-    selected_path = "src/file-1500.ex"
+    selected_path = "src/file-0010.ex"
 
     {:ok, runtime} =
       GPUI.Runtime.start_link(
@@ -31,8 +31,17 @@ defmodule GPUI.Native.GitRepositoryBrowserE2ETest do
     native_window_id = Desktop.window_id!("Git Repository Browser")
     Desktop.await_frame!(runtime, 1, native_window_id)
 
-    assert %{preview: %{lines: lines}, selected_path: ^selected_path} = root_assigns(runtime)
-    assert Enum.count(lines) == 5_000
+    assert %{
+             preview: preview,
+             preview_total: 5_000,
+             preview_lines: preview_lines,
+             selected_path: ^selected_path,
+             tree_items: tree_items
+           } = root_assigns(runtime)
+
+    refute Map.has_key?(preview, :lines)
+    assert Enum.count(preview_lines) <= 48
+    assert Enum.count(tree_items) <= 48
     assert Process.alive?(runtime)
 
     GPUI.Runtime.dispatch_event(runtime, %{

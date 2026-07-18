@@ -129,6 +129,14 @@ defmodule GPUI.Test do
   def change(runtime, event, value, opts \\ []),
     do: dispatch_value(runtime, :change, event, value, opts)
 
+  @doc "Delivers a deterministic source-backed virtual-list range request."
+  @spec range(GenServer.server(), String.t(), non_neg_integer(), non_neg_integer(), keyword()) ::
+          Snapshot.t()
+  def range(runtime, event, first, last, opts \\ [])
+      when is_integer(first) and first >= 0 and is_integer(last) and last >= first do
+    dispatch_value(runtime, :range, event, %{first: first, last: last}, opts)
+  end
+
   @doc "Selects deterministic file bytes for a display-side file picker."
   @spec file_select(GenServer.server(), String.t(), String.t(), binary(), keyword()) ::
           Snapshot.t()

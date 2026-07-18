@@ -11,6 +11,7 @@ defmodule GPUI.Event do
           | :select
           | :release
           | :search
+          | :range
           | :keydown
           | :keyup
           | :window_closed

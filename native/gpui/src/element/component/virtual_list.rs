@@ -20,6 +20,9 @@ pub(crate) struct ComponentVirtualList {
     scroll_handle: gpui::UniformListScrollHandle,
     focus_handle: gpui::FocusHandle,
     last_reveal: Option<(String, usize)>,
+    last_requested_range: Option<Range<usize>>,
+    pending_requested_range: Option<Range<usize>>,
+    range_emit_scheduled: bool,
     input_entities: HashMap<String, gpui::Entity<NativeTextInput>>,
     components: ComponentRegistry,
 }
@@ -31,6 +34,9 @@ impl ComponentVirtualList {
             scroll_handle: gpui::UniformListScrollHandle::new(),
             focus_handle: cx.focus_handle(),
             last_reveal: None,
+            last_requested_range: None,
+            pending_requested_range: None,
+            range_emit_scheduled: false,
             input_entities: HashMap::new(),
             components: ComponentRegistry::default(),
         }
@@ -51,8 +57,12 @@ struct VirtualItem {
 struct VisibleList {
     id: String,
     items: Arc<Vec<VirtualItem>>,
+    offset: usize,
+    total_count: usize,
+    overscan: usize,
     selected: Option<String>,
     change_event: Option<String>,
+    range_event: Option<String>,
     item_height: f32,
 }
 
@@ -81,14 +91,34 @@ pub(crate) fn render(
         })
         .collect::<Vec<_>>();
     let items = Arc::new(items);
+    let total_count = usize::try_from(node.total_count).unwrap_or(usize::MAX);
+    let offset = usize::try_from(node.offset)
+        .unwrap_or(usize::MAX)
+        .min(total_count);
+    let overscan = usize::try_from(node.overscan).unwrap_or(usize::MAX);
     let item_keys = items
         .iter()
-        .map(|item| (item.id.clone(), item.disabled))
+        .enumerate()
+        .map(|(local_index, item)| {
+            (
+                item.id.clone(),
+                item.disabled,
+                offset.saturating_add(local_index),
+            )
+        })
         .collect::<Vec<_>>();
     let selected_index = node
-        .selected
-        .as_ref()
-        .and_then(|selected| item_keys.iter().position(|(id, _disabled)| id == selected));
+        .selected_index
+        .and_then(|index| usize::try_from(index).ok())
+        .filter(|index| *index < total_count)
+        .or_else(|| {
+            node.selected.as_ref().and_then(|selected| {
+                item_keys
+                    .iter()
+                    .find(|(id, _disabled, _index)| id == selected)
+                    .map(|(_id, _disabled, index)| *index)
+            })
+        });
 
     if context.components.virtual_list_mut(&node.id).is_none() {
         let component = ComponentVirtualList::new(context.cx);
@@ -99,12 +129,26 @@ pub(crate) fn render(
         .components
         .virtual_list_mut(&node.id)
         .expect("virtual list component must exist after insertion");
-    let reveal = node.reveal.as_ref().and_then(|reveal| {
-        item_keys
-            .iter()
-            .position(|(id, _disabled)| id == reveal)
-            .map(|index| (reveal.clone(), index))
-    });
+    let reveal = node
+        .reveal_index
+        .and_then(|index| usize::try_from(index).ok())
+        .filter(|index| *index < total_count)
+        .map(|index| {
+            (
+                node.reveal
+                    .clone()
+                    .unwrap_or_else(|| format!("index-{index}")),
+                index,
+            )
+        })
+        .or_else(|| {
+            node.reveal.as_ref().and_then(|reveal| {
+                item_keys
+                    .iter()
+                    .find(|(id, _disabled, _index)| id == reveal)
+                    .map(|(_id, _disabled, index)| (reveal.clone(), *index))
+            })
+        });
     if component.last_reveal != reveal {
         component.last_reveal = reveal.clone();
         if let Some((_id, index)) = reveal {
@@ -113,14 +157,21 @@ pub(crate) fn render(
                 .scroll_to_item(index, scroll_strategy(node.reveal_strategy.as_deref()));
         }
     }
+    if node.range.is_none() {
+        component.last_requested_range = None;
+    }
     let scroll_handle = component.scroll_handle.clone();
     let focus_handle = component.focus_handle.clone();
 
     let visible_list = VisibleList {
         id: node.id.clone(),
         items: items.clone(),
+        offset,
+        total_count,
+        overscan,
         selected: node.selected.clone(),
         change_event: node.change.clone(),
+        range_event: node.range.clone(),
         item_height: (node.item_height as f32).max(1.0),
     };
     let processor = context.cx.processor(move |root, range, window, cx| {
@@ -133,7 +184,11 @@ pub(crate) fn render(
     let key_items = item_keys.clone();
     let key_scroll = scroll_handle.clone();
     let disabled = node.disabled;
-    let selected_for_keys = selected_index;
+    let selected_for_keys = selected_index.and_then(|selected_index| {
+        item_keys
+            .iter()
+            .position(|(_id, _disabled, index)| *index == selected_index)
+    });
 
     let element = apply_generated_render_styles(gpui::div(), node.style)
         .id(node.id.clone())
@@ -144,7 +199,12 @@ pub(crate) fn render(
             if disabled {
                 return;
             }
-            let target = key_target(event.keystroke.key.as_str(), &key_items, selected_for_keys);
+            let target = key_target(
+                event.keystroke.key.as_str(),
+                &key_items,
+                selected_for_keys,
+                total_count,
+            );
             let Some(target) = target else {
                 return;
             };
@@ -154,14 +214,14 @@ pub(crate) fn render(
                 change_event.as_ref(),
                 &key_items[target].0,
             );
-            key_scroll.scroll_to_item(target, gpui::ScrollStrategy::Nearest);
+            key_scroll.scroll_to_item(key_items[target].2, gpui::ScrollStrategy::Nearest);
             window.refresh();
             cx.stop_propagation();
         })
         .child(
             uniform_list(
                 format!("gpui-elixir-virtual-list-{window_id}-{}", node.id),
-                items.len(),
+                total_count,
                 processor,
             )
             .track_scroll(&scroll_handle)
@@ -190,12 +250,63 @@ fn render_visible_items(
     let Some(component) = root.components.virtual_list_mut(list_id) else {
         return Vec::new();
     };
+    let requested_range = range.start.saturating_sub(list.overscan)
+        ..range
+            .end
+            .saturating_add(list.overscan)
+            .min(list.total_count);
+    let schedule_range = if list.range_event.is_some() {
+        component.pending_requested_range = Some(requested_range);
+        if component.range_emit_scheduled {
+            false
+        } else {
+            component.range_emit_scheduled = true;
+            true
+        }
+    } else {
+        false
+    };
+    if schedule_range {
+        let list_id = list.id.clone();
+        let event = list
+            .range_event
+            .clone()
+            .expect("scheduled virtual range must have an event");
+        cx.defer_in(window, move |root, _window, _cx| {
+            let runtime = root.runtime.clone();
+            let window_id = root.window_id;
+            let Some(component) = root.components.virtual_list_mut(&list_id) else {
+                return;
+            };
+            component.range_emit_scheduled = false;
+            let Some(requested_range) = component.pending_requested_range.take() else {
+                return;
+            };
+            if component.last_requested_range.as_ref() == Some(&requested_range) {
+                return;
+            }
+            component.last_requested_range = Some(requested_range.clone());
+            emit_range(
+                &runtime,
+                window_id,
+                &event,
+                requested_range.start,
+                requested_range.end,
+            );
+        });
+    }
+
     component.components.begin_render();
     let mut active_input_ids = HashSet::new();
     let mut rendered = Vec::new();
 
     for index in range {
-        let Some(item) = list.items.get(index).cloned() else {
+        let item = index
+            .checked_sub(list.offset)
+            .and_then(|local_index| list.items.get(local_index))
+            .cloned();
+        let Some(item) = item else {
+            rendered.push(gpui::div().h(gpui::px(list.item_height)).into_any_element());
             continue;
         };
         let item_id = item.id.clone();
@@ -280,25 +391,55 @@ fn emit_change(
 }
 
 #[cfg(feature = "components")]
-fn key_target(key: &str, items: &[(String, bool)], selected: Option<usize>) -> Option<usize> {
+fn emit_range(
+    runtime: &crate::SharedRuntime,
+    window_id: u64,
+    event: &str,
+    first: usize,
+    last: usize,
+) {
+    use crate::{push_event, NativeEvent};
+
+    let _ = push_event(
+        runtime,
+        NativeEvent::VirtualRange {
+            window_id,
+            event: event.to_string(),
+            first: first as u64,
+            last: last as u64,
+        },
+    );
+}
+
+#[cfg(feature = "components")]
+fn key_target(
+    key: &str,
+    items: &[(String, bool, usize)],
+    selected: Option<usize>,
+    total_count: usize,
+) -> Option<usize> {
     match key {
         "down" => next_enabled(items, selected),
         "up" => previous_enabled(items, selected),
-        "home" => items.iter().position(|(_id, disabled)| !disabled),
-        "end" => items.iter().rposition(|(_id, disabled)| !disabled),
+        "home" => items
+            .iter()
+            .position(|(_id, disabled, index)| *index == 0 && !disabled),
+        "end" => items.iter().rposition(|(_id, disabled, index)| {
+            index.saturating_add(1) == total_count && !disabled
+        }),
         "enter" | "space" => selected.filter(|index| !items[*index].1),
         _other => None,
     }
 }
 
 #[cfg(feature = "components")]
-fn next_enabled(items: &[(String, bool)], selected: Option<usize>) -> Option<usize> {
+fn next_enabled(items: &[(String, bool, usize)], selected: Option<usize>) -> Option<usize> {
     let start = selected.map_or(0, |index| index.saturating_add(1));
     (start..items.len()).find(|index| !items[*index].1)
 }
 
 #[cfg(feature = "components")]
-fn previous_enabled(items: &[(String, bool)], selected: Option<usize>) -> Option<usize> {
+fn previous_enabled(items: &[(String, bool, usize)], selected: Option<usize>) -> Option<usize> {
     let end = selected.unwrap_or(items.len());
     (0..end).rev().find(|index| !items[*index].1)
 }
