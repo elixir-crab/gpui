@@ -3,8 +3,7 @@ defmodule GPUI.Codegen.Native.Boundary do
 
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
-  alias RustQ.Rust.Identifier
-  alias RustQ.Syn.Type
+  alias RustQ.Rustler.Nif
 
   @spec nifs() :: keyword(keyword())
   def nifs do
@@ -28,27 +27,23 @@ defmodule GPUI.Codegen.Native.Boundary do
 
   @spec disabled_items() :: [AST.item()]
   def disabled_items do
-    functions =
-      "native/gpui/src/nif.rs"
-      |> RustQ.Syn.parse_file!()
-      |> RustQ.Syn.functions()
+    specs = Enum.filter(nifs(), fn {_name, opts} -> Keyword.get(opts, :real_only, false) end)
 
-    nifs()
-    |> Enum.filter(fn {_name, opts} -> Keyword.get(opts, :real_only, false) end)
-    |> Enum.map(fn {name, _opts} ->
-      source_name = "#{name}_impl"
-      function = Enum.find(functions, &(&1.name == source_name)) || missing_function!(source_name)
+    "native/gpui/src/nif.rs"
+    |> Nif.wrappers_from_source(specs)
+    |> Enum.map(fn function ->
+      args =
+        Enum.map(function.args, fn arg ->
+          %{arg | name: String.to_atom("_#{arg.name}")}
+        end)
 
-      %AST.Function{
-        name: name |> Atom.to_string() |> Kernel.<>("_impl") |> String.to_atom(),
-        vis: :crate,
-        lifetimes: Enum.map(function.lifetimes, &lifetime/1),
-        args:
-          Enum.map(function.args, fn arg ->
-            A.arg(String.to_atom("_#{arg.name}"), type_ast(arg.type_ast))
-          end),
-        returns: type_ast(function.returns_ast),
-        body: [A.return_stmt(disabled_error())]
+      %{
+        function
+        | name: String.to_atom("#{function.name}_impl"),
+          vis: :crate,
+          args: args,
+          attrs: [],
+          body: [A.return_stmt(disabled_error())]
       }
     end)
   end
@@ -60,33 +55,4 @@ defmodule GPUI.Codegen.Native.Boundary do
     |> then(&A.path_call([:rustler, :Error, :Term], [&1]))
     |> A.err()
   end
-
-  defp type_ast(%Type.Path{} = path) do
-    generic_args =
-      if path.generic_args == [] do
-        Enum.map(path.args, &%Type.GenericArgument{kind: :type, type: &1})
-      else
-        path.generic_args
-      end
-
-    %AST.TypePath{
-      parts: Enum.map(path.segments, &Identifier.atom!/1),
-      lifetimes:
-        for(
-          %Type.GenericArgument{kind: :lifetime, source: source} <- generic_args,
-          do: lifetime(source)
-        ),
-      generics:
-        for(
-          %Type.GenericArgument{kind: :type, type: type} <- generic_args,
-          do: type_ast(type)
-        )
-    }
-  end
-
-  defp lifetime("'" <> name), do: Identifier.atom!(name)
-  defp lifetime(name), do: Identifier.atom!(name)
-
-  defp missing_function!(name),
-    do: raise(ArgumentError, "missing native NIF implementation #{name}")
 end
