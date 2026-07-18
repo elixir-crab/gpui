@@ -2,6 +2,9 @@
 
 ## 0.1.1
 
+- Added accessible source-backed data tables with fixed sortable headers, horizontal scrolling, controlled row/cell navigation, numeric alignment, grid metadata, and 100,000-row native coverage; migrated Process Explorer to the shared table.
+- Added a supervised ETS Table Explorer with bounded server-local discovery, asynchronous stale-safe object loading, source-owned models, small table slices, filtering, sorting, and selected-object details.
+- Moved option, image, text-child, and style decoding from handwritten Rust into typespec-derived contracts, ordinary Elixir macros, and typed Rusty-Elixir.
 - Added a supervised OTP log and trace explorer with bounded Logger ingestion, asynchronous stale-safe filtering, pause/follow-tail controls, source-backed semantic log rendering, multiline details, retention rollover, and display-side copying.
 - Polished the example suite with clearer controlled-state feedback, filtered and empty process states, safe palette action availability, explicit local/remote path semantics, richer settings review, and modernized resource-reference rendering.
 - Added an accessible source-backed monospaced code and unified-diff viewer with line numbers, controlled selection/reveal, horizontal scrolling, tab expansion, display-side copying, and 100,000-line native coverage; migrated Git Repository Browser previews to it.

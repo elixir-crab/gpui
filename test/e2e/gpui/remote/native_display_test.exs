@@ -211,6 +211,74 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
     end
   end
 
+  defmodule TableView do
+    use GPUI.View
+
+    alias GPUI.UI
+
+    @impl GPUI.View
+    def render(assigns) do
+      columns = [
+        UI.table_column(%{id: "name", label: "Name", width: 240, sortable: true}),
+        UI.table_column(%{id: "value", label: "Value", width: 180, align: "right"})
+      ]
+
+      rows =
+        Enum.map(1..3, fn index ->
+          UI.table_row(%{
+            id: "row-#{index}",
+            children: ["remote-#{index}", Integer.to_string(index)]
+          })
+        end)
+
+      ~GPUI"""
+      <div class="w-[480px] h-[240px] bg-slate-900">
+        <UI.data_table
+          id="remote-table"
+          label="Remote records"
+          selected={assigns.selected}
+          selected_column={assigns.selected_column}
+          sort_column="name"
+          sort_direction={assigns.sort_direction}
+          phx-change="remote_row_selected"
+          phx-cell-change="remote_cell_selected"
+          phx-sort="remote_table_sorted"
+          class="h-[220px]"
+        >
+          {columns ++ rows}
+        </UI.data_table>
+      </div>
+      """
+    end
+
+    @impl GPUI.View
+    def handle_event("remote_row_selected", %{value: selected}, assigns),
+      do: {:noreply, %{assigns | selected: selected}}
+
+    def handle_event("remote_cell_selected", %{value: [selected, column]}, assigns),
+      do: {:noreply, %{assigns | selected: selected, selected_column: column}}
+
+    def handle_event("remote_table_sorted", _event, assigns) do
+      direction = if assigns.sort_direction == "ascending", do: "descending", else: "ascending"
+      {:noreply, %{assigns | sort_direction: direction}}
+    end
+  end
+
+  defmodule TableApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(_args) do
+      {:ok,
+       [
+         window "GPUI Remote Table E2E" do
+           size(480, 240)
+           root(TableView, selected: nil, selected_column: nil, sort_direction: "ascending")
+         end
+       ]}
+    end
+  end
+
   test "a TCP session renders through the real native display" do
     client = start_remote!(CounterApp)
 
@@ -282,6 +350,29 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
     Desktop.eventually(fn ->
       assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
       assert ["security"] = get_in(updated, [:root, :assigns, :expanded])
+    end)
+  end
+
+  test "data-table sorting and cell selection cross a remote native session" do
+    client = start_remote!(TableApp)
+
+    assert {:ok, %{windows: [_window]}} = GPUI.Remote.Client.mount(client)
+    :ok = GPUI.Remote.Client.subscribe(client)
+    window_id = Desktop.window_id!("GPUI Remote Table E2E")
+
+    Desktop.click!(window_id, 100, 20)
+
+    Desktop.eventually(fn ->
+      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
+      assert "descending" = get_in(updated, [:root, :assigns, :sort_direction])
+    end)
+
+    Desktop.click!(window_id, 100, 65)
+
+    Desktop.eventually(fn ->
+      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
+      assert "row-1" = get_in(updated, [:root, :assigns, :selected])
+      assert "name" = get_in(updated, [:root, :assigns, :selected_column])
     end)
   end
 

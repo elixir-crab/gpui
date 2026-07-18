@@ -1,5 +1,5 @@
 for scenario <-
-      ~w(code_viewer component_gallery data_table focus_timer git_repository_browser hello_window image_palette log_trace_explorer process_explorer settings_form virtual_list) do
+      ~w(code_viewer component_gallery data_table ets_table_explorer focus_timer git_repository_browser hello_window image_palette log_trace_explorer process_explorer settings_form virtual_list) do
   Code.require_file("../visual/scenarios/#{scenario}.exs", __DIR__)
 end
 
@@ -81,6 +81,20 @@ defmodule GPUI.VisualScenariosTest do
     assert %{rows: rows, selected: nil, sort_column: "memory"} = assigns(runtime)
     assert Enum.count_until(rows, 41) == 40
     assert %{type: :ui_data_table} = runtime |> tree() |> find!(id: "visual-table")
+  end
+
+  test "ETS table explorer scenario shows bounded tables, entries, and object details" do
+    scenario = GPUITest.Visual.EtsTableExplorer.Scenario
+
+    assert Enum.map(scenario.captures(), & &1.name) == [
+             "tables-and-entries",
+             "selected-object"
+           ]
+
+    runtime = start_gpui!(scenario.app(), args: scenario.args(:dark))
+    assert %{table_total: 8, entry_total: 12, selected_entry: nil} = assigns(runtime)
+    assert %{type: :ui_data_table} = runtime |> tree() |> find!(id: "ets-tables")
+    assert %{type: :ui_data_table} = runtime |> tree() |> find!(id: "ets-entries")
   end
 
   test "image palette scenario uses fixed raster data and controlled selection" do

@@ -33,6 +33,19 @@ sorting, a virtualized accessible data table, explicit empty/filter states,
 selection, and a details pane. See
 [`process_explorer/README.md`](process_explorer/README.md) for its architecture.
 
+## ETS table explorer
+
+The ETS explorer keeps table and object models in a supervised source process,
+loads selected table objects asynchronously with explicit bounds, and presents
+two source-backed data tables:
+
+```bash
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/ets_table_explorer/run.exs
+```
+
+See [`ets_table_explorer/README.md`](ets_table_explorer/README.md) for its
+server-local inspection semantics, bounds, and stale-operation handling.
+
 ## Log and trace explorer
 
 The log explorer attaches a lightweight OTP Logger handler to a supervised,
