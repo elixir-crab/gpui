@@ -254,6 +254,54 @@ Use `GPUI.Test.range/5` to request ranges without a native display. Native range
 events are coalesced per render cycle and use the same protocol over remote
 displays.
 
+### Source-backed data tables
+
+`data_table/1` adds fixed headers, horizontal scrolling, explicit column widths,
+numeric alignment, sorting events, and grid accessibility to the uniform
+source-backed collection contract. Column definitions precede loaded rows, and
+every row contains one child per column:
+
+```elixir
+<UI.data_table
+  id="processes"
+  label="BEAM processes"
+  total_count={assigns.total_count}
+  offset={assigns.loaded_offset}
+  selected={assigns.selected_id}
+  selected_index={assigns.selected_index}
+  selected_column={assigns.selected_column}
+  reveal={assigns.selected_id}
+  reveal_index={assigns.selected_index}
+  sort_column={assigns.sort_column}
+  sort_direction={assigns.sort_direction}
+  phx-change="process_selected"
+  phx-cell-change="cell_selected"
+  phx-sort="process_sorted"
+  phx-range="process_range"
+  class="h-[480px]"
+>
+  <UI.table_column id="pid" label="Process" width={140} />
+  <UI.table_column id="memory" label="Memory" width={120} align="right" sortable={true} />
+  {Enum.map(assigns.loaded_rows, fn row ->
+    UI.table_row(%{id: row.id, children: [row.pid, row.memory]})
+  end)}
+</UI.data_table>
+```
+
+Widths are display pixels and each column is bounded from 40 to 2,000 pixels.
+Sortable headers emit their stable column ID through `phx-sort`; controlled
+`sort_column` and `sort_direction` (`ascending` or `descending`) expose the
+current order. Row selection emits the row ID. Cell selection and Left/Right
+navigation emit `[row_id, column_id]` through `phx-cell-change`, while Up/Down,
+Home/End, Enter, and Space follow the source-backed row rules.
+
+The native accessibility tree uses grid, row, column-header, and grid-cell roles
+with one-based row and column indexes and total grid dimensions. Use
+`GPUI.Test.table_sort/4`, `GPUI.Test.table_cell_select/5`, and
+`GPUI.Test.range/5` for deterministic tests. Full row models remain in the
+source process; snapshots contain only column definitions and the loaded row
+slice.
+
 ### Accessible trees
 
 `tree/1` and `tree_item/1` apply the same uniform-height, source-backed range,

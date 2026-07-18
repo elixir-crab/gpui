@@ -43,13 +43,6 @@ defmodule Examples.ProcessExplorer.View do
 
       <div class="flex h-[570px]">
         <div class="flex flex-col w-[720px] h-[570px]">
-          <div class="flex gap-3 p-3" style={[background: {:rgb, 0x0F172A}]}>
-            <text class="text-white w-[130px]">Process</text>
-            <text class="text-white w-[180px]">Name / function</text>
-            <text class="text-white w-[100px]">Memory</text>
-            <text class="text-white w-[100px]">Mailbox</text>
-            <text class="text-white w-[110px]">Reductions</text>
-          </div>
           {process_collection(processes, visible_selection, assigns)}
         </div>
 
@@ -66,6 +59,9 @@ defmodule Examples.ProcessExplorer.View do
     do: {:noreply, %{assigns | filter: filter}}
 
   def handle_event("sort_changed", %{value: sort}, assigns),
+    do: {:noreply, %{assigns | sort: sort}}
+
+  def handle_event("process_sorted", %{value: sort}, assigns),
     do: {:noreply, %{assigns | sort: sort}}
 
   def handle_event("toggle_pause", _event, assigns),
@@ -127,22 +123,27 @@ defmodule Examples.ProcessExplorer.View do
     if Enum.any?(processes, &(&1.pid == pid)), do: pid, else: nil
   end
 
-  defp process_row(process, selected_pid) do
-    assigns = %{process: process, selected: process.pid == selected_pid}
+  defp process_row(process) do
+    UI.table_row(%{
+      id: process.pid,
+      children: [
+        process.pid,
+        process_name_cell(process),
+        format_bytes(process.memory),
+        Integer.to_string(process.message_queue_len),
+        format_integer(process.reductions)
+      ]
+    })
+  end
+
+  defp process_name_cell(process) do
+    assigns = %{process: process}
 
     ~GPUI"""
-    <UI.virtual_list_item id={assigns.process.pid} style={row_style(assigns.selected)}>
-      <div class="flex items-center gap-3 p-3">
-        <text class="text-white w-[130px]">{assigns.process.pid}</text>
-        <div class="flex flex-col w-[180px]">
-          <text class="text-white">{assigns.process.name}</text>
-          <text style={[color: {:rgb, 0x94A3B8}]}>{assigns.process.current_function}</text>
-        </div>
-        <text class="text-white w-[100px]">{format_bytes(assigns.process.memory)}</text>
-        <text class="text-white w-[100px]">{assigns.process.message_queue_len}</text>
-        <text class="text-white w-[110px]">{format_integer(assigns.process.reductions)}</text>
-      </div>
-    </UI.virtual_list_item>
+    <div class="flex flex-col">
+      <text class="text-white">{assigns.process.name}</text>
+      <text style={[color: {:rgb, 0x94A3B8}]}>{assigns.process.current_function}</text>
+    </div>
     """
   end
 
@@ -156,26 +157,61 @@ defmodule Examples.ProcessExplorer.View do
   end
 
   defp process_collection(processes, visible_selection, assigns) do
-    collection_assigns = %{
+    table_assigns = %{
       processes: processes,
-      selected_pid: assigns.selected_pid,
-      visible_selection: visible_selection
+      visible_selection: visible_selection,
+      sort: assigns.sort
     }
 
     ~GPUI"""
-    <UI.virtual_list
+    <UI.data_table
       id="processes"
       label="BEAM processes"
-      selected={collection_assigns.visible_selection}
-      reveal={collection_assigns.visible_selection}
+      selected={table_assigns.visible_selection}
+      reveal={table_assigns.visible_selection}
+      sort_column={table_assigns.sort}
+      sort_direction={sort_direction(table_assigns.sort)}
       item_height={76}
+      header_height={50}
       phx-change="process_selected"
-      class="h-[520px]"
+      phx-sort="process_sorted"
+      class="h-[570px]"
     >
-      {Enum.map(collection_assigns.processes, &process_row(&1, collection_assigns.selected_pid))}
-    </UI.virtual_list>
+      {process_columns() ++ Enum.map(table_assigns.processes, &process_row/1)}
+    </UI.data_table>
     """
   end
+
+  defp process_columns do
+    [
+      UI.table_column(%{id: "pid", label: "Process", width: 130}),
+      UI.table_column(%{id: "name", label: "Name / function", width: 210, sortable: true}),
+      UI.table_column(%{
+        id: "memory",
+        label: "Memory",
+        width: 115,
+        align: "right",
+        sortable: true
+      }),
+      UI.table_column(%{
+        id: "mailbox",
+        label: "Mailbox",
+        width: 115,
+        align: "right",
+        sortable: true
+      }),
+      UI.table_column(%{
+        id: "reductions",
+        label: "Reductions",
+        width: 130,
+        align: "right",
+        sortable: true
+      })
+    ]
+  end
+
+  defp sort_direction("name"), do: "ascending"
+  defp sort_direction(_sort), do: "descending"
 
   defp inspector(nil, _hidden) do
     ~GPUI"""
@@ -239,8 +275,6 @@ defmodule Examples.ProcessExplorer.View do
       else: "Try a different PID, name, or function."
   end
 
-  defp row_style(true), do: [background: {:rgb, 0x1D4ED8}]
-  defp row_style(false), do: [background: {:rgb, 0x111827}]
   defp pause_label(true), do: "Resume updates"
   defp pause_label(false), do: "Pause updates"
   defp pause_variant(true), do: "primary"

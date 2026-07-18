@@ -30,6 +30,9 @@ defmodule GPUI.SchemaTest do
              :ui_accordion_item,
              :ui_virtual_list,
              :ui_virtual_list_item,
+             :ui_data_table,
+             :ui_table_column,
+             :ui_table_row,
              :ui_tree,
              :ui_tree_item,
              :ui_code_viewer,
@@ -76,6 +79,7 @@ defmodule GPUI.SchemaTest do
              :select_component,
              :combobox_component,
              :virtual_list_component,
+             :data_table_component,
              :tree_component,
              :code_viewer_component,
              :slider_component

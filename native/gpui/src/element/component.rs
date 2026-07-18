@@ -1,5 +1,6 @@
 pub(crate) mod accordion;
 pub(crate) mod code_viewer;
+pub(crate) mod data_table;
 pub(crate) mod display;
 pub(crate) mod overlay;
 pub(crate) mod radio;

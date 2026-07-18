@@ -182,6 +182,17 @@ defmodule GPUI.Native.LifecycleE2ETest do
         attrs: %{id: "invalid-count", label: "Invalid list", total_count: -1},
         children: []
       },
+      invalid_data_table_column_width: %{
+        type: :ui_data_table,
+        attrs: %{id: "invalid-table", label: "Invalid table", total_count: 0},
+        children: [
+          %{
+            type: :ui_table_column,
+            attrs: %{id: "name", label: "Name", width: 0},
+            children: []
+          }
+        ]
+      },
       invalid_code_viewer_tab_width: %{
         type: :ui_code_viewer,
         attrs: %{id: "invalid-code", label: "Invalid code", tab_width: 0},

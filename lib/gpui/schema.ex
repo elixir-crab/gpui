@@ -273,6 +273,53 @@ defmodule GPUI.Schema do
       attrs: [id: :string, disabled: :boolean]
     },
     %Component{
+      tag: :ui_data_table,
+      kind: :data_table_component,
+      stateful: true,
+      events: [
+        change: :"phx-change",
+        cell_change: :"phx-cell-change",
+        sort: :"phx-sort",
+        range: :"phx-range"
+      ],
+      children: true,
+      attrs: [
+        id: :string,
+        label: :string,
+        selected: :string,
+        selected_index: :non_negative_integer,
+        selected_column: :string,
+        reveal: :string,
+        reveal_index: :non_negative_integer,
+        reveal_strategy: {:default, {:enum, ~w(nearest top center bottom)}, "nearest"},
+        sort_column: :string,
+        sort_direction: {:default, {:enum, ~w(none ascending descending)}, "none"},
+        total_count: {:default, :non_negative_integer, 0},
+        offset: {:default, :non_negative_integer, 0},
+        overscan: {:default, :non_negative_integer, 8},
+        item_height: {:default, :positive_number, 44.0},
+        header_height: {:default, :positive_number, 40.0},
+        disabled: :boolean
+      ]
+    },
+    %Component{
+      tag: :ui_table_column,
+      kind: :table_column_component,
+      attrs: [
+        id: :string,
+        label: {:default, :string},
+        width: {:default, :positive_number, 160.0},
+        align: {:default, {:enum, ~w(left center right)}, "left"},
+        sortable: :boolean
+      ]
+    },
+    %Component{
+      tag: :ui_table_row,
+      kind: :table_row_component,
+      children: true,
+      attrs: [id: :string, disabled: :boolean]
+    },
+    %Component{
       tag: :ui_tree,
       kind: :tree_component,
       stateful: true,

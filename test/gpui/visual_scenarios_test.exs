@@ -1,5 +1,5 @@
 for scenario <-
-      ~w(code_viewer component_gallery focus_timer git_repository_browser hello_window image_palette log_trace_explorer process_explorer settings_form virtual_list) do
+      ~w(code_viewer component_gallery data_table focus_timer git_repository_browser hello_window image_palette log_trace_explorer process_explorer settings_form virtual_list) do
   Code.require_file("../visual/scenarios/#{scenario}.exs", __DIR__)
 end
 
@@ -66,6 +66,21 @@ defmodule GPUI.VisualScenariosTest do
     runtime = start_gpui!(scenario.app(), args: scenario.args(:dark))
     assert %{items: ["row-001" | _rows] = items, selected: nil} = assigns(runtime)
     assert List.last(items) == "row-100"
+  end
+
+  test "data table scenario covers wide, selected-cell, and sorted states" do
+    scenario = GPUITest.Visual.DataTable.Scenario
+
+    assert Enum.map(scenario.captures(), & &1.name) == [
+             "table",
+             "selected-cell",
+             "sorted-name"
+           ]
+
+    runtime = start_gpui!(scenario.app(), args: scenario.args(:dark))
+    assert %{rows: rows, selected: nil, sort_column: "memory"} = assigns(runtime)
+    assert Enum.count_until(rows, 41) == 40
+    assert %{type: :ui_data_table} = runtime |> tree() |> find!(id: "visual-table")
   end
 
   test "image palette scenario uses fixed raster data and controlled selection" do

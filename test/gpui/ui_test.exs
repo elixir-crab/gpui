@@ -125,6 +125,78 @@ defmodule GPUI.UITest do
     end
   end
 
+  test "builds source-backed data tables with stable columns and rows" do
+    columns = [
+      UI.table_column(%{id: "name", label: "Name", width: 240, sortable: true}),
+      UI.table_column(%{id: "memory", label: "Memory", width: 120, align: "right"})
+    ]
+
+    rows = [
+      UI.table_row(%{id: "row-501", children: ["alpha", "1 KB"]}),
+      UI.table_row(%{id: "row-502", children: ["beta", "2 KB"]})
+    ]
+
+    assert %Element{type: :ui_data_table, attrs: attrs, children: children} =
+             UI.data_table(%{
+               :"phx-change" => "row_selected",
+               :"phx-cell-change" => "cell_selected",
+               :"phx-range" => "table_range",
+               :"phx-sort" => "table_sorted",
+               id: "records",
+               label: "Records",
+               total_count: 100_000,
+               offset: 500,
+               selected: "row-501",
+               selected_index: 500,
+               selected_column: "memory",
+               reveal: "row-501",
+               reveal_index: 500,
+               sort_column: "name",
+               sort_direction: "ascending",
+               children: columns ++ rows
+             })
+
+    assert children == columns ++ rows
+    assert attrs[:total_count] == 100_000
+    assert attrs[:offset] == 500
+    assert attrs[:selected_column] == "memory"
+    assert attrs[:sort_direction] == "ascending"
+    assert attrs[:item_height] == 44.0
+    assert attrs[:header_height] == 40.0
+  end
+
+  test "validates data table structure, columns, rows, and sorting" do
+    column = UI.table_column(%{id: "name", label: "Name"})
+    row = UI.table_row(%{id: "row-1", children: ["alpha"]})
+
+    assert_raise ArgumentError, ~r/table_column children followed by table_row/, fn ->
+      UI.data_table(%{id: "records", label: "Records", children: [row, column]})
+    end
+
+    assert_raise ArgumentError, ~r/one cell child per column/, fn ->
+      UI.data_table(%{id: "records", label: "Records", children: [column, %{row | children: []}]})
+    end
+
+    assert_raise ArgumentError, ~r/requires phx-sort/, fn ->
+      UI.data_table(%{
+        id: "records",
+        label: "Records",
+        children: [UI.table_column(%{id: "name", label: "Name", sortable: true}), row]
+      })
+    end
+
+    assert_raise ArgumentError, ~r/sort_column must identify a sortable/, fn ->
+      UI.data_table(%{
+        :"phx-sort" => "sorted",
+        id: "records",
+        label: "Records",
+        sort_column: "name",
+        sort_direction: "ascending",
+        children: [column, row]
+      })
+    end
+  end
+
   test "builds accessible source-backed trees with structural metadata" do
     branch =
       UI.tree_item(%{

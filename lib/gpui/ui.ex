@@ -264,6 +264,128 @@ defmodule GPUI.UI do
     do: component(:ui_virtual_list_item, Schema.apply_defaults(assigns, :ui_virtual_list_item))
 
   @doc """
+  Builds an accessible source-backed data grid with fixed column definitions.
+
+  `table_column/1` children define stable columns and must precede `table_row/1`
+  children. Rows use the same controlled selection, reveal, overscan, and
+  exclusive `phx-range` contract as `virtual_list/1`. `phx-sort` receives a
+  sortable column ID, while `phx-cell-change` receives `[row_id, column_id]`.
+  """
+  @spec data_table(map()) :: Element.t()
+  def data_table(assigns) when is_map(assigns) do
+    assigns = normalize_attr_key(assigns, :"phx-range")
+    children = Map.get(assigns, :children, [])
+    {columns, rows} = table_children!(children)
+
+    assigns =
+      assigns
+      |> Map.put_new(:total_count, length(rows))
+      |> Schema.apply_defaults(:ui_data_table)
+
+    column_ids = Enum.map(columns, &element_id!/1)
+    row_ids = Enum.map(rows, &element_id!/1)
+
+    validate_table_columns!(columns, column_ids)
+    validate_table_rows!(rows, length(columns))
+    validate_virtual_collection!(:ui_data_table, assigns, row_ids)
+    validate_item_height!(:ui_data_table, assigns.header_height)
+    validate_table_selection!(assigns, column_ids)
+    validate_table_sort!(assigns, columns, column_ids)
+
+    component(:ui_data_table, assigns)
+  end
+
+  @doc "Builds one fixed column definition for `data_table/1`."
+  @spec table_column(map()) :: Element.t()
+  def table_column(assigns) when is_map(assigns) do
+    assigns = Schema.apply_defaults(assigns, :ui_table_column)
+    validate_non_empty_label!(:ui_table_column, assigns.label)
+
+    unless is_number(assigns.width) and assigns.width >= 40 and assigns.width <= 2_000 do
+      raise ArgumentError, "ui_table_column width must be between 40 and 2000"
+    end
+
+    component(:ui_table_column, assigns)
+  end
+
+  @doc "Builds one stable, uniform-height row for `data_table/1`."
+  @spec table_row(map()) :: Element.t()
+  def table_row(assigns) when is_map(assigns),
+    do: component(:ui_table_row, Schema.apply_defaults(assigns, :ui_table_row))
+
+  defp table_children!(children) do
+    {columns, rows} = Enum.split_while(children, &match?(%Element{type: :ui_table_column}, &1))
+
+    unless columns != [] and Enum.all?(rows, &match?(%Element{type: :ui_table_row}, &1)) do
+      raise ArgumentError,
+            "ui_data_table requires table_column children followed by table_row children"
+    end
+
+    {columns, rows}
+  end
+
+  defp element_id!(%Element{attrs: attrs}), do: Map.fetch!(Map.new(attrs), :id)
+
+  defp validate_table_columns!(columns, column_ids) do
+    if Enum.count_until(columns, 65) > 64 do
+      raise ArgumentError, "ui_data_table supports at most 64 columns"
+    end
+
+    if column_ids != Enum.uniq(column_ids) do
+      raise ArgumentError, "ui_data_table column IDs must be unique"
+    end
+  end
+
+  defp validate_table_rows!(rows, column_count) do
+    row_ids = Enum.map(rows, &element_id!/1)
+
+    if row_ids != Enum.uniq(row_ids) do
+      raise ArgumentError, "ui_data_table row IDs must be unique"
+    end
+
+    unless Enum.all?(rows, &(length(&1.children) == column_count)) do
+      raise ArgumentError, "ui_data_table rows must contain one cell child per column"
+    end
+  end
+
+  defp validate_table_selection!(assigns, column_ids) do
+    selected_column = Map.get(assigns, :selected_column)
+
+    unless is_nil(selected_column) or selected_column in column_ids do
+      raise ArgumentError, "ui_data_table selected_column must identify a table column"
+    end
+  end
+
+  defp validate_table_sort!(assigns, columns, column_ids) do
+    sort_column = Map.get(assigns, :sort_column)
+    direction = assigns.sort_direction
+
+    sortable_ids =
+      columns
+      |> Enum.filter(&Map.new(&1.attrs).sortable)
+      |> MapSet.new(&element_id!/1)
+
+    cond do
+      is_nil(sort_column) and direction == "none" ->
+        :ok
+
+      MapSet.member?(sortable_ids, sort_column) and direction in ~w(ascending descending) ->
+        :ok
+
+      sort_column in column_ids and direction in ~w(ascending descending) ->
+        raise ArgumentError, "ui_data_table sort_column must identify a sortable column"
+
+      true ->
+        raise ArgumentError,
+              "ui_data_table sort_column and sort_direction must identify an ascending or descending sortable column"
+    end
+
+    if MapSet.size(sortable_ids) > 0 do
+      validate_event!(:ui_data_table, assigns, :"phx-sort")
+    end
+  end
+
+  @doc """
   Builds an accessible controlled tree from uniform-height `tree_item/1` children.
 
   Trees support the same source-backed `total_count`, `offset`, `overscan`,

@@ -12,7 +12,7 @@ The application demonstrates a larger GPUI architecture:
 - `GPUI.Runtime.send_view/3` delivers snapshots to the root view;
 - filtering, sorting, selection, pause state, and empty-state feedback remain
   controlled in Elixir;
-- `GPUI.UI.virtual_list/1` renders only the visible process rows and preserves scroll state;
+- `GPUI.UI.data_table/1` renders virtualized rows beneath fixed, sortable, explicitly sized columns;
 - pointer or keyboard selection opens a process inspector without a second source of truth;
 - filtered summaries distinguish visible rows from the full sample, while a
   selected process can remain inspectable when the current filter hides it;

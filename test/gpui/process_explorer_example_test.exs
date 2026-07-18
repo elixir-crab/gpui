@@ -13,8 +13,11 @@ defmodule GPUI.ProcessExplorerExampleTest do
     runtime = start_gpui!(App, args: %{processes: processes()})
 
     assert %{processes: [_, _], selected_pid: nil, sort: "memory"} = assigns(runtime)
-    assert %{type: :ui_virtual_list} = runtime |> tree() |> find!(id: "processes")
-    assert %{type: :ui_virtual_list_item} = runtime |> tree() |> find!(id: "<0.20.0>")
+    assert %{type: :ui_data_table} = runtime |> tree() |> find!(id: "processes")
+    assert %{type: :ui_table_row} = runtime |> tree() |> find!(id: "<0.20.0>")
+
+    table_sort(runtime, "process_sorted", "name")
+    assert %{sort: "name"} = assigns(runtime)
 
     change(runtime, "filter_changed", "0.20")
     assert runtime |> tree() |> all(id: "<0.20.0>") |> length() == 1

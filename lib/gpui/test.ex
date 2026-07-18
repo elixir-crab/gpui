@@ -137,6 +137,24 @@ defmodule GPUI.Test do
     dispatch_value(runtime, :range, event, %{first: first, last: last}, opts)
   end
 
+  @doc "Dispatches a deterministic sortable data-table header selection."
+  @spec table_sort(GenServer.server(), String.t(), String.t(), keyword()) :: Snapshot.t()
+  def table_sort(runtime, event, column_id, opts \\ [])
+      when is_binary(column_id) and column_id != "",
+      do: change(runtime, event, column_id, opts)
+
+  @doc "Dispatches a deterministic data-table cell selection."
+  @spec table_cell_select(
+          GenServer.server(),
+          String.t(),
+          String.t(),
+          String.t(),
+          keyword()
+        ) :: Snapshot.t()
+  def table_cell_select(runtime, event, row_id, column_id, opts \\ [])
+      when is_binary(row_id) and row_id != "" and is_binary(column_id) and column_id != "",
+      do: change(runtime, event, [row_id, column_id], opts)
+
   @doc "Acknowledges deterministic copying of a selected code-viewer line."
   @spec copy_selected_line(GenServer.server(), String.t(), keyword()) :: Snapshot.t()
   def copy_selected_line(runtime, event, opts \\ []), do: click(runtime, event, opts)

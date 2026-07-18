@@ -9,6 +9,7 @@ enum ComponentKind {
     Select,
     Combobox,
     VirtualList,
+    DataTable,
     Tree,
     CodeViewer,
     Slider,
@@ -21,6 +22,7 @@ enum StatefulComponent {
     Select(ComponentSelect),
     Combobox(ComponentCombobox),
     VirtualList(ComponentVirtualList),
+    DataTable(ComponentDataTable),
     Tree(ComponentTree),
     CodeViewer(ComponentCodeViewer),
     Slider(ComponentSlider),
@@ -146,6 +148,26 @@ impl ComponentRegistry {
         let key = ComponentKey::new(ComponentKind::VirtualList, id);
         self.active.insert(key.clone());
         self.entries.insert(key, StatefulComponent::VirtualList(component)).is_none()
+    }
+    pub(crate) fn data_table_mut(
+        &mut self,
+        id: &str,
+    ) -> Option<&mut ComponentDataTable> {
+        let key = ComponentKey::new(ComponentKind::DataTable, id);
+        self.active.insert(key.clone());
+        match self.entries.get_mut(&key) {
+            Some(StatefulComponent::DataTable(component)) => Some(component),
+            _ => None,
+        }
+    }
+    pub(crate) fn insert_data_table(
+        &mut self,
+        id: &str,
+        component: ComponentDataTable,
+    ) -> bool {
+        let key = ComponentKey::new(ComponentKind::DataTable, id);
+        self.active.insert(key.clone());
+        self.entries.insert(key, StatefulComponent::DataTable(component)).is_none()
     }
     pub(crate) fn tree_mut(&mut self, id: &str) -> Option<&mut ComponentTree> {
         let key = ComponentKey::new(ComponentKind::Tree, id);

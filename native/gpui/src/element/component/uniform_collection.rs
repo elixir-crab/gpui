@@ -91,6 +91,7 @@ pub(crate) enum CollectionKind {
     List,
     Tree,
     CodeViewer,
+    DataTable,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -125,6 +126,10 @@ pub(crate) fn schedule_range(
             CollectionKind::CodeViewer => root
                 .components
                 .code_viewer_mut(&collection_id)
+                .map(|component| &mut component.collection),
+            CollectionKind::DataTable => root
+                .components
+                .data_table_mut(&collection_id)
                 .map(|component| &mut component.collection),
         };
         let Some(component) = component else {
@@ -166,6 +171,32 @@ pub(crate) fn emit_change(
             window_id,
             event: event.to_string(),
             value: Some(EventValue::String(value.to_string())),
+        },
+    );
+}
+
+pub(crate) fn emit_cell_change(
+    runtime: &crate::SharedRuntime,
+    window_id: u64,
+    event: Option<&str>,
+    row_id: &str,
+    column_id: &str,
+) {
+    use crate::{push_event, EventValue, InputKind, NativeEvent};
+
+    let Some(event) = event else {
+        return;
+    };
+    let _ = push_event(
+        runtime,
+        NativeEvent::Input {
+            kind: InputKind::Change,
+            window_id,
+            event: event.to_string(),
+            value: Some(EventValue::Strings(vec![
+                row_id.to_string(),
+                column_id.to_string(),
+            ])),
         },
     );
 }

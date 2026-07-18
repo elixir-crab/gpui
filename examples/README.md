@@ -29,7 +29,7 @@ RUST_FONTCONFIG_DLOPEN=1 mix run examples/process_explorer/run.exs
 ```
 
 It combines a supervised sampler, periodic root-view messages, filtering,
-sorting, a virtualized process collection, explicit empty/filter states,
+sorting, a virtualized accessible data table, explicit empty/filter states,
 selection, and a details pane. See
 [`process_explorer/README.md`](process_explorer/README.md) for its architecture.
 
