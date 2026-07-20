@@ -2566,7 +2566,7 @@ pub(crate) fn render_generated_component_node(
 ) -> gpui::AnyElement {
     match node {
         ElementNode::ButtonComponent(node) => {
-            element::component::render_button_component(node, context)
+            element::component::controls::render_button_component(node, context)
         }
         ElementNode::ProgressComponent(node) => {
             element::component::display::render_progress(node, context)
@@ -2587,19 +2587,19 @@ pub(crate) fn render_generated_component_node(
             element::component::overlay::render_content(node, context)
         }
         ElementNode::TooltipComponent(node) => {
-            element::component::overlay::render_tooltip(node, context)
+            element::component::overlay::tooltip::render_tooltip(node, context)
         }
         ElementNode::TooltipTriggerComponent(node) => {
-            element::component::overlay::render_tooltip_trigger(node, context)
+            element::component::overlay::tooltip::render_tooltip_trigger(node, context)
         }
         ElementNode::DialogComponent(node) => {
-            element::component::overlay::render_dialog(node, context)
+            element::component::overlay::dialog::render_dialog(node, context)
         }
         ElementNode::DialogTriggerComponent(node) => {
-            element::component::overlay::render_dialog_trigger(node, context)
+            element::component::overlay::dialog::render_dialog_trigger(node, context)
         }
         ElementNode::DialogContentComponent(node) => {
-            element::component::overlay::render_dialog_content(node, context)
+            element::component::overlay::dialog::render_dialog_content(node, context)
         }
         ElementNode::DropdownMenuComponent(node) => {
             element::component::overlay::dropdown::render(node, context)
@@ -2611,16 +2611,16 @@ pub(crate) fn render_generated_component_node(
             element::component::overlay::render_dropdown_menu_item(node, context)
         }
         ElementNode::CheckboxComponent(node) => {
-            element::component::render_checkbox_component(node, context)
+            element::component::controls::render_checkbox_component(node, context)
         }
         ElementNode::InputComponent(node) => {
-            element::component::render_input_component(element_id, node, context)
+            element::component::form::render_input_component(element_id, node, context)
         }
         ElementNode::SelectComponent(node) => {
-            element::component::render_select_component(node, context)
+            element::component::form::render_select_component(node, context)
         }
         ElementNode::ComboboxComponent(node) => {
-            element::component::render_combobox_component(node, context)
+            element::component::form::render_combobox_component(node, context)
         }
         ElementNode::SwitchComponent(node) => {
             element::component::switch::render(node, context)
