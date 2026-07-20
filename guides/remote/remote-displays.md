@@ -97,9 +97,18 @@ mix run examples/remote/display_client.exs
 ## Failure behavior
 
 Requests have explicit IDs and timeouts. Negotiation rejects unsupported
-protocol versions or capabilities. Server connection termination stops only the
-owned remote session. Client reconnect behavior is isolated from the native
-window loop and does not create shared application state.
+protocol versions or capabilities. Mounts and events carry stable operation IDs,
+so retrying after a lost reply does not mount twice or apply the same event
+twice. A disconnected session remains resumable until its configured session
+TTL expires; terminating a connection immediately removes only its connection
+owner.
+
+Display events drained during an outage are retained in a bounded 1,024-event
+client queue and retried in order after reconnection. If that bound is exceeded,
+the newest events are retained. Poll and session-GC timers use generation tokens
+so stale timer messages cannot create duplicate polling loops. Client reconnect
+behavior remains isolated from the native window loop and does not create shared
+application state.
 
 Remote transport and protocol tests live under `test/integration/`; local and
 remote native behavior is also exercised under Xvfb in `test/e2e/`.

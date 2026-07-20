@@ -9,19 +9,11 @@ defmodule GPUI.Remote.SessionGC do
     :ok
   end
 
-  @spec reject_expired(map(), :infinity | non_neg_integer(), (term(), map() -> term())) :: map()
-  def reject_expired(sessions, :infinity, _on_expired), do: sessions
+  @spec expired?(map(), :infinity | non_neg_integer()) :: boolean()
+  def expired?(_session, :infinity), do: false
 
-  def reject_expired(sessions, ttl, on_expired) when is_integer(ttl) and ttl >= 0 do
-    now = System.monotonic_time(:millisecond)
-
-    sessions
-    |> Enum.reject(fn {session_id, session} ->
-      expired? = now - Map.get(session, :last_seen, now) > ttl
-      if expired?, do: on_expired.(session_id, session)
-      expired?
-    end)
-    |> Map.new()
+  def expired?(session, ttl) when is_integer(ttl) and ttl >= 0 do
+    monotonic_ms() - Map.get(session, :last_seen, monotonic_ms()) > ttl
   end
 
   @spec touch_existing(map(), term()) :: map()

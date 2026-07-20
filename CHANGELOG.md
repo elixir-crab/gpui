@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Hardened remote lifecycle handling with idempotent mount/event retries, resumable bounded event queues, monitored session cleanup, isolated connection owners, structured display synchronization failures, and stale-timer rejection.
 - Hardened internal display frame replies, explicit session callback contracts, event-history consistency, idempotent native window reconciliation, and shared collection keyboard navigation.
 - Added accessible source-backed data tables with fixed sortable headers, horizontal scrolling, controlled row/cell navigation, numeric alignment, grid metadata, and 100,000-row native coverage; migrated Process Explorer to the shared table.
 - Added a supervised ETS Table Explorer with bounded server-local discovery, asynchronous stale-safe object loading, source-owned models, small table slices, filtering, sorting, and selected-object details.

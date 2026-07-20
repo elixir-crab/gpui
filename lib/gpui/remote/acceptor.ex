@@ -10,12 +10,22 @@ defmodule GPUI.Remote.Acceptor do
     Task.start(fn ->
       case TCP.accept(listener, :infinity) do
         {:ok, socket} ->
-          :ok = TCP.controlling_process(socket, owner)
-          send(owner, {:gpui_remote_accepted, socket})
+          transfer_socket(socket, owner)
 
         {:error, reason} ->
           send(owner, {:gpui_remote_accept_error, reason})
       end
     end)
+  end
+
+  defp transfer_socket(socket, owner) do
+    case TCP.controlling_process(socket, owner) do
+      :ok ->
+        send(owner, {:gpui_remote_accepted, socket})
+
+      {:error, reason} ->
+        TCP.close(socket)
+        send(owner, {:gpui_remote_accept_error, reason})
+    end
   end
 end

@@ -14,6 +14,7 @@ defmodule GPUI.Remote.Client do
   alias GPUI.Remote.Transport.TCP
 
   @reconnect_errors [:closed, :timeout, :econnrefused, :enetunreach, :nxdomain]
+  @pending_event_limit 1_024
 
   def child_spec(opts), do: GPUI.Remote.child_spec(__MODULE__, opts)
 
@@ -35,21 +36,34 @@ defmodule GPUI.Remote.Client do
     display_module = Keyword.get(opts, :display, GPUI.Display.Native)
     display_opts = Keyword.get(opts, :display_opts, [])
 
-    with {:ok, rpc} <- start_rpc_client(opts),
-         {:ok, display} <- display_module.start_link(display_opts) do
-      state = %{
-        opts: opts,
-        rpc: rpc,
-        display: display,
-        display_module: display_module,
-        mounted_args: nil,
-        session_id: Keyword.get_lazy(opts, :session_id, &new_session_id/0),
-        poll_interval: poll_interval(opts),
-        revision: 0,
-        subscribers: %{}
-      }
+    case start_rpc_client(opts) do
+      {:ok, rpc} -> start_display(rpc, display_module, display_opts, opts)
+      {:error, reason} -> {:stop, {:rpc_start_failed, reason}}
+    end
+  end
 
-      {:ok, schedule_poll(state)}
+  defp start_display(rpc, display_module, display_opts, opts) do
+    case display_module.start_link(display_opts) do
+      {:ok, display} ->
+        state = %{
+          opts: opts,
+          rpc: rpc,
+          display: display,
+          display_module: display_module,
+          mounted_args: nil,
+          session_id: Keyword.get_lazy(opts, :session_id, &new_session_id/0),
+          poll_interval: poll_interval(opts),
+          poll_timer: nil,
+          pending_events: [],
+          revision: 0,
+          subscribers: %{}
+        }
+
+        {:ok, schedule_poll(state)}
+
+      {:error, reason} ->
+        Reconnect.stop_client(rpc)
+        {:stop, {:display_start_failed, reason}}
     end
   end
 
@@ -62,13 +76,19 @@ defmodule GPUI.Remote.Client do
   @impl GenServer
   def handle_call({:mount, args}, _from, state) do
     args = Map.new(args)
-    payload = %{args: args, session_id: state.session_id}
+    payload = %{args: args, session_id: state.session_id, request_id: new_request_id()}
 
     case call_with_reconnect(state, :mount, payload) do
       {:ok, %{snapshot: snapshot}, state} ->
-        :ok = state.display_module.sync(state.display, snapshot)
-        state = GPUI.UpdateSubscribers.publish_update(state, self(), [], snapshot)
-        {:reply, {:ok, snapshot}, %{state | mounted_args: args}}
+        state = %{state | mounted_args: args}
+
+        case synchronize_snapshot(state, snapshot, []) do
+          {:ok, state} -> {:reply, {:ok, snapshot}, state}
+          {:error, reason, state} -> {:reply, {:error, reason}, state}
+        end
+
+      {:ok, reply, state} ->
+        {:reply, {:error, {:invalid_reply, :mount, reply}}, state}
 
       {:error, reason, state} ->
         {:reply, {:error, reason}, state}
@@ -86,7 +106,12 @@ defmodule GPUI.Remote.Client do
   end
 
   def handle_call({:event, event}, _from, state) do
-    remote_snapshot_call(state, :event, Map.put(event, :session_id, state.session_id))
+    payload =
+      event
+      |> Map.put(:session_id, state.session_id)
+      |> Map.put(:request_id, new_request_id())
+
+    remote_snapshot_call(state, :event, payload)
   end
 
   def handle_call(:snapshot, _from, state) do
@@ -138,30 +163,32 @@ defmodule GPUI.Remote.Client do
     {:noreply, %{state | subscribers: subscribers}}
   end
 
-  def handle_info(:poll_display, state) do
-    state = forward_display_events(state)
-    schedule_poll(state)
+  def handle_info({:poll_display, token}, %{poll_timer: token} = state) do
+    state = state |> Map.put(:poll_timer, nil) |> forward_display_events() |> schedule_poll()
     {:noreply, state}
+  end
+
+  def handle_info({:poll_display, _stale_token}, state), do: {:noreply, state}
+
+  def handle_info(:poll_display, state) do
+    {:noreply, forward_display_events(state)}
   end
 
   defp remote_snapshot_call(state, op, payload) do
     case call_with_reconnect(state, op, payload) do
       {:ok, %{snapshot: snapshot}, state} ->
-        :ok = state.display_module.sync(state.display, snapshot)
+        events =
+          if op == :event,
+            do: [Map.drop(payload, [:session_id, :request_id])],
+            else: nil
 
-        state =
-          if op == :event do
-            GPUI.UpdateSubscribers.publish_update(
-              state,
-              self(),
-              [Map.delete(payload, :session_id)],
-              snapshot
-            )
-          else
-            state
-          end
+        case synchronize_snapshot(state, snapshot, events) do
+          {:ok, state} -> {:reply, {:ok, snapshot}, state}
+          {:error, reason, state} -> {:reply, {:error, reason}, state}
+        end
 
-        {:reply, {:ok, snapshot}, state}
+      {:ok, reply, state} ->
+        {:reply, {:error, {:invalid_reply, op, reply}}, state}
 
       {:error, reason, state} ->
         {:reply, {:error, reason}, state}
@@ -195,21 +222,32 @@ defmodule GPUI.Remote.Client do
   defp resume_or_remount(state) do
     case safe_call(state.rpc, :resume_session, %{session_id: state.session_id}) do
       {:ok, %{snapshot: snapshot}} ->
-        :ok = state.display_module.sync(state.display, snapshot)
-        {:ok, GPUI.UpdateSubscribers.publish_update(state, self(), [], snapshot)}
+        synchronize_snapshot(state, snapshot, [])
 
-      {:error, _reason} ->
+      {:ok, reply} ->
+        {:error, {:invalid_reply, :resume_session, reply}, state}
+
+      {:error, reason} when reason in [:unknown_session, :session_expired] ->
         remount(state)
+
+      {:error, reason} ->
+        {:error, reason, state}
     end
   end
 
   defp remount(state) do
-    payload = %{args: state.mounted_args, session_id: state.session_id}
+    payload = %{
+      args: state.mounted_args,
+      session_id: state.session_id,
+      request_id: new_request_id()
+    }
 
     case safe_call(state.rpc, :mount, payload) do
       {:ok, %{snapshot: snapshot}} ->
-        :ok = state.display_module.sync(state.display, snapshot)
-        {:ok, GPUI.UpdateSubscribers.publish_update(state, self(), [], snapshot)}
+        synchronize_snapshot(state, snapshot, [])
+
+      {:ok, reply} ->
+        {:error, {:invalid_reply, :mount, reply}, state}
 
       {:error, reason} ->
         {:error, reason, state}
@@ -233,13 +271,36 @@ defmodule GPUI.Remote.Client do
   end
 
   defp forward_display_events(state) do
-    case state.display_module.drain_events(state.display) do
-      {:ok, events} -> Enum.reduce(events, state, &forward_display_event/2)
-      {:error, _reason} -> state
-    end
+    state =
+      case safe_display_drain(state) do
+        {:ok, events} when is_list(events) -> enqueue_display_events(state, events)
+        {:ok, _invalid_events} -> state
+        {:error, _reason} -> state
+      end
+
+    flush_pending_events(state)
   end
 
-  defp forward_display_event(%{type: type} = event, state)
+  defp safe_display_drain(state) do
+    state.display_module.drain_events(state.display)
+  catch
+    kind, reason -> {:error, {kind, reason}}
+  end
+
+  defp enqueue_display_events(state, events) do
+    new_events =
+      Enum.flat_map(events, fn event ->
+        case display_event_payload(event, state.session_id) do
+          nil -> []
+          payload -> [payload]
+        end
+      end)
+
+    pending = Enum.take(state.pending_events ++ new_events, -@pending_event_limit)
+    %{state | pending_events: pending}
+  end
+
+  defp display_event_payload(%{type: type} = event, session_id)
        when type in [
               :click,
               :change,
@@ -251,25 +312,33 @@ defmodule GPUI.Remote.Client do
               :keyup,
               :window_closed
             ] do
-    payload = event |> GPUI.Event.normalize() |> Map.put(:session_id, state.session_id)
-
-    case call_with_reconnect(state, :event, payload) do
-      {:ok, %{snapshot: snapshot}, state} ->
-        :ok = state.display_module.sync(state.display, snapshot)
-
-        GPUI.UpdateSubscribers.publish_update(
-          state,
-          self(),
-          [Map.delete(payload, :session_id)],
-          snapshot
-        )
-
-      {:error, _reason, state} ->
-        state
-    end
+    event
+    |> GPUI.Event.normalize()
+    |> Map.put(:session_id, session_id)
+    |> Map.put(:request_id, new_request_id())
   end
 
-  defp forward_display_event(_event, state), do: state
+  defp display_event_payload(_event, _session_id), do: nil
+
+  defp flush_pending_events(%{pending_events: []} = state), do: state
+
+  defp flush_pending_events(%{pending_events: [payload | rest]} = state) do
+    case call_with_reconnect(state, :event, payload) do
+      {:ok, %{snapshot: snapshot}, state} ->
+        events = [Map.drop(payload, [:session_id, :request_id])]
+
+        case synchronize_snapshot(%{state | pending_events: rest}, snapshot, events) do
+          {:ok, state} -> flush_pending_events(state)
+          {:error, _reason, state} -> %{state | pending_events: [payload | rest]}
+        end
+
+      {:ok, _reply, state} ->
+        %{state | pending_events: [payload | rest]}
+
+      {:error, _reason, state} ->
+        %{state | pending_events: [payload | rest]}
+    end
+  end
 
   defp poll_interval(opts) do
     case Keyword.get(opts, :poll_interval, 16) do
@@ -280,12 +349,48 @@ defmodule GPUI.Remote.Client do
 
   defp schedule_poll(%{poll_interval: nil} = state), do: state
 
-  defp schedule_poll(%{poll_interval: interval} = state) do
-    Process.send_after(self(), :poll_display, interval)
-    state
+  defp schedule_poll(%{poll_interval: interval, poll_timer: nil} = state) do
+    token = make_ref()
+    Process.send_after(self(), {:poll_display, token}, interval)
+    %{state | poll_timer: token}
   end
 
-  defp new_session_id, do: System.unique_integer([:positive, :monotonic])
+  defp schedule_poll(state), do: state
+
+  defp synchronize_snapshot(state, snapshot, events) do
+    case safe_display_sync(state, snapshot) do
+      :ok ->
+        state =
+          if is_list(events) do
+            GPUI.UpdateSubscribers.publish_update(state, self(), events, snapshot)
+          else
+            state
+          end
+
+        {:ok, state}
+
+      {:error, reason} ->
+        {:error, {:display_sync_failed, reason}, state}
+
+      invalid ->
+        {:error, {:display_sync_failed, {:invalid_return, invalid}}, state}
+    end
+  end
+
+  defp safe_display_sync(state, snapshot) do
+    state.display_module.sync(state.display, snapshot)
+  catch
+    kind, reason -> {:error, {kind, reason}}
+  end
+
+  defp new_session_id, do: unique_id()
+  defp new_request_id, do: unique_id()
+
+  defp unique_id do
+    16
+    |> :crypto.strong_rand_bytes()
+    |> Base.url_encode64(padding: false)
+  end
 
   defp start_rpc_client(opts) do
     opts =
@@ -293,10 +398,22 @@ defmodule GPUI.Remote.Client do
       |> Keyword.put(:transport, TCP)
       |> Keyword.put_new(:cap, Protocol.capability())
 
-    with {:ok, client} <- SafeRPC.Client.start_link(opts),
-         %{op: op, payload: payload} = Protocol.hello(),
-         {:ok, _hello} <- safe_call(client, op, payload) do
-      {:ok, client}
+    case SafeRPC.Client.start_link(opts) do
+      {:ok, client} -> negotiate_client(client)
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp negotiate_client(client) do
+    %{op: op, payload: payload} = Protocol.hello()
+
+    case safe_call(client, op, payload) do
+      {:ok, _hello} ->
+        {:ok, client}
+
+      {:error, reason} ->
+        Reconnect.stop_client(client)
+        {:error, reason}
     end
   end
 end

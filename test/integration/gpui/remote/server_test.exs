@@ -27,6 +27,11 @@ defmodule GPUI.Remote.ServerTest do
 
     def handle_event("tree_toggled", %{value: value}, assigns),
       do: {:noreply, %{assigns | tree_branch: value}}
+
+    def handle_event("increment", _event, assigns),
+      do: {:noreply, %{assigns | count: assigns.count + 1}}
+
+    def handle_event("crash", _event, _assigns), do: raise("view failed")
   end
 
   defmodule FormApp do
@@ -39,7 +44,7 @@ defmodule GPUI.Remote.ServerTest do
       {:ok,
        [
          window("Remote Form",
-           do: root(FormView, name: name, file: nil, range: nil, tree_branch: nil)
+           do: root(FormView, name: name, file: nil, range: nil, tree_branch: nil, count: 0)
          )
        ]}
     end
@@ -63,6 +68,73 @@ defmodule GPUI.Remote.ServerTest do
                event: "rename",
                value: "new"
              })
+  end
+
+  test "deduplicates retried mounts without replacing the live session" do
+    {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    {:ok, client} = start_client(port)
+
+    mount = %{session_id: "stable-mount", request_id: "mount-17", args: %{name: "first"}}
+    assert {:ok, _reply} = SafeRPC.call(client, :mount, mount)
+    session = :sys.get_state(server).session_registry.sessions["stable-mount"].pid
+
+    assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{name: "changed"}}}]}}} =
+             SafeRPC.call(client, :event, %{
+               session_id: "stable-mount",
+               type: :change,
+               window_id: 1,
+               event: "rename",
+               value: "changed"
+             })
+
+    assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{name: "changed"}}}]}}} =
+             SafeRPC.call(client, :mount, mount)
+
+    assert :sys.get_state(server).session_registry.sessions["stable-mount"].pid == session
+  end
+
+  test "deduplicates retried events within a session" do
+    {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    {:ok, client} = start_client(port)
+
+    assert {:ok, _reply} = SafeRPC.call(client, :mount, %{session_id: "deduplicated"})
+
+    event = %{
+      session_id: "deduplicated",
+      request_id: 17,
+      type: :click,
+      window_id: 1,
+      event: "increment"
+    }
+
+    assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{count: 1}}}]}}} =
+             SafeRPC.call(client, :event, event)
+
+    assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{count: 1}}}]}}} =
+             SafeRPC.call(client, :event, event)
+  end
+
+  test "contains a crashing session without terminating the remote server" do
+    {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    {:ok, client} = start_client(port)
+    assert {:ok, _reply} = SafeRPC.call(client, :mount, %{session_id: "crashing"})
+
+    ExUnit.CaptureLog.capture_log(fn ->
+      assert {:error, {:session_unavailable, _reason}} =
+               SafeRPC.call(client, :event, %{
+                 session_id: "crashing",
+                 type: :click,
+                 window_id: 1,
+                 event: "crash"
+               })
+    end)
+
+    assert Process.alive?(server)
+    assert {:error, :unknown_session} = SafeRPC.call(client, :snapshot, %{session_id: "crashing"})
+    assert {:ok, _reply} = SafeRPC.call(client, :mount, %{session_id: "healthy"})
   end
 
   test "isolates application state by session" do
@@ -118,6 +190,50 @@ defmodule GPUI.Remote.ServerTest do
     assert :ok = GPUI.Remote.Client.unsubscribe(client)
     assert {:ok, _snapshot} = GPUI.Remote.Client.event(client, %{event | value: "silent"})
     refute_receive {:gpui, ^client, %GPUI.Runtime.Update{}}
+  end
+
+  defmodule RecoveringDisplay do
+    @behaviour GPUI.Display
+
+    use Agent
+
+    @impl GPUI.Display
+    def start_link(_opts), do: Agent.start_link(fn -> :fail_next_sync end)
+
+    @impl GPUI.Display
+    def sync(display, _snapshot) do
+      Agent.get_and_update(display, fn
+        :fail_next_sync -> {{:error, :injected_sync_failure}, :ready}
+        :ready -> {:ok, :ready}
+      end)
+    end
+
+    @impl GPUI.Display
+    def drain_events(_display), do: {:ok, []}
+
+    @impl GPUI.Display
+    def inject_event(_display, _event), do: {:ok, :ok}
+  end
+
+  test "remote client reports display synchronization failures and can retry" do
+    {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.Server.port(server)
+
+    {:ok, client} =
+      GPUI.Remote.Client.start_link(
+        host: "127.0.0.1",
+        port: port,
+        display: RecoveringDisplay,
+        poll_interval: nil
+      )
+
+    assert {:error, {:display_sync_failed, :injected_sync_failure}} =
+             GPUI.Remote.Client.mount(client, %{name: "retained"})
+
+    assert Process.alive?(client)
+
+    assert {:ok, %{windows: [%{root: %{assigns: %{name: "retained"}}}]}} =
+             GPUI.Remote.Client.snapshot(client)
   end
 
   test "remote client remains responsive across repeated updates and connection replacement" do
@@ -242,6 +358,42 @@ defmodule GPUI.Remote.ServerTest do
                     }}
   end
 
+  test "remote client retains local display events across server outages" do
+    {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    display_name = Module.concat(__MODULE__, RetryingDisplay)
+
+    {:ok, client} =
+      GPUI.Remote.Client.start_link(
+        host: "127.0.0.1",
+        port: port,
+        display: GPUI.Test.Display,
+        display_opts: [name: display_name],
+        poll_interval: nil
+      )
+
+    assert {:ok, _snapshot} = GPUI.Remote.Client.mount(client, %{name: "before-outage"})
+    :ok = GenServer.stop(server)
+
+    assert {:ok, :ok} =
+             GPUI.Test.Display.inject_event(display_name, %{
+               type: :change,
+               window_id: 1,
+               event: "rename",
+               value: "after-outage"
+             })
+
+    send(client, :poll_display)
+    assert %{pending_events: [_event]} = :sys.get_state(client)
+
+    {:ok, _replacement_server} = GPUI.Remote.Server.start_link(app: FormApp, port: port)
+    send(client, :poll_display)
+    assert %{pending_events: []} = :sys.get_state(client)
+
+    assert {:ok, %{windows: [%{root: %{assigns: %{name: "after-outage"}}}]}} =
+             GPUI.Remote.Client.snapshot(client)
+  end
+
   test "remote client ignores display diagnostics that are not user input" do
     {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
     {:ok, port} = GPUI.Remote.Server.port(server)
@@ -306,6 +458,42 @@ defmodule GPUI.Remote.ServerTest do
     assert {:error, :handshake_required} = SafeRPC.call(client_b, :mount, %{session_id: "b"})
   end
 
+  test "stops connection owners when the server terminates" do
+    {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    {:ok, _client} = start_client(port)
+
+    [%{owner: owner}] = server |> :sys.get_state() |> Map.fetch!(:connections) |> Map.values()
+    monitor = Process.monitor(owner)
+
+    :ok = GenServer.stop(server)
+    assert_receive {:DOWN, ^monitor, :process, ^owner, _reason}
+  end
+
+  test "removes terminated sessions without waiting for garbage collection" do
+    {:ok, server} =
+      GPUI.Remote.Server.start_link(
+        app: FormApp,
+        port: 0,
+        session_ttl: :infinity,
+        session_gc_interval: :infinity
+      )
+
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    {:ok, client} = start_client(port)
+    assert {:ok, _reply} = SafeRPC.call(client, :mount, %{session_id: "terminated"})
+
+    session = :sys.get_state(server).session_registry.sessions["terminated"].pid
+    monitor = Process.monitor(session)
+    Process.exit(session, :kill)
+    assert_receive {:DOWN, ^monitor, :process, ^session, :killed}
+
+    assert {:error, :unknown_session} =
+             SafeRPC.call(client, :resume_session, %{session_id: "terminated"})
+
+    refute Map.has_key?(:sys.get_state(server).session_registry.sessions, "terminated")
+  end
+
   test "expires inactive sessions" do
     {:ok, server} =
       GPUI.Remote.Server.start_link(
@@ -319,7 +507,7 @@ defmodule GPUI.Remote.ServerTest do
     {:ok, client} = start_client(port)
 
     assert {:ok, _reply} = SafeRPC.call(client, :mount, %{session_id: "expired"})
-    session = :sys.get_state(server).sessions["expired"].pid
+    session = :sys.get_state(server).session_registry.sessions["expired"].pid
     monitor = Process.monitor(session)
     assert_receive {:DOWN, ^monitor, :process, ^session, _reason}, 1_000
 
@@ -336,6 +524,22 @@ defmodule GPUI.Remote.ServerTest do
 
     assert {:ok, %{resumed: true, session_id: "stable", snapshot: %{windows: [%{id: 1}]}}} =
              SafeRPC.call(client, :resume_session, %{session_id: "stable"})
+  end
+
+  test "remote client reports negotiation failures during startup" do
+    {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    previous = Process.flag(:trap_exit, true)
+
+    assert {:error, {:rpc_start_failed, :unauthorized}} =
+             GPUI.Remote.Client.start_link(
+               host: "127.0.0.1",
+               port: port,
+               cap: :wrong_cap,
+               display: GPUI.Test.Display
+             )
+
+    Process.flag(:trap_exit, previous)
   end
 
   test "rejects unauthorized clients" do
