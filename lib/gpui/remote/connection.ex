@@ -79,8 +79,18 @@ defmodule GPUI.Remote.Connection do
   end
 
   @impl GenServer
-  def handle_call({:dispatch, request}, _from, state) do
-    reply = GenServer.call(state.server, {:dispatch, state.connection_id, request}, :infinity)
-    {:reply, reply, state}
+  def handle_call({:dispatch, request}, from, state) do
+    case GenServer.call(state.server, {:dispatch, state.connection_id, request}, :infinity) do
+      {:delegate, session, session_request} ->
+        {:ok, _pid} =
+          Task.start(fn ->
+            GenServer.reply(from, GPUI.Remote.Session.call(session, session_request))
+          end)
+
+        {:noreply, state}
+
+      reply ->
+        {:reply, reply, state}
+    end
   end
 end

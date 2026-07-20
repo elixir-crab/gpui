@@ -9,18 +9,17 @@ defmodule GPUI.Remote.SessionSupervisor do
 
   def start_session(supervisor, opts) do
     child_spec = %{
-      id: {GPUI.Session, System.unique_integer([:positive])},
-      start: {GPUI.Session, :start_link, [opts]},
+      id: {GPUI.Remote.Session, System.unique_integer([:positive])},
+      start: {GPUI.Remote.Session, :start_link, [opts]},
       restart: :temporary
     }
 
     DynamicSupervisor.start_child(supervisor, child_spec)
   end
 
-  def stop_session(_supervisor, nil), do: :ok
-
-  def stop_session(supervisor, session) when is_pid(session) do
-    DynamicSupervisor.terminate_child(supervisor, session)
+  def stop_session(session) when is_pid(session) do
+    if Process.alive?(session), do: Process.exit(session, :shutdown)
+    :ok
   end
 
   @impl DynamicSupervisor

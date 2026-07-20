@@ -6,7 +6,10 @@ renderer-independent; snapshots and normalized events cross the transport.
 
 ## Topology
 
-`GPUI.Remote.Server` supervises one isolated `GPUI.Session` per mounted client.
+`GPUI.Remote.Server` supervises one isolated remote session coordinator and
+`GPUI.Session` per mounted client. Session work is delegated out of the central
+server and connection owner, so a slow mount or event in one session does not
+delay unrelated sessions—even when requests share one transport connection.
 `GPUI.Remote.Client` negotiates the protocol, mounts the application, forwards
 snapshots to its configured display, and sends display events back to the
 server.
@@ -105,10 +108,11 @@ owner.
 
 Display events drained during an outage are retained in a bounded 1,024-event
 client queue and retried in order after reconnection. If that bound is exceeded,
-the newest events are retained. Poll and session-GC timers use generation tokens
-so stale timer messages cannot create duplicate polling loops. Client reconnect
-behavior remains isolated from the native window loop and does not create shared
-application state.
+the newest events are retained. Poll timers use generation tokens, while each
+session coordinator owns and resets its expiry timer directly. Stale timer
+messages cannot create duplicate polling loops or expire a recently active
+session. Client reconnect behavior remains isolated from the native window loop
+and does not create shared application state.
 
 Remote transport and protocol tests live under `test/integration/`; local and
 remote native behavior is also exercised under Xvfb in `test/e2e/`.

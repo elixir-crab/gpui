@@ -192,6 +192,121 @@ defmodule GPUI.Remote.ServerTest do
     refute_receive {:gpui, ^client, %GPUI.Runtime.Update{}}
   end
 
+  defmodule BlockingView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(assigns) do
+      ~GPUI"""
+      <div>{assigns.id}</div>
+      """
+    end
+
+    @impl GPUI.View
+    def handle_event("block", _event, assigns) do
+      send(assigns.owner, {:remote_session_blocked, self()})
+
+      receive do
+        :release_remote_session -> {:noreply, assigns}
+      end
+    end
+  end
+
+  defmodule BlockingApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(args) do
+      args = Map.new(args)
+      maybe_block_mount(args)
+
+      {:ok,
+       [
+         window("Blocking Session",
+           do: root(BlockingView, owner: Map.fetch!(args, :owner), id: Map.fetch!(args, :id))
+         )
+       ]}
+    end
+
+    defp maybe_block_mount(%{id: "blocked-mount", owner: owner}) do
+      send(owner, {:remote_mount_blocked, self()})
+
+      receive do
+        :release_remote_mount -> :ok
+      end
+    end
+
+    defp maybe_block_mount(_args), do: :ok
+  end
+
+  test "blocked session work does not delay unrelated remote sessions" do
+    owner = Module.concat(__MODULE__, ConcurrencyOwner)
+    Process.register(self(), owner)
+    on_exit(fn -> if Process.whereis(owner), do: Process.unregister(owner) end)
+
+    {:ok, server} =
+      GPUI.Remote.Server.start_link(
+        app: BlockingApp,
+        args: %{owner: owner, id: "default"},
+        port: 0
+      )
+
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    {:ok, client} = start_client(port)
+
+    assert {:ok, _reply} =
+             SafeRPC.call(client, :mount, %{
+               session_id: "blocked-a",
+               args: %{owner: owner, id: "a"}
+             })
+
+    assert {:ok, _reply} =
+             SafeRPC.call(client, :mount, %{
+               session_id: "responsive-b",
+               args: %{owner: owner, id: "b"}
+             })
+
+    blocked_call =
+      Task.async(fn ->
+        SafeRPC.call(client, :event, %{
+          session_id: "blocked-a",
+          type: :click,
+          window_id: 1,
+          event: "block"
+        })
+      end)
+
+    assert_receive {:remote_session_blocked, blocked_session}
+
+    assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{id: "b"}}}]}}} =
+             SafeRPC.call(client, :snapshot, %{session_id: "responsive-b"})
+
+    assert {:ok, ^port} = GPUI.Remote.Server.port(server)
+    send(blocked_session, :release_remote_session)
+
+    assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{id: "a"}}}]}}} =
+             Task.await(blocked_call)
+
+    blocked_mount =
+      Task.async(fn ->
+        SafeRPC.call(client, :mount, %{
+          session_id: "blocked-mount",
+          args: %{owner: owner, id: "blocked-mount"}
+        })
+      end)
+
+    assert_receive {:remote_mount_blocked, mounting_session}
+
+    assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{id: "b"}}}]}}} =
+             SafeRPC.call(client, :snapshot, %{session_id: "responsive-b"})
+
+    assert {:ok, ^port} = GPUI.Remote.Server.port(server)
+    send(mounting_session, :release_remote_mount)
+
+    assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{id: "blocked-mount"}}}]}}} =
+             Task.await(blocked_mount)
+  end
+
   defmodule RecoveringDisplay do
     @behaviour GPUI.Display
 
@@ -475,8 +590,7 @@ defmodule GPUI.Remote.ServerTest do
       GPUI.Remote.Server.start_link(
         app: FormApp,
         port: 0,
-        session_ttl: :infinity,
-        session_gc_interval: :infinity
+        session_ttl: :infinity
       )
 
     {:ok, port} = GPUI.Remote.Server.port(server)
@@ -499,8 +613,7 @@ defmodule GPUI.Remote.ServerTest do
       GPUI.Remote.Server.start_link(
         app: FormApp,
         port: 0,
-        session_ttl: 20,
-        session_gc_interval: 10
+        session_ttl: 20
       )
 
     {:ok, port} = GPUI.Remote.Server.port(server)

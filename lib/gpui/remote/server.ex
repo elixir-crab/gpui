@@ -12,7 +12,6 @@ defmodule GPUI.Remote.Server do
   alias GPUI.Remote.Connection
   alias GPUI.Remote.Protocol
   alias GPUI.Remote.Request
-  alias GPUI.Remote.SessionGC
   alias GPUI.Remote.SessionRegistry
   alias GPUI.Remote.SessionSupervisor
   alias GPUI.Remote.Transport.TCP
@@ -28,9 +27,6 @@ defmodule GPUI.Remote.Server do
   def init(opts) do
     listen_opts = [port: Keyword.get(opts, :port, 0), ssl: Keyword.get(opts, :ssl, false)]
 
-    session_ttl = Keyword.get(opts, :session_ttl, :timer.minutes(30))
-    gc_interval = Keyword.get(opts, :session_gc_interval, :timer.minutes(1))
-
     with {:ok, listener} <- TCP.listen(listen_opts),
          {:ok, connection_supervisor} <- DynamicSupervisor.start_link(strategy: :one_for_one),
          {:ok, session_supervisor} <- SessionSupervisor.start_link() do
@@ -43,13 +39,11 @@ defmodule GPUI.Remote.Server do
         connections: %{},
         session_registry: SessionRegistry.new(),
         negotiated_connections: MapSet.new(),
-        session_ttl: session_ttl,
-        session_gc_interval: gc_interval,
-        session_gc_timer: nil
+        session_ttl: Keyword.get(opts, :session_ttl, :timer.minutes(30))
       }
 
       Acceptor.start(listener)
-      {:ok, schedule_session_gc(state)}
+      {:ok, state}
     end
   end
 
@@ -88,13 +82,6 @@ defmodule GPUI.Remote.Server do
 
     {:noreply, state}
   end
-
-  def handle_info({:gc_sessions, token}, %{session_gc_timer: token} = state) do
-    state = state |> Map.put(:session_gc_timer, nil) |> gc_sessions() |> schedule_session_gc()
-    {:noreply, state}
-  end
-
-  def handle_info({:gc_sessions, _stale_token}, state), do: {:noreply, state}
 
   defp dispatch(request, connection_id, state) do
     Request.dispatch(request, connection_id, state, &dispatch_request/3)
@@ -141,122 +128,57 @@ defmodule GPUI.Remote.Server do
     request_id = Map.get(payload, :request_id)
 
     if SessionRegistry.repeated_mount?(state.session_registry, session_id, request_id) do
-      reply_with_existing_mount(state, session_id)
+      delegate_existing(state, session_id, :mount)
     else
       start_mounted_session(state, session_id, request_id, payload)
     end
   end
 
-  defp dispatch_call(:resume_session, %{session_id: session_id}, state) do
-    case fetch_session(state, session_id) do
-      {:ok, session} -> resume_session(state, session_id, session)
-      {:error, reason} -> {{:error, reason}, state}
-    end
-  end
+  defp dispatch_call(:resume_session, %{session_id: session_id}, state),
+    do: delegate_existing(state, session_id, :resume)
 
-  defp dispatch_call(:snapshot, %{session_id: session_id}, state) do
-    case fetch_session(state, session_id) do
-      {:ok, session} -> session_snapshot(state, session_id, session)
-      {:error, reason} -> {{:error, reason}, state}
-    end
-  end
+  defp dispatch_call(:snapshot, %{session_id: session_id}, state),
+    do: delegate_existing(state, session_id, :snapshot)
 
-  defp dispatch_call(:event, %{session_id: session_id} = event, state) do
-    case fetch_session(state, session_id) do
-      {:ok, session} -> dispatch_session_event(state, session_id, session, event)
-      {:error, reason} -> {{:error, reason}, state}
-    end
-  end
+  defp dispatch_call(:event, %{session_id: session_id} = event, state),
+    do: delegate_existing(state, session_id, {:event, event})
 
   defp dispatch_call(op, _payload, state), do: {{:error, {:invalid_payload, op}}, state}
 
   defp start_mounted_session(state, session_id, request_id, payload) do
-    args = Map.get(payload, :args, state.app_args)
     state = drop_session(state, session_id)
 
-    case SessionSupervisor.start_session(state.session_supervisor, app: state.app, args: args) do
-      {:ok, session} -> mount_started_session(state, session_id, request_id, session)
+    opts = [
+      app: state.app,
+      args: Map.get(payload, :args, state.app_args),
+      session_id: session_id,
+      ttl: state.session_ttl
+    ]
+
+    case SessionSupervisor.start_session(state.session_supervisor, opts) do
+      {:ok, session} -> register_session(state, session_id, request_id, session)
       {:error, reason} -> {{:error, reason}, state}
     end
   end
 
-  defp mount_started_session(state, session_id, request_id, session) do
-    case session_call(fn -> GPUI.Session.snapshot(session) end) do
-      {:ok, snapshot} ->
-        monitor = Process.monitor(session)
+  defp register_session(state, session_id, request_id, session) do
+    monitor = Process.monitor(session)
 
-        registry =
-          SessionRegistry.put(
-            state.session_registry,
-            session_id,
-            session,
-            monitor,
-            request_id
-          )
+    registry =
+      SessionRegistry.put(state.session_registry, session_id, session, monitor, request_id)
 
-        {{:ok, %{session_id: session_id, snapshot: snapshot}},
-         %{state | session_registry: registry}}
-
-      {:error, reason} ->
-        SessionSupervisor.stop_session(state.session_supervisor, session)
-        {{:error, reason}, state}
-    end
+    {{:delegate, session, :mount}, %{state | session_registry: registry}}
   end
 
-  defp resume_session(state, session_id, session) do
-    case session_call(fn -> GPUI.Session.snapshot(session) end) do
-      {:ok, snapshot} ->
-        state = touch_session(state, session_id)
-        {{:ok, %{session_id: session_id, resumed: true, snapshot: snapshot}}, state}
-
-      {:error, reason} ->
-        {{:error, reason}, drop_session(state, session_id)}
+  defp delegate_existing(state, session_id, request) do
+    case SessionRegistry.fetch(state.session_registry, session_id) do
+      {:ok, session} -> {{:delegate, session, request}, state}
+      {:error, reason} -> {{:error, reason}, state}
     end
   end
-
-  defp session_snapshot(state, session_id, session) do
-    case session_call(fn -> GPUI.Session.snapshot(session) end) do
-      {:ok, snapshot} ->
-        {{:ok, %{snapshot: snapshot}}, touch_session(state, session_id)}
-
-      {:error, reason} ->
-        {{:error, reason}, drop_session(state, session_id)}
-    end
-  end
-
-  defp dispatch_session_event(state, session_id, session, event) do
-    request_id = Map.get(event, :request_id)
-
-    if SessionRegistry.repeated_event?(state.session_registry, session_id, request_id) do
-      session_snapshot(state, session_id, session)
-    else
-      apply_session_event(state, session_id, session, request_id, event)
-    end
-  end
-
-  defp apply_session_event(state, session_id, session, request_id, event) do
-    event = Map.drop(event, [:session_id, :request_id])
-
-    case session_call(fn -> GPUI.Session.dispatch_event(session, event) end) do
-      {:ok, {_event, snapshot}} ->
-        state =
-          state
-          |> touch_session(session_id)
-          |> remember_event(session_id, request_id)
-
-        {{:ok, %{snapshot: snapshot}}, state}
-
-      {:error, reason} ->
-        {{:error, reason}, drop_session(state, session_id)}
-    end
-  end
-
-  defp fetch_session(state, session_id),
-    do: SessionRegistry.fetch(state.session_registry, session_id)
 
   defp drop_session(state, session_id) do
-    registry =
-      SessionRegistry.drop(state.session_registry, session_id, state.session_supervisor)
+    registry = SessionRegistry.drop(state.session_registry, session_id)
 
     %{state | session_registry: registry}
   end
@@ -273,50 +195,5 @@ defmodule GPUI.Remote.Server do
 
   defp mark_negotiated(state, connection_id) do
     update_in(state.negotiated_connections, &MapSet.put(&1, connection_id))
-  end
-
-  defp touch_session(state, session_id) do
-    registry = SessionRegistry.touch(state.session_registry, session_id)
-    %{state | session_registry: registry}
-  end
-
-  defp schedule_session_gc(%{session_gc_interval: :infinity} = state), do: state
-
-  defp schedule_session_gc(%{session_gc_interval: interval, session_gc_timer: nil} = state) do
-    token = make_ref()
-    :ok = SessionGC.schedule(interval, {:gc_sessions, token})
-    %{state | session_gc_timer: token}
-  end
-
-  defp schedule_session_gc(state), do: state
-
-  defp gc_sessions(state) do
-    registry =
-      SessionRegistry.gc(state.session_registry, state.session_ttl, state.session_supervisor)
-
-    %{state | session_registry: registry}
-  end
-
-  defp reply_with_existing_mount(state, session_id) do
-    %{pid: session} = SessionRegistry.entry!(state.session_registry, session_id)
-
-    case session_call(fn -> GPUI.Session.snapshot(session) end) do
-      {:ok, snapshot} ->
-        {{:ok, %{session_id: session_id, snapshot: snapshot}}, touch_session(state, session_id)}
-
-      {:error, reason} ->
-        {{:error, reason}, drop_session(state, session_id)}
-    end
-  end
-
-  defp remember_event(state, session_id, request_id) do
-    registry = SessionRegistry.remember_event(state.session_registry, session_id, request_id)
-    %{state | session_registry: registry}
-  end
-
-  defp session_call(callback) do
-    {:ok, callback.()}
-  catch
-    :exit, reason -> {:error, {:session_unavailable, reason}}
   end
 end
