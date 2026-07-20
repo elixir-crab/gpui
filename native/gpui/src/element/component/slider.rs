@@ -7,6 +7,25 @@ use super::apply_component_styles;
 use super::render_component_fallback;
 
 #[cfg(feature = "components")]
+#[derive(Debug, PartialEq)]
+struct SliderAccessibility {
+    label: String,
+    orientation: gpui::Orientation,
+}
+
+#[cfg(feature = "components")]
+fn slider_accessibility(label: String, vertical: bool) -> SliderAccessibility {
+    SliderAccessibility {
+        label,
+        orientation: if vertical {
+            gpui::Orientation::Vertical
+        } else {
+            gpui::Orientation::Horizontal
+        },
+    }
+}
+
+#[cfg(feature = "components")]
 pub(crate) fn render(
     node: SliderComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
@@ -14,11 +33,16 @@ pub(crate) fn render(
     use crate::element::component_registry::{ComponentSlider, SharedEvent, SliderConfig};
     use crate::element::controlled::{ControlledBinding, SharedBinding};
     use crate::{push_event, EventValue, InputKind, NativeEvent};
-    use gpui::{AppContext, IntoElement};
+    use gpui::{
+        AppContext, InteractiveElement, IntoElement, ParentElement, StatefulInteractiveElement,
+        Styled,
+    };
     use gpui_component::slider::{Slider, SliderEvent, SliderScale, SliderState};
     use std::sync::{Arc, Mutex};
 
     let vertical = node.orientation.as_deref() == Some("vertical");
+    let accessibility = slider_accessibility(node.label.clone(), vertical);
+    let accessibility_id = node.id.clone();
     let component_height = node
         .style
         .height
@@ -162,7 +186,15 @@ pub(crate) fn render(
         element = element.reverse();
     }
 
-    apply_component_styles(element, component_style).into_any_element()
+    gpui::div()
+        .id(format!("slider-accessibility-{accessibility_id}"))
+        .role(gpui::Role::Group)
+        .aria_label(accessibility.label)
+        .aria_orientation(accessibility.orientation)
+        .w_full()
+        .h(gpui::px(component_height))
+        .child(apply_component_styles(element, component_style))
+        .into_any_element()
 }
 
 #[cfg(feature = "components")]
@@ -170,6 +202,29 @@ fn slider_number(value: gpui_component::slider::SliderValue) -> f64 {
     match value {
         gpui_component::slider::SliderValue::Single(value) => f64::from(value),
         gpui_component::slider::SliderValue::Range(_start, end) => f64::from(end),
+    }
+}
+
+#[cfg(all(test, feature = "components"))]
+mod tests {
+    use super::{slider_accessibility, SliderAccessibility};
+
+    #[test]
+    fn accessibility_tracks_label_and_orientation() {
+        assert_eq!(
+            slider_accessibility("Volume".to_string(), false),
+            SliderAccessibility {
+                label: "Volume".to_string(),
+                orientation: crate::gpui::Orientation::Horizontal,
+            }
+        );
+        assert_eq!(
+            slider_accessibility("Zoom".to_string(), true),
+            SliderAccessibility {
+                label: "Zoom".to_string(),
+                orientation: crate::gpui::Orientation::Vertical,
+            }
+        );
     }
 }
 

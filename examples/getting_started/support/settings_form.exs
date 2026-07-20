@@ -48,6 +48,7 @@ defmodule GettingStarted.SettingsForm.View do
         <text style={[color: {:rgb, 0xCBD5E1}]}>Interface density</text>
         <UI.radio_group
           id="density"
+          label="Density"
           value={assigns.density}
           options={[{"Comfortable", "comfortable"}, {"Compact", "compact"}]}
           orientation="horizontal"
@@ -59,6 +60,7 @@ defmodule GettingStarted.SettingsForm.View do
         <text class="text-white">Notification volume: {round(assigns.volume)}%</text>
         <UI.slider
           id="volume"
+          label="Volume"
           value={assigns.volume}
           min={0}
           max={100}

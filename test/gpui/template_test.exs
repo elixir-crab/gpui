@@ -218,6 +218,7 @@ defmodule GPUI.TemplateTest do
                />
                <GPUI.UI.radio_group
                  id="plan"
+                 label="Plan"
                  value="pro"
                  options={[
                    %{label: "Free", value: "free"},
@@ -244,6 +245,7 @@ defmodule GPUI.TemplateTest do
                />
                <GPUI.UI.slider
                  id="volume"
+                 label="Volume"
                  value={25}
                  min={0}
                  max={50}
@@ -519,6 +521,7 @@ defmodule GPUI.TemplateTest do
     radio =
       GPUI.UI.radio_group(%{
         id: "plan",
+        label: "Plan",
         value: "pro",
         options: [%{label: "Pro", value: "pro", disabled: true}],
         "phx-change": "plan_changed"

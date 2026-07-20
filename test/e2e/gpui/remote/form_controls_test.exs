@@ -23,6 +23,7 @@ defmodule GPUI.Remote.FormControlsE2ETest do
         />
         <GPUI.UI.radio_group
           id="remote-radio"
+          label="Plan"
           value={assigns.plan}
           options={[{"Free", "free"}, {"Team", "team"}]}
           orientation="horizontal"

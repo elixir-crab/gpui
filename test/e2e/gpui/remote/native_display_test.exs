@@ -35,6 +35,7 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
         />
         <GPUI.UI.slider
           id="remote-volume"
+          label="Volume"
           class="w-full h-[32px]"
           value={assigns.volume}
           step={10}

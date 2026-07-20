@@ -213,7 +213,7 @@ defmodule GPUI.Schema do
       attrs: [
         id: :string,
         checked: :boolean,
-        label: :string,
+        label: :required_string,
         size: {:enum, ~w(xs sm md lg)},
         disabled: :boolean,
         loading: :boolean
@@ -226,6 +226,7 @@ defmodule GPUI.Schema do
       required_events: [:"phx-change"],
       attrs: [
         id: :string,
+        label: :required_string,
         value: :string,
         options: :radio_options,
         orientation: {:enum, ~w(horizontal vertical)},
@@ -356,11 +357,11 @@ defmodule GPUI.Schema do
       attrs: [
         id: :string,
         parent_id: :string,
-        level: {:default, :non_negative_integer, 1},
+        level: {:default, :positive_integer, 1},
         branch: :boolean,
         expanded: :boolean,
-        position: :non_negative_integer,
-        set_size: :non_negative_integer,
+        position: :positive_integer,
+        set_size: :positive_integer,
         disabled: :boolean
       ]
     },
@@ -425,6 +426,7 @@ defmodule GPUI.Schema do
       required_events: [:"phx-change"],
       attrs: [
         id: :string,
+        label: :required_string,
         value: {:default, :number, 0.0},
         min: {:default, :number, 0.0},
         max: {:default, :number, 100.0},
@@ -700,9 +702,18 @@ defmodule GPUI.Schema do
 
   defp validate_declared_attrs!(assigns, component) do
     Enum.each(component.attrs, fn {name, type} ->
-      case Map.fetch(assigns, name) do
-        {:ok, value} when not is_nil(value) -> validate_attr!(component.tag, name, type, value)
-        _missing_or_nil -> :ok
+      case {type, Map.fetch(assigns, name)} do
+        {:required_string, {:ok, value}} ->
+          validate_attr!(component.tag, name, type, value)
+
+        {:required_string, _missing} ->
+          invalid_attr!(component.tag, name, "a non-empty string", nil)
+
+        {_type, {:ok, value}} when not is_nil(value) ->
+          validate_attr!(component.tag, name, type, value)
+
+        {_type, _missing_or_nil} ->
+          :ok
       end
     end)
   end
@@ -769,6 +780,11 @@ defmodule GPUI.Schema do
     do: validate_attr!(tag, name, type, value)
 
   defp validate_attr!(_tag, _name, :string, value) when is_binary(value), do: :ok
+
+  defp validate_attr!(_tag, _name, :required_string, value)
+       when is_binary(value) and value != "",
+       do: :ok
+
   defp validate_attr!(_tag, _name, :number, value) when is_number(value), do: :ok
 
   defp validate_attr!(_tag, _name, :positive_number, value) when is_number(value) and value > 0,
@@ -804,6 +820,7 @@ defmodule GPUI.Schema do
     do: invalid_attr!(tag, name, expected_attr_type(type), value)
 
   defp expected_attr_type(:string), do: "a string"
+  defp expected_attr_type(:required_string), do: "a non-empty string"
   defp expected_attr_type(:number), do: "a number"
   defp expected_attr_type(:positive_number), do: "a number greater than zero"
   defp expected_attr_type(:non_negative_integer), do: "a non-negative integer"

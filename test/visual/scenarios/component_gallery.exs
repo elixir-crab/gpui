@@ -17,6 +17,7 @@ defmodule GPUITest.Visual.ComponentGallery.View do
       <UI.combobox id="framework" value="Phoenix" options={["Phoenix", "LiveView"]} phx-change="noop" />
       <UI.radio_group
         id="plan"
+        label="Plan"
         value="team"
         options={[{"Free", "free"}, {"Team", "team"}, %{label: "Pro", value: "pro", disabled: true}]}
         orientation="horizontal"
@@ -29,7 +30,7 @@ defmodule GPUITest.Visual.ComponentGallery.View do
         variant="underline"
         phx-change="noop"
       />
-      <UI.slider id="volume" value={65} min={0} max={100} phx-change="noop" />
+      <UI.slider id="volume" label="Volume" value={65} min={0} max={100} phx-change="noop" />
       <UI.accordion id="details" expanded={["account"]} phx-change="noop">
         <UI.accordion_item id="account" title="Account">
           <text>Account details</text>

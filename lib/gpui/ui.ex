@@ -136,15 +136,23 @@ defmodule GPUI.UI do
   def combobox(assigns),
     do: component(:ui_combobox, normalize_options_assigns!(:ui_combobox, assigns))
 
-  @doc "Builds a controlled boolean switch using `checked` and required `phx-change`."
+  @doc """
+  Builds a controlled boolean switch.
+
+  A non-empty `label` provides both the visible and native accessibility name;
+  `phx-change` owns changes to boolean `checked` state.
+  """
   @spec switch(map()) :: Element.t()
-  def switch(assigns), do: component(:ui_switch, assigns)
+  def switch(assigns) when is_map(assigns) do
+    validate_non_empty_label!(:ui_switch, Map.get(assigns, :label))
+    component(:ui_switch, assigns)
+  end
 
   @doc """
   Builds a controlled GPUI Component radio group.
 
-  Options accept the same forms as `select/1`. Map options may additionally set
-  `disabled: true`.
+  A non-empty `label` names the radio group for assistive technology. Options
+  accept the same forms as `select/1`; maps may additionally set `disabled: true`.
   """
   @spec radio_group(map()) :: Element.t()
   def radio_group(%{options: options} = assigns) when is_list(options) do
@@ -162,6 +170,7 @@ defmodule GPUI.UI do
             "ui_radio_group value #{inspect(value)} is not present in options"
     end
 
+    validate_non_empty_label!(:ui_radio_group, Map.get(assigns, :label))
     component(:ui_radio_group, Map.put(assigns, :options, options))
   end
 
@@ -464,6 +473,7 @@ defmodule GPUI.UI do
   @doc """
   Builds a persistent controlled GPUI Component slider.
 
+  A non-empty `label` names the slider's native accessibility group.
   `phx-change` is emitted continuously during pointer interaction and
   `phx-release` is emitted once interaction finishes.
   """
@@ -474,6 +484,7 @@ defmodule GPUI.UI do
       |> normalize_slider_numbers!()
 
     validate_slider!(assigns)
+    validate_non_empty_label!(:ui_slider, Map.get(assigns, :label))
     component(:ui_slider, assigns)
   end
 

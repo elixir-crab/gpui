@@ -14,6 +14,7 @@ defmodule GPUI.Schema.Component do
 
   @type scalar_type ::
           :string
+          | :required_string
           | :number
           | :positive_number
           | :non_negative_integer

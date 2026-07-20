@@ -7,13 +7,31 @@ use super::apply_component_styles;
 use super::render_component_fallback;
 
 #[cfg(feature = "components")]
+#[derive(Debug, PartialEq)]
+struct SwitchAccessibility {
+    label: String,
+    toggled: gpui::Toggled,
+}
+
+#[cfg(feature = "components")]
+fn switch_accessibility(label: String, checked: bool) -> SwitchAccessibility {
+    SwitchAccessibility {
+        label,
+        toggled: if checked {
+            gpui::Toggled::True
+        } else {
+            gpui::Toggled::False
+        },
+    }
+}
+
+#[cfg(feature = "components")]
 pub(crate) fn render(
     node: SwitchComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     use gpui::{
         InteractiveElement, IntoElement, ParentElement, Role, StatefulInteractiveElement, Styled,
-        Toggled,
     };
     use gpui_component::{h_flex, spinner::Spinner, switch::Switch, Disableable, Sizable};
 
@@ -24,6 +42,7 @@ pub(crate) fn render(
     let key_event = change_event.clone();
     let checked = node.checked;
     let unavailable = node.disabled || node.loading;
+    let accessibility = switch_accessibility(node.label.clone(), checked);
     let switch_id = node.id.clone();
     let focus_handle = context
         .window
@@ -40,9 +59,7 @@ pub(crate) fn render(
             mouse_focus.focus(window, cx);
             emit_change(&runtime, window_id, change_event.as_ref(), *checked);
         });
-    if let Some(label) = node.label {
-        element = element.label(label);
-    }
+    element = element.label(node.label);
     element = match node.size.as_deref() {
         Some("xs") => element.xsmall(),
         Some("sm") => element.small(),
@@ -63,11 +80,8 @@ pub(crate) fn render(
     gpui::div()
         .id(node.id)
         .role(Role::Switch)
-        .aria_toggled(if checked {
-            Toggled::True
-        } else {
-            Toggled::False
-        })
+        .aria_label(accessibility.label)
+        .aria_toggled(accessibility.toggled)
         .track_focus(&focus_handle.tab_stop(!unavailable))
         .on_key_down(move |event, _window, cx| {
             if unavailable || !matches!(event.keystroke.key.as_str(), "enter" | "space") {
@@ -103,10 +117,30 @@ fn emit_change(
     );
 }
 
+#[cfg(all(test, feature = "components"))]
+mod tests {
+    use super::{switch_accessibility, SwitchAccessibility};
+
+    #[test]
+    fn accessibility_tracks_label_and_controlled_state() {
+        assert_eq!(
+            switch_accessibility("Notifications".to_string(), true),
+            SwitchAccessibility {
+                label: "Notifications".to_string(),
+                toggled: crate::gpui::Toggled::True,
+            }
+        );
+        assert_eq!(
+            switch_accessibility("Power".to_string(), false).label,
+            "Power"
+        );
+    }
+}
+
 #[cfg(not(feature = "components"))]
 pub(crate) fn render(
     node: SwitchComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
-    render_component_fallback(node.style, node.label, Vec::new(), context)
+    render_component_fallback(node.style, Some(node.label), Vec::new(), context)
 }

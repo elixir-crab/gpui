@@ -5,6 +5,25 @@ use crate::{gpui, RadioGroupComponentNode};
 use super::render_component_fallback;
 
 #[cfg(feature = "components")]
+#[derive(Debug, PartialEq)]
+struct RadioGroupAccessibility {
+    label: String,
+    orientation: gpui::Orientation,
+}
+
+#[cfg(feature = "components")]
+fn radio_group_accessibility(label: String, orientation: Option<&str>) -> RadioGroupAccessibility {
+    RadioGroupAccessibility {
+        label,
+        orientation: if orientation == Some("horizontal") {
+            gpui::Orientation::Horizontal
+        } else {
+            gpui::Orientation::Vertical
+        },
+    }
+}
+
+#[cfg(feature = "components")]
 pub(crate) fn render(
     node: RadioGroupComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
@@ -16,6 +35,8 @@ pub(crate) fn render(
 
     let size = node.size.clone();
     let selected = node.value.clone();
+    let accessibility = radio_group_accessibility(node.label.clone(), node.orientation.as_deref());
+    let horizontal = accessibility.orientation == gpui::Orientation::Horizontal;
     let group_id = node.id.clone();
     let disabled = node.disabled;
     let runtime = context.runtime.clone();
@@ -78,7 +99,7 @@ pub(crate) fn render(
         };
         radio
     });
-    let group = if node.orientation.as_deref() == Some("horizontal") {
+    let group = if horizontal {
         h_flex().w_full().flex_wrap()
     } else {
         v_flex()
@@ -91,6 +112,8 @@ pub(crate) fn render(
     let element = crate::apply_generated_render_styles(gpui::div(), node.style)
         .id(node.id)
         .role(Role::RadioGroup)
+        .aria_label(accessibility.label)
+        .aria_orientation(accessibility.orientation)
         .on_key_down(move |event, window, cx| {
             let focused_index = key_focus_handles
                 .iter()
@@ -169,6 +192,29 @@ fn emit_change(
             value: Some(EventValue::String(value.to_string())),
         },
     );
+}
+
+#[cfg(all(test, feature = "components"))]
+mod tests {
+    use super::{radio_group_accessibility, RadioGroupAccessibility};
+
+    #[test]
+    fn accessibility_tracks_label_and_orientation() {
+        assert_eq!(
+            radio_group_accessibility("Plan".to_string(), Some("horizontal")),
+            RadioGroupAccessibility {
+                label: "Plan".to_string(),
+                orientation: crate::gpui::Orientation::Horizontal,
+            }
+        );
+        assert_eq!(
+            radio_group_accessibility("Priority".to_string(), None),
+            RadioGroupAccessibility {
+                label: "Priority".to_string(),
+                orientation: crate::gpui::Orientation::Vertical,
+            }
+        );
+    }
 }
 
 #[cfg(not(feature = "components"))]

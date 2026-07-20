@@ -158,6 +158,16 @@ pub(crate) fn component_string_attr<'a>(
     }
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn component_required_string_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+) -> NifResult<String> {
+    match component_string_attr(term, attr) {
+        Ok(Some(value)) if !value.is_empty() => Ok(value),
+        _missing_or_empty => Err(rustler::Error::BadArg),
+    }
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn component_bool_attr<'a>(
     term: Term<'a>,
     attr: Atom,
@@ -253,10 +263,7 @@ pub(crate) fn component_enum_attr<'a>(
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn component_id<'a>(term: Term<'a>) -> NifResult<String> {
-    match component_string_attr(term, atoms::id()) {
-        Ok(Some(id)) if !id.is_empty() => Ok(id),
-        _other => Err(rustler::Error::BadArg),
-    }
+    component_required_string_attr(term, atoms::id())
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn text_fragment<'a>(term: Term<'a>) -> NifResult<String> {
@@ -1640,7 +1647,7 @@ pub(crate) struct SwitchComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
     pub(crate) checked: bool,
-    pub(crate) label: Option<String>,
+    pub(crate) label: String,
     pub(crate) size: Option<String>,
     pub(crate) disabled: bool,
     pub(crate) loading: bool,
@@ -1654,7 +1661,7 @@ pub(crate) fn decode_generated_switch_component(
         style: decode_style(term)?,
         id: component_id(term)?,
         checked: component_bool_attr(term, atoms::checked())?.unwrap_or(false),
-        label: component_string_attr(term, atoms::label())?,
+        label: component_required_string_attr(term, atoms::label())?,
         size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         loading: component_bool_attr(term, atoms::loading())?.unwrap_or(false),
@@ -1667,6 +1674,7 @@ pub(crate) fn decode_generated_switch_component(
 pub(crate) struct RadioGroupComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
+    pub(crate) label: String,
     pub(crate) value: Option<String>,
     pub(crate) options: Vec<RadioOptionNode>,
     pub(crate) orientation: Option<String>,
@@ -1681,6 +1689,7 @@ pub(crate) fn decode_generated_radio_group_component(
     Ok(RadioGroupComponentNode {
         style: decode_style(term)?,
         id: component_id(term)?,
+        label: component_required_string_attr(term, atoms::label())?,
         value: component_string_attr(term, atoms::value())?,
         options: decode_radio_options(term)?,
         orientation: component_enum_attr(
@@ -2018,11 +2027,11 @@ pub(crate) fn decode_generated_tree_item_component(
         style: decode_style(term)?,
         id: component_id(term)?,
         parent_id: component_string_attr(term, atoms::parent_id())?,
-        level: component_non_negative_integer_attr(term, atoms::level())?.unwrap_or(1),
+        level: component_positive_integer_attr(term, atoms::level())?.unwrap_or(1),
         branch: component_bool_attr(term, atoms::branch())?.unwrap_or(false),
         expanded: component_bool_attr(term, atoms::expanded())?.unwrap_or(false),
-        position: component_non_negative_integer_attr(term, atoms::position())?,
-        set_size: component_non_negative_integer_attr(term, atoms::set_size())?,
+        position: component_positive_integer_attr(term, atoms::position())?,
+        set_size: component_positive_integer_attr(term, atoms::set_size())?,
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         children: decode_children(term)?,
     })
@@ -2174,6 +2183,7 @@ pub(crate) fn decode_generated_tabs_component(
 pub(crate) struct SliderComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
+    pub(crate) label: String,
     pub(crate) value: f64,
     pub(crate) min: f64,
     pub(crate) max: f64,
@@ -2192,6 +2202,7 @@ pub(crate) fn decode_generated_slider_component(
     Ok(SliderComponentNode {
         style: decode_style(term)?,
         id: component_id(term)?,
+        label: component_required_string_attr(term, atoms::label())?,
         value: component_number_attr(term, atoms::value())?.unwrap_or(0.0),
         min: component_number_attr(term, atoms::min())?.unwrap_or(0.0),
         max: component_number_attr(term, atoms::max())?.unwrap_or(100.0),

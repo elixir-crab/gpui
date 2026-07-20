@@ -151,6 +151,14 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
+  @spec component_required_string_attr(term(), atom()) :: R.nif_result(String.t())
+  defrust component_required_string_attr(term, attr) do
+    case component_string_attr(term, attr) do
+      {:ok, {:some, value}} when not value.is_empty() -> {:ok, value}
+      _missing_or_empty -> {:error, badarg()}
+    end
+  end
+
   @spec component_bool_attr(term(), atom()) :: R.nif_result(R.option(boolean()))
   defrust component_bool_attr(term, attr) do
     case component_attr(term, attr) do
@@ -244,10 +252,7 @@ defmodule GPUI.Codegen.Native.Decoder do
 
   @spec component_id(term()) :: R.nif_result(String.t())
   defrust component_id(term) do
-    case component_string_attr(term, Atoms.id()) do
-      {:ok, {:some, id}} when not id.is_empty() -> {:ok, id}
-      _other -> {:error, badarg()}
-    end
+    component_required_string_attr(term, Atoms.id())
   end
 
   @spec text_fragment(term()) :: R.nif_result(String.t())

@@ -227,6 +227,22 @@ defmodule GPUI.Native.LifecycleE2ETest do
           %{type: :ui_tree_item, attrs: %{id: "child", position: -1}, children: []}
         ]
       },
+      zero_tree_accessibility_position: %{
+        type: :ui_tree,
+        attrs: %{id: "zero-tree-position", label: "Invalid tree", total_count: 1},
+        children: [
+          %{
+            type: :ui_tree_item,
+            attrs: %{id: "child", level: 0, position: 0, set_size: 0},
+            children: []
+          }
+        ]
+      },
+      unnamed_slider: %{
+        type: :ui_slider,
+        attrs: %{id: "unnamed-slider"},
+        children: []
+      },
       invalid_progress_max: %{
         type: :ui_progress,
         attrs: %{id: "invalid-progress", label: "Invalid progress", max: 0},

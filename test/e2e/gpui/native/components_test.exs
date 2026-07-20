@@ -118,6 +118,7 @@ defmodule GPUI.Native.ComponentsE2ETest do
       <div class="w-[360px] h-[100px] p-4 bg-slate-900">
         <GPUI.UI.slider
           id="component-volume"
+          label="Volume"
           class="w-full h-full"
           value={assigns.volume}
           min={assigns.min}

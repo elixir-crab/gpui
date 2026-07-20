@@ -257,6 +257,7 @@ defmodule GPUI.Codegen.Native.Schema do
   end
 
   defp component_field_type(:id, :string), do: T.path(:String)
+  defp component_field_type(_name, :required_string), do: T.path(:String)
   defp component_field_type(_name, :string), do: T.option(:String)
   defp component_field_type(_name, {:default, :string}), do: T.path(:String)
 
@@ -282,6 +283,9 @@ defmodule GPUI.Codegen.Native.Schema do
 
   defp component_decoder_expr(:id, :string),
     do: A.try(A.call(:component_id, [:term]))
+
+  defp component_decoder_expr(name, :required_string),
+    do: A.try(component_attr_call(:component_required_string_attr, name))
 
   defp component_decoder_expr(name, :string),
     do: A.try(component_attr_call(:component_string_attr, name))

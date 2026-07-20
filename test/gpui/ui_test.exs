@@ -68,6 +68,25 @@ defmodule GPUI.UITest do
     end
   end
 
+  test "requires semantic labels for labeled accessibility controls" do
+    assert_raise ArgumentError, ~r/ui_switch requires a non-empty string label/, fn ->
+      UI.switch(%{id: "notifications", checked: true, "phx-change": "notifications_changed"})
+    end
+
+    assert_raise ArgumentError, ~r/ui_radio_group requires a non-empty string label/, fn ->
+      UI.radio_group(%{
+        id: "plan",
+        value: "free",
+        options: [{"Free", "free"}],
+        "phx-change": "plan_changed"
+      })
+    end
+
+    assert_raise ArgumentError, ~r/ui_slider requires a non-empty string label/, fn ->
+      UI.slider(%{id: "volume", value: 50, "phx-change": "volume_changed"})
+    end
+  end
+
   test "requires event handlers for editable controlled components" do
     assert_raise ArgumentError,
                  ~r/ui_input :phx-change must be a non-empty string; got: nil/,

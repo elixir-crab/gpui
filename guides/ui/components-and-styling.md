@@ -93,6 +93,7 @@ be asynchronous.
 
 <UI.radio_group
   id="plan"
+  label="Plan"
   value={assigns.plan}
   options={[
     {"Free", "free"},
@@ -104,8 +105,10 @@ be asynchronous.
 />
 ```
 
-Switches support Enter and Space. Radio groups use roving tab stops and
-Left/Up/Right/Down navigation, wrapping around disabled options.
+Switch and radio-group labels are semantic contracts, not decorative captions:
+they provide stable native accessibility names. Switches support Enter and
+Space. Radio groups use roving tab stops and Left/Up/Right/Down navigation,
+wrapping around disabled options.
 
 ## Tabs, accordions, and sliders
 
@@ -131,6 +134,7 @@ Left/Up/Right/Down navigation, wrapping around disabled options.
 
 <UI.slider
   id="volume"
+  label="Volume"
   value={assigns.volume}
   min={0}
   max={100}
@@ -141,7 +145,9 @@ Left/Up/Right/Down navigation, wrapping around disabled options.
 ```
 
 Tab changes carry one string value. Accordion changes carry an ordered list of
-expanded item IDs. Slider changes are continuous and `phx-release` fires once
+expanded item IDs. A slider label names the accessibility group around the
+native slider, which exposes its controlled value, range, step, and orientation.
+Slider changes are continuous and `phx-release` fires once
 pointer interaction ends. Linear and logarithmic slider scales are supported.
 
 ## Progress and display-side actions

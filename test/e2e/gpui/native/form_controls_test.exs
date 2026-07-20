@@ -22,6 +22,7 @@ defmodule GPUI.Native.FormControlsE2ETest do
         />
         <GPUI.UI.radio_group
           id="form-plan"
+          label="Plan"
           value={assigns.plan}
           options={assigns.plan_options}
           orientation="horizontal"

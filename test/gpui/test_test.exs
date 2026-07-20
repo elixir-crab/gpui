@@ -33,11 +33,13 @@ defmodule GPUI.TestTest do
         />
         <GPUI.UI.switch
           id="notifications"
+          label="Notifications"
           checked={assigns.notifications}
           phx-change="notifications_changed"
         />
         <GPUI.UI.radio_group
           id="plan"
+          label="Plan"
           value={assigns.plan}
           options={[{"Free", "free"}, {"Pro", "pro"}]}
           phx-change="plan_changed"
@@ -59,6 +61,7 @@ defmodule GPUI.TestTest do
         />
         <GPUI.UI.slider
           id="volume"
+          label="Volume"
           value={assigns.volume}
           phx-change="volume_changed"
           phx-release="volume_released"
