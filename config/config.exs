@@ -1,5 +1,7 @@
 import Config
 
+config :gpui, build_native: true
+
 cond do
   System.get_env("GPUI_E2E") == "1" ->
     config :gpui, GPUI.Native,

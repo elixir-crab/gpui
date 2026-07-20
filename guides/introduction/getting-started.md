@@ -13,7 +13,16 @@ development packages:
 sudo apt-get install libxkbcommon-dev libxkbcommon-x11-dev
 ```
 
-If `fontconfig.pc` is unavailable, compile with:
+Enable the native display outside tests in your application's configuration:
+
+```elixir
+# config/config.exs
+config :gpui, build_native: config_env() != :test
+```
+
+This keeps renderer-independent tests free of Rust and native-library
+requirements. If `fontconfig.pc` is unavailable for a native build, compile
+with:
 
 ```bash
 RUST_FONTCONFIG_DLOPEN=1 mix compile

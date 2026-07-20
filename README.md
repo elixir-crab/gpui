@@ -21,7 +21,16 @@ def deps do
 end
 ```
 
-Native builds require Rust and the platform GPUI development libraries. See
+Desktop applications explicitly enable the native display outside tests:
+
+```elixir
+# config/config.exs
+config :gpui, build_native: config_env() != :test
+```
+
+Renderer-independent sessions, remote servers, and `GPUI.Test` do not require
+that setting, Rust, a native library, or a display server. Native builds require
+Rust and the platform GPUI development libraries. See
 [Native builds and deployment](guides/deployment/native-builds.md).
 
 ## Quick start

@@ -62,7 +62,8 @@ defmodule GPUI.Display.Native do
 
   @impl GenServer
   def init(opts) do
-    with {:ok, runtime} <- GPUI.Native.start_runtime(),
+    with :ok <- native_compiled(),
+         {:ok, runtime} <- GPUI.Native.start_runtime(),
          :ok <- initialize_theme(runtime, Keyword.get(opts, :theme)) do
       {:ok, %{runtime: runtime, windows: MapSet.new(), resources: %{}}}
     else
@@ -143,6 +144,16 @@ defmodule GPUI.Display.Native do
   defp normalize_frame_reply({:error, "gpui_command_timeout"}), do: {:error, :timeout}
   defp normalize_frame_reply({:error, "gpui_runtime_stopped"}), do: {:error, :runtime_stopped}
   defp normalize_frame_reply({:error, reason}), do: {:error, reason}
+
+  defp native_compiled do
+    if GPUI.Native.compiled?() do
+      :ok
+    else
+      {:error,
+       {:native_not_compiled,
+        "set `config :gpui, build_native: true` outside renderer-independent test environments"}}
+    end
+  end
 
   defp initialize_theme(_runtime, nil), do: :ok
 

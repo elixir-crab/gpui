@@ -1,7 +1,9 @@
 # Testing GPUI applications
 
-`GPUI.Test` provides deterministic ExUnit helpers without loading the native NIF
-or requiring a display server. Native interaction tests remain a separate E2E
+`GPUI.Test` provides deterministic ExUnit helpers without compiling or loading
+the native NIF and without requiring Rust or a display server. Configure desktop
+consumers with `config :gpui, build_native: config_env() != :test` so ordinary
+test builds retain that boundary. Native interaction tests remain a separate E2E
 layer.
 
 ## Deterministic application tests
@@ -43,6 +45,11 @@ window = window_snapshot(snapshot, "Settings")
 assigns = assigns(runtime)
 tree = tree(runtime)
 ```
+
+`render/2` returns the original `%GPUI.Element{}` tree, while `tree/2` returns
+the snapshot-encoded map sent across display boundaries. `find/2`, `find!/2`,
+and `all/2` intentionally query either representation; pattern matches should
+use the corresponding struct or map shape.
 
 ## Semantic events
 

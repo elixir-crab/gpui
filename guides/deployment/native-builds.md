@@ -17,6 +17,18 @@ artifacts.
 
 ## Source builds on Linux
 
+Native compilation is opt-in so renderer-independent consumers and tests do not
+need a Rust toolchain. Enable it outside tests:
+
+```elixir
+# config/config.exs
+config :gpui, build_native: config_env() != :test
+```
+
+`GPUI_BUILD_FROM_SOURCE=1` also enables the native build and forces source
+compilation when a precompiled artifact exists. `GPUI_SKIP_NATIVE=1` explicitly
+disables native compilation for tooling or packaging checks.
+
 Install Rust and the platform libraries:
 
 ```bash
@@ -28,9 +40,6 @@ Then compile normally:
 ```bash
 PATH="$HOME/.cargo/bin:$PATH" mix compile
 ```
-
-Set `GPUI_BUILD_FROM_SOURCE=1` to force source compilation when a precompiled
-artifact exists.
 
 `yeslogic-fontconfig-sys` can load Fontconfig dynamically when development
 metadata is unavailable:
@@ -47,8 +56,10 @@ The native crate is checked in three configurations:
 - headless real GPUI, without desktop linker dependencies;
 - desktop GPUI with component integration.
 
-The ordinary test environment uses the core configuration, so deterministic
-session and remote tests do not load platform libraries. `ZED_HEADLESS=1`
+Consumer test environments configured with `build_native: config_env() != :test`
+skip NIF compilation entirely, so `GPUI.Test` requires neither Rust nor platform
+libraries. GPUI's own development suite still compiles and tests the core NIF
+configuration explicitly. `ZED_HEADLESS=1`
 selects real GPUI's headless backend for lifecycle work, but that backend cannot
 open a platform window.
 
