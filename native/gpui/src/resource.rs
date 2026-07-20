@@ -30,7 +30,9 @@ impl RasterData {
             return Err(rustler::Error::Term(Box::new("unsupported_raster_format")));
         }
 
-        let row_bytes = self.width as usize * 4;
+        let row_bytes = (self.width as usize)
+            .checked_mul(4)
+            .ok_or_else(|| rustler::Error::Term(Box::new("raster_size_overflow")))?;
         let stride = self
             .stride
             .map(|stride| stride as usize)
@@ -40,7 +42,10 @@ impl RasterData {
             return Err(rustler::Error::Term(Box::new("invalid_raster_stride")));
         }
 
-        let expected_len = stride * (self.height as usize - 1) + row_bytes;
+        let expected_len = (self.height as usize - 1)
+            .checked_mul(stride)
+            .and_then(|length| length.checked_add(row_bytes))
+            .ok_or_else(|| rustler::Error::Term(Box::new("raster_size_overflow")))?;
         if self.data.len() < expected_len {
             return Err(rustler::Error::Term(Box::new("invalid_raster_data")));
         }
@@ -63,20 +68,33 @@ impl RasterData {
     }
 
     fn into_rgba(mut self) -> Vec<u8> {
-        let row_bytes = self.width as usize * 4;
+        let Some(row_bytes) = (self.width as usize).checked_mul(4) else {
+            return Vec::new();
+        };
+        let Some(packed_len) = row_bytes.checked_mul(self.height as usize) else {
+            return Vec::new();
+        };
 
         if let Some(stride) = self.stride.map(|stride| stride as usize) {
             if stride != row_bytes {
-                let mut compact = Vec::with_capacity(row_bytes * self.height as usize);
+                let mut compact = Vec::with_capacity(packed_len);
                 for row in 0..self.height as usize {
-                    let start = row * stride;
-                    compact.extend_from_slice(&self.data[start..start + row_bytes]);
+                    let Some(start) = row.checked_mul(stride) else {
+                        return Vec::new();
+                    };
+                    let Some(end) = start.checked_add(row_bytes) else {
+                        return Vec::new();
+                    };
+                    let Some(row_data) = self.data.get(start..end) else {
+                        return Vec::new();
+                    };
+                    compact.extend_from_slice(row_data);
                 }
                 self.data = compact;
             }
         }
 
-        self.data.truncate(row_bytes * self.height as usize);
+        self.data.truncate(packed_len);
 
         if self.format == "bgra8" {
             for pixel in self.data.chunks_exact_mut(4) {
@@ -103,6 +121,20 @@ mod tests {
         };
 
         assert_eq!(raster.into_rgba(), vec![1, 2, 3, 255, 4, 5, 6, 255]);
+    }
+
+    #[test]
+    fn rejects_raster_size_overflow_without_panicking() {
+        let raster = RasterData {
+            width: u32::MAX,
+            height: u32::MAX,
+            format: "rgba8".to_string(),
+            stride: Some(u32::MAX),
+            data: Vec::new(),
+        };
+
+        assert!(raster.validate().is_err());
+        assert!(raster.into_rgba().is_empty());
     }
 
     #[test]

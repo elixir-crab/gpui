@@ -175,7 +175,10 @@ impl NativeTextInput {
     }
 
     fn offset_from_utf16(&self, offset: usize) -> usize {
-        let value = self.value();
+        Self::offset_from_utf16_for(&self.value(), offset)
+    }
+
+    fn offset_from_utf16_for(value: &str, offset: usize) -> usize {
         let mut utf8_offset = 0;
         let mut utf16_count = 0;
 
@@ -210,6 +213,18 @@ impl NativeTextInput {
         self.offset_from_utf16(range.start)..self.offset_from_utf16(range.end)
     }
 
+    fn marked_selection_range(
+        new_text: &str,
+        inserted: &Range<usize>,
+        selection: &Range<usize>,
+    ) -> Range<usize> {
+        let start = Self::offset_from_utf16_for(new_text, selection.start);
+        let end = Self::offset_from_utf16_for(new_text, selection.end.max(selection.start));
+        let start = inserted.start.saturating_add(start).min(inserted.end);
+        let end = inserted.start.saturating_add(end).min(inserted.end);
+        start..end
+    }
+
     fn range_to_utf16_for(value: &str, range: &Range<usize>) -> Range<usize> {
         Self::offset_to_utf16_for(value, range.start)..Self::offset_to_utf16_for(value, range.end)
     }
@@ -222,19 +237,21 @@ impl NativeTextInput {
         }
     }
 
-    fn replace_value(&mut self, range: Range<usize>, text: &str) {
+    fn replace_value(&mut self, range: Range<usize>, text: &str) -> Option<Range<usize>> {
         let updated = self.runtime.input_values.lock().ok().map(|mut values| {
             let value = values.entry(self.id.clone()).or_default();
             let start = Self::clamp(value, range.start);
             let end = Self::clamp(value, range.end.max(start));
             value.replace_range(start..end, text);
-            self.selected_range = start + text.len()..start + text.len();
-            value.clone()
+            let inserted_end = start.saturating_add(text.len()).min(value.len());
+            (value.clone(), start..inserted_end)
         });
 
-        if let Some(value) = updated {
+        updated.map(|(value, inserted)| {
+            self.selected_range = inserted.end..inserted.end;
             self.emit_change(value);
-        }
+            inserted
+        })
     }
 
     fn previous_boundary(&self, offset: usize) -> usize {
@@ -449,7 +466,7 @@ impl EntityInputHandler for NativeTextInput {
             .map(|range| self.range_from_utf16(range))
             .or_else(|| self.marked_range.clone())
             .unwrap_or_else(|| self.selected_range.clone());
-        self.replace_value(range, text);
+        let _ = self.replace_value(range, text);
         self.marked_range = None;
         cx.notify();
     }
@@ -467,12 +484,11 @@ impl EntityInputHandler for NativeTextInput {
             .map(|range| self.range_from_utf16(range))
             .or_else(|| self.marked_range.clone())
             .unwrap_or_else(|| self.selected_range.clone());
-        let start = range.start;
-        self.replace_value(range, new_text);
-        self.marked_range = (!new_text.is_empty()).then_some(start..start + new_text.len());
-        if let Some(selection) = new_selected_range {
-            let selection = self.range_from_utf16(&selection);
-            self.selected_range = start + selection.start..start + selection.end;
+        if let Some(inserted) = self.replace_value(range, new_text) {
+            self.marked_range = (!new_text.is_empty()).then_some(inserted.clone());
+            if let Some(selection) = new_selected_range {
+                self.selected_range = Self::marked_selection_range(new_text, &inserted, &selection);
+            }
         }
         cx.notify();
     }
@@ -666,16 +682,22 @@ impl Element for NativeTextInputElement {
         if let Some(selection) = prepaint.selection.take() {
             window.paint_quad(selection);
         }
-        let line = prepaint.line.take().unwrap();
-        line.paint(
-            bounds.origin,
-            window.line_height(),
-            TextAlign::Left,
-            None,
-            window,
-            cx,
-        )
-        .unwrap();
+        let Some(line) = prepaint.line.take() else {
+            return;
+        };
+        if line
+            .paint(
+                bounds.origin,
+                window.line_height(),
+                TextAlign::Left,
+                None,
+                window,
+                cx,
+            )
+            .is_err()
+        {
+            return;
+        }
         if focus_handle.is_focused(window) {
             if let Some(cursor) = prepaint.cursor.take() {
                 window.paint_quad(cursor);
@@ -685,6 +707,25 @@ impl Element for NativeTextInputElement {
             input.last_layout = Some(line);
             input.last_bounds = Some(bounds);
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::NativeTextInput;
+
+    #[test]
+    fn marked_selection_clamps_malformed_utf16_ranges_to_inserted_text() {
+        let inserted = 4..9;
+
+        assert_eq!(
+            NativeTextInput::marked_selection_range("a😀", &inserted, &(1..3)),
+            5..9
+        );
+        assert_eq!(
+            NativeTextInput::marked_selection_range("a😀", &inserted, &(usize::MAX..usize::MAX),),
+            9..9
+        );
     }
 }
 

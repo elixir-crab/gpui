@@ -6,6 +6,10 @@ defmodule GPUI.Image do
   explicit through `load/1`, so applications can perform it in their own
   supervised task and report progress or cancellation through normal OTP
   messages.
+
+  Decoding rejects encoded inputs larger than 100 MiB, dimensions above 16,384
+  pixels, and decoders requiring more than 256 MiB of allocation. These limits
+  keep malformed or adversarial images from exhausting the native runtime.
   """
 
   alias GPUI.Raster

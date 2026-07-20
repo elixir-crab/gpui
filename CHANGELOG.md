@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Hardened native image, raster, text-painting, and IME paths against oversized payloads, arithmetic overflow, malformed selection ranges, and recoverable paint failures.
 - Hardened remote lifecycle handling with idempotent mount/event retries, resumable bounded event queues, monitored per-session coordinators, concurrent cross-session dispatch without head-of-line blocking, isolated connection owners, structured display synchronization failures, and stale-timer rejection.
 - Hardened internal display frame replies, explicit session callback contracts, event-history consistency, idempotent native window reconciliation, and shared collection keyboard navigation.
 - Added accessible source-backed data tables with fixed sortable headers, horizontal scrolling, controlled row/cell navigation, numeric alignment, grid metadata, and 100,000-row native coverage; migrated Process Explorer to the shared table.
