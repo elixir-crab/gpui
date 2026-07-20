@@ -470,7 +470,7 @@ defmodule GPUI.TemplateTest do
   end
 
   test "native UI components require stable ids" do
-    assert_raise ArgumentError, ~r/requires a non-empty string id/, fn ->
+    assert_raise ArgumentError, ~r/requires :id to be a non-empty string; got: nil/, fn ->
       GPUI.UI.button(%{children: []})
     end
   end

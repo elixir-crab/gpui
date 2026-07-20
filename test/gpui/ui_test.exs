@@ -42,6 +42,28 @@ defmodule GPUI.UITest do
     end
   end
 
+  test "validates schema-backed component attributes before native rendering" do
+    assert_raise ArgumentError, ~r/ui_button :label must be a string; got: 42/, fn ->
+      UI.button(%{id: "save", label: 42})
+    end
+
+    assert_raise ArgumentError, ~r/ui_button :variant must be one of .*got: "loud"/, fn ->
+      UI.button(%{id: "save", label: "Save", variant: "loud"})
+    end
+
+    assert_raise ArgumentError, ~r/ui_checkbox :checked must be a boolean; got: "yes"/, fn ->
+      UI.checkbox(%{id: "remember", checked: "yes"})
+    end
+
+    assert_raise ArgumentError, ~r/ui_input :value must be a string; got: 7/, fn ->
+      UI.input(%{id: "name", value: 7})
+    end
+
+    assert_raise ArgumentError, ~r/ui_button :phx-click must be a non-empty string/, fn ->
+      UI.button(%{id: "save", label: "Save", "phx-click": :save})
+    end
+  end
+
   test "builds controlled virtual lists from stable uniform items" do
     first = UI.virtual_list_item(%{id: "first", children: ["First"]})
     second = UI.virtual_list_item(%{id: "second", disabled: true, children: ["Second"]})

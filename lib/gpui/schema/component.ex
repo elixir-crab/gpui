@@ -19,6 +19,7 @@ defmodule GPUI.Schema.Component do
   @type attr_type ::
           scalar_type()
           | {:enum, [String.t()]}
+          | {:default, scalar_type()}
           | {:default, scalar_type() | {:enum, [String.t()]}, term()}
 
   @type t :: %__MODULE__{

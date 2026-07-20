@@ -24,7 +24,11 @@ alias GPUI.UI
 """
 ```
 
-Every stateful component requires a stable, non-empty string `id`.
+Every stateful component requires a stable, non-empty string `id`. Component
+builders validate schema-backed attributes and event names before a snapshot
+reaches any display, including `GPUI.Test.Display`. Invalid values raise an
+`ArgumentError` that names the component, attribute, expected type or enum, and
+received value—for example, `ui_button :disabled must be a boolean; got: "yes"`.
 
 ## Inputs and choices
 

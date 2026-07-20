@@ -3,7 +3,10 @@ defmodule GPUI.UI do
   Namespaced wrappers for native GPUI controls and collection primitives.
 
   Components are controlled by Elixir assigns and require a stable `:id` so
-  native focus, animation, and interaction state survives rerenders.
+  native focus, animation, and interaction state survives rerenders. Builders
+  validate schema-backed attribute and event types before snapshots reach a
+  display, raising `ArgumentError` with the component, attribute, expected
+  contract, and received value.
   """
 
   alias GPUI.Element
@@ -11,6 +14,15 @@ defmodule GPUI.UI do
   alias GPUI.UI.CollectionValidation
 
   @max_file_bytes 100 * 1_024 * 1_024
+
+  @type component_assigns :: %{
+          required(:id) => String.t(),
+          optional(atom() | String.t()) => term()
+        }
+  @type select_option ::
+          String.t()
+          | {String.t(), String.t()}
+          | %{required(:label) => String.t(), required(:value) => String.t()}
 
   @type file_picker_value ::
           %{
@@ -23,7 +35,13 @@ defmodule GPUI.UI do
           | %{operation_id: non_neg_integer(), status: :cancelled}
           | %{operation_id: non_neg_integer(), status: :error, reason: String.t()}
 
-  @doc "Builds a native GPUI Component button."
+  @doc """
+  Builds a native button.
+
+  Supply a string `label` or child content. `phx-click` receives activation;
+  `variant`, `size`, and boolean state attributes use the schema documented in
+  the components guide.
+  """
   @spec button(map()) :: Element.t()
   def button(assigns), do: component(:ui_button, assigns)
 
@@ -92,11 +110,11 @@ defmodule GPUI.UI do
     component(:ui_copy_button, assigns)
   end
 
-  @doc "Builds a native GPUI Component checkbox."
+  @doc "Builds a controlled checkbox using boolean `checked` and `phx-change`."
   @spec checkbox(map()) :: Element.t()
   def checkbox(assigns), do: component(:ui_checkbox, assigns)
 
-  @doc "Builds a persistent native GPUI Component input."
+  @doc "Builds a persistent controlled string input using `value` and `phx-change`."
   @spec input(map()) :: Element.t()
   def input(assigns), do: component(:ui_input, assigns)
 
@@ -119,7 +137,7 @@ defmodule GPUI.UI do
   def combobox(assigns),
     do: component(:ui_combobox, normalize_options_assigns!(:ui_combobox, assigns))
 
-  @doc "Builds a controlled boolean GPUI Component switch."
+  @doc "Builds a controlled boolean switch using `checked` and `phx-change`."
   @spec switch(map()) :: Element.t()
   def switch(assigns), do: component(:ui_switch, assigns)
 
@@ -312,6 +330,13 @@ defmodule GPUI.UI do
   def table_row(assigns) when is_map(assigns),
     do: component(:ui_table_row, Schema.apply_defaults(assigns, :ui_table_row))
 
+  @doc """
+  Builds an accessible source-backed tree.
+
+  `phx-change` receives selection and `phx-toggle` receives the stable ID whose
+  expansion should change. Source-backed ranges follow the same exclusive
+  `phx-range` contract as `virtual_list/1`.
+  """
   @spec tree(map()) :: Element.t()
   def tree(assigns) when is_map(assigns) do
     assigns = normalize_attr_key(assigns, :"phx-range")
@@ -525,6 +550,8 @@ defmodule GPUI.UI do
   end
 
   defp component(type, %{id: id} = assigns) when is_binary(id) and id != "" do
+    assigns = Schema.validate_component_assigns!(assigns, type)
+
     %Element{
       type: type,
       attrs: assigns |> Map.delete(:children) |> Map.to_list(),
@@ -532,7 +559,16 @@ defmodule GPUI.UI do
     }
   end
 
-  defp component(type, _assigns) do
-    raise ArgumentError, "#{type} requires a non-empty string id"
+  defp component(type, assigns) do
+    id = if is_map(assigns), do: Map.get(assigns, :id), else: nil
+
+    raise ArgumentError,
+          "#{public_component_name(type)} requires :id to be a non-empty string; " <>
+            "got: #{inspect(id)}"
+  end
+
+  defp public_component_name(type) do
+    name = type |> Atom.to_string() |> String.trim_leading("ui_")
+    "GPUI.UI.#{name}/1"
   end
 end

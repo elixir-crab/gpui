@@ -21,7 +21,10 @@ defmodule GPUI.UI.Overlay do
   """
   @spec tooltip(map()) :: Element.t()
   def tooltip(assigns) when is_map(assigns) do
-    assigns = Schema.apply_defaults(assigns, :ui_tooltip)
+    assigns =
+      assigns
+      |> Schema.apply_defaults(:ui_tooltip)
+      |> Schema.validate_component_assigns!(:ui_tooltip)
 
     trigger = one_slot!(assigns, :trigger, :tooltip)
     content = one_slot!(assigns, :content, :tooltip)
@@ -63,7 +66,10 @@ defmodule GPUI.UI.Overlay do
   """
   @spec dialog(map()) :: Element.t()
   def dialog(assigns) when is_map(assigns) do
-    assigns = Schema.apply_defaults(assigns, :ui_dialog)
+    assigns =
+      assigns
+      |> Schema.apply_defaults(:ui_dialog)
+      |> Schema.validate_component_assigns!(:ui_dialog)
 
     trigger = optional_slot!(assigns, :trigger, :dialog)
     content = one_slot!(assigns, :content, :dialog)
@@ -99,7 +105,10 @@ defmodule GPUI.UI.Overlay do
   """
   @spec dropdown_menu(map()) :: Element.t()
   def dropdown_menu(assigns) when is_map(assigns) do
-    assigns = Schema.apply_defaults(assigns, :ui_dropdown_menu)
+    assigns =
+      assigns
+      |> Schema.apply_defaults(:ui_dropdown_menu)
+      |> Schema.validate_component_assigns!(:ui_dropdown_menu)
 
     trigger = one_slot!(assigns, :trigger, :dropdown_menu)
     items = Map.get(assigns, :item, [])
@@ -136,7 +145,10 @@ defmodule GPUI.UI.Overlay do
   """
   @spec popover(map()) :: Element.t()
   def popover(assigns) when is_map(assigns) do
-    assigns = Schema.apply_defaults(assigns, :ui_popover)
+    assigns =
+      assigns
+      |> Schema.apply_defaults(:ui_popover)
+      |> Schema.validate_component_assigns!(:ui_popover)
 
     trigger = one_slot!(assigns, :trigger, :popover)
     content = one_slot!(assigns, :content, :popover)
@@ -268,7 +280,11 @@ defmodule GPUI.UI.Overlay do
     if is_binary(id) and id != "" do
       id
     else
-      raise ArgumentError, "#{type} requires a non-empty string id"
+      name = type |> Atom.to_string() |> String.trim_leading("ui_")
+
+      raise ArgumentError,
+            "GPUI.UI.Overlay.#{name}/1 requires :id to be a non-empty string; " <>
+              "got: #{inspect(id)}"
     end
   end
 

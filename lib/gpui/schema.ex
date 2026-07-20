@@ -675,6 +675,88 @@ defmodule GPUI.Schema do
     |> Map.merge(assigns)
   end
 
+  @spec validate_component_assigns!(map(), atom()) :: map()
+  def validate_component_assigns!(assigns, tag) when is_map(assigns) do
+    component = component!(tag)
+
+    Enum.each(component.attrs, fn {name, type} ->
+      case Map.fetch(assigns, name) do
+        {:ok, value} when not is_nil(value) -> validate_attr!(tag, name, type, value)
+        _missing_or_nil -> :ok
+      end
+    end)
+
+    Enum.each(component.events, fn {_event, name} ->
+      case Map.fetch(assigns, name) do
+        {:ok, value} when is_binary(value) and value != "" -> :ok
+        {:ok, nil} -> :ok
+        :error -> :ok
+        {:ok, value} -> invalid_attr!(tag, name, "a non-empty string", value)
+      end
+    end)
+
+    assigns
+  end
+
+  defp validate_attr!(tag, name, {:default, type}, value),
+    do: validate_attr!(tag, name, type, value)
+
+  defp validate_attr!(tag, name, {:default, type, _default}, value),
+    do: validate_attr!(tag, name, type, value)
+
+  defp validate_attr!(_tag, _name, :string, value) when is_binary(value), do: :ok
+  defp validate_attr!(_tag, _name, :number, value) when is_number(value), do: :ok
+
+  defp validate_attr!(_tag, _name, :positive_number, value) when is_number(value) and value > 0,
+    do: :ok
+
+  defp validate_attr!(_tag, _name, :non_negative_integer, value)
+       when is_integer(value) and value >= 0, do: :ok
+
+  defp validate_attr!(_tag, _name, :positive_integer, value) when is_integer(value) and value > 0,
+    do: :ok
+
+  defp validate_attr!(_tag, _name, :boolean, value) when is_boolean(value), do: :ok
+
+  defp validate_attr!(tag, name, :string_list, value) when is_list(value) do
+    if Enum.all?(value, &is_binary/1),
+      do: :ok,
+      else: invalid_attr!(tag, name, "a list of strings", value)
+  end
+
+  defp validate_attr!(_tag, _name, type, value)
+       when type in [:select_options, :radio_options] and is_list(value),
+       do: :ok
+
+  defp validate_attr!(_tag, _name, :resource, value) when is_map(value), do: :ok
+
+  defp validate_attr!(tag, name, {:enum, values}, value) do
+    if value in values,
+      do: :ok,
+      else: invalid_attr!(tag, name, "one of #{Enum.map_join(values, ", ", &inspect/1)}", value)
+  end
+
+  defp validate_attr!(tag, name, type, value),
+    do: invalid_attr!(tag, name, expected_attr_type(type), value)
+
+  defp expected_attr_type(:string), do: "a string"
+  defp expected_attr_type(:number), do: "a number"
+  defp expected_attr_type(:positive_number), do: "a number greater than zero"
+  defp expected_attr_type(:non_negative_integer), do: "a non-negative integer"
+  defp expected_attr_type(:positive_integer), do: "an integer greater than zero"
+  defp expected_attr_type(:boolean), do: "a boolean"
+  defp expected_attr_type(:string_list), do: "a list of strings"
+
+  defp expected_attr_type(type) when type in [:select_options, :radio_options],
+    do: "an options list"
+
+  defp expected_attr_type(:resource), do: "a resource map"
+
+  defp invalid_attr!(tag, name, expected, value) do
+    raise ArgumentError,
+          "#{tag} :#{name} must be #{expected}; got: #{inspect(value)}"
+  end
+
   def stateful_components, do: Enum.filter(@components, & &1.stateful)
   def styles, do: Enum.map(@styles, & &1.name)
   def style_specs, do: @styles
