@@ -3,40 +3,43 @@ defmodule GPUI.Remote.Session do
 
   use GenServer
 
-  alias GPUI.Remote.RequestGate
+  alias GPUI.Remote.SessionTree
+  alias GPUI.Remote.Supervision
 
   @event_request_limit 1_024
 
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts)
 
-  def route(session) do
-    GenServer.call(session, :route)
+  def route(tree) do
+    with {:ok, requests} <- Supervision.child(tree, :requests, :session_unavailable),
+         {:ok, session} <- Supervision.child(tree, :coordinator, :session_unavailable) do
+      {:ok, %{requests: requests, session: session, tree: tree}}
+    end
+  end
+
+  def call(%{requests: requests, session: session}, request) do
+    caller = self()
+    reply_ref = make_ref()
+
+    case Task.Supervisor.start_child(requests, fn ->
+           send(caller, {reply_ref, safe_call(session, request)})
+         end) do
+      {:ok, task} -> await_request(task, reply_ref)
+      {:error, :max_children} -> {:error, :overloaded}
+      {:error, reason} -> {:error, {:session_unavailable, reason}}
+    end
   catch
     :exit, reason -> {:error, {:session_unavailable, reason}}
   end
 
-  def call(%{gate: gate, session: session}, request) do
-    with {:ok, token} <- RequestGate.checkout(gate) do
-      try do
-        GenServer.call(session, request)
-      catch
-        :exit, reason -> {:error, {:session_unavailable, reason}}
-      after
-        RequestGate.checkin(gate, token)
-      end
-    end
-  end
-
   @impl GenServer
   def init(opts) do
-    {:ok, gate} = RequestGate.start_link(Keyword.fetch!(opts, :request_limit))
-
     state = %{
       app: Keyword.fetch!(opts, :app),
       args: Keyword.fetch!(opts, :args),
       session_id: Keyword.fetch!(opts, :session_id),
       session: nil,
-      gate: gate,
+      tree: Keyword.fetch!(opts, :tree),
       event_requests: [],
       ttl: Keyword.fetch!(opts, :ttl),
       expiry_timer: nil
@@ -46,18 +49,8 @@ defmodule GPUI.Remote.Session do
   end
 
   @impl GenServer
-  def terminate(_reason, %{gate: gate, session: session}) do
-    stop_process(gate)
-    stop_process(session)
-  end
-
-  @impl GenServer
-  def handle_call(:route, _from, state) do
-    {:reply, {:ok, %{gate: state.gate, session: self()}}, state}
-  end
-
   def handle_call(:mount, _from, %{session: nil} = state) do
-    case GPUI.Session.start_link(app: state.app, args: state.args) do
+    case SessionTree.start_app_session(state.tree, app: state.app, args: state.args) do
       {:ok, session} ->
         snapshot = GPUI.Session.snapshot(session)
         state = state |> Map.put(:session, session) |> touch()
@@ -103,6 +96,25 @@ defmodule GPUI.Remote.Session do
     do: {:stop, :normal, state}
 
   def handle_info({:expire, _stale_token}, state), do: {:noreply, state}
+
+  defp safe_call(session, request) do
+    GenServer.call(session, request, :infinity)
+  catch
+    :exit, reason -> {:error, {:session_unavailable, reason}}
+  end
+
+  defp await_request(task, reply_ref) do
+    monitor = Process.monitor(task)
+
+    receive do
+      {^reply_ref, reply} ->
+        Process.demonitor(monitor, [:flush])
+        reply
+
+      {:DOWN, ^monitor, :process, ^task, reason} ->
+        {:error, {:session_unavailable, reason}}
+    end
+  end
 
   defp apply_event(%{session: nil} = state, _request_id, _event) do
     {:reply, {:error, :session_not_mounted}, touch(state)}
@@ -155,13 +167,4 @@ defmodule GPUI.Remote.Session do
 
   defp cancel_expiry(nil), do: :ok
   defp cancel_expiry({timer, _token}), do: Process.cancel_timer(timer)
-
-  defp stop_process(nil), do: :ok
-
-  defp stop_process(process) do
-    if Process.alive?(process), do: GenServer.stop(process)
-    :ok
-  catch
-    :exit, _reason -> :ok
-  end
 end

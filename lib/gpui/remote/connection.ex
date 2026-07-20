@@ -3,25 +3,39 @@ defmodule GPUI.Remote.Connection do
 
   use GenServer
 
-  alias GPUI.Remote.Acceptor
+  alias GPUI.Remote.ConnectionTree
+  alias GPUI.Remote.Supervision
   alias GPUI.Remote.Transport.TCP
-  alias SafeRPC.Server.Connection, as: RPCConnection
 
-  def start(opts), do: GenServer.start(__MODULE__, opts)
+  def start_link(opts), do: GenServer.start_link(__MODULE__, opts)
 
   def port(%{listener: listener}), do: TCP.port(listener)
 
+  def configure(owner, task_supervisor) do
+    GenServer.call(owner, {:configure, task_supervisor})
+  end
+
   def accept(state, socket) do
-    Acceptor.start(state.listener)
     connection_id = System.unique_integer([:positive])
 
-    case start(
-           server: self(),
-           connection_id: connection_id,
-           request_limit: state.connection_request_limit
-         ) do
-      {:ok, owner} ->
-        start_rpc_connection(state, socket, connection_id, owner)
+    child_spec = %{
+      id: {ConnectionTree, connection_id},
+      start:
+        {ConnectionTree, :start_link,
+         [
+           [
+             server: self(),
+             connection_id: connection_id,
+             request_limit: state.connection_request_limit
+           ]
+         ]},
+      restart: :temporary,
+      type: :supervisor
+    }
+
+    case DynamicSupervisor.start_child(state.connection_supervisor, child_spec) do
+      {:ok, tree} ->
+        finish_accept(state, tree, socket, connection_id)
 
       {:error, _reason} ->
         TCP.close(socket)
@@ -29,15 +43,23 @@ defmodule GPUI.Remote.Connection do
     end
   end
 
-  def stop_all(%{connections: connections}) do
-    Enum.each(connections, fn {_pid, connection} -> stop_owner(connection.owner) end)
+  defp finish_accept(state, tree, socket, connection_id) do
+    with {:ok, owner} <- Supervision.child(tree, :owner, :connection_unavailable),
+         {:ok, task_supervisor} <- Supervision.child(tree, :tasks, :connection_unavailable),
+         :ok <- configure(owner, task_supervisor),
+         {:ok, _rpc} <- ConnectionTree.start_rpc(tree, owner, socket) do
+      Process.monitor(tree)
+      put_in(state.connections[tree], %{owner: owner, id: connection_id})
+    else
+      {:error, _reason} ->
+        Supervisor.stop(tree)
+        TCP.close(socket)
+        state
+    end
   end
 
   def remove(state, pid) do
     {connection, connections} = Map.pop(state.connections, pid)
-
-    if connection, do: stop_owner(connection.owner)
-
     state = %{state | connections: connections}
 
     if connection do
@@ -47,32 +69,6 @@ defmodule GPUI.Remote.Connection do
     end
   end
 
-  defp start_rpc_connection(state, socket, connection_id, owner) do
-    child_spec = %{
-      id: {RPCConnection, connection_id},
-      start:
-        {RPCConnection, :start_link,
-         [[owner: owner, transport: TCP, socket: socket, recv_timeout: 5_000]]},
-      restart: :temporary
-    }
-
-    case DynamicSupervisor.start_child(state.connection_supervisor, child_spec) do
-      {:ok, pid} ->
-        Process.monitor(pid)
-        put_in(state.connections[pid], %{owner: owner, id: connection_id})
-
-      {:error, _reason} ->
-        GenServer.stop(owner)
-        TCP.close(socket)
-        state
-    end
-  end
-
-  defp stop_owner(owner) do
-    if Process.alive?(owner), do: Process.exit(owner, :shutdown)
-    :ok
-  end
-
   @impl GenServer
   def init(opts) do
     {:ok,
@@ -80,11 +76,16 @@ defmodule GPUI.Remote.Connection do
        server: Keyword.fetch!(opts, :server),
        connection_id: Keyword.fetch!(opts, :connection_id),
        request_limit: Keyword.fetch!(opts, :request_limit),
+       task_supervisor: nil,
        delegates: %{}
      }}
   end
 
   @impl GenServer
+  def handle_call({:configure, task_supervisor}, _from, %{task_supervisor: nil} = state) do
+    {:reply, :ok, %{state | task_supervisor: task_supervisor}}
+  end
+
   def handle_call({:delegate_complete, token, reply}, _task_from, state) do
     case Map.fetch(state.delegates, token) do
       {:ok, {_task, _task_monitor, _caller_monitor, nil}} -> :ok
@@ -123,27 +124,23 @@ defmodule GPUI.Remote.Connection do
     {:noreply, handle_delegate_down(state, match)}
   end
 
-  @impl GenServer
-  def terminate(_reason, state) do
-    Enum.each(state.delegates, fn {_token, {task, _task_monitor, _caller_monitor, _from}} ->
-      Process.exit(task, :kill)
-    end)
-  end
-
   defp delegate_request(state, from, route, request) do
     owner = self()
     token = make_ref()
 
-    {:ok, task} =
-      Task.start(fn ->
-        reply = GPUI.Remote.Session.call(route, request)
-        GenServer.call(owner, {:delegate_complete, token, reply}, :infinity)
-      end)
+    case Task.Supervisor.start_child(state.task_supervisor, fn ->
+           reply = GPUI.Remote.Session.call(route, request)
+           GenServer.call(owner, {:delegate_complete, token, reply}, :infinity)
+         end) do
+      {:ok, task} ->
+        task_monitor = Process.monitor(task)
+        caller_monitor = Process.monitor(elem(from, 0))
 
-    task_monitor = Process.monitor(task)
-    caller_monitor = Process.monitor(elem(from, 0))
+        {:noreply, put_in(state.delegates[token], {task, task_monitor, caller_monitor, from})}
 
-    {:noreply, put_in(state.delegates[token], {task, task_monitor, caller_monitor, from})}
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
   end
 
   defp remove_delegate(state, nil), do: state

@@ -12,8 +12,10 @@ defmodule GPUI.Remote.Server do
   alias GPUI.Remote.Connection
   alias GPUI.Remote.Protocol
   alias GPUI.Remote.Request
+  alias GPUI.Remote.ServerSupervisor
   alias GPUI.Remote.SessionRegistry
   alias GPUI.Remote.SessionSupervisor
+  alias GPUI.Remote.Supervision
   alias GPUI.Remote.Transport.TCP
 
   @capability Protocol.capability()
@@ -21,10 +23,40 @@ defmodule GPUI.Remote.Server do
   @default_session_request_limit 16
   @maximum_request_limit 4_096
 
-  def child_spec(opts), do: GPUI.Remote.child_spec(__MODULE__, opts)
+  def child_spec(opts) do
+    __MODULE__
+    |> GPUI.Remote.child_spec(opts)
+    |> Map.put(:type, :supervisor)
+  end
 
-  def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
-  def port(server), do: GenServer.call(server, :port)
+  def start_link(opts) do
+    with {:ok, _connection_limit} <-
+           request_limit(
+             opts,
+             :max_in_flight_requests_per_connection,
+             @default_connection_request_limit
+           ),
+         {:ok, _session_limit} <-
+           request_limit(
+             opts,
+             :max_in_flight_requests_per_session,
+             @default_session_request_limit
+           ) do
+      ServerSupervisor.start_link(opts)
+    end
+  end
+
+  @doc false
+  def start_coordinator(opts), do: GenServer.start_link(__MODULE__, opts)
+
+  @doc false
+  def coordinator(server), do: Supervision.child(server, :coordinator, :server_unavailable)
+
+  def port(server) do
+    with {:ok, coordinator} <- coordinator(server) do
+      GenServer.call(coordinator, :port)
+    end
+  end
 
   @impl GenServer
   def init(opts) do
@@ -42,15 +74,15 @@ defmodule GPUI.Remote.Server do
              :max_in_flight_requests_per_session,
              @default_session_request_limit
            ),
-         {:ok, listener} <- TCP.listen(listen_opts),
-         {:ok, connection_supervisor} <- DynamicSupervisor.start_link(strategy: :one_for_one),
-         {:ok, session_supervisor} <- SessionSupervisor.start_link() do
+         {:ok, listener} <- TCP.listen(listen_opts) do
       state = %{
         app: Keyword.fetch!(opts, :app),
         app_args: Keyword.get(opts, :args, []),
+        tree: Keyword.fetch!(opts, :tree),
         listener: listener,
-        connection_supervisor: connection_supervisor,
-        session_supervisor: session_supervisor,
+        connection_supervisor: nil,
+        session_supervisor: nil,
+        acceptor_monitor: nil,
         connections: %{},
         session_registry: SessionRegistry.new(),
         negotiated_connections: MapSet.new(),
@@ -59,20 +91,34 @@ defmodule GPUI.Remote.Server do
         session_request_limit: session_request_limit
       }
 
-      Acceptor.start(listener)
-      {:ok, state}
+      {:ok, state, {:continue, :start_children}}
     else
       {:error, reason} -> {:stop, reason}
     end
   end
 
   @impl GenServer
-  def terminate(_reason, state) do
-    TCP.close(state.listener)
-    Connection.stop_all(state)
-    stop_supervisor(state.connection_supervisor)
-    stop_supervisor(state.session_supervisor)
+  def handle_continue(:start_children, state) do
+    with {:ok, connection_supervisor} <-
+           Supervision.child(state.tree, :connections, :server_unavailable),
+         {:ok, session_supervisor} <-
+           Supervision.child(state.tree, :sessions, :server_unavailable),
+         {:ok, acceptor} <- start_acceptor(connection_supervisor, state.listener) do
+      state = %{
+        state
+        | connection_supervisor: connection_supervisor,
+          session_supervisor: session_supervisor,
+          acceptor_monitor: Process.monitor(acceptor)
+      }
+
+      {:noreply, state}
+    else
+      {:error, reason} -> {:stop, reason, state}
+    end
   end
+
+  @impl GenServer
+  def terminate(_reason, state), do: TCP.close(state.listener)
 
   @impl GenServer
   def handle_call(:port, _from, state) do
@@ -91,6 +137,9 @@ defmodule GPUI.Remote.Server do
 
   def handle_info({:gpui_remote_accept_error, reason}, state),
     do: {:stop, {:accept_failed, reason}, state}
+
+  def handle_info({:DOWN, ref, :process, _pid, reason}, %{acceptor_monitor: ref} = state),
+    do: {:stop, {:acceptor_stopped, reason}, state}
 
   def handle_info({:DOWN, ref, :process, pid, _reason}, state) do
     state =
@@ -217,11 +266,14 @@ defmodule GPUI.Remote.Server do
     %{state | session_registry: registry}
   end
 
-  defp stop_supervisor(supervisor) do
-    if Process.alive?(supervisor), do: Supervisor.stop(supervisor)
-    :ok
-  catch
-    :exit, _reason -> :ok
+  defp start_acceptor(connection_supervisor, listener) do
+    child_spec = %{
+      id: GPUI.Remote.Acceptor,
+      start: {Acceptor, :start_link, [[listener: listener, owner: self()]]},
+      restart: :temporary
+    }
+
+    DynamicSupervisor.start_child(connection_supervisor, child_spec)
   end
 
   defp request_limit(opts, name, default) do

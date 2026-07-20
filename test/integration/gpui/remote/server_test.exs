@@ -77,7 +77,7 @@ defmodule GPUI.Remote.ServerTest do
 
     mount = %{session_id: "stable-mount", request_id: "mount-17", args: %{name: "first"}}
     assert {:ok, _reply} = SafeRPC.call(client, :mount, mount)
-    session = :sys.get_state(server).session_registry.sessions["stable-mount"].pid
+    session = server_state(server).session_registry.sessions["stable-mount"].pid
 
     assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{name: "changed"}}}]}}} =
              SafeRPC.call(client, :event, %{
@@ -91,7 +91,7 @@ defmodule GPUI.Remote.ServerTest do
     assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{name: "changed"}}}]}}} =
              SafeRPC.call(client, :mount, mount)
 
-    assert :sys.get_state(server).session_registry.sessions["stable-mount"].pid == session
+    assert server_state(server).session_registry.sessions["stable-mount"].pid == session
   end
 
   test "deduplicates retried events within a session" do
@@ -315,6 +315,37 @@ defmodule GPUI.Remote.ServerTest do
              Task.await(blocked_mount)
   end
 
+  test "server shutdown interrupts a blocked application mount" do
+    owner = Module.concat(__MODULE__, ShutdownOwner)
+    Process.register(self(), owner)
+    on_exit(fn -> if Process.whereis(owner), do: Process.unregister(owner) end)
+
+    {:ok, server} =
+      GPUI.Remote.Server.start_link(
+        app: BlockingApp,
+        args: %{owner: owner, id: "default"},
+        port: 0
+      )
+
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    {:ok, client} = start_client(port)
+
+    blocked_mount =
+      Task.async(fn ->
+        SafeRPC.call(client, :mount, %{
+          session_id: "shutdown-mount",
+          args: %{owner: owner, id: "blocked-mount"}
+        })
+      end)
+
+    assert_receive {:remote_mount_blocked, mounting_session}
+    mount_monitor = Process.monitor(mounting_session)
+
+    assert :ok = Supervisor.stop(server)
+    assert_receive {:DOWN, ^mount_monitor, :process, ^mounting_session, _reason}
+    Task.shutdown(blocked_mount, :brutal_kill)
+  end
+
   test "connection request limits reject excess delegated work" do
     owner = Module.concat(__MODULE__, ConnectionLimitOwner)
     Process.register(self(), owner)
@@ -359,7 +390,7 @@ defmodule GPUI.Remote.ServerTest do
                args: %{owner: owner, id: "rejected"}
              })
 
-    refute Map.has_key?(:sys.get_state(server).session_registry.sessions, "rejected-mount")
+    refute Map.has_key?(server_state(server).session_registry.sessions, "rejected-mount")
     send(blocked_session, :release_remote_session)
     assert {:ok, _snapshot} = Task.await(blocked_call)
 
@@ -399,7 +430,7 @@ defmodule GPUI.Remote.ServerTest do
                SafeRPC.await(request)
     end
 
-    [%{owner: owner}] = server |> :sys.get_state() |> Map.fetch!(:connections) |> Map.values()
+    [%{owner: owner}] = server |> server_state() |> Map.fetch!(:connections) |> Map.values()
     assert %{delegates: %{}} = :sys.get_state(owner)
     assert Process.alive?(server)
   end
@@ -695,11 +726,29 @@ defmodule GPUI.Remote.ServerTest do
     {:ok, port} = GPUI.Remote.Server.port(server)
     {:ok, _client} = start_client(port)
 
-    [%{owner: owner}] = server |> :sys.get_state() |> Map.fetch!(:connections) |> Map.values()
+    [%{owner: owner}] = server |> server_state() |> Map.fetch!(:connections) |> Map.values()
     monitor = Process.monitor(owner)
 
-    :ok = GenServer.stop(server)
+    :ok = Supervisor.stop(server)
     assert_receive {:DOWN, ^monitor, :process, ^owner, _reason}
+  end
+
+  test "connection supervision tears down siblings and accepts a replacement" do
+    {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    {:ok, _client} = start_client(port)
+
+    [{tree, %{owner: owner}}] = server_state(server).connections |> Map.to_list()
+    {:ok, rpc} = GPUI.Remote.Supervision.child(tree, :rpc, :connection_unavailable)
+    tree_monitor = Process.monitor(tree)
+    rpc_monitor = Process.monitor(rpc)
+
+    Process.exit(owner, :kill)
+
+    assert_receive {:DOWN, ^rpc_monitor, :process, ^rpc, _reason}
+    assert_receive {:DOWN, ^tree_monitor, :process, ^tree, _reason}
+    assert {:ok, _replacement} = start_client(port)
+    assert Process.alive?(server)
   end
 
   test "removes terminated sessions without waiting for garbage collection" do
@@ -714,15 +763,15 @@ defmodule GPUI.Remote.ServerTest do
     {:ok, client} = start_client(port)
     assert {:ok, _reply} = SafeRPC.call(client, :mount, %{session_id: "terminated"})
 
-    session = :sys.get_state(server).session_registry.sessions["terminated"].pid
+    session = server_state(server).session_registry.sessions["terminated"].pid
     monitor = Process.monitor(session)
-    Process.exit(session, :kill)
-    assert_receive {:DOWN, ^monitor, :process, ^session, :killed}
+    Supervisor.stop(session)
+    assert_receive {:DOWN, ^monitor, :process, ^session, :normal}
 
     assert {:error, :unknown_session} =
              SafeRPC.call(client, :resume_session, %{session_id: "terminated"})
 
-    refute Map.has_key?(:sys.get_state(server).session_registry.sessions, "terminated")
+    refute Map.has_key?(server_state(server).session_registry.sessions, "terminated")
   end
 
   test "expires inactive sessions" do
@@ -737,7 +786,7 @@ defmodule GPUI.Remote.ServerTest do
     {:ok, client} = start_client(port)
 
     assert {:ok, _reply} = SafeRPC.call(client, :mount, %{session_id: "expired"})
-    session = :sys.get_state(server).session_registry.sessions["expired"].pid
+    session = server_state(server).session_registry.sessions["expired"].pid
     monitor = Process.monitor(session)
     assert_receive {:DOWN, ^monitor, :process, ^session, _reason}, 1_000
 
@@ -785,6 +834,11 @@ defmodule GPUI.Remote.ServerTest do
       )
 
     assert {:error, :unauthorized} = SafeRPC.call(client, :hello, %{})
+  end
+
+  defp server_state(server) do
+    {:ok, coordinator} = GPUI.Remote.Server.coordinator(server)
+    :sys.get_state(coordinator)
   end
 
   defp start_client(port) do

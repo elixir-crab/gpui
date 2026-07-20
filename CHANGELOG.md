@@ -3,6 +3,7 @@
 ## 0.1.1
 
 - Added bounded per-connection and per-session remote request admission, explicit overload errors, caller monitoring, and concurrent 50-session load coverage.
+- Moved the remote server, acceptor, connection owners, delegated tasks, session coordinators, and application sessions into explicit OTP supervision subtrees with significant-child shutdown semantics and interruptible deferred mounting.
 - Split collection validation, native controls/forms, and dialog/tooltip/popover rendering into focused internal modules while preserving source-derived RustQ renderer routing.
 - Hardened native image, raster, text-painting, and IME paths against oversized payloads, arithmetic overflow, malformed selection ranges, and recoverable paint failures.
 - Hardened remote lifecycle handling with idempotent mount/event retries, resumable bounded event queues, monitored per-session coordinators, concurrent cross-session dispatch without head-of-line blocking, isolated connection owners, structured display synchronization failures, and stale-timer rejection.

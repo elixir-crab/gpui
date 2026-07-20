@@ -1,21 +1,32 @@
 defmodule GPUI.Remote.Acceptor do
   @moduledoc false
 
+  use GenServer
+
   alias GPUI.Remote.Transport.TCP
 
-  @spec start(TCP.listener()) :: {:ok, pid()}
-  def start(listener) do
-    owner = self()
+  def start_link(opts), do: GenServer.start_link(__MODULE__, opts)
 
-    Task.start(fn ->
-      case TCP.accept(listener, :infinity) do
-        {:ok, socket} ->
-          transfer_socket(socket, owner)
+  @impl GenServer
+  def init(opts) do
+    {:ok,
+     %{
+       listener: Keyword.fetch!(opts, :listener),
+       owner: Keyword.fetch!(opts, :owner)
+     }, {:continue, :accept}}
+  end
 
-        {:error, reason} ->
-          send(owner, {:gpui_remote_accept_error, reason})
-      end
-    end)
+  @impl GenServer
+  def handle_continue(:accept, state) do
+    case TCP.accept(state.listener, :infinity) do
+      {:ok, socket} ->
+        transfer_socket(socket, state.owner)
+        {:noreply, state, {:continue, :accept}}
+
+      {:error, reason} ->
+        send(state.owner, {:gpui_remote_accept_error, reason})
+        {:stop, :normal, state}
+    end
   end
 
   defp transfer_socket(socket, owner) do

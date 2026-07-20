@@ -6,10 +6,14 @@ renderer-independent; snapshots and normalized events cross the transport.
 
 ## Topology
 
-`GPUI.Remote.Server` supervises one isolated remote session coordinator and
-`GPUI.Session` per mounted client. Session work is delegated out of the central
-server and connection owner, so a slow mount or event in one session does not
-delay unrelated sessions—even when requests share one transport connection.
+`GPUI.Remote.Server` is an OTP supervision tree. It owns a supervised acceptor,
+per-connection subtrees, and one isolated session subtree per mounted client.
+Each connection subtree owns its protocol process, connection owner, and task
+supervisor. Each session subtree owns bounded request workers, its coordinator,
+and its `GPUI.Session`; losing an essential child tears down that whole isolated
+subtree. Session work is delegated out of the central server and connection
+owner, so a slow mount or event in one session does not delay unrelated
+sessions—even when requests share one transport connection.
 `GPUI.Remote.Client` negotiates the protocol, mounts the application, forwards
 snapshots to its configured display, and sends display events back to the
 server.

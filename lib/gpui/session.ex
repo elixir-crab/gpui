@@ -23,6 +23,12 @@ defmodule GPUI.Session do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
   end
 
+  @doc false
+  @spec start_link_deferred(keyword()) :: GenServer.on_start()
+  def start_link_deferred(opts) do
+    GenServer.start_link(__MODULE__, {:deferred, opts})
+  end
+
   @spec windows(GenServer.server()) :: [WindowSpec.t()]
   def windows(session), do: GenServer.call(session, :windows)
 
@@ -60,16 +66,21 @@ defmodule GPUI.Session do
   end
 
   @impl GenServer
-  def init(opts) do
+  def init({:deferred, opts}) do
     app = Keyword.fetch!(opts, :app)
     args = Keyword.get(opts, :args, [])
+    {:ok, %{mount: {app, args}}, {:continue, :mount}}
+  end
 
-    case app.mount(args) do
-      {:ok, windows} when is_list(windows) ->
-        {:ok, new_state(assign_window_ids(windows))}
+  def init(opts) do
+    mount(Keyword.fetch!(opts, :app), Keyword.get(opts, :args, []))
+  end
 
-      invalid ->
-        {:stop, {:invalid_mount_return, invalid}}
+  @impl GenServer
+  def handle_continue(:mount, %{mount: {app, args}}) do
+    case mount(app, args) do
+      {:ok, state} -> {:noreply, state}
+      {:stop, reason} -> {:stop, reason, %{mount: {app, args}}}
     end
   end
 
@@ -123,6 +134,16 @@ defmodule GPUI.Session do
 
       nil ->
         {:reply, {:error, :window_not_found}, state}
+    end
+  end
+
+  defp mount(app, args) do
+    case app.mount(args) do
+      {:ok, windows} when is_list(windows) ->
+        {:ok, new_state(assign_window_ids(windows))}
+
+      invalid ->
+        {:stop, {:invalid_mount_return, invalid}}
     end
   end
 
