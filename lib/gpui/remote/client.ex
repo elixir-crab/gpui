@@ -4,6 +4,17 @@ defmodule GPUI.Remote.Client do
 
   The client owns a local display, synchronizes remote snapshots into it, and
   forwards local display events to `GPUI.Remote.Server`.
+
+  ## Options
+
+    * `:host` and `:port` - required remote endpoint;
+    * `:ssl` - `false` or SafeRPC TLS options;
+    * `:display` - local display module, defaulting to `GPUI.Display.Native`;
+    * `:display_opts` - options passed to the display;
+    * `:session_id` - stable session identity, generated when omitted;
+    * `:poll_interval` - positive milliseconds or `nil` to disable display
+      polling, defaulting to `16`;
+    * `:name` - optional client process name.
   """
 
   use GenServer
@@ -18,7 +29,12 @@ defmodule GPUI.Remote.Client do
 
   def child_spec(opts), do: GPUI.Remote.child_spec(__MODULE__, opts)
 
-  def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
+  def start_link(opts) do
+    with {:ok, _poll_interval} <- GPUI.Polling.interval(opts) do
+      GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
+    end
+  end
+
   def mount(client, args \\ %{}), do: GenServer.call(client, {:mount, args})
   def event(client, event), do: GenServer.call(client, {:event, event})
   def snapshot(client), do: GenServer.call(client, :snapshot)
@@ -36,13 +52,19 @@ defmodule GPUI.Remote.Client do
     display_module = Keyword.get(opts, :display, GPUI.Display.Native)
     display_opts = Keyword.get(opts, :display_opts, [])
 
-    case start_rpc_client(opts) do
-      {:ok, rpc} -> start_display(rpc, display_module, display_opts, opts)
-      {:error, reason} -> {:stop, {:rpc_start_failed, reason}}
+    case GPUI.Polling.interval(opts) do
+      {:ok, poll_interval} ->
+        case start_rpc_client(opts) do
+          {:ok, rpc} -> start_display(rpc, display_module, display_opts, poll_interval, opts)
+          {:error, reason} -> {:stop, {:rpc_start_failed, reason}}
+        end
+
+      {:error, reason} ->
+        {:stop, reason}
     end
   end
 
-  defp start_display(rpc, display_module, display_opts, opts) do
+  defp start_display(rpc, display_module, display_opts, poll_interval, opts) do
     case display_module.start_link(display_opts) do
       {:ok, display} ->
         state = %{
@@ -52,7 +74,7 @@ defmodule GPUI.Remote.Client do
           display_module: display_module,
           mounted_args: nil,
           session_id: Keyword.get_lazy(opts, :session_id, &new_session_id/0),
-          poll_interval: poll_interval(opts),
+          poll_interval: poll_interval,
           poll_timer: nil,
           pending_events: [],
           revision: 0,
@@ -337,13 +359,6 @@ defmodule GPUI.Remote.Client do
 
       {:error, _reason, state} ->
         %{state | pending_events: [payload | rest]}
-    end
-  end
-
-  defp poll_interval(opts) do
-    case Keyword.get(opts, :poll_interval, 16) do
-      interval when is_integer(interval) and interval > 0 -> interval
-      _other -> nil
     end
   end
 

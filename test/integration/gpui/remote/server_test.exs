@@ -435,6 +435,16 @@ defmodule GPUI.Remote.ServerTest do
     assert Process.alive?(server)
   end
 
+  test "remote clients reject invalid polling intervals before connecting" do
+    assert {:error, {:invalid_option, :poll_interval}} =
+             GPUI.Remote.Client.start_link(
+               host: "127.0.0.1",
+               port: 1,
+               display: GPUI.Test.Display,
+               poll_interval: 0
+             )
+  end
+
   test "rejects invalid remote request limits during startup" do
     previous = Process.flag(:trap_exit, true)
 
@@ -450,6 +460,13 @@ defmodule GPUI.Remote.ServerTest do
                app: FormApp,
                port: 0,
                max_in_flight_requests_per_session: 4_097
+             )
+
+    assert {:error, {:invalid_option, :session_ttl}} =
+             GPUI.Remote.Server.start_link(
+               app: FormApp,
+               port: 0,
+               session_ttl: -1
              )
 
     Process.flag(:trap_exit, previous)

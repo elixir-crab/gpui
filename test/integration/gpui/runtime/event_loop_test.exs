@@ -81,6 +81,22 @@ defmodule GPUI.Runtime.EventLoopTest do
     assert %{resources: %{}} = GPUI.Runtime.snapshot(runtime)
   end
 
+  test "rejects invalid polling intervals during startup" do
+    assert {:error, {:invalid_option, :poll_interval}} =
+             GPUI.Runtime.start_link(
+               app: CounterApp,
+               display: GPUI.Test.Display,
+               poll_interval: 0
+             )
+
+    assert {:error, {:invalid_option, :poll_interval}} =
+             GPUI.Runtime.start_link(
+               app: CounterApp,
+               display: GPUI.Test.Display,
+               poll_interval: :fast
+             )
+  end
+
   test "display events can be polled automatically" do
     {:ok, runtime} =
       GPUI.Runtime.start_link(

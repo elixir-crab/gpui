@@ -5,6 +5,16 @@ defmodule GPUI.Runtime do
   The runtime synchronizes session snapshots to the display and routes display
   events back into the session. Remote application servers use `GPUI.Session`
   directly and therefore never start a native display.
+
+  ## Options
+
+    * `:app` - required `GPUI.Application` module;
+    * `:args` - application mount argument, defaulting to `[]`;
+    * `:display` - display module, defaulting to `GPUI.Display.Native`;
+    * `:display_opts` - options passed to the display;
+    * `:poll_interval` - positive milliseconds or `nil` to disable polling,
+      defaulting to `16`;
+    * `:name` - optional runtime process name.
   """
 
   use GenServer
@@ -25,7 +35,9 @@ defmodule GPUI.Runtime do
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
+    with {:ok, _poll_interval} <- GPUI.Polling.interval(opts) do
+      GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
+    end
   end
 
   @spec windows(GenServer.server()) :: [GPUI.WindowSpec.t()]
@@ -79,7 +91,8 @@ defmodule GPUI.Runtime do
     display_module = Keyword.get(opts, :display, GPUI.Display.Native)
     display_opts = Keyword.get(opts, :display_opts, [])
 
-    with {:ok, session} <-
+    with {:ok, poll_interval} <- GPUI.Polling.interval(opts),
+         {:ok, session} <-
            GPUI.Session.start_link(
              app: Keyword.fetch!(opts, :app),
              args: Keyword.get(opts, :args, [])
@@ -91,13 +104,15 @@ defmodule GPUI.Runtime do
         display: display,
         display_module: display_module,
         events: [],
-        poll_interval: poll_interval(opts),
+        poll_interval: poll_interval,
         revision: 0,
         subscribers: %{}
       }
 
       schedule_poll(state)
       {:ok, state}
+    else
+      {:error, reason} -> {:stop, reason}
     end
   end
 
@@ -265,13 +280,6 @@ defmodule GPUI.Runtime do
     case state.display_module.sync(state.display, snapshot) do
       :ok -> {:ok, GPUI.UpdateSubscribers.publish_update(state, self(), [], snapshot)}
       {:error, _reason} = error -> {error, state}
-    end
-  end
-
-  defp poll_interval(opts) do
-    case Keyword.get(opts, :poll_interval, 16) do
-      interval when is_integer(interval) and interval > 0 -> interval
-      _other -> nil
     end
   end
 

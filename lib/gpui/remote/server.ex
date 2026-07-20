@@ -4,6 +4,20 @@ defmodule GPUI.Remote.Server do
 
   Every remote session owns a distinct `GPUI.Session`. The server never starts a
   native display; rendering happens only on the connected display client.
+
+  ## Options
+
+    * `:app` - required `GPUI.Application` module;
+    * `:args` - default mount argument used when a client omits one;
+    * `:port` - listening port, defaulting to `0` for an OS-assigned port;
+    * `:ssl` - `false` or TLS listener options;
+    * `:session_ttl` - inactivity timeout in milliseconds or `:infinity`,
+      defaulting to 30 minutes;
+    * `:max_in_flight_requests_per_connection` - positive limit up to 4,096,
+      defaulting to 64;
+    * `:max_in_flight_requests_per_session` - positive limit up to 4,096,
+      defaulting to 16;
+    * `:name` - optional supervisor name.
   """
 
   use GenServer
@@ -41,7 +55,8 @@ defmodule GPUI.Remote.Server do
              opts,
              :max_in_flight_requests_per_session,
              @default_session_request_limit
-           ) do
+           ),
+         {:ok, _session_ttl} <- session_ttl(opts) do
       ServerSupervisor.start_link(opts)
     end
   end
@@ -74,6 +89,7 @@ defmodule GPUI.Remote.Server do
              :max_in_flight_requests_per_session,
              @default_session_request_limit
            ),
+         {:ok, session_ttl} <- session_ttl(opts),
          {:ok, listener} <- TCP.listen(listen_opts) do
       state = %{
         app: Keyword.fetch!(opts, :app),
@@ -86,7 +102,7 @@ defmodule GPUI.Remote.Server do
         connections: %{},
         session_registry: SessionRegistry.new(),
         negotiated_connections: MapSet.new(),
-        session_ttl: Keyword.get(opts, :session_ttl, :timer.minutes(30)),
+        session_ttl: session_ttl,
         connection_request_limit: connection_request_limit,
         session_request_limit: session_request_limit
       }
@@ -274,6 +290,14 @@ defmodule GPUI.Remote.Server do
     }
 
     DynamicSupervisor.start_child(connection_supervisor, child_spec)
+  end
+
+  defp session_ttl(opts) do
+    case Keyword.get(opts, :session_ttl, :timer.minutes(30)) do
+      :infinity -> {:ok, :infinity}
+      ttl when is_integer(ttl) and ttl >= 0 -> {:ok, ttl}
+      _invalid -> {:error, {:invalid_option, :session_ttl}}
+    end
   end
 
   defp request_limit(opts, name, default) do

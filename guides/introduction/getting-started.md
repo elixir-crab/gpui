@@ -97,6 +97,21 @@ display by default:
 Supervisor.start_link([MyApp.Desktop], strategy: :one_for_one)
 ```
 
+Pass runtime options through the normal `{module, options}` child form when the
+application needs mount arguments, a registered runtime, or a custom display:
+
+```elixir
+children = [
+  {MyApp.Desktop,
+   name: MyApp.Runtime,
+   args: %{account_id: account_id},
+   display: GPUI.Display.Native,
+   poll_interval: 16}
+]
+
+Supervisor.start_link(children, strategy: :one_for_one)
+```
+
 ## Controlled events
 
 Interactive native controls are controlled by root-view assigns:

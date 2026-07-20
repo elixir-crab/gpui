@@ -34,6 +34,17 @@ before other operations.
   )
 ```
 
+`GPUI.Remote.Server` has a supervisor child specification, so production
+applications can place the same options directly in their root tree:
+
+```elixir
+children = [
+  {GPUI.Remote.Server, app: MyApp.Desktop, port: 5050, name: MyApp.RemoteServer}
+]
+
+Supervisor.start_link(children, strategy: :one_for_one)
+```
+
 Each client gets its own supervised session and root assigns. A disconnected
 client cannot mutate another client's application state. The request limits
 shown above are the defaults; both accept positive values up to 4,096.
@@ -52,7 +63,9 @@ shown above are the defaults; both accept positive values up to 4,096.
 {:ok, snapshot} = GPUI.Remote.Client.mount(client)
 ```
 
-The native event loop remains local to the display client. Only declarative
+`GPUI.Remote.Client` likewise supports `{GPUI.Remote.Client, options}` in a
+display-side supervision tree. The native event loop remains local to the
+display client. Only declarative
 snapshots, resources, events, and protocol operations cross the connection.
 Display-side file pickers read bounded bytes on the client and send those bytes
 with an operation ID; they never claim that a client-local path is readable by
