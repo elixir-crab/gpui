@@ -62,6 +62,35 @@ defmodule GPUI.UITest do
     assert_raise ArgumentError, ~r/ui_button :phx-click must be a non-empty string/, fn ->
       UI.button(%{id: "save", label: "Save", "phx-click": :save})
     end
+
+    assert_raise ArgumentError, ~r/ui_button received unsupported attributes: :disabeld/, fn ->
+      UI.button(%{id: "save", label: "Save", disabeld: true})
+    end
+  end
+
+  test "requires event handlers for editable controlled components" do
+    assert_raise ArgumentError,
+                 ~r/ui_input :phx-change must be a non-empty string; got: nil/,
+                 fn ->
+                   UI.input(%{id: "name", value: "Ada"})
+                 end
+
+    assert %Element{attrs: attrs} =
+             UI.input(%{"phx-change" => "name_changed", id: "name", value: "Ada"})
+
+    assert attrs[:"phx-change"] == "name_changed"
+    refute Enum.any?(attrs, &(elem(&1, 0) == "phx-change"))
+
+    assert_raise ArgumentError,
+                 ~r/received duplicate :phx-change and "phx-change" attributes/,
+                 fn ->
+                   UI.input(%{
+                     "phx-change" => "other_name_changed",
+                     id: "name",
+                     value: "Ada",
+                     "phx-change": "name_changed"
+                   })
+                 end
   end
 
   test "builds controlled virtual lists from stable uniform items" do

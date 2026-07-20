@@ -41,6 +41,7 @@ defmodule GPUI.Schema do
       tag: :ui_file_picker,
       kind: :file_picker_component,
       events: [change: :"phx-change"],
+      required_events: [:"phx-change"],
       attrs: [
         id: :string,
         label: :string,
@@ -53,6 +54,7 @@ defmodule GPUI.Schema do
       tag: :ui_copy_button,
       kind: :copy_button_component,
       events: [click: :"phx-click"],
+      required_events: [:"phx-click"],
       attrs: [id: :string, label: :string, text: {:default, :string}, disabled: :boolean]
     },
     %Component{
@@ -142,6 +144,7 @@ defmodule GPUI.Schema do
       tag: :ui_checkbox,
       kind: :checkbox_component,
       events: [change: :"phx-change"],
+      required_events: [:"phx-change"],
       children: true,
       attrs: [
         id: :string,
@@ -156,6 +159,7 @@ defmodule GPUI.Schema do
       kind: :input_component,
       stateful: true,
       events: [change: :"phx-change"],
+      required_events: [:"phx-change"],
       attrs: [
         id: :string,
         value: {:default, :string},
@@ -172,6 +176,7 @@ defmodule GPUI.Schema do
       kind: :select_component,
       stateful: true,
       events: [change: :"phx-change"],
+      required_events: [:"phx-change"],
       attrs: [
         id: :string,
         value: :string,
@@ -187,6 +192,7 @@ defmodule GPUI.Schema do
       kind: :combobox_component,
       stateful: true,
       events: [change: :"phx-change", search: :"phx-search"],
+      required_events: [:"phx-change"],
       attrs: [
         id: :string,
         value: :string,
@@ -203,6 +209,7 @@ defmodule GPUI.Schema do
       tag: :ui_switch,
       kind: :switch_component,
       events: [change: :"phx-change"],
+      required_events: [:"phx-change"],
       attrs: [
         id: :string,
         checked: :boolean,
@@ -216,6 +223,7 @@ defmodule GPUI.Schema do
       tag: :ui_radio_group,
       kind: :radio_group_component,
       events: [change: :"phx-change"],
+      required_events: [:"phx-change"],
       attrs: [
         id: :string,
         value: :string,
@@ -229,6 +237,7 @@ defmodule GPUI.Schema do
       tag: :ui_accordion,
       kind: :accordion_component,
       events: [change: :"phx-change"],
+      required_events: [:"phx-change"],
       children: true,
       attrs: [
         id: :string,
@@ -397,6 +406,7 @@ defmodule GPUI.Schema do
       tag: :ui_tabs,
       kind: :tabs_component,
       events: [change: :"phx-change"],
+      required_events: [:"phx-change"],
       attrs: [
         id: :string,
         value: :string,
@@ -412,6 +422,7 @@ defmodule GPUI.Schema do
       kind: :slider_component,
       stateful: true,
       events: [change: :"phx-change", release: :"phx-release"],
+      required_events: [:"phx-change"],
       attrs: [
         id: :string,
         value: {:default, :number, 0.0},
@@ -675,27 +686,80 @@ defmodule GPUI.Schema do
     |> Map.merge(assigns)
   end
 
-  @spec validate_component_assigns!(map(), atom()) :: map()
-  def validate_component_assigns!(assigns, tag) when is_map(assigns) do
+  @spec validate_component_assigns!(map(), atom(), [atom()]) :: map()
+  def validate_component_assigns!(assigns, tag, extra_attrs \\ [])
+      when is_map(assigns) and is_list(extra_attrs) do
     component = component!(tag)
+    assigns = normalize_event_keys!(assigns, component)
+    validate_known_attrs!(assigns, component, extra_attrs)
+    validate_declared_attrs!(assigns, component)
+    validate_events!(assigns, component)
+    validate_required_events!(assigns, component)
+    assigns
+  end
 
+  defp validate_declared_attrs!(assigns, component) do
     Enum.each(component.attrs, fn {name, type} ->
       case Map.fetch(assigns, name) do
-        {:ok, value} when not is_nil(value) -> validate_attr!(tag, name, type, value)
+        {:ok, value} when not is_nil(value) -> validate_attr!(component.tag, name, type, value)
         _missing_or_nil -> :ok
       end
     end)
+  end
 
+  defp validate_events!(assigns, component) do
     Enum.each(component.events, fn {_event, name} ->
       case Map.fetch(assigns, name) do
         {:ok, value} when is_binary(value) and value != "" -> :ok
         {:ok, nil} -> :ok
         :error -> :ok
-        {:ok, value} -> invalid_attr!(tag, name, "a non-empty string", value)
+        {:ok, value} -> invalid_attr!(component.tag, name, "a non-empty string", value)
       end
     end)
+  end
 
-    assigns
+  defp validate_required_events!(assigns, component) do
+    Enum.each(component.required_events, fn name ->
+      value = Map.get(assigns, name)
+
+      unless is_binary(value) and value != "" do
+        invalid_attr!(component.tag, name, "a non-empty string", value)
+      end
+    end)
+  end
+
+  defp normalize_event_keys!(assigns, component) do
+    Enum.reduce(component.events, assigns, fn {_event, name}, normalized ->
+      string_name = Atom.to_string(name)
+
+      case {Map.fetch(normalized, name), Map.fetch(normalized, string_name)} do
+        {{:ok, _atom_value}, {:ok, _string_value}} ->
+          raise ArgumentError,
+                "#{component.tag} received duplicate :#{name} and #{inspect(string_name)} attributes"
+
+        {:error, {:ok, value}} ->
+          normalized |> Map.delete(string_name) |> Map.put(name, value)
+
+        _other ->
+          normalized
+      end
+    end)
+  end
+
+  defp validate_known_attrs!(assigns, component, extra_attrs) do
+    allowed =
+      component.attrs
+      |> Keyword.keys()
+      |> Kernel.++(Keyword.values(component.events))
+      |> Kernel.++([:children, :class, :style | extra_attrs])
+      |> MapSet.new()
+
+    unknown = assigns |> Map.keys() |> Enum.reject(&MapSet.member?(allowed, &1))
+
+    if unknown != [] do
+      names = unknown |> Enum.sort_by(&inspect/1) |> Enum.map_join(", ", &inspect/1)
+      raise ArgumentError, "#{component.tag} received unsupported attributes: #{names}"
+    end
   end
 
   defp validate_attr!(tag, name, {:default, type}, value),

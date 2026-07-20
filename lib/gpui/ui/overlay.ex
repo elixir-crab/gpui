@@ -24,7 +24,7 @@ defmodule GPUI.UI.Overlay do
     assigns =
       assigns
       |> Schema.apply_defaults(:ui_tooltip)
-      |> Schema.validate_component_assigns!(:ui_tooltip)
+      |> Schema.validate_component_assigns!(:ui_tooltip, [:trigger, :content])
 
     trigger = one_slot!(assigns, :trigger, :tooltip)
     content = one_slot!(assigns, :content, :tooltip)
@@ -69,7 +69,7 @@ defmodule GPUI.UI.Overlay do
     assigns =
       assigns
       |> Schema.apply_defaults(:ui_dialog)
-      |> Schema.validate_component_assigns!(:ui_dialog)
+      |> Schema.validate_component_assigns!(:ui_dialog, [:trigger, :content])
 
     trigger = optional_slot!(assigns, :trigger, :dialog)
     content = one_slot!(assigns, :content, :dialog)
@@ -108,7 +108,7 @@ defmodule GPUI.UI.Overlay do
     assigns =
       assigns
       |> Schema.apply_defaults(:ui_dropdown_menu)
-      |> Schema.validate_component_assigns!(:ui_dropdown_menu)
+      |> Schema.validate_component_assigns!(:ui_dropdown_menu, [:trigger, :item])
 
     trigger = one_slot!(assigns, :trigger, :dropdown_menu)
     items = Map.get(assigns, :item, [])
@@ -148,7 +148,7 @@ defmodule GPUI.UI.Overlay do
     assigns =
       assigns
       |> Schema.apply_defaults(:ui_popover)
-      |> Schema.validate_component_assigns!(:ui_popover)
+      |> Schema.validate_component_assigns!(:ui_popover, [:trigger, :content])
 
     trigger = one_slot!(assigns, :trigger, :popover)
     content = one_slot!(assigns, :content, :popover)

@@ -2,7 +2,15 @@ defmodule GPUI.Schema.Component do
   @moduledoc false
 
   @enforce_keys [:tag, :kind]
-  defstruct [:tag, :kind, events: [], attrs: [], children: false, stateful: false]
+  defstruct [
+    :tag,
+    :kind,
+    events: [],
+    required_events: [],
+    attrs: [],
+    children: false,
+    stateful: false
+  ]
 
   @type scalar_type ::
           :string
@@ -26,6 +34,7 @@ defmodule GPUI.Schema.Component do
           tag: atom(),
           kind: atom(),
           events: keyword(atom()),
+          required_events: [atom()],
           attrs: keyword(attr_type()),
           children: boolean(),
           stateful: boolean()

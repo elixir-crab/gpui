@@ -5,12 +5,22 @@ defmodule GPUI.Template do
   This module intentionally reuses Phoenix LiveView's tag parser for the
   HEEx-compatible tokenizer/tree builder, then compiles the parsed tree into
   `%GPUI.Element{}` values instead of `%Phoenix.LiveView.Rendered{}`.
+
+  Lowercase tags are renderer primitives. Native components use `GPUI.UI` or
+  `GPUI.UI.Overlay`; their internal `ui_*` element tags are intentionally not a
+  public template surface.
   """
 
   alias GPUI.Element
   alias Phoenix.LiveView.TagEngine.Parser
 
-  @tag_lookup Map.new(GPUI.Schema.tags(), &{Atom.to_string(&1), &1})
+  @primitive_tag_lookup GPUI.Schema.components()
+                        |> Enum.reject(&String.starts_with?(Atom.to_string(&1.tag), "ui_"))
+                        |> Map.new(&{Atom.to_string(&1.tag), &1.tag})
+
+  @component_tags GPUI.Schema.tags()
+                  |> Enum.filter(&String.starts_with?(Atom.to_string(&1), "ui_"))
+                  |> MapSet.new(&Atom.to_string/1)
 
   @doc "Compiles a HEEx-style GPUI template into an element tree."
   defmacro sigil_GPUI({:<<>>, meta, [source]}, _modifiers) when is_binary(source) do
@@ -34,11 +44,11 @@ defmodule GPUI.Template do
     end
   end
 
-  defp compile_node({:block, :tag, name, attrs, children, _open_meta, _close_meta}, caller) do
+  defp compile_node({:block, :tag, name, attrs, children, open_meta, _close_meta}, caller) do
     quote do
       %Element{
-        type: unquote(tag_atom(name)),
-        attrs: unquote(compile_attrs(attrs)),
+        type: unquote(tag_atom(name, caller, open_meta)),
+        attrs: unquote(compile_attrs(attrs, caller)),
         children:
           List.flatten(
             unquote(
@@ -51,11 +61,11 @@ defmodule GPUI.Template do
     end
   end
 
-  defp compile_node({:self_close, :tag, name, attrs, _meta}, _caller) do
+  defp compile_node({:self_close, :tag, name, attrs, meta}, caller) do
     quote do
       %Element{
-        type: unquote(tag_atom(name)),
-        attrs: unquote(compile_attrs(attrs)),
+        type: unquote(tag_atom(name, caller, meta)),
+        attrs: unquote(compile_attrs(attrs, caller)),
         children: []
       }
     end
@@ -93,7 +103,7 @@ defmodule GPUI.Template do
     quote do
       unquote(module).unquote(function)(
         GPUI.Component.assigns(
-          unquote(compile_attrs(attrs)),
+          unquote(compile_attrs(attrs, caller)),
           List.flatten(unquote(children)),
           unquote(slots)
         )
@@ -108,7 +118,7 @@ defmodule GPUI.Template do
     quote do
       unquote(module).unquote(function)(
         GPUI.Component.assigns(
-          unquote(compile_attrs(attrs)),
+          unquote(compile_attrs(attrs, caller)),
           List.flatten(unquote(children)),
           unquote(slots)
         )
@@ -127,7 +137,7 @@ defmodule GPUI.Template do
         slot =
           quote do
             %GPUI.Component.Slot{
-              attrs: unquote(compile_attrs(attrs)),
+              attrs: unquote(compile_attrs(attrs, caller)),
               children: List.flatten(unquote(children))
             }
           end
@@ -137,7 +147,7 @@ defmodule GPUI.Template do
       {:self_close, :slot, name, attrs, _meta} ->
         slot =
           quote do
-            %GPUI.Component.Slot{attrs: unquote(compile_attrs(attrs)), children: []}
+            %GPUI.Component.Slot{attrs: unquote(compile_attrs(attrs, caller)), children: []}
           end
 
         {compile_time_atom(name), slot}
@@ -170,12 +180,34 @@ defmodule GPUI.Template do
   defp function_name?(<<first, _rest::binary>>), do: first in ?a..?z or first == ?_
   defp function_name?(""), do: false
 
-  defp tag_atom(name) do
-    case Map.fetch(@tag_lookup, name) do
-      {:ok, tag} -> tag
-      :error -> raise ArgumentError, "unsupported GPUI tag #{inspect(name)}"
+  defp tag_atom(name, caller, meta) do
+    case Map.fetch(@primitive_tag_lookup, name) do
+      {:ok, tag} ->
+        tag
+
+      :error ->
+        description =
+          if MapSet.member?(@component_tags, name) do
+            "native component tag <#{name}> is internal; use #{component_builder(name)}"
+          else
+            "unsupported GPUI tag <#{name}>"
+          end
+
+        raise CompileError,
+          file: caller.file,
+          line: meta_line(meta, caller.line),
+          description: description
     end
   end
+
+  defp component_builder("ui_" <> name) when name in ~w(popover tooltip dialog dropdown_menu),
+    do: "<GPUI.UI.Overlay.#{name}>"
+
+  defp component_builder("ui_" <> name)
+       when name in ~w(popover_trigger popover_content tooltip_trigger dialog_trigger dialog_content dropdown_menu_trigger dropdown_menu_item),
+       do: "the corresponding GPUI.UI.Overlay builder"
+
+  defp component_builder("ui_" <> name), do: "<GPUI.UI.#{name}>"
 
   defp attr_atom("class"), do: :class
   defp attr_atom("label"), do: :label
@@ -194,13 +226,34 @@ defmodule GPUI.Template do
     end
   end
 
-  defp compile_attrs(attrs) do
+  defp compile_attrs(attrs, caller) do
+    validate_unique_attrs!(attrs, caller)
+
     attrs
     |> Enum.map(fn {name, value, _meta} ->
       {attr_atom(to_string(name)), compile_attr_value(value)}
     end)
     |> normalize_class_attr()
   end
+
+  defp validate_unique_attrs!(attrs, caller) do
+    attrs
+    |> Enum.group_by(fn {name, _value, _meta} -> to_string(name) end)
+    |> Enum.each(fn
+      {_name, [_attr]} ->
+        :ok
+
+      {name, [_first, {_name, _value, meta} | _rest]} ->
+        raise CompileError,
+          file: caller.file,
+          line: meta_line(meta, caller.line),
+          description: "duplicate GPUI attribute #{inspect(name)}"
+    end)
+  end
+
+  defp meta_line(%{line: line}, _fallback) when is_integer(line), do: line
+  defp meta_line(meta, fallback) when is_list(meta), do: Keyword.get(meta, :line, fallback)
+  defp meta_line(_meta, fallback), do: fallback
 
   defp normalize_class_attr(attrs) do
     case Keyword.fetch(attrs, :class) do

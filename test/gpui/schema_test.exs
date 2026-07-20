@@ -71,6 +71,10 @@ defmodule GPUI.SchemaTest do
     assert :ui_code_viewer in GPUI.Schema.identified_tags()
     assert :ui_code_line in GPUI.Schema.identified_tags()
 
+    assert GPUI.Schema.component!(:ui_input).required_events == [:"phx-change"]
+    assert GPUI.Schema.component!(:ui_slider).required_events == [:"phx-change"]
+    assert GPUI.Schema.component!(:ui_button).required_events == []
+
     assert Enum.map(GPUI.Schema.stateful_components(), & &1.kind) == [
              :popover_component,
              :dialog_component,

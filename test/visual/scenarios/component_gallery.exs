@@ -10,25 +10,27 @@ defmodule GPUITest.Visual.ComponentGallery.View do
     <div class="flex flex-col w-[640px] h-[860px] gap-4 p-4" style={background_style(assigns.theme)}>
       <text class="text-2xl font-semibold" style={foreground_style(assigns.theme)}>GPUI component gallery</text>
       <UI.button id="primary" label="Primary button" variant="primary" />
-      <UI.checkbox id="checked" label="Checked checkbox" checked={true} />
-      <UI.switch id="notifications" label="Notifications" checked={true} />
-      <UI.input id="name" value="Ada Lovelace" placeholder="Name" cleanable={true} />
-      <UI.select id="language" value="elixir" options={[{"Elixir", "elixir"}, {"Rust", "rust"}]} />
-      <UI.combobox id="framework" value="Phoenix" options={["Phoenix", "LiveView"]} />
+      <UI.checkbox id="checked" label="Checked checkbox" checked={true} phx-change="noop" />
+      <UI.switch id="notifications" label="Notifications" checked={true} phx-change="noop" />
+      <UI.input id="name" value="Ada Lovelace" placeholder="Name" cleanable={true} phx-change="noop" />
+      <UI.select id="language" value="elixir" options={[{"Elixir", "elixir"}, {"Rust", "rust"}]} phx-change="noop" />
+      <UI.combobox id="framework" value="Phoenix" options={["Phoenix", "LiveView"]} phx-change="noop" />
       <UI.radio_group
         id="plan"
         value="team"
         options={[{"Free", "free"}, {"Team", "team"}, %{label: "Pro", value: "pro", disabled: true}]}
         orientation="horizontal"
+        phx-change="noop"
       />
       <UI.tabs
         id="section"
         value="general"
         options={[{"General", "general"}, {"Advanced", "advanced"}]}
         variant="underline"
+        phx-change="noop"
       />
-      <UI.slider id="volume" value={65} min={0} max={100} />
-      <UI.accordion id="details" expanded={["account"]}>
+      <UI.slider id="volume" value={65} min={0} max={100} phx-change="noop" />
+      <UI.accordion id="details" expanded={["account"]} phx-change="noop">
         <UI.accordion_item id="account" title="Account">
           <text>Account details</text>
         </UI.accordion_item>
@@ -50,7 +52,7 @@ defmodule GPUITest.Visual.ComponentGallery.View do
         title="Visual review dialog"
         width={360}
       >
-        <:content><UI.input id="dialog-input" value="Dialog content" /></:content>
+        <:content><UI.input id="dialog-input" value="Dialog content" phx-change="noop" /></:content>
       </Overlay.dialog>
       <Overlay.dropdown_menu id="gallery-menu" open={assigns.overlay == "menu"}>
         <:trigger><UI.button id="menu-trigger" label="File menu" /></:trigger>
@@ -65,6 +67,8 @@ defmodule GPUITest.Visual.ComponentGallery.View do
   @impl GPUI.View
   def handle_event("show_overlay", %{value: overlay}, assigns),
     do: {:noreply, %{assigns | overlay: overlay}}
+
+  def handle_event("noop", _event, assigns), do: {:noreply, assigns}
 
   defp background_style(:dark), do: [background: {:rgb, 0x0F172A}]
   defp background_style(:light), do: [background: {:rgb, 0xFFFFFF}]

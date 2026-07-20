@@ -4,9 +4,10 @@ defmodule GPUI.UI do
 
   Components are controlled by Elixir assigns and require a stable `:id` so
   native focus, animation, and interaction state survives rerenders. Builders
-  validate schema-backed attribute and event types before snapshots reach a
-  display, raising `ArgumentError` with the component, attribute, expected
-  contract, and received value.
+  reject unsupported options and validate schema-backed attribute and event
+  types before snapshots reach a display. Editable controlled components
+  require `phx-change`; invalid contracts raise `ArgumentError` with the
+  component, attribute, expectation, and received value.
   """
 
   alias GPUI.Element
@@ -81,7 +82,6 @@ defmodule GPUI.UI do
     assigns = Schema.apply_defaults(assigns, :ui_file_picker)
 
     validate_non_empty_label!(:ui_file_picker, Map.get(assigns, :label))
-    CollectionValidation.validate_event!(:ui_file_picker, assigns, :"phx-change")
 
     unless is_integer(assigns.max_bytes) and assigns.max_bytes > 0 and
              assigns.max_bytes <= @max_file_bytes do
@@ -101,7 +101,6 @@ defmodule GPUI.UI do
   def copy_button(assigns) when is_map(assigns) do
     assigns = Schema.apply_defaults(assigns, :ui_copy_button)
     validate_non_empty_label!(:ui_copy_button, Map.get(assigns, :label))
-    CollectionValidation.validate_event!(:ui_copy_button, assigns, :"phx-click")
 
     unless is_binary(Map.get(assigns, :text)) do
       raise ArgumentError, "ui_copy_button requires string text"
@@ -110,11 +109,11 @@ defmodule GPUI.UI do
     component(:ui_copy_button, assigns)
   end
 
-  @doc "Builds a controlled checkbox using boolean `checked` and `phx-change`."
+  @doc "Builds a controlled checkbox using boolean `checked` and required `phx-change`."
   @spec checkbox(map()) :: Element.t()
   def checkbox(assigns), do: component(:ui_checkbox, assigns)
 
-  @doc "Builds a persistent controlled string input using `value` and `phx-change`."
+  @doc "Builds a persistent controlled string input using `value` and required `phx-change`."
   @spec input(map()) :: Element.t()
   def input(assigns), do: component(:ui_input, assigns)
 
@@ -137,7 +136,7 @@ defmodule GPUI.UI do
   def combobox(assigns),
     do: component(:ui_combobox, normalize_options_assigns!(:ui_combobox, assigns))
 
-  @doc "Builds a controlled boolean switch using `checked` and `phx-change`."
+  @doc "Builds a controlled boolean switch using `checked` and required `phx-change`."
   @spec switch(map()) :: Element.t()
   def switch(assigns), do: component(:ui_switch, assigns)
 

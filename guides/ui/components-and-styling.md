@@ -24,11 +24,18 @@ alias GPUI.UI
 """
 ```
 
-Every stateful component requires a stable, non-empty string `id`. Component
-builders validate schema-backed attributes and event names before a snapshot
-reaches any display, including `GPUI.Test.Display`. Invalid values raise an
-`ArgumentError` that names the component, attribute, expected type or enum, and
-received value—for example, `ui_button :disabled must be a boolean; got: "yes"`.
+Lowercase tags are renderer primitives such as `div`, `text`, `input`, and
+`img`. Native components are always called through `GPUI.UI` or
+`GPUI.UI.Overlay`; internal tags such as `<ui_button>` are rejected at template
+compile time instead of bypassing their public builder contracts. Duplicate
+attributes and unknown tags are also compile errors.
+
+Every native component requires a stable, non-empty string `id`. Component
+builders reject unknown options and validate schema-backed attributes and event
+names before a snapshot reaches any display, including `GPUI.Test.Display`.
+Invalid values raise an `ArgumentError` that names the component, attribute,
+expected type or enum, and received value—for example,
+`ui_button :disabled must be a boolean; got: "yes"`.
 
 ## Inputs and choices
 
@@ -61,6 +68,13 @@ received value—for example, `ui_button :disabled must be a boolean; got: "yes"
 Select, combobox, tabs, and radio-group options accept strings,
 `{label, value}` tuples, or `%{label: label, value: value}` maps. Radio maps may
 also set `disabled: true`. Option values must be unique.
+
+Editable controlled components require a non-empty `phx-change`. This includes
+checkboxes, inputs, selects, comboboxes, switches, radio groups, accordions,
+tabs, and sliders. Requiring an owner for native edits prevents a control from
+appearing editable while silently snapping back to an unchanged Elixir value.
+`phx-search` on comboboxes and `phx-release` on sliders remain optional secondary
+events.
 
 Inputs preserve native focus, cursor, selection, clipboard, and IME state while
 controlled snapshots are reconciled. Combobox search and option replacement can

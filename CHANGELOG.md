@@ -2,7 +2,8 @@
 
 ## 0.1.1
 
-- Added schema-driven public component attribute and event validation, clearer stable-ID errors, corrected schema option types, and expanded common-builder documentation.
+- Added schema-driven public component attribute and event validation, required owner events for editable controlled components, unknown-option rejection, normalized string event keys, clearer stable-ID errors, corrected schema option types, and expanded common-builder documentation.
+- Restricted lowercase templates to renderer primitives and added compile-time diagnostics for internal component tags, unsupported tags, and duplicate attributes.
 - Made runtime mutation, frame, drain, and injection operations return structured custom-display failures without crashing, while retaining authoritative session state for frame retries.
 - Added centralized custom-display callback validation with structured startup, synchronization, drain, and event-injection failures.
 - Documented local and remote supervision options and now reject invalid polling intervals and remote session TTLs during startup instead of silently disabling lifecycle behavior.

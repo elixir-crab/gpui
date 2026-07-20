@@ -64,7 +64,7 @@ Dialogs are modal and can be opened by a trigger or entirely through assigns:
 >
   <:trigger><UI.button id="settings-trigger" label="Settings" /></:trigger>
   <:content>
-    <UI.input id="display-name" value={assigns.name} />
+    <UI.input id="display-name" value={assigns.name} phx-change="name_changed" />
   </:content>
 </Overlay.dialog>
 ```

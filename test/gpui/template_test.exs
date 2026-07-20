@@ -362,7 +362,7 @@ defmodule GPUI.TemplateTest do
                phx-change="dialog_changed"
              >
                <:trigger><UI.button id="settings" label="Settings" /></:trigger>
-               <:content><UI.input id="display-name" value="Ada" /></:content>
+               <:content><UI.input id="display-name" value="Ada" phx-change="name_changed" /></:content>
              </Overlay.dialog>
              """
 
@@ -469,6 +469,22 @@ defmodule GPUI.TemplateTest do
     end
   end
 
+  test "template diagnostics reject internal component tags and duplicate attributes" do
+    assert_raise CompileError,
+                 ~r/native component tag <ui_button> is internal.*GPUI.UI.button/,
+                 fn ->
+                   GPUI.Template.compile(~s(<ui_button id="save" />), __ENV__)
+                 end
+
+    assert_raise CompileError, ~r/unsupported GPUI tag <canvas>/, fn ->
+      GPUI.Template.compile("<canvas />", __ENV__)
+    end
+
+    assert_raise CompileError, ~r/duplicate GPUI attribute "id"/, fn ->
+      GPUI.Template.compile(~s(<div id="first" id="second" />), __ENV__)
+    end
+  end
+
   test "native UI components require stable ids" do
     assert_raise ArgumentError, ~r/requires :id to be a non-empty string; got: nil/, fn ->
       GPUI.UI.button(%{children: []})
@@ -484,7 +500,14 @@ defmodule GPUI.TemplateTest do
       GPUI.UI.select(%{id: "language", value: "zig", options: ["Rust"]})
     end
 
-    combobox = GPUI.UI.combobox(%{id: "framework", value: "LiveView", options: []})
+    combobox =
+      GPUI.UI.combobox(%{
+        id: "framework",
+        value: "LiveView",
+        options: [],
+        "phx-change": "framework_changed"
+      })
+
     assert combobox.attrs[:value] == "LiveView"
   end
 
@@ -497,7 +520,8 @@ defmodule GPUI.TemplateTest do
       GPUI.UI.radio_group(%{
         id: "plan",
         value: "pro",
-        options: [%{label: "Pro", value: "pro", disabled: true}]
+        options: [%{label: "Pro", value: "pro", disabled: true}],
+        "phx-change": "plan_changed"
       })
 
     assert [%{disabled: true}] = radio.attrs[:options]
@@ -544,7 +568,7 @@ defmodule GPUI.TemplateTest do
       ~GPUI"""
       <div>
         <GPUI.UI.button id="duplicate" label="One" />
-        <GPUI.UI.input id="duplicate" value="" />
+        <GPUI.UI.input id="duplicate" value="" phx-change="name_changed" />
       </div>
       """
 
