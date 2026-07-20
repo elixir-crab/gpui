@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Added centralized custom-display callback validation with structured startup, synchronization, drain, and event-injection failures.
 - Documented local and remote supervision options and now reject invalid polling intervals and remote session TTLs during startup instead of silently disabling lifecycle behavior.
 - Made native compilation an explicit consumer opt-in outside tests, so `GPUI.Test`, renderer-independent sessions, and remote servers compile and run without Rust or a native library.
 - Added bounded per-connection and per-session remote request admission, explicit overload errors, caller monitoring, and concurrent 50-session load coverage.

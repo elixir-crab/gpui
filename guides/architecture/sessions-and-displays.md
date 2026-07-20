@@ -27,6 +27,13 @@ ships two principal implementations:
 Remote clients can also mount a native display against a session hosted by
 `GPUI.Remote.Server`.
 
+Custom displays implement `GPUI.Display`. Startup must return `{:ok, pid}` or
+`{:error, reason}`; synchronization must return `:ok` or `{:error, reason}`;
+event draining must return `{:ok, events}` or `{:error, reason}`; and injection
+must return an `:ok` or `:error` tuple. GPUI rejects invalid returns as
+`{:invalid_display_return, callback, value}` and catches callback failures as
+`{:display_callback_failed, callback, kind, reason}`.
+
 ## Runtime
 
 `GPUI.Runtime` composes one session with one display. It synchronizes snapshots,

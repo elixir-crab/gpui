@@ -3,7 +3,9 @@ defmodule GPUI.Display do
   Display boundary for rendered GPUI session snapshots and native input events.
 
   Displays own renderer-specific lifecycle and resources. Application sessions
-  remain renderer-independent.
+  remain renderer-independent. Runtime and remote-client boundaries validate
+  callback return values and convert raised or exited callbacks into structured
+  `:display_callback_failed` errors.
   """
 
   @type snapshot :: GPUI.Snapshot.t()
@@ -25,6 +27,46 @@ defmodule GPUI.Display do
             ) :: :ok | {:error, term()}
 
   @optional_callbacks await_frame: 3, frame_token: 2, await_frame_after: 4
+
+  @doc false
+  @spec start(module(), keyword()) :: {:ok, pid()} | {:error, term()}
+  def start(display_module, opts) do
+    case invoke(display_module, :start_link, [opts]) do
+      {:ok, pid} when is_pid(pid) -> {:ok, pid}
+      {:error, _reason} = error -> error
+      invalid -> {:error, {:invalid_display_return, :start_link, invalid}}
+    end
+  end
+
+  @doc false
+  @spec sync_snapshot(module(), GenServer.server(), snapshot()) :: :ok | {:error, term()}
+  def sync_snapshot(display_module, display, snapshot) do
+    case invoke(display_module, :sync, [display, snapshot]) do
+      :ok -> :ok
+      {:error, _reason} = error -> error
+      invalid -> {:error, {:invalid_display_return, :sync, invalid}}
+    end
+  end
+
+  @doc false
+  @spec drain(module(), GenServer.server()) :: {:ok, [event()]} | {:error, term()}
+  def drain(display_module, display) do
+    case invoke(display_module, :drain_events, [display]) do
+      {:ok, events} when is_list(events) -> {:ok, events}
+      {:error, _reason} = error -> error
+      invalid -> {:error, {:invalid_display_return, :drain_events, invalid}}
+    end
+  end
+
+  @doc false
+  @spec inject(module(), GenServer.server(), event()) :: {:ok, term()} | {:error, term()}
+  def inject(display_module, display, event) do
+    case invoke(display_module, :inject_event, [display, event]) do
+      {:ok, _reply} = reply -> reply
+      {:error, _reason} = error -> error
+      invalid -> {:error, {:invalid_display_return, :inject_event, invalid}}
+    end
+  end
 
   @doc false
   @spec call_await_frame(GenServer.server(), pos_integer(), pos_integer()) ::
@@ -93,6 +135,12 @@ defmodule GPUI.Display do
       end)
 
     :ok
+  end
+
+  defp invoke(display_module, callback, args) do
+    apply(display_module, callback, args)
+  catch
+    kind, reason -> {:error, {:display_callback_failed, callback, kind, reason}}
   end
 
   defp invoke_async(callback, normalize) do

@@ -97,8 +97,8 @@ defmodule GPUI.Runtime do
              app: Keyword.fetch!(opts, :app),
              args: Keyword.get(opts, :args, [])
            ),
-         {:ok, display} <- display_module.start_link(display_opts),
-         :ok <- display_module.sync(display, GPUI.Session.snapshot(session)) do
+         {:ok, display} <- start_display(display_module, display_opts),
+         :ok <- sync_initial_snapshot(display_module, display, session) do
       state = %{
         session: session,
         display: display,
@@ -240,6 +240,20 @@ defmodule GPUI.Runtime do
     {_handled, state} = drain_display_events(state)
     schedule_poll(state)
     {:noreply, state}
+  end
+
+  defp start_display(display_module, display_opts) do
+    case GPUI.Display.start(display_module, display_opts) do
+      {:ok, display} -> {:ok, display}
+      {:error, reason} -> {:error, {:display_start_failed, reason}}
+    end
+  end
+
+  defp sync_initial_snapshot(display_module, display, session) do
+    case GPUI.Display.sync_snapshot(display_module, display, GPUI.Session.snapshot(session)) do
+      :ok -> :ok
+      {:error, reason} -> {:error, {:display_sync_failed, reason}}
+    end
   end
 
   defp stop_child(child) do

@@ -51,6 +51,48 @@ defmodule GPUI.RuntimeTest do
     def mount(_args), do: :invalid
   end
 
+  defmodule ContractDisplay do
+    @behaviour GPUI.Display
+
+    use Agent
+
+    @impl GPUI.Display
+    def start_link(opts) do
+      case Keyword.fetch!(opts, :mode) do
+        :raise_start -> raise "start failed"
+        :invalid_start -> :invalid_start
+        mode -> Agent.start_link(fn -> mode end)
+      end
+    end
+
+    @impl GPUI.Display
+    def sync(display, _snapshot) do
+      case Agent.get(display, & &1) do
+        :raise_sync -> raise "sync failed"
+        :invalid_sync -> :invalid_sync
+        _mode -> :ok
+      end
+    end
+
+    @impl GPUI.Display
+    def drain_events(display) do
+      case Agent.get(display, & &1) do
+        :raise_drain -> raise "drain failed"
+        :invalid_drain -> :invalid_drain
+        _mode -> {:ok, []}
+      end
+    end
+
+    @impl GPUI.Display
+    def inject_event(display, _event) do
+      case Agent.get(display, & &1) do
+        :raise_inject -> raise "inject failed"
+        :invalid_inject -> :invalid_inject
+        _mode -> {:ok, :ok}
+      end
+    end
+  end
+
   defmodule RaisingFrameDisplay do
     @behaviour GPUI.Display
 
@@ -98,6 +140,69 @@ defmodule GPUI.RuntimeTest do
         :release_frame -> :ok
       end
     end
+  end
+
+  test "runtime startup normalizes custom display failures" do
+    previous = Process.flag(:trap_exit, true)
+
+    assert {:error,
+            {:display_start_failed,
+             {:display_callback_failed, :start_link, :error,
+              %RuntimeError{message: "start failed"}}}} =
+             GPUI.Runtime.start_link(
+               app: DemoApp,
+               display: ContractDisplay,
+               display_opts: [mode: :raise_start]
+             )
+
+    assert {:error,
+            {:display_start_failed, {:invalid_display_return, :start_link, :invalid_start}}} =
+             GPUI.Runtime.start_link(
+               app: DemoApp,
+               display: ContractDisplay,
+               display_opts: [mode: :invalid_start]
+             )
+
+    assert {:error, {:display_sync_failed, {:invalid_display_return, :sync, :invalid_sync}}} =
+             GPUI.Runtime.start_link(
+               app: DemoApp,
+               display: ContractDisplay,
+               display_opts: [mode: :invalid_sync]
+             )
+
+    assert {:error,
+            {:display_sync_failed,
+             {:display_callback_failed, :sync, :error, %RuntimeError{message: "sync failed"}}}} =
+             GPUI.Runtime.start_link(
+               app: DemoApp,
+               display: ContractDisplay,
+               display_opts: [mode: :raise_sync]
+             )
+
+    Process.flag(:trap_exit, previous)
+  end
+
+  test "display boundary normalizes event callback failures" do
+    {:ok, invalid_drain} = ContractDisplay.start_link(mode: :invalid_drain)
+    {:ok, raising_drain} = ContractDisplay.start_link(mode: :raise_drain)
+    {:ok, invalid_inject} = ContractDisplay.start_link(mode: :invalid_inject)
+    {:ok, raising_inject} = ContractDisplay.start_link(mode: :raise_inject)
+
+    assert {:error, {:invalid_display_return, :drain_events, :invalid_drain}} =
+             GPUI.Display.drain(ContractDisplay, invalid_drain)
+
+    assert {:error,
+            {:display_callback_failed, :drain_events, :error,
+             %RuntimeError{message: "drain failed"}}} =
+             GPUI.Display.drain(ContractDisplay, raising_drain)
+
+    assert {:error, {:invalid_display_return, :inject_event, :invalid_inject}} =
+             GPUI.Display.inject(ContractDisplay, invalid_inject, %{})
+
+    assert {:error,
+            {:display_callback_failed, :inject_event, :error,
+             %RuntimeError{message: "inject failed"}}} =
+             GPUI.Display.inject(ContractDisplay, raising_inject, %{})
   end
 
   test "application modules start renderer-independent sessions with a display" do

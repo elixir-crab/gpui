@@ -65,7 +65,7 @@ defmodule GPUI.Remote.Client do
   end
 
   defp start_display(rpc, display_module, display_opts, poll_interval, opts) do
-    case display_module.start_link(display_opts) do
+    case GPUI.Display.start(display_module, display_opts) do
       {:ok, display} ->
         state = %{
           opts: opts,
@@ -295,8 +295,7 @@ defmodule GPUI.Remote.Client do
   defp forward_display_events(state) do
     state =
       case safe_display_drain(state) do
-        {:ok, events} when is_list(events) -> enqueue_display_events(state, events)
-        {:ok, _invalid_events} -> state
+        {:ok, events} -> enqueue_display_events(state, events)
         {:error, _reason} -> state
       end
 
@@ -304,9 +303,7 @@ defmodule GPUI.Remote.Client do
   end
 
   defp safe_display_drain(state) do
-    state.display_module.drain_events(state.display)
-  catch
-    kind, reason -> {:error, {kind, reason}}
+    GPUI.Display.drain(state.display_module, state.display)
   end
 
   defp enqueue_display_events(state, events) do
@@ -386,16 +383,11 @@ defmodule GPUI.Remote.Client do
 
       {:error, reason} ->
         {:error, {:display_sync_failed, reason}, state}
-
-      invalid ->
-        {:error, {:display_sync_failed, {:invalid_return, invalid}}, state}
     end
   end
 
   defp safe_display_sync(state, snapshot) do
-    state.display_module.sync(state.display, snapshot)
-  catch
-    kind, reason -> {:error, {kind, reason}}
+    GPUI.Display.sync_snapshot(state.display_module, state.display, snapshot)
   end
 
   defp new_session_id, do: unique_id()
