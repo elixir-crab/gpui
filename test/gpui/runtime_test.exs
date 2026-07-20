@@ -182,6 +182,50 @@ defmodule GPUI.RuntimeTest do
     Process.flag(:trap_exit, previous)
   end
 
+  test "runtime operations return display failures without crashing" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(
+        app: DemoApp,
+        display: ContractDisplay,
+        display_opts: [mode: :ok],
+        poll_interval: nil
+      )
+
+    %{display: display} = :sys.get_state(runtime)
+    set_display_mode(display, :invalid_sync)
+
+    assert {:error, {:display_sync_failed, {:invalid_display_return, :sync, :invalid_sync}}} =
+             GPUI.Runtime.dispatch_event(runtime, %{
+               type: :change,
+               window_id: 1,
+               event: "rename",
+               value: "Changed"
+             })
+
+    assert {:error, {:display_sync_failed, {:invalid_display_return, :sync, :invalid_sync}}} =
+             GPUI.Runtime.send_view(runtime, 1, {:rename, "Message"})
+
+    assert {:error, {:display_sync_failed, {:invalid_display_return, :sync, :invalid_sync}}} =
+             GPUI.Runtime.put_resource(runtime, "preview", %{})
+
+    assert {:error, {:display_sync_failed, {:invalid_display_return, :sync, :invalid_sync}}} =
+             GPUI.Runtime.request_frame(runtime)
+
+    set_display_mode(display, :invalid_inject)
+
+    assert {:error,
+            {:display_inject_failed, {:invalid_display_return, :inject_event, :invalid_inject}}} =
+             GPUI.Runtime.inject_event(runtime, %{type: :click})
+
+    set_display_mode(display, :invalid_drain)
+
+    assert {:error,
+            {:display_drain_failed, {:invalid_display_return, :drain_events, :invalid_drain}}} =
+             GPUI.Runtime.drain_events(runtime)
+
+    assert Process.alive?(runtime)
+  end
+
   test "display boundary normalizes event callback failures" do
     {:ok, invalid_drain} = ContractDisplay.start_link(mode: :invalid_drain)
     {:ok, raising_drain} = ContractDisplay.start_link(mode: :raise_drain)
@@ -380,6 +424,8 @@ defmodule GPUI.RuntimeTest do
     assert [] = GPUI.Session.windows(session)
     assert %GPUI.Snapshot{windows: [], resources: %{}} = GPUI.Session.snapshot(session)
   end
+
+  defp set_display_mode(display, mode), do: Agent.update(display, fn _current -> mode end)
 
   test "sessions can run without any display" do
     {:ok, session} = GPUI.Session.start_link(app: DemoApp)

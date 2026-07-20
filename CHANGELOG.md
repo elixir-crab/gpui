@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Made runtime mutation, frame, drain, and injection operations return structured custom-display failures without crashing, while retaining authoritative session state for frame retries.
 - Added centralized custom-display callback validation with structured startup, synchronization, drain, and event-injection failures.
 - Documented local and remote supervision options and now reject invalid polling intervals and remote session TTLs during startup instead of silently disabling lifecycle behavior.
 - Made native compilation an explicit consumer opt-in outside tests, so `GPUI.Test`, renderer-independent sessions, and remote servers compile and run without Rust or a native library.

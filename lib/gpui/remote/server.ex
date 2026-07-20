@@ -37,12 +37,16 @@ defmodule GPUI.Remote.Server do
   @default_session_request_limit 16
   @maximum_request_limit 4_096
 
+  @doc false
+  @spec child_spec(keyword()) :: Supervisor.child_spec()
   def child_spec(opts) do
     __MODULE__
     |> GPUI.Remote.child_spec(opts)
     |> Map.put(:type, :supervisor)
   end
 
+  @doc "Starts the remote server supervision tree linked to the caller."
+  @spec start_link(keyword()) :: Supervisor.on_start()
   def start_link(opts) do
     with {:ok, _connection_limit} <-
            request_limit(
@@ -67,6 +71,8 @@ defmodule GPUI.Remote.Server do
   @doc false
   def coordinator(server), do: Supervision.child(server, :coordinator, :server_unavailable)
 
+  @doc "Returns the server's effective listening port."
+  @spec port(Supervisor.supervisor()) :: {:ok, :inet.port_number()} | {:error, term()}
   def port(server) do
     with {:ok, coordinator} <- coordinator(server) do
       GenServer.call(coordinator, :port)

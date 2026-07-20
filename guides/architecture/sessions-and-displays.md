@@ -92,7 +92,12 @@ synchronized with a completed-frame token:
 ```
 
 `GPUI.Runtime.request_frame/1` resynchronizes the current snapshot when callers
-need an explicit frame without changing application state.
+need an explicit frame without changing application state. Runtime operations
+return structured `:display_start_failed`, `:display_sync_failed`,
+`:display_drain_failed`, and `:display_inject_failed` errors instead of crashing
+when a custom display fails its contract. Session mutations happen before display
+synchronization; after a synchronization error, `request_frame/1` retries the
+current authoritative snapshot.
 
 ## Native process model
 

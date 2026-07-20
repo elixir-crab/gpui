@@ -97,9 +97,11 @@ defmodule GPUI.Test do
   def dispatch(runtime, event) do
     event = Event.normalize(event)
 
-    case Runtime.inject_event(runtime, event) do
-      {:ok, :ok} -> {Runtime.drain_events(runtime), Runtime.snapshot(runtime)}
-      {:error, reason} -> raise "GPUI test display rejected event: #{inspect(reason)}"
+    with {:ok, :ok} <- Runtime.inject_event(runtime, event),
+         handled when is_list(handled) <- Runtime.drain_events(runtime) do
+      {handled, Runtime.snapshot(runtime)}
+    else
+      {:error, reason} -> raise "GPUI test display failed to process event: #{inspect(reason)}"
     end
   end
 

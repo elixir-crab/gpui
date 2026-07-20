@@ -27,16 +27,29 @@ defmodule GPUI.Remote.Client do
   @reconnect_errors [:closed, :timeout, :econnrefused, :enetunreach, :nxdomain]
   @pending_event_limit 1_024
 
+  @doc false
+  @spec child_spec(keyword()) :: Supervisor.child_spec()
   def child_spec(opts), do: GPUI.Remote.child_spec(__MODULE__, opts)
 
+  @doc "Starts a remote display client linked to the caller."
+  @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
     with {:ok, _poll_interval} <- GPUI.Polling.interval(opts) do
       GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
     end
   end
 
+  @doc "Mounts or remounts the configured application session and synchronizes its snapshot."
+  @spec mount(GenServer.server(), map() | keyword()) ::
+          {:ok, GPUI.Snapshot.t()} | {:error, term()}
   def mount(client, args \\ %{}), do: GenServer.call(client, {:mount, args})
+
+  @doc "Dispatches one normalized event remotely and synchronizes its snapshot."
+  @spec event(GenServer.server(), map()) :: {:ok, GPUI.Snapshot.t()} | {:error, term()}
   def event(client, event), do: GenServer.call(client, {:event, event})
+
+  @doc "Fetches and synchronizes the current remote session snapshot."
+  @spec snapshot(GenServer.server()) :: {:ok, GPUI.Snapshot.t()} | {:error, term()}
   def snapshot(client), do: GenServer.call(client, :snapshot)
 
   @doc "Subscribes the calling process to synchronized remote display updates."
