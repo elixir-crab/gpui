@@ -248,7 +248,9 @@ defmodule GPUI.Remote.ServerTest do
       GPUI.Remote.Server.start_link(
         app: BlockingApp,
         args: %{owner: owner, id: "default"},
-        port: 0
+        port: 0,
+        max_in_flight_requests_per_connection: 8,
+        max_in_flight_requests_per_session: 1
       )
 
     {:ok, port} = GPUI.Remote.Server.port(server)
@@ -278,6 +280,9 @@ defmodule GPUI.Remote.ServerTest do
 
     assert_receive {:remote_session_blocked, blocked_session}
 
+    assert {:error, :overloaded} =
+             SafeRPC.call(client, :snapshot, %{session_id: "blocked-a"})
+
     assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{id: "b"}}}]}}} =
              SafeRPC.call(client, :snapshot, %{session_id: "responsive-b"})
 
@@ -297,6 +302,9 @@ defmodule GPUI.Remote.ServerTest do
 
     assert_receive {:remote_mount_blocked, mounting_session}
 
+    assert {:error, :overloaded} =
+             SafeRPC.call(client, :snapshot, %{session_id: "blocked-mount"})
+
     assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{id: "b"}}}]}}} =
              SafeRPC.call(client, :snapshot, %{session_id: "responsive-b"})
 
@@ -305,6 +313,115 @@ defmodule GPUI.Remote.ServerTest do
 
     assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{id: "blocked-mount"}}}]}}} =
              Task.await(blocked_mount)
+  end
+
+  test "connection request limits reject excess delegated work" do
+    owner = Module.concat(__MODULE__, ConnectionLimitOwner)
+    Process.register(self(), owner)
+    on_exit(fn -> if Process.whereis(owner), do: Process.unregister(owner) end)
+
+    {:ok, server} =
+      GPUI.Remote.Server.start_link(
+        app: BlockingApp,
+        args: %{owner: owner, id: "default"},
+        port: 0,
+        max_in_flight_requests_per_connection: 1,
+        max_in_flight_requests_per_session: 4
+      )
+
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    {:ok, client} = start_client(port)
+
+    for {session_id, id} <- [{"limited-a", "a"}, {"limited-b", "b"}] do
+      assert {:ok, _reply} =
+               SafeRPC.call(client, :mount, %{
+                 session_id: session_id,
+                 args: %{owner: owner, id: id}
+               })
+    end
+
+    blocked_call =
+      Task.async(fn ->
+        SafeRPC.call(client, :event, %{
+          session_id: "limited-a",
+          type: :click,
+          window_id: 1,
+          event: "block"
+        })
+      end)
+
+    assert_receive {:remote_session_blocked, blocked_session}
+    assert {:error, :overloaded} = SafeRPC.call(client, :snapshot, %{session_id: "limited-b"})
+
+    assert {:error, :overloaded} =
+             SafeRPC.call(client, :mount, %{
+               session_id: "rejected-mount",
+               args: %{owner: owner, id: "rejected"}
+             })
+
+    refute Map.has_key?(:sys.get_state(server).session_registry.sessions, "rejected-mount")
+    send(blocked_session, :release_remote_session)
+    assert {:ok, _snapshot} = Task.await(blocked_call)
+
+    assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{id: "b"}}}]}}} =
+             SafeRPC.call(client, :snapshot, %{session_id: "limited-b"})
+  end
+
+  test "serves many isolated sessions concurrently within configured limits" do
+    {:ok, server} =
+      GPUI.Remote.Server.start_link(
+        app: FormApp,
+        port: 0,
+        max_in_flight_requests_per_connection: 128,
+        max_in_flight_requests_per_session: 4
+      )
+
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    {:ok, client} = start_client(port)
+
+    session_ids = Enum.map(1..50, &"load-#{&1}")
+
+    for session_id <- session_ids do
+      assert {:ok, _reply} =
+               SafeRPC.call(client, :mount, %{
+                 session_id: session_id,
+                 args: %{name: session_id}
+               })
+    end
+
+    requests =
+      Enum.map(session_ids, fn session_id ->
+        {session_id, SafeRPC.async(client, :snapshot, %{session_id: session_id})}
+      end)
+
+    for {session_id, request} <- requests do
+      assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{name: ^session_id}}}]}}} =
+               SafeRPC.await(request)
+    end
+
+    [%{owner: owner}] = server |> :sys.get_state() |> Map.fetch!(:connections) |> Map.values()
+    assert %{delegates: %{}} = :sys.get_state(owner)
+    assert Process.alive?(server)
+  end
+
+  test "rejects invalid remote request limits during startup" do
+    previous = Process.flag(:trap_exit, true)
+
+    assert {:error, {:invalid_option, :max_in_flight_requests_per_connection}} =
+             GPUI.Remote.Server.start_link(
+               app: FormApp,
+               port: 0,
+               max_in_flight_requests_per_connection: 0
+             )
+
+    assert {:error, {:invalid_option, :max_in_flight_requests_per_session}} =
+             GPUI.Remote.Server.start_link(
+               app: FormApp,
+               port: 0,
+               max_in_flight_requests_per_session: 4_097
+             )
+
+    Process.flag(:trap_exit, previous)
   end
 
   defmodule RecoveringDisplay do

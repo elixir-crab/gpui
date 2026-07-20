@@ -24,12 +24,15 @@ before other operations.
 {:ok, server} =
   GPUI.Remote.Server.start_link(
     app: MyApp.Desktop,
-    port: 5050
+    port: 5050,
+    max_in_flight_requests_per_connection: 64,
+    max_in_flight_requests_per_session: 16
   )
 ```
 
 Each client gets its own supervised session and root assigns. A disconnected
-client cannot mutate another client's application state.
+client cannot mutate another client's application state. The request limits
+shown above are the defaults; both accept positive values up to 4,096.
 
 ## Start a native display client
 
@@ -111,8 +114,11 @@ client queue and retried in order after reconnection. If that bound is exceeded,
 the newest events are retained. Poll timers use generation tokens, while each
 session coordinator owns and resets its expiry timer directly. Stale timer
 messages cannot create duplicate polling loops or expire a recently active
-session. Client reconnect behavior remains isolated from the native window loop
-and does not create shared application state.
+session. Work above either configured in-flight limit is rejected with
+`{:error, :overloaded}` before it reaches the session. Automatically forwarded
+display events remain in the client's bounded queue and retry on a later poll.
+Client reconnect behavior remains isolated from the native window loop and does
+not create shared application state.
 
 Remote transport and protocol tests live under `test/integration/`; local and
 remote native behavior is also exercised under Xvfb in `test/e2e/`.

@@ -3,23 +3,40 @@ defmodule GPUI.Remote.Session do
 
   use GenServer
 
+  alias GPUI.Remote.RequestGate
+
   @event_request_limit 1_024
 
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts)
 
-  def call(session, request) do
-    GenServer.call(session, request)
+  def route(session) do
+    GenServer.call(session, :route)
   catch
     :exit, reason -> {:error, {:session_unavailable, reason}}
   end
 
+  def call(%{gate: gate, session: session}, request) do
+    with {:ok, token} <- RequestGate.checkout(gate) do
+      try do
+        GenServer.call(session, request)
+      catch
+        :exit, reason -> {:error, {:session_unavailable, reason}}
+      after
+        RequestGate.checkin(gate, token)
+      end
+    end
+  end
+
   @impl GenServer
   def init(opts) do
+    {:ok, gate} = RequestGate.start_link(Keyword.fetch!(opts, :request_limit))
+
     state = %{
       app: Keyword.fetch!(opts, :app),
       args: Keyword.fetch!(opts, :args),
       session_id: Keyword.fetch!(opts, :session_id),
       session: nil,
+      gate: gate,
       event_requests: [],
       ttl: Keyword.fetch!(opts, :ttl),
       expiry_timer: nil
@@ -29,11 +46,16 @@ defmodule GPUI.Remote.Session do
   end
 
   @impl GenServer
-  def terminate(_reason, %{session: session}) do
-    stop_session(session)
+  def terminate(_reason, %{gate: gate, session: session}) do
+    stop_process(gate)
+    stop_process(session)
   end
 
   @impl GenServer
+  def handle_call(:route, _from, state) do
+    {:reply, {:ok, %{gate: state.gate, session: self()}}, state}
+  end
+
   def handle_call(:mount, _from, %{session: nil} = state) do
     case GPUI.Session.start_link(app: state.app, args: state.args) do
       {:ok, session} ->
@@ -134,10 +156,10 @@ defmodule GPUI.Remote.Session do
   defp cancel_expiry(nil), do: :ok
   defp cancel_expiry({timer, _token}), do: Process.cancel_timer(timer)
 
-  defp stop_session(nil), do: :ok
+  defp stop_process(nil), do: :ok
 
-  defp stop_session(session) do
-    if Process.alive?(session), do: GenServer.stop(session)
+  defp stop_process(process) do
+    if Process.alive?(process), do: GenServer.stop(process)
     :ok
   catch
     :exit, _reason -> :ok

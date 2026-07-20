@@ -6,20 +6,20 @@ defmodule GPUI.Remote.SessionRegistry do
   @spec new() :: %{sessions: map(), monitors: map()}
   def new, do: %{sessions: %{}, monitors: %{}}
 
-  @spec put(map(), term(), pid(), reference(), term()) :: map()
-  def put(registry, session_id, session, monitor, mount_request) do
-    entry = %{pid: session, monitor: monitor, mount_request: mount_request}
+  @spec put(map(), term(), pid(), map(), reference(), term()) :: map()
+  def put(registry, session_id, session, route, monitor, mount_request) do
+    entry = %{pid: session, route: route, monitor: monitor, mount_request: mount_request}
 
     registry
     |> put_in([:sessions, session_id], entry)
     |> put_in([:monitors, monitor], session_id)
   end
 
-  @spec fetch(map(), term()) :: {:ok, pid()} | {:error, :session_expired | :unknown_session}
+  @spec fetch(map(), term()) :: {:ok, map()} | {:error, :session_expired | :unknown_session}
   def fetch(registry, session_id) do
     case Map.fetch(registry.sessions, session_id) do
-      {:ok, %{pid: session}} when is_pid(session) ->
-        if Process.alive?(session), do: {:ok, session}, else: {:error, :session_expired}
+      {:ok, %{pid: session, route: route}} when is_pid(session) ->
+        if Process.alive?(session), do: {:ok, route}, else: {:error, :session_expired}
 
       :error ->
         {:error, :unknown_session}

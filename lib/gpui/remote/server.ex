@@ -17,6 +17,9 @@ defmodule GPUI.Remote.Server do
   alias GPUI.Remote.Transport.TCP
 
   @capability Protocol.capability()
+  @default_connection_request_limit 64
+  @default_session_request_limit 16
+  @maximum_request_limit 4_096
 
   def child_spec(opts), do: GPUI.Remote.child_spec(__MODULE__, opts)
 
@@ -27,7 +30,19 @@ defmodule GPUI.Remote.Server do
   def init(opts) do
     listen_opts = [port: Keyword.get(opts, :port, 0), ssl: Keyword.get(opts, :ssl, false)]
 
-    with {:ok, listener} <- TCP.listen(listen_opts),
+    with {:ok, connection_request_limit} <-
+           request_limit(
+             opts,
+             :max_in_flight_requests_per_connection,
+             @default_connection_request_limit
+           ),
+         {:ok, session_request_limit} <-
+           request_limit(
+             opts,
+             :max_in_flight_requests_per_session,
+             @default_session_request_limit
+           ),
+         {:ok, listener} <- TCP.listen(listen_opts),
          {:ok, connection_supervisor} <- DynamicSupervisor.start_link(strategy: :one_for_one),
          {:ok, session_supervisor} <- SessionSupervisor.start_link() do
       state = %{
@@ -39,11 +54,15 @@ defmodule GPUI.Remote.Server do
         connections: %{},
         session_registry: SessionRegistry.new(),
         negotiated_connections: MapSet.new(),
-        session_ttl: Keyword.get(opts, :session_ttl, :timer.minutes(30))
+        session_ttl: Keyword.get(opts, :session_ttl, :timer.minutes(30)),
+        connection_request_limit: connection_request_limit,
+        session_request_limit: session_request_limit
       }
 
       Acceptor.start(listener)
       {:ok, state}
+    else
+      {:error, reason} -> {:stop, reason}
     end
   end
 
@@ -152,7 +171,8 @@ defmodule GPUI.Remote.Server do
       app: state.app,
       args: Map.get(payload, :args, state.app_args),
       session_id: session_id,
-      ttl: state.session_ttl
+      ttl: state.session_ttl,
+      request_limit: state.session_request_limit
     ]
 
     case SessionSupervisor.start_session(state.session_supervisor, opts) do
@@ -162,17 +182,31 @@ defmodule GPUI.Remote.Server do
   end
 
   defp register_session(state, session_id, request_id, session) do
-    monitor = Process.monitor(session)
+    case GPUI.Remote.Session.route(session) do
+      {:ok, route} ->
+        monitor = Process.monitor(session)
 
-    registry =
-      SessionRegistry.put(state.session_registry, session_id, session, monitor, request_id)
+        registry =
+          SessionRegistry.put(
+            state.session_registry,
+            session_id,
+            session,
+            route,
+            monitor,
+            request_id
+          )
 
-    {{:delegate, session, :mount}, %{state | session_registry: registry}}
+        {{:delegate, route, :mount}, %{state | session_registry: registry}}
+
+      {:error, reason} ->
+        SessionSupervisor.stop_session(session)
+        {{:error, reason}, state}
+    end
   end
 
   defp delegate_existing(state, session_id, request) do
     case SessionRegistry.fetch(state.session_registry, session_id) do
-      {:ok, session} -> {{:delegate, session, request}, state}
+      {:ok, route} -> {{:delegate, route, request}, state}
       {:error, reason} -> {{:error, reason}, state}
     end
   end
@@ -188,6 +222,16 @@ defmodule GPUI.Remote.Server do
     :ok
   catch
     :exit, _reason -> :ok
+  end
+
+  defp request_limit(opts, name, default) do
+    case Keyword.get(opts, name, default) do
+      limit when is_integer(limit) and limit > 0 and limit <= @maximum_request_limit ->
+        {:ok, limit}
+
+      _invalid ->
+        {:error, {:invalid_option, name}}
+    end
   end
 
   defp negotiated?(state, connection_id),
