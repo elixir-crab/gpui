@@ -12,7 +12,13 @@ defmodule GPUI.TestTest do
       <div id="root">
         <text>Count: {assigns.count}</text>
         <GPUI.UI.button id="increment" label="Increment" phx-click="increment" />
-        <GPUI.UI.input id="name" label="Name" value={assigns.name} phx-change="name_changed" />
+        <GPUI.UI.input
+          id="name"
+          label="Name"
+          value={assigns.name}
+          phx-change="name_changed"
+          phx-submit="name_submitted"
+        />
         <GPUI.UI.file_picker
           id="file"
           label="Choose file"
@@ -99,6 +105,9 @@ defmodule GPUI.TestTest do
     def handle_event("name_changed", %{value: name}, assigns),
       do: {:noreply, %{assigns | name: name}}
 
+    def handle_event("name_submitted", %{value: name}, assigns),
+      do: {:noreply, %{assigns | submitted_name: name}}
+
     def handle_event("file_selected", %{value: file}, assigns),
       do: {:noreply, %{assigns | file: file}}
 
@@ -160,6 +169,7 @@ defmodule GPUI.TestTest do
            root(TestView,
              count: 0,
              name: "",
+             submitted_name: nil,
              file: nil,
              range: nil,
              language: "rust",
@@ -186,6 +196,7 @@ defmodule GPUI.TestTest do
       render(TestView,
         count: 2,
         name: "Ada",
+        submitted_name: nil,
         file: nil,
         range: nil,
         language: "rust",
@@ -214,6 +225,7 @@ defmodule GPUI.TestTest do
     assert %{
              count: 0,
              name: "",
+             submitted_name: nil,
              range: nil,
              language: "rust",
              framework: nil,
@@ -238,6 +250,8 @@ defmodule GPUI.TestTest do
     assert %{count: 2} = assigns(runtime)
 
     change(runtime, "name_changed", "Ada")
+    submit(runtime, "name_submitted", "Ada")
+    assert %{submitted_name: "Ada"} = assigns(runtime)
     file_select(runtime, "file_selected", "fixture.bin", <<1, 2, 3>>)
 
     assert %{file: %{status: :selected, name: "fixture.bin", size: 3, data: <<1, 2, 3>>}} =

@@ -117,39 +117,57 @@ pub(crate) fn render_input_component(
             node.change.clone(),
             node.value.clone(),
         )));
+        let submit_event: SharedEvent = Arc::new(Mutex::new(node.submit.clone()));
         let runtime = context.runtime.clone();
         let window_id = context.window_id;
         let event_binding = binding.clone();
+        let event_submit = submit_event.clone();
         let subscription = context.cx.subscribe_in(
             &state,
             context.window,
             move |_root, state, event: &InputEvent, _window, cx| {
-                if !matches!(event, InputEvent::Change) {
-                    return;
-                }
-
                 let value = state.read(cx).value().to_string();
-                let event = event_binding.lock().ok().and_then(|mut binding| {
-                    binding.event.clone().inspect(|_event| {
-                        binding.push_pending(value.clone());
-                    })
-                });
 
-                if let Some(event) = event {
-                    let result = push_event(
-                        &runtime,
-                        NativeEvent::Input {
-                            kind: InputKind::Change,
-                            window_id,
-                            event,
-                            value: Some(EventValue::String(value)),
-                        },
-                    );
-                    if result.is_err() {
-                        if let Ok(mut binding) = event_binding.lock() {
-                            binding.pop_pending();
+                match event {
+                    InputEvent::Change => {
+                        let event = event_binding.lock().ok().and_then(|mut binding| {
+                            binding.event.clone().inspect(|_event| {
+                                binding.push_pending(value.clone());
+                            })
+                        });
+
+                        if let Some(event) = event {
+                            let result = push_event(
+                                &runtime,
+                                NativeEvent::Input {
+                                    kind: InputKind::Change,
+                                    window_id,
+                                    event,
+                                    value: Some(EventValue::String(value)),
+                                },
+                            );
+                            if result.is_err() {
+                                if let Ok(mut binding) = event_binding.lock() {
+                                    binding.pop_pending();
+                                }
+                            }
                         }
                     }
+                    InputEvent::PressEnter { .. } => {
+                        let event = event_submit.lock().ok().and_then(|event| event.clone());
+                        if let Some(event) = event {
+                            let _ = push_event(
+                                &runtime,
+                                NativeEvent::Input {
+                                    kind: InputKind::Submit,
+                                    window_id,
+                                    event,
+                                    value: Some(EventValue::String(value)),
+                                },
+                            );
+                        }
+                    }
+                    InputEvent::Focus | InputEvent::Blur => {}
                 }
             },
         );
@@ -159,6 +177,8 @@ pub(crate) fn render_input_component(
             ComponentInput {
                 state,
                 binding,
+                submit_event,
+                focus_request: 0,
                 placeholder: node.placeholder.clone().unwrap_or_default(),
                 masked: node.masked,
                 loading: false,
@@ -179,6 +199,11 @@ pub(crate) fn render_input_component(
             binding.reconcile(&node.value)
         })
         .unwrap_or(true);
+    if let Ok(mut submit_event) = input.submit_event.lock() {
+        *submit_event = node.submit.clone();
+    }
+    let request_focus = input.focus_request != node.focus_request;
+    input.focus_request = node.focus_request;
     let current_value = input.state.read(context.cx).value();
     if apply_value && current_value.as_ref() != node.value {
         input.state.update(context.cx, |state, cx| {
@@ -211,6 +236,12 @@ pub(crate) fn render_input_component(
         .as_ref()
         .map(|_value| input.state.read(context.cx).value().to_string());
     let focus_handle = input.state.focus_handle(context.cx);
+    if request_focus && node.focus_request > 0 {
+        let requested_focus = focus_handle.clone();
+        context.window.defer(context.cx, move |window, cx| {
+            requested_focus.focus(window, cx)
+        });
+    }
     let mut element = Input::new(&input.state)
         .role(gpui::Role::GenericContainer)
         .disabled(node.disabled)

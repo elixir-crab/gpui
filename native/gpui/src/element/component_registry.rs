@@ -150,6 +150,8 @@ pub(crate) fn filter_options(
 pub(crate) struct ComponentInput {
     pub(crate) state: gpui::Entity<InputState>,
     pub(crate) binding: SharedBinding<String>,
+    pub(crate) submit_event: SharedEvent,
+    pub(crate) focus_request: u64,
     pub(crate) placeholder: String,
     pub(crate) masked: bool,
     pub(crate) loading: bool,

@@ -1554,6 +1554,7 @@ pub(crate) struct InputComponentNode {
     pub(crate) id: String,
     pub(crate) label: String,
     pub(crate) value: String,
+    pub(crate) focus_request: u64,
     pub(crate) placeholder: Option<String>,
     pub(crate) size: Option<String>,
     pub(crate) disabled: bool,
@@ -1561,6 +1562,7 @@ pub(crate) struct InputComponentNode {
     pub(crate) masked: bool,
     pub(crate) loading: bool,
     pub(crate) change: Option<String>,
+    pub(crate) submit: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_generated_input_component(
@@ -1571,6 +1573,8 @@ pub(crate) fn decode_generated_input_component(
         id: component_id(term)?,
         label: component_required_string_attr(term, atoms::label())?,
         value: component_string_attr(term, atoms::value())?.unwrap_or_default(),
+        focus_request: component_non_negative_integer_attr(term, atoms::focus_request())?
+            .unwrap_or(0),
         placeholder: component_string_attr(term, atoms::placeholder())?,
         size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
@@ -1578,6 +1582,7 @@ pub(crate) fn decode_generated_input_component(
         masked: component_bool_attr(term, atoms::masked())?.unwrap_or(false),
         loading: component_bool_attr(term, atoms::loading())?.unwrap_or(false),
         change: component_string_attr(term, atoms::phx_change())?,
+        submit: component_string_attr(term, atoms::phx_submit())?,
     })
 }
 #[derive(Clone, Debug)]

@@ -117,12 +117,21 @@ Supervisor.start_link(children, strategy: :one_for_one)
 Interactive native controls are controlled by root-view assigns:
 
 ```elixir
-<GPUI.UI.input
-  id="display-name"
+<GPUI.UI.field
   label="Display name"
-  value={assigns.name}
-  phx-change="name_changed"
-/>
+  required={true}
+  help="Used in shared workspace activity."
+  error={assigns.errors[:name]}
+>
+  <GPUI.UI.input
+    id="display-name"
+    label="Display name"
+    value={assigns.name}
+    focus_request={assigns.name_focus_request}
+    phx-change="name_changed"
+    phx-submit="save"
+  />
+</GPUI.UI.field>
 ```
 
 ```elixir
@@ -130,6 +139,10 @@ Interactive native controls are controlled by root-view assigns:
 def handle_event("name_changed", %{value: name}, assigns),
   do: {:noreply, %{assigns | name: name}}
 ```
+
+`phx-submit` is optional and emits Enter activation with the input's current
+string value. Increment `focus_request` when an application-owned transition,
+such as failed validation, should move native focus back to the input.
 
 Stable string IDs preserve native focus, editing state, popup state, and
 selection across snapshots. Duplicate IDs are rejected before reaching a

@@ -59,6 +59,15 @@ defmodule GPUI.UITest do
       UI.input(%{id: "name", label: "Name", value: 7})
     end
 
+    assert_raise ArgumentError, ~r/ui_input :focus_request must be a non-negative integer/, fn ->
+      UI.input(%{
+        id: "name",
+        label: "Name",
+        focus_request: -1,
+        "phx-change": "name_changed"
+      })
+    end
+
     assert_raise ArgumentError, ~r/ui_button :phx-click must be a non-empty string/, fn ->
       UI.button(%{id: "save", label: "Save", "phx-click": :save})
     end
@@ -104,6 +113,45 @@ defmodule GPUI.UITest do
 
     assert_raise ArgumentError, ~r/ui_slider requires a non-empty string label/, fn ->
       UI.slider(%{id: "volume", value: 50, "phx-change": "volume_changed"})
+    end
+  end
+
+  test "builds controlled field feedback and input submission contracts" do
+    input =
+      UI.input(%{
+        id: "name",
+        label: "Name",
+        value: "",
+        focus_request: 2,
+        "phx-change": "name_changed",
+        "phx-submit": "save"
+      })
+
+    assert %Element{
+             type: :div,
+             children: [
+               %Element{type: :text, children: ["Name (required)"]},
+               ^input,
+               %Element{
+                 type: :text,
+                 attrs: [style: [color: {:rgb, 0xEF4444}]],
+                 children: ["Error: Enter a name."]
+               }
+             ]
+           } =
+             UI.field(%{
+               label: "Name",
+               required: true,
+               help: "Shown to collaborators.",
+               error: "Enter a name.",
+               children: [input]
+             })
+
+    assert input.attrs[:focus_request] == 2
+    assert input.attrs[:"phx-submit"] == "save"
+
+    assert_raise ArgumentError, ~r/requires exactly one element child/, fn ->
+      UI.field(%{label: "Name", children: []})
     end
   end
 

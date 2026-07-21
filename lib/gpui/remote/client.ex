@@ -339,6 +339,7 @@ defmodule GPUI.Remote.Client do
               :select,
               :release,
               :search,
+              :submit,
               :range,
               :keydown,
               :keyup,

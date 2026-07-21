@@ -44,10 +44,25 @@ defmodule GPUI.GettingStartedExamplesTest do
     assert %{remaining: 2, status: :ready} = assigns(runtime)
   end
 
-  test "settings form remains controlled and confirms changes" do
+  test "settings form validates, requests focus, and confirms changes" do
     runtime = start_gpui!(GettingStarted.SettingsForm.App)
 
-    change(runtime, "name_changed", "Grace Hopper")
+    change(runtime, "name_changed", "")
+    click(runtime, "review")
+
+    assert %{
+             dialog_open: false,
+             errors: %{name: "Enter a display name."},
+             validation_started: true,
+             name_focus_request: 1
+           } = assigns(runtime)
+
+    assert runtime
+           |> tree()
+           |> all(type: :text)
+           |> Enum.any?(&match?(%{children: ["Error: Enter a display name."]}, &1))
+
+    submit(runtime, "review_submitted", "Grace Hopper")
     select(runtime, "preview_changed", "paper")
     toggle(runtime, "notifications_changed", false)
     select(runtime, "density_changed", "compact")
@@ -62,8 +77,7 @@ defmodule GPUI.GettingStartedExamplesTest do
              saved: false
            } = assigns(runtime)
 
-    click(runtime, "review")
-    assert %{dialog_open: true} = assigns(runtime)
+    assert %{dialog_open: true, errors: %{}} = assigns(runtime)
 
     assert runtime
            |> tree()

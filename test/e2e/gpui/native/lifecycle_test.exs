@@ -248,6 +248,11 @@ defmodule GPUI.Native.LifecycleE2ETest do
         attrs: %{id: "unnamed-input"},
         children: []
       },
+      invalid_input_focus_request: %{
+        type: :ui_input,
+        attrs: %{id: "invalid-input-focus", label: "Invalid input", focus_request: -1},
+        children: []
+      },
       invalid_progress_max: %{
         type: :ui_progress,
         attrs: %{id: "invalid-progress", label: "Invalid progress", max: 0},

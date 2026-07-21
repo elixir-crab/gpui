@@ -1,6 +1,7 @@
 defmodule GPUI.UI do
   @moduledoc """
-  Namespaced wrappers for native GPUI controls and collection primitives.
+  Namespaced builders for native GPUI controls, collection primitives, and
+  renderer-independent UI composition.
 
   Components are controlled by Elixir assigns and require a stable `:id` so
   native focus, animation, and interaction state survives rerenders. Builders
@@ -159,7 +160,22 @@ defmodule GPUI.UI do
   def checkbox(assigns), do: component(:ui_checkbox, assigns)
 
   @doc """
+  Builds a renderer-independent field containing one control, its visible label,
+  and optional help or error feedback.
+
+  Error feedback replaces help text and is prefixed with `Error:`. Set
+  `required: true` to mark the visible label; validation and error state remain
+  controlled by the owning view.
+  """
+  @spec field(map()) :: Element.t()
+  defdelegate field(assigns), to: GPUI.UI.Form
+
+  @doc """
   Builds a persistent labeled controlled string input using `value` and required `phx-change`.
+
+  `phx-submit` optionally receives Enter activation with the current value.
+  Increment `focus_request` to request native focus after validation or another
+  application-owned transition.
 
   #{Schema.component_options_doc(:ui_input)}
   """

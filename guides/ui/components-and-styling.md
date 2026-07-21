@@ -81,8 +81,34 @@ labels. Native text-input metadata exposes the controlled value and placeholder;
 masked inputs expose a password-input role without leaking their value. Select
 metadata exposes the visible label of the controlled option, while searchable
 comboboxes retain the upstream expanded-state semantics inside a labeled group.
-Input, select, and combobox labels are semantic rather than visible captions;
-render adjacent `text` when the interface also needs a visual field label.
+Input, select, and combobox labels are semantic rather than visible captions.
+Use `UI.field/1` when the interface also needs a visual label and controlled help
+or error feedback:
+
+```elixir
+<UI.field
+  label="Display name"
+  required={true}
+  help="Used in workspace activity."
+  error={assigns.errors[:name]}
+  class="flex flex-col gap-2"
+>
+  <UI.input
+    id="display-name"
+    label="Display name"
+    value={assigns.name}
+    focus_request={assigns.name_focus_request}
+    phx-change="name_changed"
+    phx-submit="save"
+  />
+</UI.field>
+```
+
+A field accepts exactly one control. Error feedback replaces help text and stays
+owned by the view. Enter emits optional `phx-submit` with the input's current
+value. Increment `focus_request` to focus the input after a failed submission;
+using a monotonically increasing request avoids repeatedly stealing focus during
+ordinary rerenders.
 
 Select, combobox, tabs, and radio-group options accept strings,
 `{label, value}` tuples, or `%{label: label, value: value}` maps. Radio maps may

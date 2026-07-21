@@ -11,20 +11,26 @@ defmodule GettingStarted.SettingsForm.View do
       <text class="text-white text-2xl font-semibold">Workspace settings</text>
       <text style={[color: {:rgb, 0x94A3B8}]}>A controlled form whose source of truth stays in Elixir.</text>
 
-      <div class="flex flex-col gap-2">
-        <text style={[color: {:rgb, 0xCBD5E1}]}>Display name</text>
+      <UI.field
+        label="Display name"
+        required={true}
+        help="Used in workspace activity and shared views."
+        error={assigns.errors[:name]}
+        class="flex flex-col gap-2"
+      >
         <UI.input
           id="display-name"
           label="Display name"
           value={assigns.name}
+          focus_request={assigns.name_focus_request}
           placeholder="Display name"
           cleanable={true}
           phx-change="name_changed"
+          phx-submit="review_submitted"
         />
-      </div>
+      </UI.field>
 
-      <div class="flex flex-col gap-2">
-        <text style={[color: {:rgb, 0xCBD5E1}]}>Appearance</text>
+      <UI.field label="Appearance" class="flex flex-col gap-2">
         <UI.select
           id="preview"
           label="Appearance"
@@ -32,7 +38,7 @@ defmodule GettingStarted.SettingsForm.View do
           options={[{"Midnight", "midnight"}, {"Paper", "paper"}]}
           phx-change="preview_changed"
         />
-      </div>
+      </UI.field>
 
       <div class="flex flex-col gap-2 p-4 rounded-md" style={preview_style(assigns.preview)}>
         <text style={preview_text_style(assigns.preview)}>Live appearance preview</text>
@@ -99,8 +105,13 @@ defmodule GettingStarted.SettingsForm.View do
   end
 
   @impl GPUI.View
-  def handle_event("name_changed", %{value: name}, assigns),
-    do: changed(assigns, :name, name)
+  def handle_event("name_changed", %{value: name}, assigns) do
+    assigns = assigns |> Map.put(:name, name) |> Map.put(:saved, false)
+    {:noreply, validate_if_started(assigns)}
+  end
+
+  def handle_event("review_submitted", %{value: name}, assigns),
+    do: review(%{assigns | name: name})
 
   def handle_event("preview_changed", %{value: preview}, assigns),
     do: changed(assigns, :preview, preview)
@@ -114,14 +125,41 @@ defmodule GettingStarted.SettingsForm.View do
   def handle_event("volume_changed", %{value: volume}, assigns),
     do: changed(assigns, :volume, volume)
 
-  def handle_event("review", _event, assigns),
-    do: {:noreply, %{assigns | dialog_open: true}}
+  def handle_event("review", _event, assigns), do: review(assigns)
 
   def handle_event("dialog_changed", %{value: open}, assigns),
     do: {:noreply, %{assigns | dialog_open: open}}
 
   def handle_event("apply", _event, assigns),
-    do: {:noreply, %{assigns | dialog_open: false, saved: true}}
+    do: {:noreply, %{assigns | dialog_open: false, saved: true, validation_started: false}}
+
+  defp review(assigns) do
+    case validate(assigns) do
+      errors when map_size(errors) == 0 ->
+        {:noreply, %{assigns | dialog_open: true, errors: errors, validation_started: true}}
+
+      errors ->
+        {:noreply,
+         %{
+           assigns
+           | dialog_open: false,
+             errors: errors,
+             validation_started: true,
+             name_focus_request: assigns.name_focus_request + 1
+         }}
+    end
+  end
+
+  defp validate_if_started(%{validation_started: true} = assigns),
+    do: %{assigns | errors: validate(assigns)}
+
+  defp validate_if_started(assigns), do: assigns
+
+  defp validate(assigns) do
+    if String.trim(assigns.name) == "",
+      do: %{name: "Enter a display name."},
+      else: %{}
+  end
 
   defp changed(assigns, key, value),
     do: {:noreply, assigns |> Map.put(key, value) |> Map.put(:saved, false)}
@@ -130,8 +168,13 @@ defmodule GettingStarted.SettingsForm.View do
   defp preview_style("paper"), do: [background: {:rgb, 0xF8FAFC}]
   defp preview_text_style("midnight"), do: [color: {:rgb, 0xFFFFFF}]
   defp preview_text_style("paper"), do: [color: {:rgb, 0x111827}]
+
+  defp status_style(%{errors: errors}) when map_size(errors) > 0,
+    do: [color: {:rgb, 0xEF4444}]
+
   defp status_style(%{saved: true}), do: [color: {:rgb, 0x22C55E}]
   defp status_style(_assigns), do: [color: {:rgb, 0x94A3B8}]
+  defp status_label(%{errors: errors}) when map_size(errors) > 0, do: "Fix validation errors"
   defp status_label(%{saved: true}), do: "Settings up to date"
   defp status_label(_assigns), do: "Unsaved changes"
   defp review_label(true), do: "Review settings"
@@ -160,6 +203,9 @@ defmodule GettingStarted.SettingsForm.App do
            density: "comfortable",
            volume: 65.0,
            dialog_open: false,
+           errors: %{},
+           validation_started: false,
+           name_focus_request: 0,
            saved: true
          )
        end

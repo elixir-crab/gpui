@@ -191,7 +191,17 @@ defmodule GPUI.Session do
          %{type: type, window_id: window_id, event: event} = native_event,
          state
        )
-       when type in [:click, :change, :select, :release, :search, :range, :keydown, :keyup] do
+       when type in [
+              :click,
+              :change,
+              :select,
+              :release,
+              :search,
+              :submit,
+              :range,
+              :keydown,
+              :keyup
+            ] do
     case Enum.find(state.windows, &(&1.id == window_id)) do
       %WindowSpec{root: {module, assigns}} = window ->
         assigns = Map.new(assigns)

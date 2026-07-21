@@ -29,9 +29,11 @@ defmodule GPUI.Native.ComponentsE2ETest do
           id="component-input"
           label="Name"
           value={assigns.name}
+          focus_request={assigns.name_focus_request}
           placeholder="Name"
           cleanable={true}
           phx-change="name_changed"
+          phx-submit="name_submitted"
         />
         <GPUI.UI.select
           id="component-language"
@@ -65,6 +67,12 @@ defmodule GPUI.Native.ComponentsE2ETest do
 
     def handle_event("name_changed", %{value: name}, assigns) when is_binary(name),
       do: {:noreply, %{assigns | name: name}}
+
+    def handle_event("name_submitted", %{value: name}, assigns) when is_binary(name),
+      do: {:noreply, %{assigns | submitted_name: name}}
+
+    def handle_event("focus_name", _event, assigns),
+      do: {:noreply, %{assigns | name_focus_request: assigns.name_focus_request + 1}}
 
     def handle_event("replace_name", _event, assigns),
       do: {:noreply, %{assigns | name: "server"}}
@@ -101,6 +109,8 @@ defmodule GPUI.Native.ComponentsE2ETest do
              count: 0,
              enabled: false,
              name: "",
+             submitted_name: nil,
+             name_focus_request: 0,
              language: "rust",
              framework: nil,
              framework_query: "",
@@ -110,6 +120,29 @@ defmodule GPUI.Native.ComponentsE2ETest do
          end
        ]}
     end
+  end
+
+  test "input focus requests and Enter submissions remain application-controlled" do
+    title = "GPUI Input Submission E2E #{System.unique_integer([:positive])}"
+    {:ok, runtime} = GPUI.Runtime.start_link(app: ComponentsApp, args: %{title: title})
+    :ok = GPUI.Runtime.subscribe(runtime)
+    on_exit(fn -> Desktop.stop_process(runtime) end)
+
+    %{windows: [window]} = GPUI.Runtime.snapshot(runtime)
+
+    GPUI.Runtime.dispatch_event(runtime, %{
+      type: :click,
+      window_id: window.id,
+      event: "focus_name"
+    })
+
+    window_id = Desktop.window_id!(title)
+    Desktop.await_frame!(runtime, 1, window_id)
+    Desktop.type!(window_id, "Ada")
+
+    Desktop.eventually(fn -> assert %{name: "Ada"} = assigns(runtime) end)
+    Desktop.key!(window_id, "Return")
+    Desktop.eventually(fn -> assert %{submitted_name: "Ada"} = assigns(runtime) end)
   end
 
   defmodule SliderView do

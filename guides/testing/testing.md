@@ -58,6 +58,7 @@ Use the helper matching the component contract:
 ```elixir
 click(runtime, "save")
 change(runtime, "name_changed", "Ada")
+submit(runtime, "save", "Ada")
 select(runtime, "language_changed", "elixir")
 search(runtime, "framework_searched", "live")
 toggle(runtime, "notifications_changed", true)

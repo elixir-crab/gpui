@@ -131,6 +131,11 @@ defmodule GPUI.Test do
   def change(runtime, event, value, opts \\ []),
     do: dispatch_value(runtime, :change, event, value, opts)
 
+  @doc "Dispatches an input submission with its current string value."
+  @spec submit(GenServer.server(), String.t(), String.t(), keyword()) :: Snapshot.t()
+  def submit(runtime, event, value, opts \\ []) when is_binary(value),
+    do: dispatch_value(runtime, :submit, event, value, opts)
+
   @doc "Delivers a deterministic source-backed virtual-list range request."
   @spec range(GenServer.server(), String.t(), non_neg_integer(), non_neg_integer(), keyword()) ::
           Snapshot.t()

@@ -25,6 +25,7 @@ impl EventValue {
 pub(crate) enum InputKind {
     Change,
     Select,
+    Submit,
     Search,
     Range,
     CellChange,
@@ -39,6 +40,7 @@ impl InputKind {
         match self {
             Self::Change => atoms::change(),
             Self::Select => atoms::select(),
+            Self::Submit => atoms::submit(),
             Self::Search => atoms::search(),
             Self::Range => atoms::range(),
             Self::CellChange => atoms::cell_change(),
