@@ -97,6 +97,59 @@ defmodule GPUI.SchemaTest do
     assert :border_color in GPUI.Schema.styles()
   end
 
+  test "derives public option documentation from component contracts" do
+    slider_doc = GPUI.Schema.component_options_doc(:ui_slider)
+
+    assert slider_doc =~ "## Options"
+    assert slider_doc =~ "| `:label` | non-empty `String.t()` | yes | — |"
+
+    assert slider_doc =~
+             "| `:orientation` | `\"horizontal\"`, `\"vertical\"` | no | `\"horizontal\"` |"
+
+    assert slider_doc =~ "| `:\"phx-change\"` | non-empty event name | yes | — |"
+
+    tooltip_doc = GPUI.Schema.component_options_doc(:ui_tooltip)
+    assert tooltip_doc =~ "| `:trigger` | one named slot | yes | — |"
+    assert tooltip_doc =~ "| `:content` | one named slot | yes | — |"
+    refute tooltip_doc =~ "`:text`"
+    refute tooltip_doc =~ "`:children`"
+  end
+
+  test "publishes generated option types and tables for every public builder" do
+    ui_builders = [
+      :button,
+      :progress,
+      :file_picker,
+      :copy_button,
+      :checkbox,
+      :input,
+      :select,
+      :combobox,
+      :switch,
+      :radio_group,
+      :accordion,
+      :accordion_item,
+      :virtual_list,
+      :virtual_list_item,
+      :data_table,
+      :table_column,
+      :table_row,
+      :tree,
+      :tree_item,
+      :code_viewer,
+      :code_line,
+      :tabs,
+      :slider
+    ]
+
+    overlay_builders = [:tooltip, :dialog, :dropdown_menu, :popover]
+
+    assert_options_docs(GPUI.UI, ui_builders)
+    assert_options_docs(GPUI.UI.Overlay, overlay_builders)
+    assert_option_types(GPUI.UI, ui_builders)
+    assert_option_types(GPUI.UI.Overlay, overlay_builders)
+  end
+
   test "projects component defaults for public builders and native decoders" do
     assert %{
              max_bytes: 26_214_400,
@@ -125,5 +178,32 @@ defmodule GPUI.SchemaTest do
     assert_raise ArgumentError, ~r/unknown GPUI component/, fn ->
       GPUI.Schema.component!(:unknown)
     end
+  end
+
+  defp assert_options_docs(module, functions) do
+    {:docs_v1, _, :elixir, _, _, _, docs} = Code.fetch_docs(module)
+
+    function_docs =
+      Map.new(docs, fn
+        {{:function, name, 1}, _, _, %{"en" => doc}, _} -> {name, doc}
+        {{_kind, name, _arity}, _, _, _, _} -> {name, ""}
+      end)
+
+    Enum.each(functions, fn function ->
+      assert function_docs[function] =~ "## Options",
+             "expected #{inspect(module)}.#{function}/1 to contain a generated options table"
+    end)
+  end
+
+  defp assert_option_types(module, functions) do
+    {:ok, types} = Code.Typespec.fetch_types(module)
+    names = Enum.map(types, fn {_visibility, {name, _type, args}} -> {name, length(args)} end)
+
+    Enum.each(functions, fn function ->
+      type_name = String.to_atom("#{function}_options")
+
+      assert {type_name, 0} in names,
+             "expected #{inspect(module)} to publish #{type_name}/0"
+    end)
   end
 end

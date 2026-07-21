@@ -37,6 +37,14 @@ Invalid values raise an `ArgumentError` that names the component, attribute,
 expected type or enum, and received value—for example,
 `ui_button :disabled must be a boolean; got: "yes"`.
 
+Each builder's ExDoc entry includes a schema-derived option table showing types,
+required attributes and events, enum values, and defaults. The corresponding
+named option type—for example `t:GPUI.UI.slider_options/0` or
+`t:GPUI.UI.Overlay.dialog_options/0`—provides the same contract to editors,
+Dialyzer, and library consumers. Both projections come from the shared internal
+component schema, so native decoding, validation, types, and documentation
+cannot drift into separate option registries.
+
 ## Inputs and choices
 
 ```elixir

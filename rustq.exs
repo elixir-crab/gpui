@@ -4,6 +4,7 @@ alias RustQ.Rustler.Atom, as: RustlerAtom
 alias RustQ.Rustler.Nif
 
 require_file("lib/gpui/schema/component.ex")
+require_file("lib/gpui/schema/component_docs.ex")
 require_file("lib/gpui/schema/resource.ex")
 require_file("lib/gpui/schema/style.ex")
 require_file("lib/gpui/schema.ex")

@@ -2,8 +2,11 @@ defmodule GPUI.Schema do
   @moduledoc false
 
   alias GPUI.Schema.Component
+  alias GPUI.Schema.ComponentDocs
   alias GPUI.Schema.Resource
   alias GPUI.Schema.Style
+
+  Code.ensure_compiled!(ComponentDocs)
 
   @components [
     %Component{tag: :div, kind: :container, events: [click: :"phx-click"]},
@@ -29,6 +32,7 @@ defmodule GPUI.Schema do
     %Component{
       tag: :ui_progress,
       kind: :progress_component,
+      public_required_attrs: [:label],
       attrs: [
         id: :string,
         label: :string,
@@ -42,6 +46,7 @@ defmodule GPUI.Schema do
       kind: :file_picker_component,
       events: [change: :"phx-change"],
       required_events: [:"phx-change"],
+      public_required_attrs: [:label],
       attrs: [
         id: :string,
         label: :string,
@@ -55,6 +60,7 @@ defmodule GPUI.Schema do
       kind: :copy_button_component,
       events: [click: :"phx-click"],
       required_events: [:"phx-click"],
+      public_required_attrs: [:label, :text],
       attrs: [id: :string, label: :string, text: {:default, :string}, disabled: :boolean]
     },
     %Component{
@@ -63,6 +69,7 @@ defmodule GPUI.Schema do
       stateful: true,
       events: [change: :"phx-change"],
       children: true,
+      public_slots: [trigger: :required, content: :required],
       attrs: [
         id: :string,
         open: :boolean,
@@ -81,6 +88,8 @@ defmodule GPUI.Schema do
       tag: :ui_tooltip,
       kind: :tooltip_component,
       children: true,
+      public_hidden_attrs: [:text],
+      public_slots: [trigger: :required, content: :required],
       attrs: [
         id: :string,
         text: {:default, :string},
@@ -95,6 +104,7 @@ defmodule GPUI.Schema do
       stateful: true,
       events: [change: :"phx-change"],
       children: true,
+      public_slots: [trigger: :optional, content: :required],
       attrs: [
         id: :string,
         open: :boolean,
@@ -114,6 +124,7 @@ defmodule GPUI.Schema do
       stateful: true,
       events: [change: :"phx-change", select: :"phx-select"],
       children: true,
+      public_slots: [trigger: :required, item: :one_or_more],
       attrs: [
         id: :string,
         open: :boolean,
@@ -177,6 +188,7 @@ defmodule GPUI.Schema do
       stateful: true,
       events: [change: :"phx-change"],
       required_events: [:"phx-change"],
+      public_required_attrs: [:options],
       attrs: [
         id: :string,
         value: :string,
@@ -193,6 +205,7 @@ defmodule GPUI.Schema do
       stateful: true,
       events: [change: :"phx-change", search: :"phx-search"],
       required_events: [:"phx-change"],
+      public_required_attrs: [:options],
       attrs: [
         id: :string,
         value: :string,
@@ -224,6 +237,7 @@ defmodule GPUI.Schema do
       kind: :radio_group_component,
       events: [change: :"phx-change"],
       required_events: [:"phx-change"],
+      public_required_attrs: [:value, :options],
       attrs: [
         id: :string,
         label: :required_string,
@@ -253,6 +267,7 @@ defmodule GPUI.Schema do
       tag: :ui_accordion_item,
       kind: :accordion_item_component,
       children: true,
+      public_required_attrs: [:title],
       attrs: [id: :string, title: :string, disabled: :boolean]
     },
     %Component{
@@ -261,6 +276,7 @@ defmodule GPUI.Schema do
       stateful: true,
       events: [change: :"phx-change", range: :"phx-range"],
       children: true,
+      public_required_attrs: [:label],
       attrs: [
         id: :string,
         label: :string,
@@ -293,6 +309,7 @@ defmodule GPUI.Schema do
         range: :"phx-range"
       ],
       children: true,
+      public_required_attrs: [:label],
       attrs: [
         id: :string,
         label: :string,
@@ -315,6 +332,7 @@ defmodule GPUI.Schema do
     %Component{
       tag: :ui_table_column,
       kind: :table_column_component,
+      public_required_attrs: [:label],
       attrs: [
         id: :string,
         label: {:default, :string},
@@ -335,6 +353,7 @@ defmodule GPUI.Schema do
       stateful: true,
       events: [change: :"phx-change", toggle: :"phx-toggle", range: :"phx-range"],
       children: true,
+      public_required_attrs: [:label],
       attrs: [
         id: :string,
         label: :string,
@@ -371,6 +390,7 @@ defmodule GPUI.Schema do
       stateful: true,
       events: [change: :"phx-change", range: :"phx-range", click: :"phx-copy"],
       children: true,
+      public_required_attrs: [:label],
       attrs: [
         id: :string,
         label: :string,
@@ -393,6 +413,7 @@ defmodule GPUI.Schema do
     %Component{
       tag: :ui_code_line,
       kind: :code_line_component,
+      public_required_attrs: [:text],
       attrs: [
         id: :string,
         text: {:default, :string},
@@ -408,6 +429,7 @@ defmodule GPUI.Schema do
       kind: :tabs_component,
       events: [change: :"phx-change"],
       required_events: [:"phx-change"],
+      public_required_attrs: [:value, :options],
       attrs: [
         id: :string,
         value: :string,
@@ -665,6 +687,30 @@ defmodule GPUI.Schema do
   ]
 
   def components, do: @components
+
+  @doc false
+  @spec component_options_doc(atom()) :: String.t()
+  def component_options_doc(tag), do: tag |> component!() |> ComponentDocs.options_doc()
+
+  @doc false
+  defmacro define_component_option_types(definitions) do
+    definitions = Macro.expand(definitions, __CALLER__)
+
+    types =
+      Enum.map(definitions, fn {type_name, tag} ->
+        type = tag |> component!() |> ComponentDocs.option_type_ast()
+        builder = type_name |> Atom.to_string() |> String.trim_trailing("_options")
+
+        quote do
+          @typedoc "Options accepted by `#{unquote(builder)}/1`."
+          @type unquote({type_name, [], []}) :: unquote(type)
+        end
+      end)
+
+    quote do
+      (unquote_splicing(types))
+    end
+  end
 
   def component!(tag) do
     Enum.find(@components, &(&1.tag == tag)) ||

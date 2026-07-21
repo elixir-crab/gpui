@@ -11,6 +11,20 @@ defmodule GPUI.UI.Overlay do
   alias GPUI.Element
   alias GPUI.Schema
 
+  require Schema
+
+  @type slot :: %{
+          required(:attrs) => keyword(),
+          required(:children) => [GPUI.Element.child()]
+        }
+
+  Schema.define_component_option_types(
+    tooltip_options: :ui_tooltip,
+    dialog_options: :ui_dialog,
+    dropdown_menu_options: :ui_dropdown_menu,
+    popover_options: :ui_popover
+  )
+
   @anchors ~w(top_left top_center top_right bottom_left bottom_center bottom_right left_center right_center)
 
   @doc """
@@ -18,8 +32,10 @@ defmodule GPUI.UI.Overlay do
 
   `delay` is the show delay in milliseconds from `0` through `60_000`. Set `hoverable` when
   the pointer may move into the tooltip without dismissing it.
+
+  #{Schema.component_options_doc(:ui_tooltip)}
   """
-  @spec tooltip(map()) :: Element.t()
+  @spec tooltip(tooltip_options()) :: Element.t()
   def tooltip(assigns) when is_map(assigns) do
     assigns =
       assigns
@@ -63,8 +79,10 @@ defmodule GPUI.UI.Overlay do
   Changes to `open` are emitted through `phx-change`. The native dialog traps
   focus while open and restores the previous focus when it closes. Escape and
   overlay clicks request closure when enabled.
+
+  #{Schema.component_options_doc(:ui_dialog)}
   """
-  @spec dialog(map()) :: Element.t()
+  @spec dialog(dialog_options()) :: Element.t()
   def dialog(assigns) when is_map(assigns) do
     assigns =
       assigns
@@ -102,8 +120,10 @@ defmodule GPUI.UI.Overlay do
   `phx-change` receives controlled open-state changes and `phx-select` receives
   the selected item value. Popup-menu keyboard navigation, dismissal, and focus
   restoration are provided by GPUI Component.
+
+  #{Schema.component_options_doc(:ui_dropdown_menu)}
   """
-  @spec dropdown_menu(map()) :: Element.t()
+  @spec dropdown_menu(dropdown_menu_options()) :: Element.t()
   def dropdown_menu(assigns) when is_map(assigns) do
     assigns =
       assigns
@@ -142,8 +162,10 @@ defmodule GPUI.UI.Overlay do
 
   Changes to `open` are emitted through `phx-change`. Escape and, by default,
   outside clicks request closure and restore focus to the trigger.
+
+  #{Schema.component_options_doc(:ui_popover)}
   """
-  @spec popover(map()) :: Element.t()
+  @spec popover(popover_options()) :: Element.t()
   def popover(assigns) when is_map(assigns) do
     assigns =
       assigns

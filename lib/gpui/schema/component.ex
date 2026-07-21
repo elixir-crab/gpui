@@ -9,7 +9,10 @@ defmodule GPUI.Schema.Component do
     required_events: [],
     attrs: [],
     children: false,
-    stateful: false
+    stateful: false,
+    public_required_attrs: [],
+    public_hidden_attrs: [],
+    public_slots: []
   ]
 
   @type scalar_type ::
@@ -38,6 +41,9 @@ defmodule GPUI.Schema.Component do
           required_events: [atom()],
           attrs: keyword(attr_type()),
           children: boolean(),
-          stateful: boolean()
+          stateful: boolean(),
+          public_required_attrs: [atom()],
+          public_hidden_attrs: [atom()],
+          public_slots: [{atom(), :required | :optional | :one_or_more}]
         }
 end
