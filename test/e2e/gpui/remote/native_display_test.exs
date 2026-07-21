@@ -15,6 +15,7 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
         <text>Count: {assigns.count}</text>
         <GPUI.UI.combobox
           id="remote-framework"
+          label="Framework"
           value={assigns.framework}
           options={assigns.framework_options}
           phx-change="framework_changed"
@@ -23,12 +24,14 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
         <GPUI.UI.button id="remote-increment" label="Increment" variant="primary" phx-click="inc" />
         <GPUI.UI.input
           id="remote-name"
+          label="Name"
           value={assigns.name}
           placeholder="Name"
           phx-change="name_changed"
         />
         <GPUI.UI.select
           id="remote-language"
+          label="Language"
           value={assigns.language}
           options={[{"Rust", "rust"}, {"Elixir", "elixir"}]}
           phx-change="language_changed"

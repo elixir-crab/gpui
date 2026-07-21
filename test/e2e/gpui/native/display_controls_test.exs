@@ -20,7 +20,7 @@ defmodule GPUI.Native.DisplayControlsE2ETest do
           text="copied from display"
           phx-click="copied"
         />
-        <UI.input id="paste-target" value={assigns.value} phx-change="value_changed" />
+        <UI.input id="paste-target" label="Paste target" value={assigns.value} phx-change="value_changed" />
         <UI.progress id="deterministic-progress" label="Importing" value={40} max={100} />
         <UI.progress id="indeterminate-progress" label="Waiting" indeterminate={true} />
       </div>

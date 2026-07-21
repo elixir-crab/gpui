@@ -1133,7 +1133,7 @@ pub(crate) fn append_radio_option(
 pub(crate) struct ButtonComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
-    pub(crate) label: Option<String>,
+    pub(crate) label: String,
     pub(crate) variant: Option<String>,
     pub(crate) size: Option<String>,
     pub(crate) disabled: bool,
@@ -1151,7 +1151,7 @@ pub(crate) fn decode_generated_button_component(
     Ok(ButtonComponentNode {
         style: decode_style(term)?,
         id: component_id(term)?,
-        label: component_string_attr(term, atoms::label())?,
+        label: component_required_string_attr(term, atoms::label())?,
         variant: component_enum_attr(
             term,
             atoms::variant(),
@@ -1260,6 +1260,7 @@ pub(crate) fn decode_generated_copy_button_component(
 pub(crate) struct PopoverComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
+    pub(crate) label: String,
     pub(crate) open: bool,
     pub(crate) anchor: Option<String>,
     pub(crate) appearance: bool,
@@ -1274,6 +1275,7 @@ pub(crate) fn decode_generated_popover_component(
     Ok(PopoverComponentNode {
         style: decode_style(term)?,
         id: component_id(term)?,
+        label: component_required_string_attr(term, atoms::label())?,
         open: component_bool_attr(term, atoms::open())?.unwrap_or(false),
         anchor: component_enum_attr(
                 term,
@@ -1375,7 +1377,7 @@ pub(crate) struct DialogComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
     pub(crate) open: bool,
-    pub(crate) title: Option<String>,
+    pub(crate) title: String,
     pub(crate) width: f64,
     pub(crate) overlay: bool,
     pub(crate) closable: bool,
@@ -1392,7 +1394,7 @@ pub(crate) fn decode_generated_dialog_component(
         style: decode_style(term)?,
         id: component_id(term)?,
         open: component_bool_attr(term, atoms::open())?.unwrap_or(false),
-        title: component_string_attr(term, atoms::title())?,
+        title: component_required_string_attr(term, atoms::title())?,
         width: component_number_attr(term, atoms::width())?.unwrap_or(448.0),
         overlay: component_bool_attr(term, atoms::overlay())?.unwrap_or(true),
         closable: component_bool_attr(term, atoms::closable())?.unwrap_or(true),
@@ -1440,6 +1442,7 @@ pub(crate) fn decode_generated_dialog_content_component(
 pub(crate) struct DropdownMenuComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
+    pub(crate) label: String,
     pub(crate) open: bool,
     pub(crate) anchor: Option<String>,
     pub(crate) disabled: bool,
@@ -1454,6 +1457,7 @@ pub(crate) fn decode_generated_dropdown_menu_component(
     Ok(DropdownMenuComponentNode {
         style: decode_style(term)?,
         id: component_id(term)?,
+        label: component_required_string_attr(term, atoms::label())?,
         open: component_bool_attr(term, atoms::open())?.unwrap_or(false),
         anchor: component_enum_attr(
                 term,
@@ -1520,7 +1524,7 @@ pub(crate) fn decode_generated_dropdown_menu_item_component(
 pub(crate) struct CheckboxComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
-    pub(crate) label: Option<String>,
+    pub(crate) label: String,
     pub(crate) size: Option<String>,
     pub(crate) checked: bool,
     pub(crate) disabled: bool,
@@ -1534,7 +1538,7 @@ pub(crate) fn decode_generated_checkbox_component(
     Ok(CheckboxComponentNode {
         style: decode_style(term)?,
         id: component_id(term)?,
-        label: component_string_attr(term, atoms::label())?,
+        label: component_required_string_attr(term, atoms::label())?,
         size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
         checked: component_bool_attr(term, atoms::checked())?.unwrap_or(false),
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
@@ -1548,6 +1552,7 @@ pub(crate) fn decode_generated_checkbox_component(
 pub(crate) struct InputComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
+    pub(crate) label: String,
     pub(crate) value: String,
     pub(crate) placeholder: Option<String>,
     pub(crate) size: Option<String>,
@@ -1564,6 +1569,7 @@ pub(crate) fn decode_generated_input_component(
     Ok(InputComponentNode {
         style: decode_style(term)?,
         id: component_id(term)?,
+        label: component_required_string_attr(term, atoms::label())?,
         value: component_string_attr(term, atoms::value())?.unwrap_or_default(),
         placeholder: component_string_attr(term, atoms::placeholder())?,
         size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
@@ -1580,6 +1586,7 @@ pub(crate) fn decode_generated_input_component(
 pub(crate) struct SelectComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
+    pub(crate) label: String,
     pub(crate) value: Option<String>,
     pub(crate) options: Vec<SelectOptionNode>,
     pub(crate) placeholder: Option<String>,
@@ -1595,6 +1602,7 @@ pub(crate) fn decode_generated_select_component(
     Ok(SelectComponentNode {
         style: decode_style(term)?,
         id: component_id(term)?,
+        label: component_required_string_attr(term, atoms::label())?,
         value: component_string_attr(term, atoms::value())?,
         options: decode_select_options(term)?,
         placeholder: component_string_attr(term, atoms::placeholder())?,
@@ -1610,6 +1618,7 @@ pub(crate) fn decode_generated_select_component(
 pub(crate) struct ComboboxComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
+    pub(crate) label: String,
     pub(crate) value: Option<String>,
     pub(crate) options: Vec<SelectOptionNode>,
     pub(crate) placeholder: Option<String>,
@@ -1628,6 +1637,7 @@ pub(crate) fn decode_generated_combobox_component(
     Ok(ComboboxComponentNode {
         style: decode_style(term)?,
         id: component_id(term)?,
+        label: component_required_string_attr(term, atoms::label())?,
         value: component_string_attr(term, atoms::value())?,
         options: decode_select_options(term)?,
         placeholder: component_string_attr(term, atoms::placeholder())?,

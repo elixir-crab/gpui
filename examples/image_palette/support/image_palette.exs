@@ -233,6 +233,7 @@ defmodule Examples.ImagePalette.View do
         <text style={[color: {:rgb, 0x94A3B8}]}>Application-side CSS path</text>
         <UI.input
           id="export-path"
+          label="CSS export path"
           value={assigns.export_path}
           placeholder="palette.css"
           phx-change="export_path_changed"

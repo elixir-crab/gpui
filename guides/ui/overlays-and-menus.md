@@ -30,6 +30,7 @@ Popovers accept arbitrary GPUI trees in both named slots:
 ```elixir
 <Overlay.popover
   id="account-popover"
+  label="Account"
   open={assigns.account_open}
   anchor="top_left"
   phx-change="account_open_changed"
@@ -43,9 +44,10 @@ Popovers accept arbitrary GPUI trees in both named slots:
 </Overlay.popover>
 ```
 
-Popover state is controlled by `open`. Pointer interaction and Enter/Space can
-request a state change. Escape and outside clicks dismiss closable popovers and
-restore focus. Set `closable={false}` to disable outside-click dismissal.
+The required `label` names the popover trigger and its controlled expanded
+state. Popover state is controlled by `open`. Pointer interaction and
+Enter/Space can request a state change. Escape and outside clicks dismiss
+closable popovers and restore focus. Set `closable={false}` to disable outside-click dismissal.
 
 Anchors are `top_left`, `top_center`, `top_right`, `bottom_left`,
 `bottom_center`, `bottom_right`, `left_center`, and `right_center`.
@@ -64,14 +66,15 @@ Dialogs are modal and can be opened by a trigger or entirely through assigns:
 >
   <:trigger><UI.button id="settings-trigger" label="Settings" /></:trigger>
   <:content>
-    <UI.input id="display-name" value={assigns.name} phx-change="name_changed" />
+    <UI.input id="display-name" label="Display name" value={assigns.name} phx-change="name_changed" />
   </:content>
 </Overlay.dialog>
 ```
 
-The content slot accepts arbitrary GPUI content. Native dialogs trap focus,
-restore prior focus, and support configurable Escape, overlay dismissal, close
-buttons, and width. The trigger slot is optional for programmatic dialogs.
+The required non-empty `title` supplies the dialog heading and names an optional
+trigger. The content slot accepts arbitrary GPUI content. Native dialogs expose
+a dialog role, trap focus, restore prior focus, and support configurable Escape,
+overlay dismissal, close buttons, and width. The trigger slot is optional for programmatic dialogs.
 
 ## Dropdown menus
 
@@ -80,6 +83,7 @@ Dropdown menus use an arbitrary trigger and repeated textual item slots:
 ```elixir
 <Overlay.dropdown_menu
   id="file-menu"
+  label="File menu"
   open={assigns.file_menu_open}
   phx-change="file_menu_open_changed"
   phx-select="file_menu_selected"
@@ -91,11 +95,12 @@ Dropdown menus use an arbitrary trigger and repeated textual item slots:
 </Overlay.dropdown_menu>
 ```
 
+The required `label` names the menu trigger and its controlled expanded state.
 Item values must be non-empty and unique. Selection emits the value through
 `phx-select`; open-state changes use `phx-change`. The upstream popup menu
-provides menu roles, checked and disabled semantics, arrow-key navigation,
-Enter confirmation, Escape dismissal, outside-click dismissal, and focus
-restoration.
+provides menu roles, checked state, disabled-item interaction, arrow-key
+navigation, Enter confirmation, Escape dismissal, outside-click dismissal, and
+focus restoration.
 
 A typical view handles both events explicitly:
 

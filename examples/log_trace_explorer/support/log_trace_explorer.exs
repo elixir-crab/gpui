@@ -49,6 +49,7 @@ defmodule Examples.LogTraceExplorer.View do
         <div class="flex items-center gap-3">
           <UI.input
             id="event-filter"
+            label="Event filter"
             value={assigns.query}
             placeholder="Filter messages, sources, levels, or metadata"
             cleanable={true}
@@ -56,6 +57,7 @@ defmodule Examples.LogTraceExplorer.View do
           />
           <UI.select
             id="level-filter"
+            label="Log level"
             value={assigns.level}
             options={level_options()}
             phx-change="level_changed"

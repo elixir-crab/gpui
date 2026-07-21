@@ -71,7 +71,8 @@ defmodule GPUI.UI do
   @doc """
   Builds a native button.
 
-  Supply a string `label` or child content. `phx-click` receives activation;
+  A non-empty `label` provides the native accessibility name; child content may
+  customize the visual body. `phx-click` receives activation;
   `variant`, `size`, and boolean state attributes use the schema documented in
   the components guide.
 
@@ -150,7 +151,7 @@ defmodule GPUI.UI do
   end
 
   @doc """
-  Builds a controlled checkbox using boolean `checked` and required `phx-change`.
+  Builds a labeled controlled checkbox using boolean `checked` and required `phx-change`.
 
   #{Schema.component_options_doc(:ui_checkbox)}
   """
@@ -158,7 +159,7 @@ defmodule GPUI.UI do
   def checkbox(assigns), do: component(:ui_checkbox, assigns)
 
   @doc """
-  Builds a persistent controlled string input using `value` and required `phx-change`.
+  Builds a persistent labeled controlled string input using `value` and required `phx-change`.
 
   #{Schema.component_options_doc(:ui_input)}
   """
@@ -168,8 +169,9 @@ defmodule GPUI.UI do
   @doc """
   Builds a persistent native GPUI Component select.
 
-  Options may be strings, `{label, value}` tuples, or maps with string `:label`
-  and `:value` fields.
+  A non-empty `label` names the control for assistive technology. Options may be
+  strings, `{label, value}` tuples, or maps with string `:label` and `:value`
+  fields.
 
   #{Schema.component_options_doc(:ui_select)}
   """
@@ -179,8 +181,9 @@ defmodule GPUI.UI do
   @doc """
   Builds a persistent searchable GPUI Component combobox.
 
-  Selection changes use `phx-change`; search text changes use `phx-search`.
-  Options use the same format as `select/1`.
+  A non-empty `label` names the searchable control. Selection changes use
+  `phx-change`; search text changes use `phx-search`. Options use the same
+  format as `select/1`.
 
   #{Schema.component_options_doc(:ui_combobox)}
   """

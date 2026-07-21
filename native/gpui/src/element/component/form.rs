@@ -20,17 +20,88 @@ use crate::{
 use std::sync::{Arc, Mutex};
 
 #[cfg(feature = "components")]
+#[derive(Debug, PartialEq)]
+struct InputAccessibility {
+    label: String,
+    role: gpui::Role,
+    value: Option<String>,
+    placeholder: Option<String>,
+}
+
+#[cfg(feature = "components")]
+fn input_accessibility(
+    label: String,
+    value: String,
+    placeholder: Option<String>,
+    masked: bool,
+) -> InputAccessibility {
+    InputAccessibility {
+        label,
+        role: if masked {
+            gpui::Role::PasswordInput
+        } else {
+            gpui::Role::TextInput
+        },
+        value: (!masked).then_some(value),
+        placeholder,
+    }
+}
+
+#[cfg(feature = "components")]
+#[derive(Debug, PartialEq)]
+struct ChoiceAccessibility {
+    label: String,
+    value: Option<String>,
+    placeholder: Option<String>,
+}
+
+#[cfg(feature = "components")]
+fn choice_accessibility(
+    label: String,
+    value: Option<&str>,
+    placeholder: Option<String>,
+    options: &[SelectOptionNode],
+) -> ChoiceAccessibility {
+    ChoiceAccessibility {
+        label,
+        value: selected_choice_label(value, options),
+        placeholder,
+    }
+}
+
+#[cfg(feature = "components")]
+fn selected_choice_label(value: Option<&str>, options: &[SelectOptionNode]) -> Option<String> {
+    value.and_then(|value| {
+        options
+            .iter()
+            .find(|option| option.value == value)
+            .map(|option| option.label.clone())
+    })
+}
+
+#[cfg(feature = "components")]
 pub(crate) fn render_input_component(
     _element_id: usize,
     node: InputComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     use crate::{push_event, EventValue, InputKind, NativeEvent};
-    use gpui::{AppContext, IntoElement};
+    use gpui::{
+        AppContext, Focusable, InteractiveElement, IntoElement, ParentElement,
+        StatefulInteractiveElement, Styled,
+    };
     use gpui_component::{
         input::{Input, InputEvent, InputState},
         Sizable,
     };
+
+    let component_height = component_input_height(node.size.as_deref(), node.style.height);
+    let accessibility = input_accessibility(
+        node.label.clone(),
+        node.value.clone(),
+        node.placeholder.clone(),
+        node.masked,
+    );
 
     if context.components.input_mut(&node.id).is_none() {
         let state = context.cx.new(|cx| {
@@ -135,7 +206,13 @@ pub(crate) fn render_input_component(
         });
     }
 
+    let accessibility_value = accessibility
+        .value
+        .as_ref()
+        .map(|_value| input.state.read(context.cx).value().to_string());
+    let focus_handle = input.state.focus_handle(context.cx);
     let mut element = Input::new(&input.state)
+        .role(gpui::Role::GenericContainer)
         .disabled(node.disabled)
         .cleanable(node.cleanable);
     element = match node.size.as_deref() {
@@ -148,7 +225,24 @@ pub(crate) fn render_input_component(
         element = element.mask_toggle();
     }
 
-    apply_component_styles(element, node.style).into_any_element()
+    let mut accessible_element = gpui::div()
+        .id(format!("input-accessibility-{}", node.id))
+        .role(accessibility.role)
+        .aria_label(accessibility.label)
+        .track_focus(&focus_handle.tab_stop(!node.disabled))
+        .flex()
+        .w_full()
+        .h(gpui::px(component_height));
+    if let Some(value) = accessibility_value {
+        accessible_element = accessible_element.aria_value(value);
+    }
+    if let Some(placeholder) = accessibility.placeholder {
+        accessible_element = accessible_element.aria_placeholder(placeholder);
+    }
+
+    accessible_element
+        .child(apply_component_styles(element, node.style))
+        .into_any_element()
 }
 
 #[cfg(feature = "components")]
@@ -157,9 +251,18 @@ pub(crate) fn render_select_component(
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     use crate::{push_event, EventValue, InputKind, NativeEvent};
-    use gpui::AppContext;
+    use gpui::{
+        AppContext, Focusable, InteractiveElement, IntoElement, ParentElement,
+        StatefulInteractiveElement, Styled,
+    };
 
     let component_height = component_input_height(node.size.as_deref(), node.style.height);
+    let mut accessibility = choice_accessibility(
+        node.label.clone(),
+        node.value.as_deref(),
+        node.placeholder.clone(),
+        &node.options,
+    );
     use gpui_component::{
         select::{Select, SelectEvent, SelectState},
         IndexPath, Sizable,
@@ -264,6 +367,14 @@ pub(crate) fn render_select_component(
         });
     }
 
+    let current_accessibility_value = select
+        .state
+        .read(context.cx)
+        .selected_value()
+        .map(ToString::to_string);
+    accessibility.value =
+        selected_choice_label(current_accessibility_value.as_deref(), &node.options);
+    let focus_handle = select.state.focus_handle(context.cx);
     let mut element = Select::new(&select.state)
         .disabled(node.disabled)
         .cleanable(node.cleanable);
@@ -277,10 +388,23 @@ pub(crate) fn render_select_component(
         _ => element,
     };
 
-    constrain_full_size_component(
-        apply_component_styles(element, node.style),
-        component_height,
-    )
+    let mut accessible_element = gpui::div()
+        .id(format!("select-accessibility-{}", node.id))
+        .role(gpui::Role::ComboBox)
+        .aria_label(accessibility.label)
+        .track_focus(&focus_handle.tab_stop(!node.disabled))
+        .flex()
+        .h(gpui::px(component_height));
+    if let Some(value) = accessibility.value {
+        accessible_element = accessible_element.aria_value(value);
+    }
+    if let Some(placeholder) = accessibility.placeholder {
+        accessible_element = accessible_element.aria_placeholder(placeholder);
+    }
+
+    accessible_element
+        .child(apply_component_styles(element, node.style))
+        .into_any_element()
 }
 
 #[cfg(feature = "components")]
@@ -289,9 +413,18 @@ pub(crate) fn render_combobox_component(
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     use crate::{push_event, EventValue, InputKind, NativeEvent};
-    use gpui::AppContext;
+    use gpui::{
+        AppContext, InteractiveElement, IntoElement, ParentElement, StatefulInteractiveElement,
+        Styled,
+    };
 
     let component_height = component_input_height(node.size.as_deref(), node.style.height);
+    let mut accessibility = choice_accessibility(
+        node.label.clone(),
+        node.value.as_deref(),
+        node.placeholder.clone(),
+        &node.options,
+    );
     use gpui_component::{
         combobox::{Combobox, ComboboxEvent, ComboboxState},
         IndexPath, Sizable,
@@ -440,6 +573,13 @@ pub(crate) fn render_combobox_component(
         });
     }
 
+    let current_accessibility_value = combobox
+        .state
+        .read(context.cx)
+        .selected_value()
+        .map(|value| value.to_string());
+    accessibility.value =
+        selected_choice_label(current_accessibility_value.as_deref(), &node.options);
     let mut element = Combobox::new(&combobox.state)
         .disabled(node.disabled || node.loading)
         .cleanable(node.cleanable);
@@ -456,10 +596,24 @@ pub(crate) fn render_combobox_component(
         _ => element,
     };
 
-    constrain_full_size_component(
-        apply_component_styles(element, node.style),
-        component_height,
-    )
+    let mut accessible_element = gpui::div()
+        .id(format!("combobox-accessibility-{}", node.id))
+        .role(gpui::Role::Group)
+        .aria_label(accessibility.label)
+        .w_full();
+    if let Some(value) = accessibility.value {
+        accessible_element = accessible_element.aria_value(value);
+    }
+    if let Some(placeholder) = accessibility.placeholder {
+        accessible_element = accessible_element.aria_placeholder(placeholder);
+    }
+
+    accessible_element
+        .child(constrain_full_size_component(
+            apply_component_styles(element, node.style),
+            component_height,
+        ))
+        .into_any_element()
 }
 
 #[cfg(not(feature = "components"))]
@@ -510,6 +664,64 @@ pub(crate) fn render_input_component(
         },
         context,
     )
+}
+
+#[cfg(all(test, feature = "components"))]
+mod tests {
+    use super::{
+        choice_accessibility, input_accessibility, ChoiceAccessibility, InputAccessibility,
+    };
+    use crate::SelectOptionNode;
+
+    #[test]
+    fn input_accessibility_hides_masked_values() {
+        assert_eq!(
+            input_accessibility(
+                "Display name".to_string(),
+                "Ada".to_string(),
+                Some("Name".to_string()),
+                false,
+            ),
+            InputAccessibility {
+                label: "Display name".to_string(),
+                role: crate::gpui::Role::TextInput,
+                value: Some("Ada".to_string()),
+                placeholder: Some("Name".to_string()),
+            }
+        );
+
+        assert_eq!(
+            input_accessibility("Password".to_string(), "secret".to_string(), None, true),
+            InputAccessibility {
+                label: "Password".to_string(),
+                role: crate::gpui::Role::PasswordInput,
+                value: None,
+                placeholder: None,
+            }
+        );
+    }
+
+    #[test]
+    fn choice_accessibility_uses_the_selected_visible_label() {
+        let options = vec![SelectOptionNode {
+            label: "Elixir".to_string(),
+            value: "ex".to_string(),
+        }];
+
+        assert_eq!(
+            choice_accessibility(
+                "Language".to_string(),
+                Some("ex"),
+                Some("Choose a language".to_string()),
+                &options,
+            ),
+            ChoiceAccessibility {
+                label: "Language".to_string(),
+                value: Some("Elixir".to_string()),
+                placeholder: Some("Choose a language".to_string()),
+            }
+        );
+    }
 }
 
 #[cfg(feature = "components")]

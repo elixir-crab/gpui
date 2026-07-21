@@ -15,6 +15,7 @@ defmodule GettingStarted.SettingsForm.View do
         <text style={[color: {:rgb, 0xCBD5E1}]}>Display name</text>
         <UI.input
           id="display-name"
+          label="Display name"
           value={assigns.name}
           placeholder="Display name"
           cleanable={true}
@@ -26,6 +27,7 @@ defmodule GettingStarted.SettingsForm.View do
         <text style={[color: {:rgb, 0xCBD5E1}]}>Appearance</text>
         <UI.select
           id="preview"
+          label="Appearance"
           value={assigns.preview}
           options={[{"Midnight", "midnight"}, {"Paper", "paper"}]}
           phx-change="preview_changed"

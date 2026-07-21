@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Required semantic names for buttons, checkboxes, text inputs, selectors, comboboxes, popover/menu triggers, and dialogs; propagated controlled values, placeholders, password roles, selected labels, and expanded overlay state into native accessibility metadata.
 - Added schema-derived ExDoc option tables and precise named option-map types for every public UI and overlay builder, including required events, defaults, enums, accessibility labels, and named slots.
 - Added schema-driven public component attribute and event validation, required owner events for editable controlled components, unknown-option rejection, normalized string event keys, clearer stable-ID errors, corrected schema option types, and expanded common-builder documentation.
 - Required semantic labels for switches, radio groups, and sliders; propagated switch state, radio orientation, and slider grouping into native accessibility metadata; and enforced one-based tree accessibility positions at both public and native boundaries.

@@ -204,7 +204,7 @@ pub(crate) struct ComponentSlider {
 
 #[derive(Clone)]
 pub(crate) struct DialogConfig {
-    pub(crate) title: Option<String>,
+    pub(crate) title: String,
     pub(crate) width: f32,
     pub(crate) overlay: bool,
     pub(crate) closable: bool,

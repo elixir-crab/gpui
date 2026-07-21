@@ -176,7 +176,7 @@ pub(crate) fn render_dialog(
                     .lock()
                     .map(|config| config.clone())
                     .unwrap_or(DialogConfig {
-                        title: None,
+                        title: "Dialog".to_string(),
                         width: 448.0,
                         overlay: true,
                         closable: true,
@@ -184,7 +184,7 @@ pub(crate) fn render_dialog(
                         close_button: true,
                         style: crate::StyleAttrs::default(),
                     });
-                let mut dialog = super::super::apply_component_styles(dialog, config.style)
+                let dialog = super::super::apply_component_styles(dialog, config.style)
                     .width(gpui::px(config.width))
                     .overlay(config.overlay)
                     .overlay_closable(config.closable)
@@ -210,10 +210,7 @@ pub(crate) fn render_dialog(
                         }
                     })
                     .child(content_view.clone());
-                if let Some(title) = config.title {
-                    dialog = dialog.title(title);
-                }
-                dialog
+                dialog.title(config.title)
             });
             window.defer(cx, move |window, cx| content_focus.focus(window, cx));
         });
@@ -235,11 +232,13 @@ pub(crate) fn render_dialog(
         let key_binding = binding;
         let key_effective_open = effective_open;
         let mouse_focus = trigger_focus.clone();
+        let accessibility = super::overlay_trigger_accessibility(node.title.clone(), open);
         element = element.child(
             gpui::div()
                 .id("trigger")
                 .role(Role::Button)
-                .aria_expanded(open)
+                .aria_label(accessibility.label)
+                .aria_expanded(accessibility.expanded)
                 .track_focus(&trigger_focus.tab_stop(true))
                 .on_mouse_down(MouseButton::Left, move |_event, window, cx| {
                     mouse_focus.focus(window, cx);

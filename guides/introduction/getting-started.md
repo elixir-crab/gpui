@@ -119,6 +119,7 @@ Interactive native controls are controlled by root-view assigns:
 ```elixir
 <GPUI.UI.input
   id="display-name"
+  label="Display name"
   value={assigns.name}
   phx-change="name_changed"
 />

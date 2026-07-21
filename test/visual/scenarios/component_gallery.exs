@@ -12,9 +12,9 @@ defmodule GPUITest.Visual.ComponentGallery.View do
       <UI.button id="primary" label="Primary button" variant="primary" />
       <UI.checkbox id="checked" label="Checked checkbox" checked={true} phx-change="noop" />
       <UI.switch id="notifications" label="Notifications" checked={true} phx-change="noop" />
-      <UI.input id="name" value="Ada Lovelace" placeholder="Name" cleanable={true} phx-change="noop" />
-      <UI.select id="language" value="elixir" options={[{"Elixir", "elixir"}, {"Rust", "rust"}]} phx-change="noop" />
-      <UI.combobox id="framework" value="Phoenix" options={["Phoenix", "LiveView"]} phx-change="noop" />
+      <UI.input id="name" label="Name" value="Ada Lovelace" placeholder="Name" cleanable={true} phx-change="noop" />
+      <UI.select id="language" label="Language" value="elixir" options={[{"Elixir", "elixir"}, {"Rust", "rust"}]} phx-change="noop" />
+      <UI.combobox id="framework" label="Framework" value="Phoenix" options={["Phoenix", "LiveView"]} phx-change="noop" />
       <UI.radio_group
         id="plan"
         label="Plan"
@@ -39,7 +39,7 @@ defmodule GPUITest.Visual.ComponentGallery.View do
           <text>Security details</text>
         </UI.accordion_item>
       </UI.accordion>
-      <Overlay.popover id="gallery-popover" open={assigns.overlay == "popover"}>
+      <Overlay.popover id="gallery-popover" label="Popover" open={assigns.overlay == "popover"}>
         <:trigger><UI.button id="popover-trigger" label="Popover" /></:trigger>
         <:content><text>Popover content</text></:content>
       </Overlay.popover>
@@ -53,9 +53,9 @@ defmodule GPUITest.Visual.ComponentGallery.View do
         title="Visual review dialog"
         width={360}
       >
-        <:content><UI.input id="dialog-input" value="Dialog content" phx-change="noop" /></:content>
+        <:content><UI.input id="dialog-input" label="Dialog input" value="Dialog content" phx-change="noop" /></:content>
       </Overlay.dialog>
-      <Overlay.dropdown_menu id="gallery-menu" open={assigns.overlay == "menu"}>
+      <Overlay.dropdown_menu id="gallery-menu" label="File menu" open={assigns.overlay == "menu"}>
         <:trigger><UI.button id="menu-trigger" label="File menu" /></:trigger>
         <:item value="new">New file</:item>
         <:item value="recent" checked={true}>Open recent</:item>

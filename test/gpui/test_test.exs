@@ -12,7 +12,7 @@ defmodule GPUI.TestTest do
       <div id="root">
         <text>Count: {assigns.count}</text>
         <GPUI.UI.button id="increment" label="Increment" phx-click="increment" />
-        <GPUI.UI.input id="name" value={assigns.name} phx-change="name_changed" />
+        <GPUI.UI.input id="name" label="Name" value={assigns.name} phx-change="name_changed" />
         <GPUI.UI.file_picker
           id="file"
           label="Choose file"
@@ -20,12 +20,14 @@ defmodule GPUI.TestTest do
         />
         <GPUI.UI.select
           id="language"
+          label="Language"
           value={assigns.language}
           options={[{"Rust", "rust"}, {"Elixir", "elixir"}]}
           phx-change="language_changed"
         />
         <GPUI.UI.combobox
           id="framework"
+          label="Framework"
           value={assigns.framework}
           options={["Phoenix", "LiveView"]}
           phx-change="framework_changed"
@@ -68,6 +70,7 @@ defmodule GPUI.TestTest do
         />
         <Overlay.popover
           id="account-menu"
+          label="Account"
           open={assigns.overlay_open}
           phx-change="overlay_changed"
         >
@@ -76,6 +79,7 @@ defmodule GPUI.TestTest do
         </Overlay.popover>
         <Overlay.dropdown_menu
           id="file-menu"
+          label="File menu"
           open={assigns.menu_open}
           phx-change="menu_open_changed"
           phx-select="menu_selected"

@@ -51,9 +51,7 @@ pub(crate) fn render_button_component(
     if node.compact {
         button = button.compact();
     }
-    if let Some(label) = node.label {
-        button = button.label(label);
-    }
+    button = button.label(node.label);
     for child in node.children {
         button = button.child(child.render(context));
     }
@@ -94,9 +92,7 @@ pub(crate) fn render_checkbox_component(
         _ => checkbox,
     };
 
-    if let Some(label) = node.label {
-        checkbox = checkbox.label(label);
-    }
+    checkbox = checkbox.label(node.label);
     for child in node.children {
         checkbox = checkbox.child(child.render(context));
     }
@@ -122,7 +118,7 @@ pub(crate) fn render_button_component(
     node: ButtonComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
-    render_component_fallback(node.style, node.label, node.children, context)
+    render_component_fallback(node.style, Some(node.label), node.children, context)
 }
 
 #[cfg(not(feature = "components"))]
@@ -130,5 +126,5 @@ pub(crate) fn render_checkbox_component(
     node: CheckboxComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
-    render_component_fallback(node.style, node.label, node.children, context)
+    render_component_fallback(node.style, Some(node.label), node.children, context)
 }

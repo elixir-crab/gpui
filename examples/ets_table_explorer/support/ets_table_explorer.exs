@@ -288,6 +288,7 @@ defmodule Examples.EtsTableExplorer.View do
         </div>
         <UI.input
           id="table-filter"
+          label="Table filter"
           value={assigns.query}
           placeholder="Filter by table name, owner, type, or protection"
           cleanable={true}

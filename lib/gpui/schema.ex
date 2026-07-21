@@ -18,7 +18,7 @@ defmodule GPUI.Schema do
       children: true,
       attrs: [
         id: :string,
-        label: :string,
+        label: :required_string,
         variant:
           {:enum, ~w(default primary secondary danger warning success info ghost link text)},
         size: {:enum, ~w(xs sm md lg)},
@@ -72,6 +72,7 @@ defmodule GPUI.Schema do
       public_slots: [trigger: :required, content: :required],
       attrs: [
         id: :string,
+        label: :required_string,
         open: :boolean,
         anchor:
           {:default,
@@ -108,7 +109,7 @@ defmodule GPUI.Schema do
       attrs: [
         id: :string,
         open: :boolean,
-        title: :string,
+        title: :required_string,
         width: {:default, :number, 448.0},
         overlay: {:default, :boolean, true},
         closable: {:default, :boolean, true},
@@ -127,6 +128,7 @@ defmodule GPUI.Schema do
       public_slots: [trigger: :required, item: :one_or_more],
       attrs: [
         id: :string,
+        label: :required_string,
         open: :boolean,
         anchor:
           {:default,
@@ -159,7 +161,7 @@ defmodule GPUI.Schema do
       children: true,
       attrs: [
         id: :string,
-        label: :string,
+        label: :required_string,
         size: {:enum, ~w(xs sm md lg)},
         checked: :boolean,
         disabled: :boolean
@@ -173,6 +175,7 @@ defmodule GPUI.Schema do
       required_events: [:"phx-change"],
       attrs: [
         id: :string,
+        label: :required_string,
         value: {:default, :string},
         placeholder: :string,
         size: {:enum, ~w(xs sm md lg)},
@@ -191,6 +194,7 @@ defmodule GPUI.Schema do
       public_required_attrs: [:options],
       attrs: [
         id: :string,
+        label: :required_string,
         value: :string,
         options: :select_options,
         placeholder: :string,
@@ -208,6 +212,7 @@ defmodule GPUI.Schema do
       public_required_attrs: [:options],
       attrs: [
         id: :string,
+        label: :required_string,
         value: :string,
         options: :select_options,
         placeholder: :string,

@@ -243,6 +243,11 @@ defmodule GPUI.Native.LifecycleE2ETest do
         attrs: %{id: "unnamed-slider"},
         children: []
       },
+      unnamed_input: %{
+        type: :ui_input,
+        attrs: %{id: "unnamed-input"},
+        children: []
+      },
       invalid_progress_max: %{
         type: :ui_progress,
         attrs: %{id: "invalid-progress", label: "Invalid progress", max: 0},

@@ -27,6 +27,7 @@ defmodule Examples.ProcessExplorer.View do
         <div class="flex gap-3">
           <UI.input
             id="process-filter"
+            label="Process filter"
             value={assigns.filter}
             placeholder="Filter processes by PID, name, or function"
             cleanable={true}
@@ -34,6 +35,7 @@ defmodule Examples.ProcessExplorer.View do
           />
           <UI.select
             id="process-sort"
+            label="Process sort order"
             value={assigns.sort}
             options={sort_options()}
             phx-change="sort_changed"

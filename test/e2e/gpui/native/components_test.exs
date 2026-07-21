@@ -27,6 +27,7 @@ defmodule GPUI.Native.ComponentsE2ETest do
         />
         <GPUI.UI.input
           id="component-input"
+          label="Name"
           value={assigns.name}
           placeholder="Name"
           cleanable={true}
@@ -34,12 +35,14 @@ defmodule GPUI.Native.ComponentsE2ETest do
         />
         <GPUI.UI.select
           id="component-language"
+          label="Language"
           value={assigns.language}
           options={[{"Rust", "rust"}, {"Elixir", "elixir"}, {"Zig", "zig"}]}
           phx-change="language_changed"
         />
         <GPUI.UI.combobox
           id="component-framework"
+          label="Framework"
           value={assigns.framework}
           options={assigns.framework_options}
           search_placeholder="Search frameworks"

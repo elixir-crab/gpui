@@ -43,7 +43,7 @@ defmodule GPUI.UITest do
   end
 
   test "validates schema-backed component attributes before native rendering" do
-    assert_raise ArgumentError, ~r/ui_button :label must be a string; got: 42/, fn ->
+    assert_raise ArgumentError, ~r/ui_button :label must be a non-empty string; got: 42/, fn ->
       UI.button(%{id: "save", label: 42})
     end
 
@@ -52,11 +52,11 @@ defmodule GPUI.UITest do
     end
 
     assert_raise ArgumentError, ~r/ui_checkbox :checked must be a boolean; got: "yes"/, fn ->
-      UI.checkbox(%{id: "remember", checked: "yes"})
+      UI.checkbox(%{id: "remember", label: "Remember me", checked: "yes"})
     end
 
     assert_raise ArgumentError, ~r/ui_input :value must be a string; got: 7/, fn ->
-      UI.input(%{id: "name", value: 7})
+      UI.input(%{id: "name", label: "Name", value: 7})
     end
 
     assert_raise ArgumentError, ~r/ui_button :phx-click must be a non-empty string/, fn ->
@@ -68,7 +68,27 @@ defmodule GPUI.UITest do
     end
   end
 
-  test "requires semantic labels for labeled accessibility controls" do
+  test "requires semantic labels for interactive controls" do
+    assert_raise ArgumentError, ~r/ui_button :label must be a non-empty string/, fn ->
+      UI.button(%{id: "save"})
+    end
+
+    assert_raise ArgumentError, ~r/ui_checkbox :label must be a non-empty string/, fn ->
+      UI.checkbox(%{id: "remember", "phx-change": "remember_changed"})
+    end
+
+    assert_raise ArgumentError, ~r/ui_input :label must be a non-empty string/, fn ->
+      UI.input(%{id: "name", "phx-change": "name_changed"})
+    end
+
+    assert_raise ArgumentError, ~r/ui_select :label must be a non-empty string/, fn ->
+      UI.select(%{id: "language", options: ["Elixir"], "phx-change": "language_changed"})
+    end
+
+    assert_raise ArgumentError, ~r/ui_combobox :label must be a non-empty string/, fn ->
+      UI.combobox(%{id: "framework", options: ["Phoenix"], "phx-change": "framework_changed"})
+    end
+
     assert_raise ArgumentError, ~r/ui_switch requires a non-empty string label/, fn ->
       UI.switch(%{id: "notifications", checked: true, "phx-change": "notifications_changed"})
     end
@@ -91,11 +111,11 @@ defmodule GPUI.UITest do
     assert_raise ArgumentError,
                  ~r/ui_input :phx-change must be a non-empty string; got: nil/,
                  fn ->
-                   UI.input(%{id: "name", value: "Ada"})
+                   UI.input(%{id: "name", label: "Name", value: "Ada"})
                  end
 
     assert %Element{attrs: attrs} =
-             UI.input(%{"phx-change" => "name_changed", id: "name", value: "Ada"})
+             UI.input(%{"phx-change" => "name_changed", id: "name", label: "Name", value: "Ada"})
 
     assert attrs[:"phx-change"] == "name_changed"
     refute Enum.any?(attrs, &(elem(&1, 0) == "phx-change"))
@@ -106,6 +126,7 @@ defmodule GPUI.UITest do
                    UI.input(%{
                      "phx-change" => "other_name_changed",
                      id: "name",
+                     label: "Name",
                      value: "Ada",
                      "phx-change": "name_changed"
                    })

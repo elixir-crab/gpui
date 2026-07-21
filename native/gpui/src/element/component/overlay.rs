@@ -8,6 +8,21 @@ use crate::{
 };
 
 #[cfg(feature = "components")]
+#[derive(Debug, PartialEq)]
+pub(super) struct OverlayTriggerAccessibility {
+    pub(super) label: String,
+    pub(super) expanded: bool,
+}
+
+#[cfg(feature = "components")]
+pub(super) fn overlay_trigger_accessibility(
+    label: String,
+    expanded: bool,
+) -> OverlayTriggerAccessibility {
+    OverlayTriggerAccessibility { label, expanded }
+}
+
+#[cfg(feature = "components")]
 pub(crate) fn render(
     node: PopoverComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
@@ -107,10 +122,12 @@ pub(crate) fn render(
     let trigger_binding = binding.clone();
     let trigger_effective_open = effective_open.clone();
     let mouse_focus = trigger_focus.clone();
+    let accessibility = overlay_trigger_accessibility(node.label, open);
     let trigger_element = gpui::div()
         .id(format!("{}-trigger", node.id))
         .role(Role::Button)
-        .aria_expanded(open)
+        .aria_label(accessibility.label)
+        .aria_expanded(accessibility.expanded)
         .track_focus(&trigger_focus.tab_stop(true))
         .on_mouse_down(MouseButton::Left, move |_event, window, cx| {
             mouse_focus.focus(window, cx);
@@ -325,6 +342,23 @@ fn invalid_slots() -> gpui::AnyElement {
     gpui::div()
         .child("invalid popover slots")
         .into_any_element()
+}
+
+#[cfg(all(test, feature = "components"))]
+mod tests {
+    use super::{overlay_trigger_accessibility, OverlayTriggerAccessibility};
+
+    #[test]
+    fn trigger_accessibility_tracks_label_and_expanded_state() {
+        assert_eq!(
+            overlay_trigger_accessibility("Account".to_string(), true),
+            OverlayTriggerAccessibility {
+                label: "Account".to_string(),
+                expanded: true,
+            }
+        );
+        assert!(!overlay_trigger_accessibility("Account".to_string(), false).expanded);
+    }
 }
 
 #[cfg(not(feature = "components"))]

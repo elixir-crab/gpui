@@ -31,6 +31,7 @@ defmodule GPUI.Remote.FormControlsE2ETest do
         />
         <Overlay.popover
           id="remote-popover"
+          label="Account"
           open={assigns.overlay_open}
           phx-change="overlay_changed"
         >
@@ -51,6 +52,7 @@ defmodule GPUI.Remote.FormControlsE2ETest do
         </Overlay.dialog>
         <Overlay.dropdown_menu
           id="remote-menu"
+          label="File menu"
           open={assigns.menu_open}
           phx-change="menu_open_changed"
           phx-select="menu_selected"

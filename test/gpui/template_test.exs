@@ -183,7 +183,7 @@ defmodule GPUI.TemplateTest do
            } =
              ~GPUI"""
              <div>
-               <GPUI.UI.button id="save" variant="primary" phx-click="save">Save</GPUI.UI.button>
+               <GPUI.UI.button id="save" label="Save" variant="primary" phx-click="save">Save</GPUI.UI.button>
                <GPUI.UI.checkbox
                  id="remember"
                  label="Remember me"
@@ -192,6 +192,7 @@ defmodule GPUI.TemplateTest do
                />
                <GPUI.UI.input
                  id="name"
+                 label="Name"
                  value="Ada"
                  placeholder="Name"
                  cleanable={true}
@@ -199,12 +200,14 @@ defmodule GPUI.TemplateTest do
                />
                <GPUI.UI.select
                  id="language"
+                 label="Language"
                  value="rust"
                  options={options}
                  phx-change="language_changed"
                />
                <GPUI.UI.combobox
                  id="framework"
+                 label="Framework"
                  options={["Phoenix", "LiveView"]}
                  search_placeholder="Search frameworks"
                  phx-change="framework_changed"
@@ -364,7 +367,7 @@ defmodule GPUI.TemplateTest do
                phx-change="dialog_changed"
              >
                <:trigger><UI.button id="settings" label="Settings" /></:trigger>
-               <:content><UI.input id="display-name" value="Ada" phx-change="name_changed" /></:content>
+               <:content><UI.input id="display-name" label="Display name" value="Ada" phx-change="name_changed" /></:content>
              </Overlay.dialog>
              """
 
@@ -378,7 +381,7 @@ defmodule GPUI.TemplateTest do
 
   test "dialog requires one content slot" do
     assert_raise ArgumentError, ~r/exactly one :content slot/, fn ->
-      Overlay.dialog(%{id: "dialog", children: []})
+      Overlay.dialog(%{id: "dialog", title: "Dialog", children: []})
     end
   end
 
@@ -395,6 +398,7 @@ defmodule GPUI.TemplateTest do
              ~GPUI"""
              <Overlay.dropdown_menu
                id="file-menu"
+               label="File menu"
                open={true}
                phx-change="menu_open_changed"
                phx-select="menu_selected"
@@ -424,12 +428,18 @@ defmodule GPUI.TemplateTest do
     duplicate = %GPUI.Component.Slot{attrs: [value: "same"], children: ["Item"]}
 
     assert_raise ArgumentError, ~r/at least one :item/, fn ->
-      Overlay.dropdown_menu(%{id: "menu", trigger: [trigger], children: []})
+      Overlay.dropdown_menu(%{
+        id: "menu",
+        label: "Menu",
+        trigger: [trigger],
+        children: []
+      })
     end
 
     assert_raise ArgumentError, ~r/values must be unique/, fn ->
       Overlay.dropdown_menu(%{
         id: "menu",
+        label: "Menu",
         trigger: [trigger],
         item: [duplicate, duplicate],
         children: []
@@ -447,7 +457,7 @@ defmodule GPUI.TemplateTest do
              ]
            } =
              ~GPUI"""
-             <Overlay.popover id="account-menu" open={true} phx-change="menu_changed">
+             <Overlay.popover id="account-menu" label="Account" open={true} phx-change="menu_changed">
                <:trigger>Open</:trigger>
                <:content>
                  <UI.button id="profile" label="Profile" phx-click="profile" />
@@ -467,7 +477,30 @@ defmodule GPUI.TemplateTest do
     trigger = %GPUI.Component.Slot{children: ["Open"]}
 
     assert_raise ArgumentError, ~r/exactly one :content slot/, fn ->
-      Overlay.popover(%{id: "menu", trigger: [trigger], children: []})
+      Overlay.popover(%{id: "menu", label: "Menu", trigger: [trigger], children: []})
+    end
+  end
+
+  test "overlays require semantic trigger labels and dialog titles" do
+    trigger = %GPUI.Component.Slot{children: ["Open"]}
+    content = %GPUI.Component.Slot{children: ["Content"]}
+    item = %GPUI.Component.Slot{attrs: [value: "open"], children: ["Open"]}
+
+    assert_raise ArgumentError, ~r/ui_popover :label must be a non-empty string/, fn ->
+      Overlay.popover(%{id: "popover", trigger: [trigger], content: [content], children: []})
+    end
+
+    assert_raise ArgumentError, ~r/ui_dropdown_menu :label must be a non-empty string/, fn ->
+      Overlay.dropdown_menu(%{
+        id: "menu",
+        trigger: [trigger],
+        item: [item],
+        children: []
+      })
+    end
+
+    assert_raise ArgumentError, ~r/ui_dialog :title must be a non-empty string/, fn ->
+      Overlay.dialog(%{id: "dialog", content: [content], children: []})
     end
   end
 
@@ -505,6 +538,7 @@ defmodule GPUI.TemplateTest do
     combobox =
       GPUI.UI.combobox(%{
         id: "framework",
+        label: "Framework",
         value: "LiveView",
         options: [],
         "phx-change": "framework_changed"
@@ -571,7 +605,7 @@ defmodule GPUI.TemplateTest do
       ~GPUI"""
       <div>
         <GPUI.UI.button id="duplicate" label="One" />
-        <GPUI.UI.input id="duplicate" value="" phx-change="name_changed" />
+        <GPUI.UI.input id="duplicate" label="Duplicate" value="" phx-change="name_changed" />
       </div>
       """
 

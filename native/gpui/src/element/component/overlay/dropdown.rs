@@ -147,10 +147,12 @@ pub(crate) fn render(
     let mouse_focus = trigger_focus.clone();
     let disabled = node.disabled;
 
+    let accessibility = super::overlay_trigger_accessibility(node.label, open);
     let trigger_element = gpui::div()
         .id(format!("{}-trigger", node.id))
         .role(Role::Button)
-        .aria_expanded(open)
+        .aria_label(accessibility.label)
+        .aria_expanded(accessibility.expanded)
         .track_focus(&trigger_focus.clone().tab_stop(!disabled))
         .on_mouse_down(MouseButton::Left, move |_event, window, cx| {
             if disabled {

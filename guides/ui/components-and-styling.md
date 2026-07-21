@@ -50,6 +50,7 @@ cannot drift into separate option registries.
 ```elixir
 <UI.input
   id="name"
+  label="Name"
   value={assigns.name}
   placeholder="Name"
   cleanable={true}
@@ -58,6 +59,7 @@ cannot drift into separate option registries.
 
 <UI.select
   id="language"
+  label="Language"
   value={assigns.language}
   options={[{"Rust", "rust"}, {"Elixir", "elixir"}]}
   phx-change="language_changed"
@@ -65,6 +67,7 @@ cannot drift into separate option registries.
 
 <UI.combobox
   id="framework"
+  label="Framework"
   value={assigns.framework}
   options={assigns.framework_options}
   search_placeholder="Search frameworks"
@@ -72,6 +75,14 @@ cannot drift into separate option registries.
   phx-search="framework_searched"
 />
 ```
+
+Buttons, checkboxes, inputs, selects, and comboboxes require non-empty semantic
+labels. Native text-input metadata exposes the controlled value and placeholder;
+masked inputs expose a password-input role without leaking their value. Select
+metadata exposes the visible label of the controlled option, while searchable
+comboboxes retain the upstream expanded-state semantics inside a labeled group.
+Input, select, and combobox labels are semantic rather than visible captions;
+render adjacent `text` when the interface also needs a visual field label.
 
 Select, combobox, tabs, and radio-group options accept strings,
 `{label, value}` tuples, or `%{label: label, value: value}` maps. Radio maps may

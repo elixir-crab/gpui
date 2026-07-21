@@ -76,7 +76,8 @@ defmodule GPUI.UI.Overlay do
   @doc """
   Builds a controlled modal dialog with an optional `:trigger` and one `:content` slot.
 
-  Changes to `open` are emitted through `phx-change`. The native dialog traps
+  A non-empty `title` supplies the dialog heading and names its optional
+  trigger. Changes to `open` are emitted through `phx-change`. The native dialog traps
   focus while open and restores the previous focus when it closes. Escape and
   overlay clicks request closure when enabled.
 
@@ -117,7 +118,7 @@ defmodule GPUI.UI.Overlay do
   @doc """
   Builds a controlled dropdown menu with one `:trigger` and one or more `:item` slots.
 
-  `phx-change` receives controlled open-state changes and `phx-select` receives
+  A non-empty `label` names the trigger and its expanded state. `phx-change` receives controlled open-state changes and `phx-select` receives
   the selected item value. Popup-menu keyboard navigation, dismissal, and focus
   restoration are provided by GPUI Component.
 
@@ -160,7 +161,7 @@ defmodule GPUI.UI.Overlay do
   @doc """
   Builds a controlled popover with one `:trigger` and one `:content` slot.
 
-  Changes to `open` are emitted through `phx-change`. Escape and, by default,
+  A non-empty `label` names the trigger and its expanded state. Changes to `open` are emitted through `phx-change`. Escape and, by default,
   outside clicks request closure and restore focus to the trigger.
 
   #{Schema.component_options_doc(:ui_popover)}

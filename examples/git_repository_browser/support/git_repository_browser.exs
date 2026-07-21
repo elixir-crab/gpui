@@ -230,6 +230,7 @@ defmodule Examples.GitRepositoryBrowser.View do
         <div class="flex gap-3">
           <UI.input
             id="repository-filter"
+            label="Repository filter"
             value={assigns.filter}
             placeholder="Filter repository paths"
             cleanable={true}
@@ -237,6 +238,7 @@ defmodule Examples.GitRepositoryBrowser.View do
           />
           <UI.select
             id="status-filter"
+            label="Status filter"
             value={assigns.status_filter}
             options={status_options()}
             phx-change="status_filter_changed"

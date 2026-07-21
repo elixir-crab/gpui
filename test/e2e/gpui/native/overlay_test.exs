@@ -18,6 +18,7 @@ defmodule GPUI.Native.OverlayE2ETest do
       <div class="flex flex-col w-[420px] h-[300px] p-4 gap-4 bg-slate-900">
         <Overlay.popover
           id="account-popover"
+          label="Account"
           open={assigns.open}
           phx-change="open_changed"
         >
@@ -48,6 +49,7 @@ defmodule GPUI.Native.OverlayE2ETest do
         </Overlay.dialog>
         <Overlay.dropdown_menu
           id="file-menu"
+          label="File menu"
           open={assigns.menu_open}
           phx-change="menu_open_changed"
           phx-select="menu_selected"
