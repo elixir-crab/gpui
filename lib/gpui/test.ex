@@ -113,18 +113,15 @@ defmodule GPUI.Test do
     snapshot
   end
 
+  @doc "Dispatches an application command and returns the updated snapshot."
+  @spec command(GenServer.server(), String.t(), keyword()) :: Snapshot.t()
+  def command(runtime, event, opts \\ []),
+    do: dispatch_named(runtime, :command, event, opts)
+
   @doc "Dispatches a click event and returns the updated snapshot."
   @spec click(GenServer.server(), String.t(), keyword()) :: Snapshot.t()
-  def click(runtime, event, opts \\ []) do
-    {_handled, snapshot} =
-      dispatch(runtime, %{
-        type: :click,
-        window_id: event_window_id(runtime, opts),
-        event: event
-      })
-
-    snapshot
-  end
+  def click(runtime, event, opts \\ []),
+    do: dispatch_named(runtime, :click, event, opts)
 
   @doc "Dispatches a change event and returns the updated snapshot."
   @spec change(GenServer.server(), String.t(), term(), keyword()) :: Snapshot.t()
@@ -241,6 +238,17 @@ defmodule GPUI.Test do
   def find!(tree, selector) when is_list(selector) do
     find(tree, selector) ||
       raise ArgumentError, "no GPUI element matches #{inspect(selector)}"
+  end
+
+  defp dispatch_named(runtime, type, event, opts) do
+    {_handled, snapshot} =
+      dispatch(runtime, %{
+        type: type,
+        window_id: event_window_id(runtime, opts),
+        event: event
+      })
+
+    snapshot
   end
 
   defp dispatch_value(runtime, type, event, value, opts) do

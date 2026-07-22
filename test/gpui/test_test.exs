@@ -166,6 +166,8 @@ defmodule GPUI.TestTest do
       {:ok,
        [
          window "Primary" do
+           shortcut("increment", "primary-i")
+
            root(TestView,
              count: 0,
              name: "",
@@ -246,8 +248,9 @@ defmodule GPUI.TestTest do
     assert %{type: :ui_input} = runtime |> tree() |> find!(id: "name")
 
     click(runtime, "increment")
+    command(runtime, "increment")
     send_view(runtime, :increment)
-    assert %{count: 2} = assigns(runtime)
+    assert %{count: 3} = assigns(runtime)
 
     change(runtime, "name_changed", "Ada")
     submit(runtime, "name_submitted", "Ada")
@@ -267,7 +270,7 @@ defmodule GPUI.TestTest do
     assert %{tree_branch: "dir:lib"} = assigns(runtime)
 
     select(runtime, "language_changed", "elixir")
-    assert %{count: 2, name: "Ada", language: "elixir"} = assigns(runtime)
+    assert %{count: 3, name: "Ada", language: "elixir"} = assigns(runtime)
 
     select(runtime, "language_changed", nil)
     search(runtime, "framework_searched", "live")

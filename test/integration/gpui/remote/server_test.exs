@@ -600,6 +600,19 @@ defmodule GPUI.Remote.ServerTest do
                       snapshot: %{windows: [%{root: %{assigns: %{name: "submitted"}}}]}
                     }}
 
+    assert {:ok, :ok} =
+             GPUI.Test.Display.inject_event(display_name, %{
+               type: :command,
+               window_id: 1,
+               event: "increment"
+             })
+
+    assert_receive {:gpui, ^client,
+                    %GPUI.Runtime.Update{
+                      events: [%{type: :command}],
+                      snapshot: %{windows: [%{root: %{assigns: %{name: "submitted", count: 1}}}]}
+                    }}
+
     selection = %{
       operation_id: 17,
       status: :selected,

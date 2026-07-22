@@ -16,6 +16,7 @@ The application demonstrates a larger GPUI architecture:
 - pointer or keyboard selection opens a process inspector without a second source of truth;
 - filtered summaries distinguish visible rows from the full sample, while a
   selected process can remain inspectable when the current filter hides it;
+- `primary-p` pause/resume and `primary-f` filter-focus commands;
 - tests use synthetic process snapshots through `GPUI.Test` and do not need a
   native window.
 

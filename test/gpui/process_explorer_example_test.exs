@@ -16,6 +16,9 @@ defmodule GPUI.ProcessExplorerExampleTest do
     assert %{type: :ui_data_table} = runtime |> tree() |> find!(id: "processes")
     assert %{type: :ui_table_row} = runtime |> tree() |> find!(id: "<0.20.0>")
 
+    command(runtime, "focus_process_filter")
+    assert %{filter_focus_request: 1} = assigns(runtime)
+
     table_sort(runtime, "process_sorted", "name")
     assert %{sort: "name"} = assigns(runtime)
 
@@ -41,12 +44,12 @@ defmodule GPUI.ProcessExplorerExampleTest do
   test "pauses and resumes snapshots while reconciling terminated selections" do
     runtime = start_gpui!(App, args: %{processes: processes()})
     select(runtime, "process_selected", "<0.20.0>")
-    click(runtime, "toggle_pause")
+    command(runtime, "toggle_pause")
 
     send_view(runtime, {:process_snapshot, [process("<0.30.0>", "new", 99)]})
     assert %{paused: true, selected_pid: "<0.20.0>", processes: [_, _]} = assigns(runtime)
 
-    click(runtime, "toggle_pause")
+    command(runtime, "toggle_pause")
     send_view(runtime, {:process_snapshot, [process("<0.30.0>", "new", 99)]})
 
     assert %{paused: false, selected_pid: nil, processes: [%{pid: "<0.30.0>"}]} =

@@ -51,6 +51,7 @@ defmodule Examples.LogTraceExplorer.View do
             id="event-filter"
             label="Event filter"
             value={assigns.query}
+            focus_request={assigns.filter_focus_request}
             placeholder="Filter messages, sources, levels, or metadata"
             cleanable={true}
             phx-change="filter_changed"
@@ -85,6 +86,9 @@ defmodule Examples.LogTraceExplorer.View do
   end
 
   @impl GPUI.View
+  def handle_event("focus_event_filter", _event, assigns),
+    do: {:noreply, %{assigns | filter_focus_request: assigns.filter_focus_request + 1}}
+
   def handle_event("filter_changed", %{value: query}, assigns),
     do: begin_filter(assigns, :query, String.slice(query, 0, 256))
 
@@ -380,9 +384,13 @@ defmodule Examples.LogTraceExplorer.App do
      [
        window "OTP Log and Trace Explorer" do
          size(1200, 760)
+         shortcut("toggle_pause", "primary-p")
+         shortcut("clear_events", "primary-shift-k")
+         shortcut("focus_event_filter", "primary-f")
 
          root(Examples.LogTraceExplorer.View,
            query: "",
+           filter_focus_request: 0,
            level: "all",
            paused: false,
            follow: base.follow,

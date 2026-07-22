@@ -29,6 +29,8 @@ other supervised trace producers can call
   debug/info/warning/error presentation.
 - Message copying executes on the display machine, preserving useful semantics
   for remote sessions.
+- `primary-p`, `primary-shift-k`, and `primary-f` control pause, clear, and
+  filter focus without duplicating view handlers.
 
 Pause stops snapshot updates but not ingestion. Follow-tail can be disabled to
 inspect historical ranges. Filters search message text, source, level, and

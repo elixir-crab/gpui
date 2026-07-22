@@ -57,6 +57,7 @@ Use the helper matching the component contract:
 
 ```elixir
 click(runtime, "save")
+command(runtime, "reload_repository")
 change(runtime, "name_changed", "Ada")
 submit(runtime, "save", "Ada")
 select(runtime, "language_changed", "elixir")

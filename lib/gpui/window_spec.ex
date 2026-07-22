@@ -1,6 +1,9 @@
 defmodule GPUI.WindowSpec do
   @moduledoc """
   Declarative window specification returned by the application DSL.
+
+  Each window owns a bounded set of platform-aware `GPUI.Command` bindings in
+  addition to its title, size, and root view.
   """
 
   @type root :: {module(), map() | keyword()}
@@ -8,14 +11,15 @@ defmodule GPUI.WindowSpec do
           id: pos_integer() | nil,
           title: String.t(),
           size: {pos_integer(), pos_integer()} | nil,
-          root: root() | nil
+          root: root() | nil,
+          commands: [GPUI.Command.t()]
         }
 
   @enforce_keys [:title]
-  defstruct [:id, :title, :size, :root]
+  defstruct [:id, :title, :size, :root, commands: []]
 
   @spec validate!(t()) :: t()
-  def validate!(%__MODULE__{title: title, size: size, root: root} = window) do
+  def validate!(%__MODULE__{title: title, size: size, root: root, commands: commands} = window) do
     unless is_binary(title), do: raise(ArgumentError, "window title must be a string")
 
     unless valid_size?(size) do
@@ -25,6 +29,8 @@ defmodule GPUI.WindowSpec do
     unless valid_root?(root) do
       raise ArgumentError, "window root must contain a module and map or keyword assigns"
     end
+
+    GPUI.Command.validate_all!(commands)
 
     if match?({_, _}, root) do
       {module, _assigns} = root

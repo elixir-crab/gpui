@@ -122,6 +122,10 @@ A snapshot contains the complete declarative window set. Native synchronization:
 4. reconciles stateful controls by component kind and stable ID;
 5. drops registry entries no longer present in the rendered tree.
 
+Window snapshots also carry bounded command ID/shortcut pairs. The native root
+observes matched keystrokes after normal GPUI dispatch, emits `:command` events,
+and suppresses standard editing combinations while an input is focused.
+
 Component IDs never depend on traversal position. Duplicate structural IDs are
 rejected before crossing the display boundary.
 

@@ -34,7 +34,8 @@ pub(crate) fn open_window_impl<'a>(
     let window_id = window_id(window)?;
     let (width, height) = window_size(window)?;
     let tree = window_tree(window)?;
-    let shared_window = Arc::new(WindowState::new(tree));
+    let commands = decode_window_commands(window)?;
+    let shared_window = Arc::new(WindowState::new(tree, commands));
     let (reply, receiver) = std::sync::mpsc::sync_channel(1);
 
     let command = WindowCommand::Open {
@@ -52,6 +53,27 @@ pub(crate) fn open_window_impl<'a>(
         env,
         execute_window_command(&runtime, command, receiver).map(|()| title),
     )
+}
+
+#[cfg(feature = "real-gpui")]
+fn decode_window_commands(window: Term) -> NifResult<Vec<CommandBinding>> {
+    let commands = window_commands(window)?;
+    if commands.len() > 64 {
+        return Err(rustler::Error::BadArg);
+    }
+
+    let mut ids = HashSet::new();
+    let mut shortcuts = HashSet::new();
+    commands
+        .into_iter()
+        .map(|(id, shortcut)| {
+            if !ids.insert(id.clone()) || !shortcuts.insert(shortcut.clone()) {
+                return Err(rustler::Error::BadArg);
+            }
+
+            CommandBinding::new(id, shortcut).map_err(|_reason| rustler::Error::BadArg)
+        })
+        .collect()
 }
 
 pub(crate) fn drain_events_impl<'a>(
@@ -369,7 +391,17 @@ pub(crate) fn inject_event_impl<'a>(
                 },
             )?;
         }
-        "change" | "release" | "search" | "keydown" | "keyup" => {
+        "command" => {
+            let event_name = event.map_get(atoms::event())?.decode::<String>()?;
+            push_event(
+                &runtime.state,
+                NativeEvent::Command {
+                    window_id,
+                    event: event_name,
+                },
+            )?;
+        }
+        "change" | "release" | "search" | "submit" | "keydown" | "keyup" => {
             let event_name = event.map_get(atoms::event())?.decode::<String>()?;
             let value = event
                 .map_get(atoms::value())
@@ -379,6 +411,7 @@ pub(crate) fn inject_event_impl<'a>(
                 "change" => InputKind::Change,
                 "release" => InputKind::Release,
                 "search" => InputKind::Search,
+                "submit" => InputKind::Submit,
                 "keydown" => InputKind::KeyDown,
                 "keyup" => InputKind::KeyUp,
                 _other => return Err(rustler::Error::BadArg),

@@ -188,6 +188,12 @@ defmodule GPUI.GitRepositoryBrowserExampleTest do
 
     assert runtime |> tree() |> all(id: "file:test/new_test.exs") |> Enum.any?()
     refute runtime |> tree() |> all(id: "file:lib/slow.ex") |> Enum.any?()
+
+    command(runtime, "focus_repository_filter")
+    assert %{filter_focus_request: 1} = assigns(runtime)
+
+    command(runtime, "reload_repository")
+    assert %{scan_status: :scanning} = assigns(runtime)
   end
 
   test "supervises scans and replaces an active preview without stale results" do

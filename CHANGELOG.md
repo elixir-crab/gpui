@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Added bounded renderer-independent window commands with cross-platform modified shortcuts, native post-dispatch matching that preserves focused input behavior, local/remote event routing, deterministic command tests, and command-driven Git, process, and log/trace dogfood workflows.
 - Added renderer-independent controlled field composition, visible help/error feedback, input Enter submission, monotonic native focus requests, deterministic submission testing, and validation-driven Settings Form and external-consumer examples.
 - Required semantic names for buttons, checkboxes, text inputs, selectors, comboboxes, popover/menu triggers, and dialogs; propagated controlled values, placeholders, password roles, selected labels, and expanded overlay state into native accessibility metadata.
 - Added schema-derived ExDoc option tables and precise named option-map types for every public UI and overlay builder, including required events, defaults, enums, accessibility labels, and named slots.

@@ -17,6 +17,12 @@ defmodule GPUI.NativeTest do
              GPUI.Native.drain_events(runtime)
 
     assert {:ok, :ok} =
+             GPUI.Native.inject_event(runtime, %{type: :command, window_id: 7, event: "save"})
+
+    assert {:ok, [%{type: :command, window_id: 7, event: "save"}]} =
+             GPUI.Native.drain_events(runtime)
+
+    assert {:ok, :ok} =
              GPUI.Native.inject_event(runtime, %{type: :window_closed, window_id: 7})
 
     assert {:ok, [%{type: :window_closed, window_id: 7}]} = GPUI.Native.drain_events(runtime)

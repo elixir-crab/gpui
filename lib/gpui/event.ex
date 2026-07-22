@@ -7,6 +7,7 @@ defmodule GPUI.Event do
 
   @type type ::
           :click
+          | :command
           | :change
           | :select
           | :release

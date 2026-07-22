@@ -29,6 +29,7 @@ defmodule Examples.ProcessExplorer.View do
             id="process-filter"
             label="Process filter"
             value={assigns.filter}
+            focus_request={assigns.filter_focus_request}
             placeholder="Filter processes by PID, name, or function"
             cleanable={true}
             phx-change="filter_changed"
@@ -57,6 +58,9 @@ defmodule Examples.ProcessExplorer.View do
   end
 
   @impl GPUI.View
+  def handle_event("focus_process_filter", _event, assigns),
+    do: {:noreply, %{assigns | filter_focus_request: assigns.filter_focus_request + 1}}
+
   def handle_event("filter_changed", %{value: filter}, assigns),
     do: {:noreply, %{assigns | filter: filter}}
 
@@ -337,11 +341,14 @@ defmodule Examples.ProcessExplorer.App do
      [
        window "BEAM Process Explorer" do
          size(1100, 720)
+         shortcut("toggle_pause", "primary-p")
+         shortcut("focus_process_filter", "primary-f")
 
          root(Examples.ProcessExplorer.View,
            processes: processes,
            selected_pid: nil,
            filter: "",
+           filter_focus_request: 0,
            sort: "memory",
            paused: false
          )

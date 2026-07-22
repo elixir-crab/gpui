@@ -12,6 +12,10 @@ pub(crate) enum NativeEvent {
         window_id: u64,
         event: String,
     },
+    Command {
+        window_id: u64,
+        event: String,
+    },
     Input {
         kind: InputKind,
         window_id: u64,
@@ -58,6 +62,14 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             env,
             vec![
                 (atoms::type_atom(), atoms::click().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
+            ],
+        ),
+        NativeEvent::Command { window_id, event } => encode_event_map(
+            env,
+            vec![
+                (atoms::type_atom(), atoms::command().to_term(env)),
                 (atoms::window_id(), window_id.encode(env)),
                 (atoms::event(), event.encode(env)),
             ],

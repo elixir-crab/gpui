@@ -39,6 +39,9 @@ defmodule GPUI.Native.InteractivityE2ETest do
     def handle_event("reset", _event, assigns),
       do: {:noreply, %{assigns | primary: "server"}}
 
+    def handle_event("select_all_conflict", _event, assigns),
+      do: {:noreply, %{assigns | command_conflicts: assigns.command_conflicts + 1}}
+
     def handle_event("keydown", %{value: key}, assigns),
       do: {:noreply, %{assigns | keydowns: [key | assigns.keydowns]}}
 
@@ -55,9 +58,12 @@ defmodule GPUI.Native.InteractivityE2ETest do
        [
          window title do
            size(420, 360)
+           shortcut("increment", "primary-i")
+           shortcut("select_all_conflict", "primary-a")
 
            root(InteractiveView,
              count: 0,
+             command_conflicts: 0,
              primary: "",
              secondary: "",
              keydowns: [],
@@ -115,6 +121,16 @@ defmodule GPUI.Native.InteractivityE2ETest do
     Desktop.eventually(fn ->
       assert %{primary: "server!", secondary: "abz"} = assigns(runtime)
     end)
+
+    Desktop.key!(window_id, "ctrl+a")
+    Desktop.type!(window_id, "selected")
+
+    Desktop.eventually(fn ->
+      assert %{primary: "server!selected", command_conflicts: 0} = assigns(runtime)
+    end)
+
+    Desktop.key!(window_id, "ctrl+i")
+    Desktop.eventually(fn -> assert %{count: 2} = assigns(runtime) end)
 
     Desktop.close_window!(window_id)
 

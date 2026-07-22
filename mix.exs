@@ -96,6 +96,7 @@ defmodule GPUI.MixProject do
         "guides/introduction/getting-started.md",
         "guides/architecture/sessions-and-displays.md",
         "guides/ui/components-and-styling.md",
+        "guides/ui/commands-and-shortcuts.md",
         "guides/ui/overlays-and-menus.md",
         "guides/remote/remote-displays.md",
         "guides/testing/testing.md",
@@ -113,6 +114,7 @@ defmodule GPUI.MixProject do
         Core: [
           GPUI,
           GPUI.Application,
+          GPUI.Command,
           GPUI.Session,
           GPUI.Snapshot,
           GPUI.Runtime,

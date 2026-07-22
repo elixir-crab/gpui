@@ -23,6 +23,7 @@ When no path is supplied, it opens the current repository.
 - `GPUI.UI.code_viewer/1` with line selection, display-side copying, horizontal
   scrolling, and distinct added, deleted, context, and hunk rows;
 - operation generations that prevent stale scans or previews from winning;
+- `primary-r` repository refresh and `primary-f` filter-focus commands;
 - deterministic application, repository, and visual tests.
 
 ## Filesystem semantics

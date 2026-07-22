@@ -4,6 +4,8 @@ defmodule GPUI.Application do
 
   `mount/1` declares a session's initial windows. Interactive state belongs to
   each root view's assigns rather than an unused application-level state value.
+  Window blocks may bind stable command IDs with `shortcut/2`; native and remote
+  displays dispatch them to the same view handlers used by buttons and menus.
   """
 
   alias GPUI.WindowSpec
@@ -15,7 +17,7 @@ defmodule GPUI.Application do
     quote do
       @behaviour GPUI.Application
 
-      import GPUI.Application, only: [window: 2, size: 2, root: 1, root: 2]
+      import GPUI.Application, only: [window: 2, size: 2, root: 1, root: 2, shortcut: 2]
 
       def child_spec(opts) do
         %{
@@ -32,14 +34,23 @@ defmodule GPUI.Application do
 
     quote do
       Enum.reduce(unquote(entries), %GPUI.WindowSpec{title: unquote(title)}, fn
-        {:size, width, height}, spec -> %{spec | size: {width, height}}
-        {:root, module, assigns}, spec -> %{spec | root: {module, Map.new(assigns)}}
+        {:size, width, height}, spec ->
+          %{spec | size: {width, height}}
+
+        {:root, module, assigns}, spec ->
+          %{spec | root: {module, Map.new(assigns)}}
+
+        {:command, id, shortcut}, spec ->
+          %{spec | commands: spec.commands ++ [GPUI.Command.new(id, shortcut)]}
       end)
     end
   end
 
   @doc "Declares a window size inside `window`."
   defmacro size(width, height), do: quote(do: {:size, unquote(width), unquote(height)})
+
+  @doc "Binds an application command to a modified shortcut inside `window`."
+  defmacro shortcut(id, keys), do: quote(do: {:command, unquote(id), unquote(keys)})
 
   @doc "Declares a root view inside `window`."
   defmacro root(module, assigns \\ []) do

@@ -61,6 +61,7 @@ defmodule GPUI.Session do
       id: window.id,
       title: window.title,
       size: Tuple.to_list(window.size || {800, 600}),
+      commands: Enum.map(window.commands, &GPUI.Command.to_payload/1),
       root: encode_root(window.root)
     }
   end
@@ -193,6 +194,7 @@ defmodule GPUI.Session do
        )
        when type in [
               :click,
+              :command,
               :change,
               :select,
               :release,

@@ -7,8 +7,116 @@ pub(crate) type WindowCommandReply = std::sync::mpsc::SyncSender<Result<(), Stri
 pub(crate) type WindowGenerationReply = std::sync::mpsc::SyncSender<Result<u64, String>>;
 
 #[cfg(feature = "real-gpui")]
+#[derive(Clone)]
+pub(crate) struct CommandBinding {
+    id: String,
+    shortcut: gpui::KeybindingKeystroke,
+}
+
+#[cfg(feature = "real-gpui")]
+impl CommandBinding {
+    pub(crate) fn new(id: String, shortcut: String) -> Result<Self, &'static str> {
+        if id.is_empty() || id.len() > 128 || !valid_command_shortcut(&shortcut) {
+            return Err("invalid_command");
+        }
+
+        let shortcut = shortcut
+            .split('-')
+            .map(|part| if part == "primary" { "secondary" } else { part })
+            .collect::<Vec<_>>()
+            .join("-");
+        let shortcut = gpui::Keystroke::parse(&shortcut).map_err(|_error| "invalid_command")?;
+        if !(shortcut.modifiers.platform || shortcut.modifiers.control || shortcut.modifiers.alt) {
+            return Err("invalid_command");
+        }
+
+        Ok(Self {
+            id,
+            shortcut: gpui::KeybindingKeystroke::from_keystroke(shortcut),
+        })
+    }
+
+    fn matches(&self, keystroke: &gpui::Keystroke) -> bool {
+        keystroke.should_match(&self.shortcut)
+    }
+}
+
+#[cfg(feature = "real-gpui")]
+fn valid_command_shortcut(shortcut: &str) -> bool {
+    if shortcut.is_empty() || shortcut.len() > 64 {
+        return false;
+    }
+
+    let parts = shortcut.split('-').collect::<Vec<_>>();
+    let Some((key, modifiers)) = parts.split_last() else {
+        return false;
+    };
+    let valid_key = key.len() == 1
+        && key
+            .bytes()
+            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit());
+    let expected = ["primary", "ctrl", "alt", "shift"];
+    let mut next_modifier = 0;
+    let mut activation_modifier = false;
+
+    for modifier in modifiers {
+        let Some(index) = expected.iter().position(|expected| expected == modifier) else {
+            return false;
+        };
+        if index < next_modifier {
+            return false;
+        }
+        next_modifier = index + 1;
+        activation_modifier |= matches!(*modifier, "primary" | "ctrl" | "alt");
+    }
+
+    !modifiers.is_empty() && activation_modifier && valid_key
+}
+
+#[cfg(feature = "real-gpui")]
+fn native_editing_shortcut(keystroke: &gpui::Keystroke) -> bool {
+    (keystroke.modifiers.platform || keystroke.modifiers.control)
+        && !keystroke.modifiers.alt
+        && matches!(keystroke.key.as_str(), "a" | "c" | "v" | "x" | "y" | "z")
+}
+
+#[cfg(all(test, feature = "real-gpui"))]
+mod command_tests {
+    use super::{native_editing_shortcut, valid_command_shortcut, CommandBinding};
+
+    #[test]
+    fn primary_shortcuts_use_gpui_platform_matching() {
+        let command = CommandBinding::new("refresh".to_string(), "primary-r".to_string())
+            .expect("valid command");
+        let matching = zed_gpui::Keystroke::parse("secondary-r").expect("valid keystroke");
+        let unmodified = zed_gpui::Keystroke::parse("r").expect("valid keystroke");
+
+        assert!(command.matches(&matching));
+        assert!(!command.matches(&unmodified));
+    }
+
+    #[test]
+    fn malformed_native_shortcuts_are_rejected() {
+        assert!(valid_command_shortcut("primary-shift-r"));
+        assert!(!valid_command_shortcut("shift-r"));
+        assert!(!valid_command_shortcut("shift-primary-r"));
+        assert!(!valid_command_shortcut("primary-R"));
+    }
+
+    #[test]
+    fn native_editing_shortcuts_are_reserved_while_an_input_is_focused() {
+        let select_all = zed_gpui::Keystroke::parse("ctrl-a").expect("valid keystroke");
+        let refresh = zed_gpui::Keystroke::parse("ctrl-r").expect("valid keystroke");
+
+        assert!(native_editing_shortcut(&select_all));
+        assert!(!native_editing_shortcut(&refresh));
+    }
+}
+
+#[cfg(feature = "real-gpui")]
 pub(crate) struct WindowState {
     pub(crate) tree: Mutex<ElementNode>,
+    commands: Vec<CommandBinding>,
     requested_generation: std::sync::atomic::AtomicU64,
     rendered_generation: std::sync::atomic::AtomicU64,
     scheduled_frame_generation: std::sync::atomic::AtomicU64,
@@ -19,9 +127,10 @@ pub(crate) struct WindowState {
 
 #[cfg(feature = "real-gpui")]
 impl WindowState {
-    pub(crate) fn new(tree: ElementNode) -> Self {
+    pub(crate) fn new(tree: ElementNode, commands: Vec<CommandBinding>) -> Self {
         Self {
             tree: Mutex::new(tree),
+            commands,
             requested_generation: std::sync::atomic::AtomicU64::new(1),
             rendered_generation: std::sync::atomic::AtomicU64::new(0),
             scheduled_frame_generation: std::sync::atomic::AtomicU64::new(0),
@@ -46,6 +155,8 @@ pub(crate) struct ElixirRoot {
     input_entities: HashMap<String, gpui::Entity<NativeTextInput>>,
     #[cfg(feature = "components")]
     pub(crate) components: crate::element::component_registry::ComponentRegistry,
+    command_subscription: Option<gpui::Subscription>,
+    observe_commands: bool,
     #[cfg(feature = "components")]
     render_dialog_layer: bool,
     #[cfg(feature = "components")]
@@ -64,6 +175,8 @@ impl ElixirRoot {
             input_entities: HashMap::new(),
             #[cfg(feature = "components")]
             components: crate::element::component_registry::ComponentRegistry::default(),
+            command_subscription: None,
+            observe_commands: true,
             #[cfg(feature = "components")]
             render_dialog_layer: true,
             #[cfg(feature = "components")]
@@ -83,9 +196,61 @@ impl ElixirRoot {
     ) -> Self {
         let mut root = Self::new(window_state, runtime, window_id);
         root.render_dialog_layer = false;
+        root.observe_commands = false;
         root.dialog_focus = Some(focus);
         root.dialog_key_handler = Some(key_handler);
         root
+    }
+
+    fn editable_input_focused(&self, window: &gpui::Window, cx: &gpui::App) -> bool {
+        use gpui::Focusable;
+
+        let primitive_input_focused = self
+            .input_entities
+            .values()
+            .any(|input| input.read(cx).focus_handle(cx).is_focused(window));
+
+        #[cfg(feature = "components")]
+        let component_input_focused = self.components.editable_input_focused(window, cx);
+        #[cfg(not(feature = "components"))]
+        let component_input_focused = false;
+
+        primitive_input_focused || component_input_focused
+    }
+
+    fn observe_commands(&mut self, window: &gpui::Window, cx: &mut gpui::Context<Self>) {
+        if !self.observe_commands
+            || self.command_subscription.is_some()
+            || self.window_state.commands.is_empty()
+        {
+            return;
+        }
+
+        let expected_window = window.window_handle();
+        let commands = self.window_state.commands.clone();
+        let runtime = self.runtime.clone();
+        let window_id = self.window_id;
+        self.command_subscription = Some(cx.observe_keystrokes(move |root, event, window, cx| {
+            if window.window_handle() != expected_window
+                || (native_editing_shortcut(&event.keystroke)
+                    && root.editable_input_focused(window, cx))
+            {
+                return;
+            }
+
+            if let Some(command) = commands
+                .iter()
+                .find(|command| command.matches(&event.keystroke))
+            {
+                let _ = push_event(
+                    &runtime,
+                    NativeEvent::Command {
+                        window_id,
+                        event: command.id.clone(),
+                    },
+                );
+            }
+        }));
     }
 }
 
@@ -96,6 +261,8 @@ impl gpui::Render for ElixirRoot {
         _window: &mut gpui::Window,
         cx: &mut gpui::Context<Self>,
     ) -> impl gpui::IntoElement {
+        self.observe_commands(_window, cx);
+
         let tree = self
             .window_state
             .tree

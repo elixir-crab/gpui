@@ -335,6 +335,7 @@ defmodule GPUI.Remote.Client do
   defp display_event_payload(%{type: type} = event, session_id)
        when type in [
               :click,
+              :command,
               :change,
               :select,
               :release,

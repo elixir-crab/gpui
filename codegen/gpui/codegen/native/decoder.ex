@@ -121,6 +121,14 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
+  @spec window_commands(term()) :: R.nif_result(R.vec({String.t(), String.t()}))
+  defrust window_commands(window) do
+    case window.map_get(Atoms.commands()) do
+      {:ok, commands} -> decode_as(commands, R.vec({String.t(), String.t()}))
+      {:error, _missing} -> {:ok, []}
+    end
+  end
+
   @spec component_attr(term(), atom()) :: R.nif_result(R.option(term()))
   defrust component_attr(term, attr) do
     case term.map_get(Atoms.attrs()) do

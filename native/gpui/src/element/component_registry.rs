@@ -277,6 +277,18 @@ pub(crate) struct ComponentRegistry {
 include!("../generated/component_registry.rs");
 
 impl ComponentRegistry {
+    pub(crate) fn editable_input_focused(&self, window: &gpui::Window, cx: &gpui::App) -> bool {
+        use gpui::Focusable;
+
+        self.entries.values().any(|component| match component {
+            StatefulComponent::Input(input) => input.state.focus_handle(cx).is_focused(window),
+            StatefulComponent::Combobox(combobox) => {
+                combobox.state.focus_handle(cx).is_focused(window)
+            }
+            _component => false,
+        })
+    }
+
     pub(crate) fn begin_render(&mut self) {
         self.active.clear();
     }

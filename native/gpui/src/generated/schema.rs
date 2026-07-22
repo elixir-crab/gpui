@@ -130,6 +130,13 @@ pub(crate) fn window_size<'a>(window: Term<'a>) -> NifResult<(f32, f32)> {
     }
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn window_commands<'a>(window: Term<'a>) -> NifResult<Vec<(String, String)>> {
+    match window.map_get(atoms::commands()) {
+        Ok(commands) => commands.decode::<Vec<(String, String)>>(),
+        Err(_missing) => Ok(vec![]),
+    }
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn component_attr<'a>(
     term: Term<'a>,
     attr: Atom,

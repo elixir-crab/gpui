@@ -232,6 +232,7 @@ defmodule Examples.GitRepositoryBrowser.View do
             id="repository-filter"
             label="Repository filter"
             value={assigns.filter}
+            focus_request={assigns.filter_focus_request}
             placeholder="Filter repository paths"
             cleanable={true}
             phx-change="filter_changed"
@@ -282,6 +283,9 @@ defmodule Examples.GitRepositoryBrowser.View do
   end
 
   @impl GPUI.View
+  def handle_event("focus_repository_filter", _event, assigns),
+    do: {:noreply, %{assigns | filter_focus_request: assigns.filter_focus_request + 1}}
+
   def handle_event("filter_changed", %{value: filter}, assigns),
     do:
       {:noreply,
@@ -701,6 +705,8 @@ defmodule Examples.GitRepositoryBrowser.App do
      [
        window "Git Repository Browser" do
          size(1200, 760)
+         shortcut("reload_repository", "primary-r")
+         shortcut("focus_repository_filter", "primary-f")
 
          root(Examples.GitRepositoryBrowser.View,
            path: Map.get(args, :path, File.cwd!()),
@@ -730,6 +736,7 @@ defmodule Examples.GitRepositoryBrowser.App do
            preview_range: range,
            preview_generation: 0,
            filter: "",
+           filter_focus_request: 0,
            status_filter: "all"
          )
        end

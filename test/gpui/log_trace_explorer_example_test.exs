@@ -62,6 +62,9 @@ defmodule GPUI.LogTraceExplorerExampleTest do
     assert runtime |> tree() |> all(type: :ui_code_line) |> length() == 4
     assert %{attrs: %{kind: "warning"}} = runtime |> tree() |> find!(id: "event-3")
 
+    command(runtime, "focus_event_filter")
+    assert %{filter_focus_request: 1} = assigns(runtime)
+
     select(runtime, "event_selected", "event-4")
 
     assert %{
@@ -114,7 +117,7 @@ defmodule GPUI.LogTraceExplorerExampleTest do
     assert Source.retained_count(source) == 3
     assert %{retained_count: 3, dropped_count: 1, total_count: 3} = assigns(runtime)
 
-    click(runtime, "toggle_pause")
+    command(runtime, "toggle_pause")
     assert_receive {:log_trace_explorer, :controls, events}
     assert "toggle_pause" in events
 
@@ -128,7 +131,7 @@ defmodule GPUI.LogTraceExplorerExampleTest do
     assert Source.retained_count(source) == 3
     assert runtime |> tree() |> find(id: "event-5") == nil
 
-    click(runtime, "toggle_pause")
+    command(runtime, "toggle_pause")
     assert_receive {:log_trace_explorer, :controls, events}
     assert "toggle_pause" in events
     await_published(3, 5)
@@ -140,7 +143,7 @@ defmodule GPUI.LogTraceExplorerExampleTest do
     await_published(2, 5)
     assert %{total_count: 2, filter_status: :ready} = assigns(runtime)
 
-    click(runtime, "clear_events")
+    command(runtime, "clear_events")
     assert_receive {:log_trace_explorer, :controls, events}
     assert "clear_events" in events
     await_published(0, 6)
