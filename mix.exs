@@ -37,10 +37,8 @@ defmodule GPUI.MixProject do
         ci_native: :test,
         test_unit: :test,
         test_integration: :test,
-        test_e2e: :test,
         test_all: :test,
         "gpui.release.check": :release,
-        "gpui.test.e2e": :e2e,
         "gpui.visual.capture": :e2e
       ]
     ]
@@ -48,13 +46,13 @@ defmodule GPUI.MixProject do
 
   defp load_test_file?(path) do
     String.ends_with?(path, "_test.exs") and
-      (System.get_env("GPUI_E2E") == "1" or not String.contains?(path, "e2e/"))
+      (Mix.env() == :e2e or not String.contains?(path, "e2e/"))
   end
 
   defp ignore_test_file?(path) do
     String.contains?(path, "support/") or
       String.contains?(path, "test/visual/scenarios/") or
-      (System.get_env("GPUI_E2E") != "1" and String.contains?(path, "e2e/"))
+      (Mix.env() != :e2e and String.contains?(path, "e2e/"))
   end
 
   defp elixirc_paths(env) when env in [:dev, :test, :e2e, :release],
@@ -166,7 +164,6 @@ defmodule GPUI.MixProject do
     [
       test_unit: ["test test/gpui test/gpui_test.exs"],
       test_integration: ["test test/integration"],
-      test_e2e: ["gpui.test.e2e"],
       test_all: ["test"],
       ci_fast: [
         "compile --warnings-as-errors",

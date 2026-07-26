@@ -3,7 +3,7 @@ import Config
 config :gpui, build_native: true
 
 cond do
-  System.get_env("GPUI_E2E") == "1" ->
+  config_env() == :e2e ->
     config :gpui, GPUI.Native,
       default_features: true,
       features: []

@@ -5,17 +5,21 @@ packaging is validated separately from renderer-independent Elixir tests.
 
 ## Current platform status
 
-The validated release target is:
+Source builds and native window lifecycle behavior are validated on:
 
-- `x86_64-unknown-linux-gnu`
+- `x86_64-unknown-linux-gnu` under X11 with Xvfb and Mesa Lavapipe;
+- Apple silicon macOS with AppKit on ERTS's original process main thread;
+- `x86_64-pc-windows-msvc` with the dedicated native GUI-thread host.
 
-macOS, Windows, Linux ARM, musl, and additional target triples must not be
-claimed until their native build and interaction suites pass. Linux release
-artifacts are built on Ubuntu 22.04 and must not require GLIBC symbols newer
-than `GLIBC_2.35`; binaries built on a newer development host are not release
-artifacts.
+The published precompiled release target remains
+`x86_64-unknown-linux-gnu`. Linux release artifacts are built on Ubuntu 22.04
+and must not require GLIBC symbols newer than `GLIBC_2.35`; binaries built on a
+newer development host are not release artifacts. macOS and Windows currently
+require source builds. Linux ARM, musl, Windows ARM, and additional target
+triples must not be claimed until their native build and interaction suites
+pass.
 
-## Source builds on Linux
+## Source builds
 
 Native compilation is opt-in so renderer-independent consumers and tests do not
 need a Rust toolchain. Enable it outside tests:
@@ -29,11 +33,14 @@ config :gpui, build_native: config_env() != :test
 compilation when a precompiled artifact exists. `GPUI_SKIP_NATIVE=1` explicitly
 disables native compilation for tooling or packaging checks.
 
-Install Rust and the platform libraries:
+On Linux, install the platform libraries:
 
 ```bash
 sudo apt-get install libxkbcommon-dev libxkbcommon-x11-dev
 ```
+
+On macOS, install full Xcode and its Metal Toolchain. On Windows, use the MSVC
+Rust target with Visual Studio 2022 Build Tools and a current Windows SDK.
 
 Then compile normally:
 
@@ -73,7 +80,7 @@ RustlerPrecompiled checksum manifest.
 The expected release sequence is:
 
 1. run `mix ci`;
-2. run `mix test_e2e` under Xvfb/Lavapipe;
+2. run the native ExUnit window suite under Xvfb/Lavapipe on Linux;
 3. run `RUST_FONTCONFIG_DLOPEN=1 mix gpui.release.check`;
 4. build and attest the precompiled NIF from a version tag;
 5. generate and commit `checksum-Elixir.GPUI.Native.exs` from the published bytes;

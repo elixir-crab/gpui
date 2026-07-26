@@ -105,12 +105,38 @@ Native displays share one process-global GPUI application loop. That loop owns
 all platform windows, while commands and registry state remain scoped to their
 originating runtime and window IDs.
 
+Loop acquisition is platform-specific behind the same host boundary:
+
+- on macOS, the host asks ERTS to hand the original process main thread to GPUI,
+  satisfying AppKit's main-thread requirement without moving application state
+  out of Elixir;
+- on Linux and Windows, the host starts one permanent dedicated native GUI
+  thread and keeps every window on that thread.
+
+Startup is acknowledged only after the GPUI application has initialized. The
+last runtime releasing its windows does not tear down and recreate the
+process-global application loop.
+
 Commands are acknowledged: callers receive success, timeout, disconnection, or
 stopped-runtime outcomes instead of enqueue-only success. Native frame barriers
 track snapshot and completed-frame generations per window and acknowledge after
 the corresponding frame has passed prepaint and presentation submission. Closing the
 final window does not terminate the shared loop. Runtime shutdown is
 non-blocking and cleans up only that runtime's windows and component state.
+
+## Declarative viewport
+
+Each rendered window tree is wrapped by a renderer-internal `:viewport` node in
+Elixir before it crosses a display boundary. The node establishes the current
+window content bounds; it is included in native and remote snapshots but is not
+a public template tag. Rust interprets those declared viewport semantics and
+does not inject application-specific layout wrappers.
+
+Application roots should declare how they consume the viewport. A flex root
+normally uses `grow` and `w-full`; definite `w-full` and `h-full` lengths remain
+available where the parent layout provides a definite corresponding dimension.
+This keeps viewport declaration, layout values, defaults, and component policy
+in Elixir while leaving platform window state in GPUI.
 
 ## Snapshot reconciliation
 

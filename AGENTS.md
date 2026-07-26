@@ -21,8 +21,9 @@ mix ci
 - Put real platform-window and operating-system interaction tests in `test/e2e/`.
   Keep environment orchestration in Mix tasks and reusable drivers in
   `test/support/`; examples are documentation, not test runners.
-- Run native E2E coverage through `mix test_e2e`. It uses Xvfb/Lavapipe and must
-  not require a desktop environment or window manager.
+- Run native E2E coverage as ordinary ExUnit under Xvfb/Lavapipe:
+  `MIX_ENV=e2e xvfb-run -a dbus-run-session -- mix test --only e2e test/e2e`.
+  It must not require a desktop environment or window manager.
 - Assert behavior and generated output. Do not enforce architecture with source
   greps or policy-shaped ExUnit tests; use Reach, Credo, ExDNA, or schema-driven
   behavioral coverage.

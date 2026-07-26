@@ -87,19 +87,34 @@ The repository separates tests by purpose:
 - `test/e2e/` contains real native-window tests;
 - `test/support/` contains reusable displays and native drivers.
 
-Run focused layers with:
+Run focused renderer-independent layers with:
 
 ```bash
-mix test_unit
-mix test_integration
-mix test_e2e
+mix test test/gpui test/gpui_test.exs
+mix test test/integration
+```
+
+Run native-window tests as standard ExUnit in the desktop build environment:
+
+```bash
+MIX_ENV=e2e mix test --only e2e test/e2e
 ```
 
 ## Native E2E
 
-`mix test_e2e` compiles the desktop native feature set and launches ExUnit under
-an isolated Xvfb server. Mesa Lavapipe provides software rendering and `xdotool`
-provides XTest pointer and keyboard input.
+The native suite is ordinary ExUnit. `MIX_ENV=e2e` selects the desktop native
+Cargo features at compile time. On Linux, run ExUnit inside an isolated Xvfb
+and D-Bus session; Mesa Lavapipe provides software rendering and `xdotool`
+provides XTest pointer and keyboard input:
+
+```bash
+MIX_ENV=e2e RUST_FONTCONFIG_DLOPEN=1 LIBGL_ALWAYS_SOFTWARE=1 \
+  GALLIUM_DRIVER=llvmpipe xvfb-run -a dbus-run-session -- \
+  mix test --only e2e test/e2e
+```
+
+Display-server orchestration stays outside Mix and ExUnit. On a workstation
+with an existing display, use the plain `MIX_ENV=e2e mix test ...` command.
 
 The suite verifies real hit testing, focus, input editing, selection, clipboard,
 controlled rerenders, component popups, overlay dismissal, remote display
@@ -147,7 +162,9 @@ environment variables, or choose paths.
 
 ```bash
 mix ci
-mix test_e2e
+MIX_ENV=e2e RUST_FONTCONFIG_DLOPEN=1 LIBGL_ALWAYS_SOFTWARE=1 \
+  GALLIUM_DRIVER=llvmpipe xvfb-run -a dbus-run-session -- \
+  mix test --only e2e test/e2e
 ```
 
 `mix ci` also checks generated Rust freshness, Cargo formatting and feature

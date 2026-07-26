@@ -65,7 +65,6 @@ jobs:
     timeout-minutes: 45
     env:
       MIX_ENV: e2e
-      GPUI_E2E: "1"
       RUST_FONTCONFIG_DLOPEN: "1"
       LIBGL_ALWAYS_SOFTWARE: "1"
       GALLIUM_DRIVER: llvmpipe
@@ -91,4 +90,35 @@ jobs:
           mesa-vulkan-drivers vulkan-tools xdotool xvfb
       - name: Verify Lavapipe under Xvfb
         run: xvfb-run -a vulkaninfo --summary
-      - run: mix test_e2e
+      - name: Run native ExUnit suite
+        run: >-
+          xvfb-run -a dbus-run-session --
+          mix test --only e2e test/e2e
+
+  macos-native:
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      GPUI_BUILD_FROM_SOURCE: "1"
+      RUST_FONTCONFIG_DLOPEN: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy,rustfmt
+      - uses: elixir-vibe/actions/setup-elixir@v1
+        with:
+          otp-version: "29.0.2"
+          elixir-version: "1.20.2"
+          cache-prefix: macos-native
+          restore-plt-cache: "false"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: macos-native
+          workspaces: native/gpui -> target
+      - name: Select full Xcode toolchain
+        run: sudo xcode-select --switch /Applications/Xcode.app
+      - name: Build native NIF from source
+        run: mix compile --force --warnings-as-errors
+      - name: Run native boundary tests
+        run: mix test test/gpui/native_test.exs test/gpui/image_test.exs

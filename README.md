@@ -84,12 +84,14 @@ native prerequisites, supervision, controlled components, and event handling.
 ```bash
 mix deps.get
 mix ci
-mix test_e2e
+MIX_ENV=e2e xvfb-run -a dbus-run-session -- mix test --only e2e test/e2e
 ```
 
 `mix ci` covers Elixir, generated Rust freshness, Cargo feature matrices,
 Clippy, native unit tests, Dialyzer, Credo, duplication, and architecture
-checks. `mix test_e2e` runs real native windows under Xvfb with Lavapipe.
+checks. The standard ExUnit command runs real native windows under Xvfb with
+Lavapipe; Xvfb and D-Bus are platform infrastructure rather than a custom Mix
+test runner.
 
 ## License
 
