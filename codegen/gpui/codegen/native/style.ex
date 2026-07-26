@@ -5,6 +5,10 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
     specs = GPUI.Schema.style_specs()
     fields = specs |> Enum.map(&style_type_field/1) |> then(&{:%{}, [], &1})
 
+    clauses = Enum.map(specs, &style_clause/1) ++ [{:->, [], [[Macro.var(:_, nil)], false]}]
+
+    style_case = {:case, [], [Macro.var(:key, nil), [do: clauses]]}
+
     quote do
       @type style_attrs :: unquote(fields)
 
@@ -22,6 +26,11 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
       defrust default_style() do
         StyleAttrs.default()
       end
+
+      @spec apply_generated_style_attr(R.mut_ref(style_attrs()), atom(), term()) :: boolean()
+      defrust apply_generated_style_attr(attrs, key, term) do
+        unquote(style_case)
+      end
     end
   end
 
@@ -36,6 +45,38 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
 
   defp style_field_type(:length),
     do: quote(do: R.option(R.path({:gpui, :DefiniteLength})))
+
+  defp style_clause(spec) do
+    value = Macro.var(:value, nil)
+    attrs = Macro.var(:attrs, nil)
+    field = {{:., [], [attrs, spec.field]}, [no_parens: true], []}
+    decoded = style_decode_call(spec.type)
+    valid = Macro.var(:valid, nil)
+
+    {:->, [],
+     [
+       [spec.name],
+       quote do
+         unquote(value) = unquote(decoded)
+         unquote(valid) = unquote(valid_style_value(spec.type, value))
+         assign!(unquote(field), unquote(value))
+         unquote(valid)
+       end
+     ]}
+  end
+
+  defp valid_style_value({:atom_eq, _expected}, value), do: value
+  defp valid_style_value(_type, value), do: quote(do: unquote(value).is_some())
+
+  defp style_decode_call({:atom_eq, expected}),
+    do: quote(do: atom_eq(term, unquote(to_string(expected))))
+
+  defp style_decode_call(:atom_string), do: quote(do: atom_string(term))
+  defp style_decode_call(:rgb), do: quote(do: rgb_value(term))
+  defp style_decode_call(:number), do: quote(do: number_value(term))
+  defp style_decode_call(:px), do: quote(do: px_value(term))
+  defp style_decode_call(:length), do: quote(do: length_value(term))
+  defp style_decode_call(:radius), do: quote(do: radius_value(term))
 
   defp required(name), do: {:required, [], [name]}
 end
@@ -93,7 +134,6 @@ defmodule GPUI.Codegen.Native.Style do
     [
       generated_style_struct(),
       rusty_items(),
-      generated_apply_style_function(style_specs),
       generated_apply_render_style_function(style_specs)
     ]
     |> List.flatten()
@@ -118,48 +158,6 @@ defmodule GPUI.Codegen.Native.Style do
 
     struct
   end
-
-  defp generated_apply_style_function(style_specs) do
-    arms =
-      Enum.map(style_specs, fn spec ->
-        %AST.Arm{
-          pattern: %AST.PatAtomGuard{name: spec.name, module: [:atoms]},
-          body: [
-            A.let(:value, style_decode_call(spec.type)),
-            A.let(:valid, valid_style_value(spec.type)),
-            A.assign(A.field(A.var(:attrs), spec.field), :value),
-            A.return_stmt(:valid)
-          ]
-        }
-      end) ++
-        [%AST.Arm{pattern: P.wildcard(), body: [A.return_stmt(A.lit(false))]}]
-
-    %AST.Function{
-      name: :apply_generated_style_attr,
-      vis: :crate,
-      attrs: [A.attr(:cfg, feature: "real-gpui")],
-      args: [
-        A.arg(:attrs, T.mut_ref(:StyleAttrs)),
-        A.arg(:key, T.path(:Atom)),
-        A.arg(:term, T.path(:Term))
-      ],
-      returns: T.path(:bool),
-      body: [A.return_stmt(A.match_expr(A.var(:key), arms))]
-    }
-  end
-
-  defp valid_style_value({:atom_eq, _expected}), do: A.var(:value)
-  defp valid_style_value(_type), do: A.method(:value, :is_some)
-
-  defp style_decode_call({:atom_eq, expected}),
-    do: A.call(:atom_eq, [A.var(:term), A.lit(to_string(expected))])
-
-  defp style_decode_call(:atom_string), do: A.call(:atom_string, [A.var(:term)])
-  defp style_decode_call(:rgb), do: A.call(:rgb_value, [A.var(:term)])
-  defp style_decode_call(:number), do: A.call(:number_value, [A.var(:term)])
-  defp style_decode_call(:px), do: A.call(:px_value, [A.var(:term)])
-  defp style_decode_call(:length), do: A.call(:length_value, [A.var(:term)])
-  defp style_decode_call(:radius), do: A.call(:radius_value, [A.var(:term)])
 
   defp generated_apply_render_style_function(style_specs) do
     %AST.Function{

@@ -561,36 +561,10 @@ pub(crate) fn default_style() -> StyleAttrs {
     StyleAttrs::default()
 }
 #[cfg(feature = "real-gpui")]
-#[allow(unreachable_patterns)]
-pub(crate) fn decode_style<'a>(term: Term<'a>) -> NifResult<StyleAttrs> {
-    let attrs = term.map_get(atoms::attrs())?;
-    match attrs.map_get(atoms::style()) {
-        Ok(style) => {
-            let entries = style.decode::<Vec<(Atom, Term<'a>)>>()?;
-            let mut decoded = default_style();
-            let valid = {
-                let mut __rustq_reduce = true;
-                for entry in entries {
-                    __rustq_reduce = match __rustq_reduce {
-                        valid => {
-                            let (key, value) = entry;
-                            apply_generated_style_attr(&mut decoded, key, value) && valid
-                        }
-                        __rustq_reduce_value => __rustq_reduce_value,
-                    };
-                }
-                __rustq_reduce
-            };
-            if valid { Ok(decoded) } else { Err(rustler::Error::BadArg) }
-        }
-        Err(_missing) => Ok(default_style()),
-    }
-}
-#[cfg(feature = "real-gpui")]
-pub(crate) fn apply_generated_style_attr(
+pub(crate) fn apply_generated_style_attr<'a>(
     attrs: &mut StyleAttrs,
     key: Atom,
-    term: Term,
+    term: Term<'a>,
 ) -> bool {
     match key {
         value if value == atoms::display() => {
@@ -816,6 +790,32 @@ pub(crate) fn apply_generated_style_attr(
             valid
         }
         _ => false,
+    }
+}
+#[cfg(feature = "real-gpui")]
+#[allow(unreachable_patterns)]
+pub(crate) fn decode_style<'a>(term: Term<'a>) -> NifResult<StyleAttrs> {
+    let attrs = term.map_get(atoms::attrs())?;
+    match attrs.map_get(atoms::style()) {
+        Ok(style) => {
+            let entries = style.decode::<Vec<(Atom, Term<'a>)>>()?;
+            let mut decoded = default_style();
+            let valid = {
+                let mut __rustq_reduce = true;
+                for entry in entries {
+                    __rustq_reduce = match __rustq_reduce {
+                        valid => {
+                            let (key, value) = entry;
+                            apply_generated_style_attr(&mut decoded, key, value) && valid
+                        }
+                        __rustq_reduce_value => __rustq_reduce_value,
+                    };
+                }
+                __rustq_reduce
+            };
+            if valid { Ok(decoded) } else { Err(rustler::Error::BadArg) }
+        }
+        Err(_missing) => Ok(default_style()),
     }
 }
 #[cfg(feature = "real-gpui")]
