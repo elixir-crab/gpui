@@ -5,13 +5,13 @@ defmodule GPUI.Schema.Style do
   defstruct [:name, :field, :type, :render]
 
   @type value_type ::
-          :atom_string | :rgb | :number | :px | :radius | {:atom_eq, atom()}
+          :atom_string | :rgb | :number | :px | :length | :radius | {:atom_eq, atom()}
 
   @type render ::
           :flex_if_true
           | {:enum_methods, [{String.t(), atom()}]}
           | {:enum_values, atom(), [{String.t(), [atom()]}]}
-          | {:option_method, atom(), :rgb | :px | :f32}
+          | {:option_method, atom(), :rgb | :px | :length | :f32}
 
   @type t :: %__MODULE__{
           name: atom(),

@@ -9,7 +9,7 @@ defmodule GPUI.GettingStartedExamplesTest do
     runtime = start_gpui!(GettingStarted.HelloWindow.App)
 
     assert %{title: "Hello GPUI"} = window_snapshot(runtime)
-    assert %{type: :div, children: children} = tree(runtime)
+    assert %{type: :viewport, children: [%{type: :div, children: children}]} = tree(runtime)
     assert Enum.any?(children, &match?(%{type: :text, children: ["● Runtime connected"]}, &1))
   end
 

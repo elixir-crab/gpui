@@ -13,6 +13,8 @@ use std::{
 use zed_gpui as gpui;
 
 mod event;
+#[cfg(feature = "real-gpui")]
+mod host;
 mod image_decode;
 #[cfg(feature = "real-gpui")]
 mod input;

@@ -153,6 +153,35 @@ defmodule GPUI.Native.LifecycleE2ETest do
     assert Map.has_key?(resources, "pixel")
   end
 
+  test "resizing a window schedules and completes a fresh frame" do
+    title = "Lifecycle resize"
+    {:ok, display} = GPUI.Display.Native.start_link([])
+    on_exit(fn -> Desktop.stop_process(display) end)
+
+    responsive_tree = %{
+      type: :div,
+      attrs: %{style: [width: :full, height: :full, background: {:rgb, 0x0F172A}]},
+      children: [%{type: :text, attrs: %{}, children: ["responsive"]}]
+    }
+
+    assert :ok =
+             GPUI.Display.Native.sync(
+               display,
+               snapshot([window(1, title, responsive_tree)])
+             )
+
+    native_window_id = Desktop.window_id!(title)
+    Desktop.await_frame!(display, 1, native_window_id)
+    assert {:ok, generation} = GPUI.Display.Native.frame_token(display, 1)
+
+    Desktop.command!(["windowsize", native_window_id, "700", "460"])
+    Desktop.await_frame_after!(display, 1, generation)
+
+    assert {:ok, resized_generation} = GPUI.Display.Native.frame_token(display, 1)
+    assert resized_generation > generation
+    assert Process.alive?(display)
+  end
+
   test "malformed native payloads are rejected without poisoning the runtime" do
     title = "Malformed payloads"
     {:ok, display} = GPUI.Display.Native.start_link([])

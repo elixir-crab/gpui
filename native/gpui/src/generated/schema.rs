@@ -2,6 +2,7 @@
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GeneratedComponentKind {
+    Viewport,
     Container,
     ButtonComponent,
     ProgressComponent,
@@ -100,6 +101,18 @@ pub(crate) fn px_value<'a>(term: Term<'a>) -> Option<f32> {
                 }
                 Err(_reason) => None,
             }
+        }
+    }
+}
+#[allow(clippy::manual_map)]
+#[cfg(feature = "real-gpui")]
+pub(crate) fn length_value<'a>(term: Term<'a>) -> Option<gpui::DefiniteLength> {
+    if atom_eq(term, "full") {
+        Some(full_length())
+    } else {
+        match px_value(term) {
+            Some(value) => Some(pixel_length(value)),
+            None => None,
         }
     }
 }
@@ -320,6 +333,11 @@ pub(crate) struct TextNode {
     pub(crate) text: String,
     pub(crate) style: StyleAttrs,
 }
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct ViewportNode {
+    pub(crate) children: Vec<ElementNode>,
+}
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_element_node<'a>(term: Term<'a>) -> NifResult<ElementNode> {
     match term.decode::<String>() {
@@ -370,6 +388,17 @@ pub(crate) fn string_attr<'a>(term: Term<'a>, attr: Atom) -> Option<String> {
         }
         Err(_missing) => None,
     }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_viewport_node<'a>(
+    term: Term<'a>,
+    _tag: GeneratedElementTag,
+) -> NifResult<ElementNode> {
+    Ok(
+        ElementNode::Viewport(ViewportNode {
+            children: decode_children(term)?,
+        }),
+    )
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_container_node<'a>(
@@ -509,15 +538,23 @@ pub(crate) struct StyleAttrs {
     pub(crate) margin_right: Option<f32>,
     pub(crate) margin_bottom: Option<f32>,
     pub(crate) margin_left: Option<f32>,
-    pub(crate) width: Option<f32>,
-    pub(crate) height: Option<f32>,
-    pub(crate) min_width: Option<f32>,
-    pub(crate) max_width: Option<f32>,
-    pub(crate) min_height: Option<f32>,
-    pub(crate) max_height: Option<f32>,
+    pub(crate) width: Option<gpui::DefiniteLength>,
+    pub(crate) height: Option<gpui::DefiniteLength>,
+    pub(crate) min_width: Option<gpui::DefiniteLength>,
+    pub(crate) max_width: Option<gpui::DefiniteLength>,
+    pub(crate) min_height: Option<gpui::DefiniteLength>,
+    pub(crate) max_height: Option<gpui::DefiniteLength>,
     pub(crate) border_radius: Option<f32>,
     pub(crate) border_width: Option<f32>,
     pub(crate) border_color: Option<u32>,
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn full_length() -> gpui::DefiniteLength {
+    gpui::relative(1.0)
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn pixel_length(value: f32) -> gpui::DefiniteLength {
+    gpui::px(value).into()
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn default_style() -> StyleAttrs {
@@ -725,37 +762,37 @@ pub(crate) fn apply_generated_style_attr(
             valid
         }
         value if value == atoms::width() => {
-            let value = px_value(term);
+            let value = length_value(term);
             let valid = value.is_some();
             attrs.width = value;
             valid
         }
         value if value == atoms::height() => {
-            let value = px_value(term);
+            let value = length_value(term);
             let valid = value.is_some();
             attrs.height = value;
             valid
         }
         value if value == atoms::min_width() => {
-            let value = px_value(term);
+            let value = length_value(term);
             let valid = value.is_some();
             attrs.min_width = value;
             valid
         }
         value if value == atoms::max_width() => {
-            let value = px_value(term);
+            let value = length_value(term);
             let valid = value.is_some();
             attrs.max_width = value;
             valid
         }
         value if value == atoms::min_height() => {
-            let value = px_value(term);
+            let value = length_value(term);
             let valid = value.is_some();
             attrs.min_height = value;
             valid
         }
         value if value == atoms::max_height() => {
-            let value = px_value(term);
+            let value = length_value(term);
             let valid = value.is_some();
             attrs.max_height = value;
             valid
@@ -953,22 +990,22 @@ pub(crate) fn apply_generated_render_styles(
         element = element.ml(gpui::px(value));
     }
     if let Some(value) = style.width {
-        element = element.w(gpui::px(value));
+        element = element.w(value);
     }
     if let Some(value) = style.height {
-        element = element.h(gpui::px(value));
+        element = element.h(value);
     }
     if let Some(value) = style.min_width {
-        element = element.min_w(gpui::px(value));
+        element = element.min_w(value);
     }
     if let Some(value) = style.max_width {
-        element = element.max_w(gpui::px(value));
+        element = element.max_w(value);
     }
     if let Some(value) = style.min_height {
-        element = element.min_h(gpui::px(value));
+        element = element.min_h(value);
     }
     if let Some(value) = style.max_height {
-        element = element.max_h(gpui::px(value));
+        element = element.max_h(value);
     }
     if let Some(value) = style.border_radius {
         element = element.rounded(gpui::px(value));
@@ -2246,6 +2283,7 @@ pub(crate) fn decode_generated_slider_component(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 pub(crate) enum ElementNode {
+    Viewport(ViewportNode),
     Div(ContainerNode),
     Input(InputNode),
     ButtonComponent(ButtonComponentNode),
@@ -2287,6 +2325,7 @@ pub(crate) enum ElementNode {
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GeneratedElementTag {
+    Viewport,
     Div,
     Button,
     UiButton,
@@ -2335,6 +2374,7 @@ pub enum GeneratedElementTag {
 }
 pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
     match tag {
+        "viewport" => GeneratedElementTag::Viewport,
         "div" => GeneratedElementTag::Div,
         "button" => GeneratedElementTag::Button,
         "ui_button" => GeneratedElementTag::UiButton,
@@ -2384,6 +2424,7 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
 }
 pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentKind {
     match tag {
+        GeneratedElementTag::Viewport => GeneratedComponentKind::Viewport,
         GeneratedElementTag::Div => GeneratedComponentKind::Container,
         GeneratedElementTag::Button => GeneratedComponentKind::Container,
         GeneratedElementTag::UiButton => GeneratedComponentKind::ButtonComponent,
@@ -2461,6 +2502,7 @@ pub(crate) fn decode_generated_element_node(
     tag: GeneratedElementTag,
 ) -> NifResult<ElementNode> {
     match generated_component_kind(tag) {
+        GeneratedComponentKind::Viewport => decode_viewport_node(term, tag),
         GeneratedComponentKind::Container => decode_container_node(term, tag),
         GeneratedComponentKind::ButtonComponent => {
             decode_generated_button_component(term).map(ElementNode::ButtonComponent)

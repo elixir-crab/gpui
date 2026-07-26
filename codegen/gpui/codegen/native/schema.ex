@@ -15,7 +15,7 @@ defmodule GPUI.Codegen.Native.Schema do
   @spec items() :: [AST.item()]
   def items do
     components = GPUI.Schema.components()
-    elements = GPUI.Schema.tags()
+    elements = GPUI.Schema.native_tags()
 
     renderer_nodes =
       components
@@ -214,7 +214,8 @@ defmodule GPUI.Codegen.Native.Schema do
       derive: [:Clone, :Debug],
       attrs: [A.attr(:cfg, feature: "real-gpui")],
       variants:
-        [%AST.EnumVariant{name: :Div, tuple: [T.path(:ContainerNode)]}] ++
+        [%AST.EnumVariant{name: :Viewport, tuple: [T.path(:ViewportNode)]}] ++
+          [%AST.EnumVariant{name: :Div, tuple: [T.path(:ContainerNode)]}] ++
           [%AST.EnumVariant{name: :Input, tuple: [T.path(:InputNode)]}] ++
           component_variants ++
           [
@@ -497,6 +498,7 @@ defmodule GPUI.Codegen.Native.Schema do
     }
   end
 
+  defp primitive_decoder_path(:viewport), do: [:decode_viewport_node]
   defp primitive_decoder_path(:container), do: [:decode_container_node]
   defp primitive_decoder_path(:input), do: [:decode_input_node]
   defp primitive_decoder_path(:image), do: [:decode_image_node]

@@ -21,7 +21,14 @@ use crate::gpui;
 use crate::gpui::Styled;
 
 #[cfg(feature = "components")]
-fn component_input_height(size: Option<&str>, styled_height: Option<f32>) -> f32 {
+fn component_input_height(size: Option<&str>, styled_height: Option<gpui::DefiniteLength>) -> f32 {
+    let styled_height = styled_height.and_then(|height| match height {
+        gpui::DefiniteLength::Absolute(gpui::AbsoluteLength::Pixels(height)) => {
+            Some(f32::from(height))
+        }
+        _ => None,
+    });
+
     styled_height.unwrap_or(match size {
         Some("xs") => 20.0,
         Some("sm") => 24.0,

@@ -101,11 +101,7 @@ fn gpui_command_sender() -> Result<mpsc::UnboundedSender<WindowCommand>, &'stati
 
     match GPUI_COMMANDS.set(sender.clone()) {
         Ok(()) => {
-            let runtime_sender = sender.clone();
-            std::thread::Builder::new()
-                .name("gpui-application".to_string())
-                .spawn(move || crate::run_gpui(receiver, runtime_sender))
-                .map_err(|_| "gpui_runtime_start_failed")?;
+            crate::host::start(receiver, sender.clone())?;
             Ok(sender)
         }
         Err(_sender) => GPUI_COMMANDS

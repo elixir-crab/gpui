@@ -58,7 +58,7 @@ defmodule GPUI.Remote.ServerTest do
     assert {:ok, %{session_id: "form", snapshot: %{windows: [%{root: %{tree: tree}}]}}} =
              SafeRPC.call(client, :mount, %{session_id: "form", args: %{name: "old"}})
 
-    assert tree.type == :div
+    assert %{type: :viewport, attrs: %{}, children: [%{type: :div}]} = tree
 
     assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{name: "new"}}}]}}} =
              SafeRPC.call(client, :event, %{

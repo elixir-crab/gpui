@@ -281,7 +281,6 @@ impl gpui::Render for ElixirRoot {
             input_entities: &mut self.input_entities,
             #[cfg(feature = "components")]
             components: &mut self.components,
-            #[cfg(feature = "components")]
             window: _window,
             cx,
         });
@@ -493,6 +492,7 @@ type WindowKey = (u64, u64);
 pub(crate) fn run_gpui(
     mut commands: mpsc::UnboundedReceiver<WindowCommand>,
     command_tx: mpsc::UnboundedSender<WindowCommand>,
+    ready: std::sync::mpsc::SyncSender<Result<(), &'static str>>,
 ) {
     use gpui::App;
 
@@ -522,6 +522,7 @@ pub(crate) fn run_gpui(
         .detach();
 
         cx.activate(true);
+        let _ = ready.send(Ok(()));
     });
 }
 

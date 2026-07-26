@@ -170,7 +170,15 @@ defmodule GPUI.Session do
     %{
       module: inspect(module),
       assigns: assigns,
-      tree: render_root(module, assigns)
+      tree: viewport(render_root(module, assigns))
+    }
+  end
+
+  defp viewport(tree) do
+    %{
+      type: :viewport,
+      attrs: %{},
+      children: [tree]
     }
   end
 

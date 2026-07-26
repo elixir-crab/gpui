@@ -85,6 +85,18 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
+  @spec length_value(term()) :: R.option(R.path({:gpui, :DefiniteLength}))
+  defrust length_value(term) do
+    if atom_eq(term, "full") do
+      some(full_length())
+    else
+      case px_value(term) do
+        {:some, value} -> some(pixel_length(value))
+        :none -> nil
+      end
+    end
+  end
+
   @spec radius_value(term()) :: R.option(R.f32())
   defrust radius_value(term) do
     if atom_eq(term, "full") do
@@ -285,7 +297,14 @@ defmodule GPUI.Codegen.Native.Decoder do
 
   def asts do
     Enum.map(MetaAST.functions(__MODULE__), fn ast ->
-      %{ast | vis: :crate, attrs: [A.attr(:cfg, feature: "real-gpui") | ast.attrs]}
+      attrs = [A.attr(:cfg, feature: "real-gpui") | ast.attrs]
+
+      attrs =
+        if ast.name == :length_value,
+          do: [A.attr(:allow, [A.path([:clippy, :manual_map])]) | attrs],
+          else: attrs
+
+      %{ast | vis: :crate, attrs: attrs}
     end)
   end
 end

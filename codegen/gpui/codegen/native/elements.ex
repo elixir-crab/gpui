@@ -12,6 +12,10 @@ defmodule GPUI.Codegen.Native.Elements do
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Type, as: R
 
+  @type viewport_node :: %{
+          required(:children) => R.vec(R.path(:ElementNode))
+        }
+
   @type container_node :: %{
           required(:tag) => R.path(:GeneratedElementTag),
           required(:style) => R.path(:StyleAttrs),
@@ -94,6 +98,17 @@ defmodule GPUI.Codegen.Native.Elements do
       {:error, _missing} ->
         nil
     end
+  end
+
+  @spec decode_viewport_node(term(), R.path(:GeneratedElementTag)) ::
+          R.nif_result(R.path(:ElementNode))
+  defrust decode_viewport_node(term, _tag) do
+    {:ok,
+     enum_variant(
+       ElementNode,
+       :viewport,
+       struct_literal(ViewportNode, children: unwrap!(decode_children(term)))
+     )}
   end
 
   @spec decode_container_node(term(), R.path(:GeneratedElementTag)) ::
@@ -224,7 +239,7 @@ defmodule GPUI.Codegen.Native.Elements do
     structs =
       MetaAST.struct_type_items(
         __MODULE__,
-        [:container_node, :image_node, :text_node, :input_node],
+        [:viewport_node, :container_node, :image_node, :text_node, :input_node],
         derive: [:Clone, :Debug],
         attrs: [A.attr(:cfg, feature: "real-gpui")],
         vis: :crate,

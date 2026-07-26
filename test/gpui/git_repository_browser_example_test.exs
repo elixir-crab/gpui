@@ -36,7 +36,7 @@ defmodule GPUI.GitRepositoryBrowserExampleTest do
     root = repository_fixture!()
 
     assert {:ok, repository} = Repository.scan(root)
-    assert repository.root == root
+    assert File.stat!(repository.root).inode == File.stat!(root).inode
     assert repository.branch == "main"
     assert repository.counts == %{total: 5, clean: 1, changed: 4}
 

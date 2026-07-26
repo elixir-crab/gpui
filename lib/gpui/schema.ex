@@ -9,6 +9,7 @@ defmodule GPUI.Schema do
   Code.ensure_compiled!(ComponentDocs)
 
   @components [
+    %Component{tag: :viewport, kind: :viewport, children: true},
     %Component{tag: :div, kind: :container, events: [click: :"phx-click"]},
     %Component{tag: :button, kind: :container, events: [click: :"phx-click"]},
     %Component{
@@ -639,21 +640,31 @@ defmodule GPUI.Schema do
       type: :px,
       render: {:option_method, :ml, :px}
     },
-    %Style{name: :width, field: :width, type: :px, render: {:option_method, :w, :px}},
-    %Style{name: :height, field: :height, type: :px, render: {:option_method, :h, :px}},
-    %Style{name: :min_width, field: :min_width, type: :px, render: {:option_method, :min_w, :px}},
-    %Style{name: :max_width, field: :max_width, type: :px, render: {:option_method, :max_w, :px}},
+    %Style{name: :width, field: :width, type: :length, render: {:option_method, :w, :length}},
+    %Style{name: :height, field: :height, type: :length, render: {:option_method, :h, :length}},
+    %Style{
+      name: :min_width,
+      field: :min_width,
+      type: :length,
+      render: {:option_method, :min_w, :length}
+    },
+    %Style{
+      name: :max_width,
+      field: :max_width,
+      type: :length,
+      render: {:option_method, :max_w, :length}
+    },
     %Style{
       name: :min_height,
       field: :min_height,
-      type: :px,
-      render: {:option_method, :min_h, :px}
+      type: :length,
+      render: {:option_method, :min_h, :length}
     },
     %Style{
       name: :max_height,
       field: :max_height,
-      type: :px,
-      render: {:option_method, :max_h, :px}
+      type: :length,
+      render: {:option_method, :max_h, :length}
     },
     %Style{
       name: :border_radius,
@@ -895,7 +906,15 @@ defmodule GPUI.Schema do
   def style_specs, do: @styles
   def resources, do: Enum.map(@resources, & &1.name)
   def resource_specs, do: @resources
-  def tags, do: Enum.map(@components, & &1.tag)
+
+  def tags do
+    @components
+    |> Enum.reject(&Component.renderer_internal?/1)
+    |> Enum.map(& &1.tag)
+  end
+
+  @doc false
+  def native_tags, do: Enum.map(@components, & &1.tag)
 
   def identified_tags do
     for %Component{tag: tag, attrs: attrs} <- @components,

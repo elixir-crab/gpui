@@ -42,6 +42,7 @@ defmodule GPUI.Codegen.Native.Style do
   def items(style_specs) do
     [
       generated_style_struct(style_specs),
+      generated_length_functions(),
       generated_default_style_function(),
       rusty_items(),
       generated_apply_style_function(style_specs),
@@ -74,7 +75,36 @@ defmodule GPUI.Codegen.Native.Style do
   defp rust_style_type(:rgb), do: %AST.TypeOption{inner: T.path(:u32)}
   defp rust_style_type(:number), do: %AST.TypeOption{inner: T.path(:f32)}
   defp rust_style_type(:px), do: %AST.TypeOption{inner: T.path(:f32)}
+  defp rust_style_type(:length),
+    do: %AST.TypeOption{inner: T.path([:gpui, :DefiniteLength])}
+
   defp rust_style_type(:radius), do: %AST.TypeOption{inner: T.path(:f32)}
+
+  defp generated_length_functions do
+    length = T.path([:gpui, :DefiniteLength])
+
+    [
+      %AST.Function{
+        name: :full_length,
+        vis: :crate,
+        attrs: [A.attr(:cfg, feature: "real-gpui")],
+        returns: length,
+        body: [A.return_stmt(A.path_call([:gpui, :relative], [A.lit(1.0)]))]
+      },
+      %AST.Function{
+        name: :pixel_length,
+        vis: :crate,
+        attrs: [A.attr(:cfg, feature: "real-gpui")],
+        args: [A.arg(:value, T.path(:f32))],
+        returns: length,
+        body: [
+          A.return_stmt(
+            A.method(A.path_call([:gpui, :px], [A.var(:value)]), :into)
+          )
+        ]
+      }
+    ]
+  end
 
   defp generated_default_style_function do
     %AST.Function{
@@ -141,10 +171,11 @@ defmodule GPUI.Codegen.Native.Style do
   end
 
   defp render_style_statement(%{field: field, render: {:option_method, method, unit}})
-       when unit in [:rgb, :px, :f32] do
+       when unit in [:rgb, :px, :length, :f32] do
     rendered_value =
       case unit do
         :f32 -> A.var(:value)
+        :length -> A.var(:value)
         unit -> A.path_call([:gpui, unit], [A.var(:value)])
       end
 
@@ -194,5 +225,6 @@ defmodule GPUI.Codegen.Native.Style do
   defp style_decode_call(:rgb), do: A.call(:rgb_value, [A.var(:term)])
   defp style_decode_call(:number), do: A.call(:number_value, [A.var(:term)])
   defp style_decode_call(:px), do: A.call(:px_value, [A.var(:term)])
+  defp style_decode_call(:length), do: A.call(:length_value, [A.var(:term)])
   defp style_decode_call(:radius), do: A.call(:radius_value, [A.var(:term)])
 end

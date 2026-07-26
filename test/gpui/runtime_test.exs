@@ -270,16 +270,22 @@ defmodule GPUI.RuntimeTest do
                    module: module,
                    assigns: %{name: "OTP"},
                    tree: %{
-                     type: :div,
-                     attrs: %{
-                       style: [
-                         display: :flex,
-                         flex_direction: :column,
-                         align_items: :center,
-                         background: [:rgb, 4_210_752]
-                       ]
-                     },
-                     children: [%{type: :text, children: ["Hello ", "OTP"]}]
+                     type: :viewport,
+                     attrs: %{},
+                     children: [
+                       %{
+                         type: :div,
+                         attrs: %{
+                           style: [
+                             display: :flex,
+                             flex_direction: :column,
+                             align_items: :center,
+                             background: [:rgb, 4_210_752]
+                           ]
+                         },
+                         children: [%{type: :text, children: ["Hello ", "OTP"]}]
+                       }
+                     ]
                    }
                  }
                }

@@ -46,6 +46,12 @@ pub(crate) fn render(
     let component_height = node
         .style
         .height
+        .and_then(|height| match height {
+            gpui::DefiniteLength::Absolute(gpui::AbsoluteLength::Pixels(height)) => {
+                Some(f32::from(height))
+            }
+            _ => None,
+        })
         .unwrap_or(if vertical { 120.0 } else { 24.0 });
     let config = SliderConfig {
         min: node.min as f32,
@@ -58,7 +64,7 @@ pub(crate) fn render(
         return apply_component_styles(gpui::div(), node.style).into_any_element();
     }
     let mut component_style = node.style.clone();
-    component_style.height = Some(component_height);
+    component_style.height = Some(gpui::px(component_height).into());
     component_style.flex_grow = Some(0.0);
 
     let rebuild = context

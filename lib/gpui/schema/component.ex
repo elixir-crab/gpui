@@ -46,4 +46,9 @@ defmodule GPUI.Schema.Component do
           public_hidden_attrs: [atom()],
           public_slots: [{atom(), :required | :optional | :one_or_more}]
         }
+
+  @doc false
+  @spec renderer_internal?(t()) :: boolean()
+  def renderer_internal?(%__MODULE__{kind: :viewport}), do: true
+  def renderer_internal?(%__MODULE__{}), do: false
 end

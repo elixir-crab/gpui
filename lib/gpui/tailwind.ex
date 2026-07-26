@@ -202,6 +202,8 @@ defmodule GPUI.Tailwind do
     end
   end
 
+  defp parse_length("full"), do: {:ok, :full}
+
   defp parse_length("[" <> rest) do
     with value when value != rest <- String.trim_trailing(rest, "]"),
          {:ok, number} <- parse_px(value) do

@@ -22,6 +22,11 @@ defmodule GPUI.TailwindTest do
              )
   end
 
+  test "normalizes full dimensions as relative native lengths" do
+    assert %{style: [width: :full, height: :full], unknown: []} =
+             GPUI.Tailwind.normalize("w-full h-full")
+  end
+
   test "normalizes colors used by the counter example" do
     assert %{style: [background: {:rgb, 0x0F172A}], unknown: []} =
              GPUI.Tailwind.normalize("bg-slate-900")
@@ -61,7 +66,7 @@ defmodule GPUI.TailwindTest do
   test "every normalized style is supported by the native schema" do
     classes =
       "flex block grid hidden flex-col-reverse flex-wrap grow shrink-0 items-baseline " <>
-        "justify-evenly font-bold leading-normal opacity-50 p-2 px-3 mt-1 w-4 h-5 " <>
+        "justify-evenly font-bold leading-normal opacity-50 p-2 px-3 mt-1 w-full h-full " <>
         "min-w-6 max-h-8 border border-blue-500 rounded-lg bg-slate-900 text-white"
 
     assert %{style: styles} = GPUI.Tailwind.normalize(classes)

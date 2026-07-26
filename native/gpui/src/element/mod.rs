@@ -18,7 +18,6 @@ pub(crate) struct ElementRenderContext<'a, 'cx> {
     pub(crate) input_entities: &'a mut HashMap<String, gpui::Entity<NativeTextInput>>,
     #[cfg(feature = "components")]
     pub(crate) components: &'a mut component_registry::ComponentRegistry,
-    #[cfg(feature = "components")]
     pub(crate) window: &'a mut gpui::Window,
     pub(crate) cx: &'a mut gpui::Context<'cx, ElixirRoot>,
 }
@@ -47,6 +46,7 @@ impl ElementNode {
         let element_id = context.allocate_element_id();
 
         match self {
+            Self::Viewport(node) => render_viewport_primitive(node.children, context),
             Self::Text(node) => render_text_primitive(node.text, node.style),
             Self::Image(node) => render_image_primitive(
                 node.image,
@@ -68,6 +68,26 @@ impl ElementNode {
             component => render_generated_component_node(component, element_id, context),
         }
     }
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn render_viewport_primitive(
+    children: Vec<ElementNode>,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    use gpui::{div, IntoElement, ParentElement, Styled};
+
+    let viewport_size = context.window.viewport_size();
+
+    div()
+        .absolute()
+        .inset_0()
+        .w(viewport_size.width)
+        .h(viewport_size.height)
+        .flex()
+        .flex_col()
+        .children(children.into_iter().map(|child| child.render(context)))
+        .into_any_element()
 }
 
 #[cfg(feature = "real-gpui")]
