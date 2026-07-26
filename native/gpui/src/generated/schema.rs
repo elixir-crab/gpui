@@ -2568,135 +2568,148 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
     }
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_element_node(
-    term: Term,
+pub(crate) fn decode_generated_element_node<'a>(
+    term: Term<'a>,
     tag: GeneratedElementTag,
 ) -> NifResult<ElementNode> {
     match generated_component_kind(tag) {
         GeneratedComponentKind::Viewport => decode_viewport_node(term, tag),
         GeneratedComponentKind::Container => decode_container_node(term, tag),
         GeneratedComponentKind::ButtonComponent => {
-            decode_generated_button_component(term).map(ElementNode::ButtonComponent)
+            decode_generated_button_component(term)
+                .map(|node| ElementNode::ButtonComponent(node))
         }
         GeneratedComponentKind::ProgressComponent => {
-            decode_generated_progress_component(term).map(ElementNode::ProgressComponent)
+            decode_generated_progress_component(term)
+                .map(|node| ElementNode::ProgressComponent(node))
         }
         GeneratedComponentKind::FilePickerComponent => {
             decode_generated_file_picker_component(term)
-                .map(ElementNode::FilePickerComponent)
+                .map(|node| ElementNode::FilePickerComponent(node))
         }
         GeneratedComponentKind::CopyButtonComponent => {
             decode_generated_copy_button_component(term)
-                .map(ElementNode::CopyButtonComponent)
+                .map(|node| ElementNode::CopyButtonComponent(node))
         }
         GeneratedComponentKind::PopoverComponent => {
-            decode_generated_popover_component(term).map(ElementNode::PopoverComponent)
+            decode_generated_popover_component(term)
+                .map(|node| ElementNode::PopoverComponent(node))
         }
         GeneratedComponentKind::PopoverTriggerComponent => {
             decode_generated_popover_trigger_component(term)
-                .map(ElementNode::PopoverTriggerComponent)
+                .map(|node| ElementNode::PopoverTriggerComponent(node))
         }
         GeneratedComponentKind::PopoverContentComponent => {
             decode_generated_popover_content_component(term)
-                .map(ElementNode::PopoverContentComponent)
+                .map(|node| ElementNode::PopoverContentComponent(node))
         }
         GeneratedComponentKind::TooltipComponent => {
-            decode_generated_tooltip_component(term).map(ElementNode::TooltipComponent)
+            decode_generated_tooltip_component(term)
+                .map(|node| ElementNode::TooltipComponent(node))
         }
         GeneratedComponentKind::TooltipTriggerComponent => {
             decode_generated_tooltip_trigger_component(term)
-                .map(ElementNode::TooltipTriggerComponent)
+                .map(|node| ElementNode::TooltipTriggerComponent(node))
         }
         GeneratedComponentKind::DialogComponent => {
-            decode_generated_dialog_component(term).map(ElementNode::DialogComponent)
+            decode_generated_dialog_component(term)
+                .map(|node| ElementNode::DialogComponent(node))
         }
         GeneratedComponentKind::DialogTriggerComponent => {
             decode_generated_dialog_trigger_component(term)
-                .map(ElementNode::DialogTriggerComponent)
+                .map(|node| ElementNode::DialogTriggerComponent(node))
         }
         GeneratedComponentKind::DialogContentComponent => {
             decode_generated_dialog_content_component(term)
-                .map(ElementNode::DialogContentComponent)
+                .map(|node| ElementNode::DialogContentComponent(node))
         }
         GeneratedComponentKind::DropdownMenuComponent => {
             decode_generated_dropdown_menu_component(term)
-                .map(ElementNode::DropdownMenuComponent)
+                .map(|node| ElementNode::DropdownMenuComponent(node))
         }
         GeneratedComponentKind::DropdownMenuTriggerComponent => {
             decode_generated_dropdown_menu_trigger_component(term)
-                .map(ElementNode::DropdownMenuTriggerComponent)
+                .map(|node| ElementNode::DropdownMenuTriggerComponent(node))
         }
         GeneratedComponentKind::DropdownMenuItemComponent => {
             decode_generated_dropdown_menu_item_component(term)
-                .map(ElementNode::DropdownMenuItemComponent)
+                .map(|node| ElementNode::DropdownMenuItemComponent(node))
         }
         GeneratedComponentKind::CheckboxComponent => {
-            decode_generated_checkbox_component(term).map(ElementNode::CheckboxComponent)
+            decode_generated_checkbox_component(term)
+                .map(|node| ElementNode::CheckboxComponent(node))
         }
         GeneratedComponentKind::InputComponent => {
-            decode_generated_input_component(term).map(ElementNode::InputComponent)
+            decode_generated_input_component(term)
+                .map(|node| ElementNode::InputComponent(node))
         }
         GeneratedComponentKind::SelectComponent => {
-            decode_generated_select_component(term).map(ElementNode::SelectComponent)
+            decode_generated_select_component(term)
+                .map(|node| ElementNode::SelectComponent(node))
         }
         GeneratedComponentKind::ComboboxComponent => {
-            decode_generated_combobox_component(term).map(ElementNode::ComboboxComponent)
+            decode_generated_combobox_component(term)
+                .map(|node| ElementNode::ComboboxComponent(node))
         }
         GeneratedComponentKind::SwitchComponent => {
-            decode_generated_switch_component(term).map(ElementNode::SwitchComponent)
+            decode_generated_switch_component(term)
+                .map(|node| ElementNode::SwitchComponent(node))
         }
         GeneratedComponentKind::RadioGroupComponent => {
             decode_generated_radio_group_component(term)
-                .map(ElementNode::RadioGroupComponent)
+                .map(|node| ElementNode::RadioGroupComponent(node))
         }
         GeneratedComponentKind::AccordionComponent => {
             decode_generated_accordion_component(term)
-                .map(ElementNode::AccordionComponent)
+                .map(|node| ElementNode::AccordionComponent(node))
         }
         GeneratedComponentKind::AccordionItemComponent => {
             decode_generated_accordion_item_component(term)
-                .map(ElementNode::AccordionItemComponent)
+                .map(|node| ElementNode::AccordionItemComponent(node))
         }
         GeneratedComponentKind::VirtualListComponent => {
             decode_generated_virtual_list_component(term)
-                .map(ElementNode::VirtualListComponent)
+                .map(|node| ElementNode::VirtualListComponent(node))
         }
         GeneratedComponentKind::VirtualListItemComponent => {
             decode_generated_virtual_list_item_component(term)
-                .map(ElementNode::VirtualListItemComponent)
+                .map(|node| ElementNode::VirtualListItemComponent(node))
         }
         GeneratedComponentKind::DataTableComponent => {
             decode_generated_data_table_component(term)
-                .map(ElementNode::DataTableComponent)
+                .map(|node| ElementNode::DataTableComponent(node))
         }
         GeneratedComponentKind::TableColumnComponent => {
             decode_generated_table_column_component(term)
-                .map(ElementNode::TableColumnComponent)
+                .map(|node| ElementNode::TableColumnComponent(node))
         }
         GeneratedComponentKind::TableRowComponent => {
             decode_generated_table_row_component(term)
-                .map(ElementNode::TableRowComponent)
+                .map(|node| ElementNode::TableRowComponent(node))
         }
         GeneratedComponentKind::TreeComponent => {
-            decode_generated_tree_component(term).map(ElementNode::TreeComponent)
+            decode_generated_tree_component(term)
+                .map(|node| ElementNode::TreeComponent(node))
         }
         GeneratedComponentKind::TreeItemComponent => {
             decode_generated_tree_item_component(term)
-                .map(ElementNode::TreeItemComponent)
+                .map(|node| ElementNode::TreeItemComponent(node))
         }
         GeneratedComponentKind::CodeViewerComponent => {
             decode_generated_code_viewer_component(term)
-                .map(ElementNode::CodeViewerComponent)
+                .map(|node| ElementNode::CodeViewerComponent(node))
         }
         GeneratedComponentKind::CodeLineComponent => {
             decode_generated_code_line_component(term)
-                .map(ElementNode::CodeLineComponent)
+                .map(|node| ElementNode::CodeLineComponent(node))
         }
         GeneratedComponentKind::TabsComponent => {
-            decode_generated_tabs_component(term).map(ElementNode::TabsComponent)
+            decode_generated_tabs_component(term)
+                .map(|node| ElementNode::TabsComponent(node))
         }
         GeneratedComponentKind::SliderComponent => {
-            decode_generated_slider_component(term).map(ElementNode::SliderComponent)
+            decode_generated_slider_component(term)
+                .map(|node| ElementNode::SliderComponent(node))
         }
         GeneratedComponentKind::Text => decode_text_node(term, tag),
         GeneratedComponentKind::Input => decode_input_node(term, tag),

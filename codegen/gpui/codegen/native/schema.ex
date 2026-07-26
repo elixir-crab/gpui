@@ -4,6 +4,7 @@ defmodule GPUI.Codegen.Native.Schema do
   alias GPUI.Codegen.Native.ComponentContracts
   alias GPUI.Codegen.Native.ComponentDefinitions
   alias GPUI.Codegen.Native.Decoder
+  alias GPUI.Codegen.Native.Dispatch
   alias GPUI.Codegen.Native.Elements
   alias GPUI.Codegen.Native.Renderers
   alias GPUI.Codegen.Native.Style
@@ -32,15 +33,7 @@ defmodule GPUI.Codegen.Native.Schema do
       generated_component_contracts(components),
       generated_element_node_enum(components),
       generated_enum_decl(:GeneratedElementTag, elements ++ [:Unknown]),
-      generated_string_enum_decoder(
-        :decode_generated_element_tag,
-        :tag,
-        :GeneratedElementTag,
-        elements,
-        :Unknown
-      ),
-      generated_component_kind_function(components),
-      generated_element_decoder(components),
+      Dispatch.items(),
       generated_component_renderer(components, renderers)
     ]
     |> List.flatten()
@@ -209,34 +202,6 @@ defmodule GPUI.Codegen.Native.Schema do
       |> Kernel.<>("Node")
       |> String.to_atom()
 
-  defp decoder_name(component), do: String.to_atom("decode_generated_#{component.kind}")
-
-  defp generated_component_kind_function(components) do
-    arms =
-      Enum.map(components, fn component ->
-        %AST.Arm{
-          pattern: P.path([:GeneratedElementTag, rust_variant(component.tag)]),
-          body: [
-            A.return_stmt(A.path([:GeneratedComponentKind, rust_variant(component.kind)]))
-          ]
-        }
-      end) ++
-        [
-          %AST.Arm{
-            pattern: P.path([:GeneratedElementTag, :Unknown]),
-            body: [A.return_stmt(A.path([:GeneratedComponentKind, :Unknown]))]
-          }
-        ]
-
-    %AST.Function{
-      name: :generated_component_kind,
-      vis: :pub,
-      args: [A.arg(:tag, T.path(:GeneratedElementTag))],
-      returns: T.path(:GeneratedComponentKind),
-      body: [A.return_stmt(A.match_expr(A.var(:tag), arms))]
-    }
-  end
-
   defp generated_component_renderer(components, renderers) do
     arms =
       components
@@ -274,85 +239,12 @@ defmodule GPUI.Codegen.Native.Schema do
     }
   end
 
-  defp generated_element_decoder(components) do
-    arms =
-      components
-      |> Enum.uniq_by(& &1.kind)
-      |> Enum.map(&generated_element_decoder_arm/1)
-      |> Kernel.++([
-        %AST.Arm{
-          pattern: P.path([:GeneratedComponentKind, :Unknown]),
-          body: [A.return_stmt(A.err(A.badarg()))]
-        }
-      ])
-
-    %AST.Function{
-      name: :decode_generated_element_node,
-      vis: :crate,
-      attrs: [A.attr(:cfg, feature: "real-gpui")],
-      args: [A.arg(:term, T.path(:Term)), A.arg(:tag, T.path(:GeneratedElementTag))],
-      returns: T.nif_result(:ElementNode),
-      body: [
-        A.return_stmt(A.match_expr(A.call(:generated_component_kind, [:tag]), arms))
-      ]
-    }
-  end
-
-  defp generated_element_decoder_arm(component) do
-    kind = rust_variant(component.kind)
-
-    body =
-      if component_contract?(component) do
-        component
-        |> decoder_name()
-        |> A.call([:term])
-        |> A.method(:map, [A.path([:ElementNode, kind])])
-      else
-        A.path_call(primitive_decoder_path(component.kind), [:term, :tag])
-      end
-
-    %AST.Arm{
-      pattern: P.path([:GeneratedComponentKind, kind]),
-      body: [A.return_stmt(body)]
-    }
-  end
-
-  defp primitive_decoder_path(:viewport), do: [:decode_viewport_node]
-  defp primitive_decoder_path(:container), do: [:decode_container_node]
-  defp primitive_decoder_path(:input), do: [:decode_input_node]
-  defp primitive_decoder_path(:image), do: [:decode_image_node]
-  defp primitive_decoder_path(:text), do: [:decode_text_node]
-
   defp generated_enum_decl(name, variants) do
     %AST.Enum{
       name: name,
       derive: [:Clone, :Copy, :Debug, :Eq, :PartialEq],
       variants: Enum.map(variants, &%AST.EnumVariant{name: rust_variant(&1)}),
       vis: :pub
-    }
-  end
-
-  defp generated_string_enum_decoder(name, arg_name, enum_name, values, unknown) do
-    arms =
-      Enum.map(values, fn value ->
-        %AST.Arm{
-          pattern: %AST.PatLiteral{value: to_string(value)},
-          body: [A.return_stmt(A.path([enum_name, rust_variant(value)]))]
-        }
-      end) ++
-        [
-          %AST.Arm{
-            pattern: A.wildcard(),
-            body: [A.return_stmt(A.path([enum_name, rust_variant(unknown)]))]
-          }
-        ]
-
-    %AST.Function{
-      name: name,
-      vis: :pub,
-      args: [A.arg(arg_name, T.ref(:str))],
-      returns: T.path(enum_name),
-      body: [A.return_stmt(%AST.Match{expr: A.var(arg_name), arms: arms})]
     }
   end
 
