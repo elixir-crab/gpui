@@ -30,6 +30,22 @@ defmodule GPUI.Codegen.Native.StyleTest do
              "StyleAttrs::default()"
   end
 
+  test "generates rendering for every rendered style contract" do
+    source =
+      GPUI.Schema.style_specs()
+      |> Style.items()
+      |> Rust.render_all()
+
+    for spec <- Enum.reject(GPUI.Schema.style_specs(), &is_nil(&1.render)) do
+      assert source =~ "style.#{spec.field}"
+    end
+
+    assert source =~ "fn apply_generated_render_styles"
+    assert source =~ "element = element.flex();"
+    assert source =~ "gpui::FontWeight::BOLD"
+    assert source =~ "element = element.border_color(gpui::rgb(value));"
+  end
+
   test "keeps one decoding arm for every style contract" do
     source =
       GPUI.Schema.style_specs()

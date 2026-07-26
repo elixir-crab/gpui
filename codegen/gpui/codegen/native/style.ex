@@ -8,6 +8,7 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
     clauses = Enum.map(specs, &style_clause/1) ++ [{:->, [], [[Macro.var(:_, nil)], false]}]
 
     style_case = {:case, [], [Macro.var(:key, nil), [do: clauses]]}
+    render_statements = specs |> Enum.reject(&is_nil(&1.render)) |> Enum.map(&render_statement/1)
 
     quote do
       @type style_attrs :: unquote(fields)
@@ -30,6 +31,14 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
       @spec apply_generated_style_attr(R.mut_ref(style_attrs()), atom(), term()) :: boolean()
       defrust apply_generated_style_attr(attrs, key, term) do
         unquote(style_case)
+      end
+
+      @spec apply_generated_render_styles(R.path({:gpui, :Div}), style_attrs()) ::
+              R.path({:gpui, :Div})
+      defrust apply_generated_render_styles(element, style) do
+        element = element
+        unquote_splicing(render_statements)
+        element
       end
     end
   end
@@ -78,6 +87,73 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
   defp style_decode_call(:length), do: quote(do: length_value(term))
   defp style_decode_call(:radius), do: quote(do: radius_value(term))
 
+  defp render_statement(%{field: field, render: :flex_if_true}) do
+    style_field = field_access(:style, field)
+
+    quote do
+      if unquote(style_field) do
+        assign!(element, element.flex())
+      end
+    end
+  end
+
+  defp render_statement(%{field: field, render: {:enum_methods, values}}) do
+    render_option_case(field, values, fn method ->
+      quote(do: assign!(element, element.unquote(method)()))
+    end)
+  end
+
+  defp render_statement(%{field: field, render: {:enum_values, method, values}}) do
+    render_option_case(field, values, fn path ->
+      value = rust_path(path)
+      quote(do: assign!(element, element.unquote(method)(unquote(value))))
+    end)
+  end
+
+  defp render_statement(%{field: field, render: {:option_method, method, unit}})
+       when unit in [:rgb, :px, :length, :f32] do
+    rendered_value =
+      case unit do
+        unit when unit in [:f32, :length] -> Macro.var(:value, nil)
+        unit -> {{:., [], [{:__aliases__, [], [:Gpui]}, unit]}, [], [Macro.var(:value, nil)]}
+      end
+
+    render_option_value_case(field, fn ->
+      quote(do: assign!(element, element.unquote(method)(unquote(rendered_value))))
+    end)
+  end
+
+  defp render_option_value_case(field, render) do
+    clauses = [
+      {:->, [], [[{:some, Macro.var(:value, nil)}], render.()]},
+      {:->, [], [[Macro.var(:_, nil)], :ok]}
+    ]
+
+    {:case, [], [field_access(:style, field), [do: clauses]]}
+  end
+
+  defp render_option_case(field, values, render) do
+    clauses =
+      Enum.map(values, fn
+        {:some, binding} ->
+          pattern = {:some, Macro.var(binding, nil)}
+          {:->, [], [[pattern], render.(binding)]}
+
+        {value, action} ->
+          pattern = {:some, value}
+          {:->, [], [[pattern], render.(action)]}
+      end) ++ [{:->, [], [[Macro.var(:_, nil)], :ok]}]
+
+    style_field = field_access(:style, field)
+    {:case, [], [quote(do: unquote(style_field).as_deref()), [do: clauses]]}
+  end
+
+  defp field_access(receiver, field),
+    do: {{:., [], [Macro.var(receiver, nil), field]}, [no_parens: true], []}
+
+  defp rust_path([:gpui | rest]), do: {:__aliases__, [], [:Gpui | rest]}
+  defp rust_path(path), do: {:__aliases__, [], path}
+
   defp required(name), do: {:required, [], [name]}
 end
 
@@ -90,8 +166,6 @@ defmodule GPUI.Codegen.Native.Style do
   alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
-  alias RustQ.Rust.AST.PatternBuilder, as: P
-  alias RustQ.Rust.AST.TypeBuilder, as: T
   alias RustQ.Type, as: R
 
   require StyleDefinitions
@@ -130,11 +204,10 @@ defmodule GPUI.Codegen.Native.Style do
   end
 
   @spec items([GPUI.Schema.Style.t()]) :: [AST.item()]
-  def items(style_specs) do
+  def items(_style_specs) do
     [
       generated_style_struct(),
-      rusty_items(),
-      generated_apply_render_style_function(style_specs)
+      rusty_items()
     ]
     |> List.flatten()
   end
@@ -157,75 +230,5 @@ defmodule GPUI.Codegen.Native.Style do
       )
 
     struct
-  end
-
-  defp generated_apply_render_style_function(style_specs) do
-    %AST.Function{
-      name: :apply_generated_render_styles,
-      vis: :crate,
-      attrs: [A.attr(:cfg, feature: "real-gpui")],
-      args: [A.arg(:element, T.path([:gpui, :Div])), A.arg(:style, T.path(:StyleAttrs))],
-      returns: T.path([:gpui, :Div]),
-      body:
-        [A.let_mut(:element, A.var(:element))] ++
-          (style_specs
-           |> Enum.reject(&is_nil(&1.render))
-           |> Enum.map(&render_style_statement/1)) ++
-          [A.return_stmt(A.var(:element))]
-    }
-  end
-
-  defp render_style_statement(%{field: field, render: :flex_if_true}) do
-    A.stmt(
-      A.if_expr(
-        A.field(A.var(:style), field),
-        [A.assign(A.var(:element), A.method(A.var(:element), :flex))],
-        []
-      )
-    )
-  end
-
-  defp render_style_statement(%{field: field, render: {:enum_methods, values}}) do
-    arms =
-      Enum.map(values, fn {value, method} ->
-        %AST.Arm{
-          pattern: P.some(P.lit(value)),
-          body: [A.assign(A.var(:element), A.method(A.var(:element), method))]
-        }
-      end) ++ [%AST.Arm{pattern: P.wildcard(), body: []}]
-
-    style_value = A.field(A.var(:style), field)
-    A.stmt(A.match_expr(A.method(style_value, :as_deref), arms))
-  end
-
-  defp render_style_statement(%{field: field, render: {:enum_values, method, values}}) do
-    arms =
-      Enum.map(values, fn {value, path} ->
-        %AST.Arm{
-          pattern: P.some(P.lit(value)),
-          body: [
-            A.assign(A.var(:element), A.method(A.var(:element), method, [A.path(path)]))
-          ]
-        }
-      end) ++ [%AST.Arm{pattern: P.wildcard(), body: []}]
-
-    style_value = A.field(A.var(:style), field)
-    A.stmt(A.match_expr(A.method(style_value, :as_deref), arms))
-  end
-
-  defp render_style_statement(%{field: field, render: {:option_method, method, unit}})
-       when unit in [:rgb, :px, :length, :f32] do
-    rendered_value =
-      case unit do
-        :f32 -> A.var(:value)
-        :length -> A.var(:value)
-        unit -> A.path_call([:gpui, unit], [A.var(:value)])
-      end
-
-    A.if_let(
-      P.some(P.var(:value)),
-      A.field(A.var(:style), field),
-      [A.assign(A.var(:element), A.method(A.var(:element), method, [rendered_value]))]
-    )
   end
 end

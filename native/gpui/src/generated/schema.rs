@@ -793,32 +793,6 @@ pub(crate) fn apply_generated_style_attr<'a>(
     }
 }
 #[cfg(feature = "real-gpui")]
-#[allow(unreachable_patterns)]
-pub(crate) fn decode_style<'a>(term: Term<'a>) -> NifResult<StyleAttrs> {
-    let attrs = term.map_get(atoms::attrs())?;
-    match attrs.map_get(atoms::style()) {
-        Ok(style) => {
-            let entries = style.decode::<Vec<(Atom, Term<'a>)>>()?;
-            let mut decoded = default_style();
-            let valid = {
-                let mut __rustq_reduce = true;
-                for entry in entries {
-                    __rustq_reduce = match __rustq_reduce {
-                        valid => {
-                            let (key, value) = entry;
-                            apply_generated_style_attr(&mut decoded, key, value) && valid
-                        }
-                        __rustq_reduce_value => __rustq_reduce_value,
-                    };
-                }
-                __rustq_reduce
-            };
-            if valid { Ok(decoded) } else { Err(rustler::Error::BadArg) }
-        }
-        Err(_missing) => Ok(default_style()),
-    }
-}
-#[cfg(feature = "real-gpui")]
 pub(crate) fn apply_generated_render_styles(
     element: gpui::Div,
     style: StyleAttrs,
@@ -905,21 +879,36 @@ pub(crate) fn apply_generated_render_styles(
         }
         _ => {}
     };
-    if let Some(value) = style.flex_grow {
-        element = element.flex_grow(value);
-    }
-    if let Some(value) = style.flex_shrink {
-        element = element.flex_shrink(value);
-    }
-    if let Some(value) = style.background {
-        element = element.bg(gpui::rgb(value));
-    }
-    if let Some(value) = style.color {
-        element = element.text_color(gpui::rgb(value));
-    }
-    if let Some(value) = style.font_size {
-        element = element.text_size(gpui::px(value));
-    }
+    match style.flex_grow {
+        Some(value) => {
+            element = element.flex_grow(value);
+        }
+        _ => {}
+    };
+    match style.flex_shrink {
+        Some(value) => {
+            element = element.flex_shrink(value);
+        }
+        _ => {}
+    };
+    match style.background {
+        Some(value) => {
+            element = element.bg(gpui::rgb(value));
+        }
+        _ => {}
+    };
+    match style.color {
+        Some(value) => {
+            element = element.text_color(gpui::rgb(value));
+        }
+        _ => {}
+    };
+    match style.font_size {
+        Some(value) => {
+            element = element.text_size(gpui::px(value));
+        }
+        _ => {}
+    };
     match style.font_weight.as_deref() {
         Some("light") => {
             element = element.font_weight(gpui::FontWeight::LIGHT);
@@ -938,85 +927,189 @@ pub(crate) fn apply_generated_render_styles(
         }
         _ => {}
     };
-    if let Some(value) = style.line_height {
-        element = element.line_height(gpui::px(value));
-    }
-    if let Some(value) = style.opacity {
-        element = element.opacity(value);
-    }
-    if let Some(value) = style.gap {
-        element = element.gap(gpui::px(value));
-    }
-    if let Some(value) = style.padding {
-        element = element.p(gpui::px(value));
-    }
-    if let Some(value) = style.padding_x {
-        element = element.px(gpui::px(value));
-    }
-    if let Some(value) = style.padding_y {
-        element = element.py(gpui::px(value));
-    }
-    if let Some(value) = style.padding_top {
-        element = element.pt(gpui::px(value));
-    }
-    if let Some(value) = style.padding_right {
-        element = element.pr(gpui::px(value));
-    }
-    if let Some(value) = style.padding_bottom {
-        element = element.pb(gpui::px(value));
-    }
-    if let Some(value) = style.padding_left {
-        element = element.pl(gpui::px(value));
-    }
-    if let Some(value) = style.margin {
-        element = element.m(gpui::px(value));
-    }
-    if let Some(value) = style.margin_x {
-        element = element.mx(gpui::px(value));
-    }
-    if let Some(value) = style.margin_y {
-        element = element.my(gpui::px(value));
-    }
-    if let Some(value) = style.margin_top {
-        element = element.mt(gpui::px(value));
-    }
-    if let Some(value) = style.margin_right {
-        element = element.mr(gpui::px(value));
-    }
-    if let Some(value) = style.margin_bottom {
-        element = element.mb(gpui::px(value));
-    }
-    if let Some(value) = style.margin_left {
-        element = element.ml(gpui::px(value));
-    }
-    if let Some(value) = style.width {
-        element = element.w(value);
-    }
-    if let Some(value) = style.height {
-        element = element.h(value);
-    }
-    if let Some(value) = style.min_width {
-        element = element.min_w(value);
-    }
-    if let Some(value) = style.max_width {
-        element = element.max_w(value);
-    }
-    if let Some(value) = style.min_height {
-        element = element.min_h(value);
-    }
-    if let Some(value) = style.max_height {
-        element = element.max_h(value);
-    }
-    if let Some(value) = style.border_radius {
-        element = element.rounded(gpui::px(value));
-    }
-    if let Some(value) = style.border_width {
-        element = element.border(gpui::px(value));
-    }
-    if let Some(value) = style.border_color {
-        element = element.border_color(gpui::rgb(value));
-    }
+    match style.line_height {
+        Some(value) => {
+            element = element.line_height(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.opacity {
+        Some(value) => {
+            element = element.opacity(value);
+        }
+        _ => {}
+    };
+    match style.gap {
+        Some(value) => {
+            element = element.gap(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.padding {
+        Some(value) => {
+            element = element.p(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.padding_x {
+        Some(value) => {
+            element = element.px(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.padding_y {
+        Some(value) => {
+            element = element.py(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.padding_top {
+        Some(value) => {
+            element = element.pt(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.padding_right {
+        Some(value) => {
+            element = element.pr(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.padding_bottom {
+        Some(value) => {
+            element = element.pb(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.padding_left {
+        Some(value) => {
+            element = element.pl(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.margin {
+        Some(value) => {
+            element = element.m(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.margin_x {
+        Some(value) => {
+            element = element.mx(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.margin_y {
+        Some(value) => {
+            element = element.my(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.margin_top {
+        Some(value) => {
+            element = element.mt(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.margin_right {
+        Some(value) => {
+            element = element.mr(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.margin_bottom {
+        Some(value) => {
+            element = element.mb(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.margin_left {
+        Some(value) => {
+            element = element.ml(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.width {
+        Some(value) => {
+            element = element.w(value);
+        }
+        _ => {}
+    };
+    match style.height {
+        Some(value) => {
+            element = element.h(value);
+        }
+        _ => {}
+    };
+    match style.min_width {
+        Some(value) => {
+            element = element.min_w(value);
+        }
+        _ => {}
+    };
+    match style.max_width {
+        Some(value) => {
+            element = element.max_w(value);
+        }
+        _ => {}
+    };
+    match style.min_height {
+        Some(value) => {
+            element = element.min_h(value);
+        }
+        _ => {}
+    };
+    match style.max_height {
+        Some(value) => {
+            element = element.max_h(value);
+        }
+        _ => {}
+    };
+    match style.border_radius {
+        Some(value) => {
+            element = element.rounded(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.border_width {
+        Some(value) => {
+            element = element.border(gpui::px(value));
+        }
+        _ => {}
+    };
+    match style.border_color {
+        Some(value) => {
+            element = element.border_color(gpui::rgb(value));
+        }
+        _ => {}
+    };
     element
+}
+#[cfg(feature = "real-gpui")]
+#[allow(unreachable_patterns)]
+pub(crate) fn decode_style<'a>(term: Term<'a>) -> NifResult<StyleAttrs> {
+    let attrs = term.map_get(atoms::attrs())?;
+    match attrs.map_get(atoms::style()) {
+        Ok(style) => {
+            let entries = style.decode::<Vec<(Atom, Term<'a>)>>()?;
+            let mut decoded = default_style();
+            let valid = {
+                let mut __rustq_reduce = true;
+                for entry in entries {
+                    __rustq_reduce = match __rustq_reduce {
+                        valid => {
+                            let (key, value) = entry;
+                            apply_generated_style_attr(&mut decoded, key, value) && valid
+                        }
+                        __rustq_reduce_value => __rustq_reduce_value,
+                    };
+                }
+                __rustq_reduce
+            };
+            if valid { Ok(decoded) } else { Err(rustler::Error::BadArg) }
+        }
+        Err(_missing) => Ok(default_style()),
+    }
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg(feature = "real-gpui")]
