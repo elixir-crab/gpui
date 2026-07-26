@@ -2,6 +2,7 @@ defmodule GPUI.Codegen.Native.Schema do
   @moduledoc false
 
   alias GPUI.Codegen.Native.ComponentContracts
+  alias GPUI.Codegen.Native.ComponentDefinitions
   alias GPUI.Codegen.Native.Decoder
   alias GPUI.Codegen.Native.Elements
   alias GPUI.Codegen.Native.Renderers
@@ -63,13 +64,8 @@ defmodule GPUI.Codegen.Native.Schema do
     generated_enum_decl(:GeneratedComponentKind, kinds ++ [:Unknown])
   end
 
-  defp generated_component_contracts(components) do
-    components = Enum.filter(components, &component_contract?/1)
-
-    ComponentContracts.items() ++
-      Enum.flat_map(components, fn component ->
-        [generated_component_struct(component), generated_component_decoder(component)]
-      end)
+  defp generated_component_contracts(_components) do
+    ComponentContracts.items() ++ ComponentDefinitions.items()
   end
 
   defp generated_registry_kind(components) do
@@ -174,29 +170,6 @@ defmodule GPUI.Codegen.Native.Schema do
   defp registry_type(component),
     do: component |> registry_variant() |> then(&String.to_atom("Component#{&1}"))
 
-  defp generated_component_struct(component) do
-    fields =
-      [%AST.StructField{name: :style, type: T.path(:StyleAttrs), vis: :crate}] ++
-        Enum.map(component.attrs, fn {name, type} ->
-          %AST.StructField{name: name, type: component_field_type(name, type), vis: :crate}
-        end) ++
-        if(component.children,
-          do: [%AST.StructField{name: :children, type: T.vec(:ElementNode), vis: :crate}],
-          else: []
-        ) ++
-        Enum.map(component.events, fn {name, _attr} ->
-          %AST.StructField{name: name, type: T.option(:String), vis: :crate}
-        end)
-
-    %AST.Struct{
-      name: component_node_name(component),
-      vis: :crate,
-      derive: [:Clone, :Debug],
-      attrs: [A.attr(:cfg, feature: "real-gpui"), A.attr(:allow, [:dead_code])],
-      fields: fields
-    }
-  end
-
   defp generated_element_node_enum(components) do
     component_variants =
       components
@@ -225,153 +198,6 @@ defmodule GPUI.Codegen.Native.Schema do
     }
   end
 
-  defp generated_component_decoder(component) do
-    fields =
-      [style: A.try(A.call(:decode_style, [:term]))] ++
-        Enum.map(component.attrs, fn {name, type} ->
-          {name, component_decoder_expr(name, type)}
-        end) ++
-        if(component.children,
-          do: [children: A.try(A.call(:decode_children, [:term]))],
-          else: []
-        ) ++
-        Enum.map(component.events, fn {name, attr} ->
-          {name,
-           A.try(
-             A.call(:component_string_attr, [
-               :term,
-               A.path_call([:atoms, rust_atom_name(attr)])
-             ])
-           )}
-        end)
-
-    %AST.Function{
-      name: decoder_name(component),
-      vis: :crate,
-      attrs: [A.attr(:cfg, feature: "real-gpui")],
-      args: [A.arg(:term, T.path(:Term))],
-      returns: T.nif_result(component_node_name(component)),
-      body: [
-        A.return_stmt(A.ok(A.struct_expr(component_node_name(component), fields)))
-      ]
-    }
-  end
-
-  defp component_field_type(:id, :string), do: T.path(:String)
-  defp component_field_type(_name, :required_string), do: T.path(:String)
-  defp component_field_type(_name, :string), do: T.option(:String)
-  defp component_field_type(_name, {:default, :string}), do: T.path(:String)
-
-  defp component_field_type(_name, {:default, type, _value})
-       when type in [:number, :positive_number],
-       do: T.path(:f64)
-
-  defp component_field_type(_name, :non_negative_integer), do: T.option(:u64)
-
-  defp component_field_type(_name, {:default, type, _value})
-       when type in [:non_negative_integer, :positive_integer],
-       do: T.path(:u64)
-
-  defp component_field_type(_name, :positive_integer), do: T.option(:u64)
-  defp component_field_type(_name, {:default, {:enum, _values}, _default}), do: T.option(:String)
-
-  defp component_field_type(_name, :boolean), do: T.path(:bool)
-  defp component_field_type(_name, {:default, :boolean, _value}), do: T.path(:bool)
-  defp component_field_type(_name, :string_list), do: T.vec(:String)
-  defp component_field_type(_name, {:enum, _values}), do: T.option(:String)
-  defp component_field_type(_name, :select_options), do: T.vec(:SelectOptionNode)
-  defp component_field_type(_name, :radio_options), do: T.vec(:RadioOptionNode)
-
-  defp component_decoder_expr(:id, :string),
-    do: A.try(A.call(:component_id, [:term]))
-
-  defp component_decoder_expr(name, :required_string),
-    do: A.try(component_attr_call(:component_required_string_attr, name))
-
-  defp component_decoder_expr(name, :string),
-    do: A.try(component_attr_call(:component_string_attr, name))
-
-  defp component_decoder_expr(name, {:default, :string}) do
-    :component_string_attr
-    |> component_attr_call(name)
-    |> A.try()
-    |> A.method(:unwrap_or_default)
-  end
-
-  defp component_decoder_expr(name, {:default, type, default})
-       when type in [:number, :positive_number] do
-    helper =
-      if type == :positive_number,
-        do: :component_positive_number_attr,
-        else: :component_number_attr
-
-    helper
-    |> component_attr_call(name)
-    |> A.try()
-    |> A.method(:unwrap_or, [A.lit(default)])
-  end
-
-  defp component_decoder_expr(name, :non_negative_integer),
-    do: A.try(component_attr_call(:component_non_negative_integer_attr, name))
-
-  defp component_decoder_expr(name, {:default, type, default})
-       when type in [:non_negative_integer, :positive_integer] do
-    helper =
-      if type == :positive_integer,
-        do: :component_positive_integer_attr,
-        else: :component_non_negative_integer_attr
-
-    helper
-    |> component_attr_call(name)
-    |> A.try()
-    |> A.method(:unwrap_or, [A.lit(default)])
-  end
-
-  defp component_decoder_expr(name, :positive_integer),
-    do: A.try(component_attr_call(:component_positive_integer_attr, name))
-
-  defp component_decoder_expr(name, :boolean) do
-    :component_bool_attr
-    |> component_attr_call(name)
-    |> A.try()
-    |> A.method(:unwrap_or, [false])
-  end
-
-  defp component_decoder_expr(name, {:default, :boolean, default}) do
-    :component_bool_attr
-    |> component_attr_call(name)
-    |> A.try()
-    |> A.method(:unwrap_or, [default])
-  end
-
-  defp component_decoder_expr(name, :string_list),
-    do: A.try(component_attr_call(:component_string_list_attr, name))
-
-  defp component_decoder_expr(name, {:enum, values}) do
-    A.try(
-      A.call(:component_enum_attr, [
-        :term,
-        A.path_call([:atoms, rust_atom_name(name)]),
-        A.slice(Enum.map(values, &A.lit/1))
-      ])
-    )
-  end
-
-  defp component_decoder_expr(name, {:default, {:enum, values}, default}) do
-    name
-    |> component_decoder_expr({:enum, values})
-    |> A.method(:or, [A.some(A.method(A.lit(default), :to_string))])
-  end
-
-  defp component_decoder_expr(_name, :select_options),
-    do: A.try(A.call(:decode_select_options, [:term]))
-
-  defp component_decoder_expr(_name, :radio_options),
-    do: A.try(A.call(:decode_radio_options, [:term]))
-
-  defp component_attr_call(helper, name),
-    do: A.call(helper, [:term, A.path_call([:atoms, rust_atom_name(name)])])
-
   defp component_contract?(component),
     do: component.kind |> Atom.to_string() |> String.ends_with?("_component")
 
@@ -384,13 +210,6 @@ defmodule GPUI.Codegen.Native.Schema do
       |> String.to_atom()
 
   defp decoder_name(component), do: String.to_atom("decode_generated_#{component.kind}")
-
-  defp rust_atom_name(atom) do
-    atom
-    |> Atom.to_string()
-    |> String.replace(~r/[^a-zA-Z0-9_]/, "_")
-    |> String.to_atom()
-  end
 
   defp generated_component_kind_function(components) do
     arms =

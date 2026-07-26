@@ -1282,8 +1282,8 @@ pub(crate) struct ButtonComponentNode {
     pub(crate) click: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_button_component(
-    term: Term,
+pub(crate) fn decode_generated_button_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<ButtonComponentNode> {
     Ok(ButtonComponentNode {
         style: decode_style(term)?,
@@ -1292,20 +1292,12 @@ pub(crate) fn decode_generated_button_component(
         variant: component_enum_attr(
             term,
             atoms::variant(),
-            &[
-                "default",
-                "primary",
-                "secondary",
-                "danger",
-                "warning",
-                "success",
-                "info",
-                "ghost",
-                "link",
-                "text",
+            &vec![
+                "default", "primary", "secondary", "danger", "warning", "success",
+                "info", "ghost", "link", "text"
             ],
         )?,
-        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        size: component_enum_attr(term, atoms::size(), &vec!["xs", "sm", "md", "lg"])?,
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         selected: component_bool_attr(term, atoms::selected())?.unwrap_or(false),
         loading: component_bool_attr(term, atoms::loading())?.unwrap_or(false),
@@ -1327,8 +1319,8 @@ pub(crate) struct ProgressComponentNode {
     pub(crate) indeterminate: bool,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_progress_component(
-    term: Term,
+pub(crate) fn decode_generated_progress_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<ProgressComponentNode> {
     Ok(ProgressComponentNode {
         style: decode_style(term)?,
@@ -1353,8 +1345,8 @@ pub(crate) struct FilePickerComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_file_picker_component(
-    term: Term,
+pub(crate) fn decode_generated_file_picker_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<FilePickerComponentNode> {
     Ok(FilePickerComponentNode {
         style: decode_style(term)?,
@@ -1379,8 +1371,8 @@ pub(crate) struct CopyButtonComponentNode {
     pub(crate) click: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_copy_button_component(
-    term: Term,
+pub(crate) fn decode_generated_copy_button_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<CopyButtonComponentNode> {
     Ok(CopyButtonComponentNode {
         style: decode_style(term)?,
@@ -1406,8 +1398,8 @@ pub(crate) struct PopoverComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_popover_component(
-    term: Term,
+pub(crate) fn decode_generated_popover_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<PopoverComponentNode> {
     Ok(PopoverComponentNode {
         style: decode_style(term)?,
@@ -1417,18 +1409,12 @@ pub(crate) fn decode_generated_popover_component(
         anchor: component_enum_attr(
                 term,
                 atoms::anchor(),
-                &[
-                    "top_left",
-                    "top_center",
-                    "top_right",
-                    "bottom_left",
-                    "bottom_center",
-                    "bottom_right",
-                    "left_center",
-                    "right_center",
+                &vec![
+                    "top_left", "top_center", "top_right", "bottom_left",
+                    "bottom_center", "bottom_right", "left_center", "right_center"
                 ],
             )?
-            .or(Some("top_left".to_string())),
+            .then(|value| value.or(Some("top_left".to_string()))),
         appearance: component_bool_attr(term, atoms::appearance())?.unwrap_or(true),
         closable: component_bool_attr(term, atoms::closable())?.unwrap_or(true),
         children: decode_children(term)?,
@@ -1443,8 +1429,8 @@ pub(crate) struct PopoverTriggerComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_popover_trigger_component(
-    term: Term,
+pub(crate) fn decode_generated_popover_trigger_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<PopoverTriggerComponentNode> {
     Ok(PopoverTriggerComponentNode {
         style: decode_style(term)?,
@@ -1459,8 +1445,8 @@ pub(crate) struct PopoverContentComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_popover_content_component(
-    term: Term,
+pub(crate) fn decode_generated_popover_content_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<PopoverContentComponentNode> {
     Ok(PopoverContentComponentNode {
         style: decode_style(term)?,
@@ -1479,8 +1465,8 @@ pub(crate) struct TooltipComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_tooltip_component(
-    term: Term,
+pub(crate) fn decode_generated_tooltip_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<TooltipComponentNode> {
     Ok(TooltipComponentNode {
         style: decode_style(term)?,
@@ -1499,8 +1485,8 @@ pub(crate) struct TooltipTriggerComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_tooltip_trigger_component(
-    term: Term,
+pub(crate) fn decode_generated_tooltip_trigger_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<TooltipTriggerComponentNode> {
     Ok(TooltipTriggerComponentNode {
         style: decode_style(term)?,
@@ -1524,8 +1510,8 @@ pub(crate) struct DialogComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_dialog_component(
-    term: Term,
+pub(crate) fn decode_generated_dialog_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<DialogComponentNode> {
     Ok(DialogComponentNode {
         style: decode_style(term)?,
@@ -1549,8 +1535,8 @@ pub(crate) struct DialogTriggerComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_dialog_trigger_component(
-    term: Term,
+pub(crate) fn decode_generated_dialog_trigger_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<DialogTriggerComponentNode> {
     Ok(DialogTriggerComponentNode {
         style: decode_style(term)?,
@@ -1565,8 +1551,8 @@ pub(crate) struct DialogContentComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_dialog_content_component(
-    term: Term,
+pub(crate) fn decode_generated_dialog_content_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<DialogContentComponentNode> {
     Ok(DialogContentComponentNode {
         style: decode_style(term)?,
@@ -1588,8 +1574,8 @@ pub(crate) struct DropdownMenuComponentNode {
     pub(crate) select: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_dropdown_menu_component(
-    term: Term,
+pub(crate) fn decode_generated_dropdown_menu_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<DropdownMenuComponentNode> {
     Ok(DropdownMenuComponentNode {
         style: decode_style(term)?,
@@ -1599,18 +1585,12 @@ pub(crate) fn decode_generated_dropdown_menu_component(
         anchor: component_enum_attr(
                 term,
                 atoms::anchor(),
-                &[
-                    "top_left",
-                    "top_center",
-                    "top_right",
-                    "bottom_left",
-                    "bottom_center",
-                    "bottom_right",
-                    "left_center",
-                    "right_center",
+                &vec![
+                    "top_left", "top_center", "top_right", "bottom_left",
+                    "bottom_center", "bottom_right", "left_center", "right_center"
                 ],
             )?
-            .or(Some("top_left".to_string())),
+            .then(|value| value.or(Some("top_left".to_string()))),
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         children: decode_children(term)?,
         change: component_string_attr(term, atoms::phx_change())?,
@@ -1625,8 +1605,8 @@ pub(crate) struct DropdownMenuTriggerComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_dropdown_menu_trigger_component(
-    term: Term,
+pub(crate) fn decode_generated_dropdown_menu_trigger_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<DropdownMenuTriggerComponentNode> {
     Ok(DropdownMenuTriggerComponentNode {
         style: decode_style(term)?,
@@ -1644,8 +1624,8 @@ pub(crate) struct DropdownMenuItemComponentNode {
     pub(crate) checked: bool,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_dropdown_menu_item_component(
-    term: Term,
+pub(crate) fn decode_generated_dropdown_menu_item_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<DropdownMenuItemComponentNode> {
     Ok(DropdownMenuItemComponentNode {
         style: decode_style(term)?,
@@ -1669,14 +1649,14 @@ pub(crate) struct CheckboxComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_checkbox_component(
-    term: Term,
+pub(crate) fn decode_generated_checkbox_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<CheckboxComponentNode> {
     Ok(CheckboxComponentNode {
         style: decode_style(term)?,
         id: component_id(term)?,
         label: component_required_string_attr(term, atoms::label())?,
-        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        size: component_enum_attr(term, atoms::size(), &vec!["xs", "sm", "md", "lg"])?,
         checked: component_bool_attr(term, atoms::checked())?.unwrap_or(false),
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         children: decode_children(term)?,
@@ -1702,8 +1682,8 @@ pub(crate) struct InputComponentNode {
     pub(crate) submit: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_input_component(
-    term: Term,
+pub(crate) fn decode_generated_input_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<InputComponentNode> {
     Ok(InputComponentNode {
         style: decode_style(term)?,
@@ -1713,7 +1693,7 @@ pub(crate) fn decode_generated_input_component(
         focus_request: component_non_negative_integer_attr(term, atoms::focus_request())?
             .unwrap_or(0),
         placeholder: component_string_attr(term, atoms::placeholder())?,
-        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        size: component_enum_attr(term, atoms::size(), &vec!["xs", "sm", "md", "lg"])?,
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         cleanable: component_bool_attr(term, atoms::cleanable())?.unwrap_or(false),
         masked: component_bool_attr(term, atoms::masked())?.unwrap_or(false),
@@ -1738,8 +1718,8 @@ pub(crate) struct SelectComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_select_component(
-    term: Term,
+pub(crate) fn decode_generated_select_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<SelectComponentNode> {
     Ok(SelectComponentNode {
         style: decode_style(term)?,
@@ -1748,7 +1728,7 @@ pub(crate) fn decode_generated_select_component(
         value: component_string_attr(term, atoms::value())?,
         options: decode_select_options(term)?,
         placeholder: component_string_attr(term, atoms::placeholder())?,
-        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        size: component_enum_attr(term, atoms::size(), &vec!["xs", "sm", "md", "lg"])?,
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         cleanable: component_bool_attr(term, atoms::cleanable())?.unwrap_or(false),
         change: component_string_attr(term, atoms::phx_change())?,
@@ -1773,8 +1753,8 @@ pub(crate) struct ComboboxComponentNode {
     pub(crate) search: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_combobox_component(
-    term: Term,
+pub(crate) fn decode_generated_combobox_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<ComboboxComponentNode> {
     Ok(ComboboxComponentNode {
         style: decode_style(term)?,
@@ -1784,7 +1764,7 @@ pub(crate) fn decode_generated_combobox_component(
         options: decode_select_options(term)?,
         placeholder: component_string_attr(term, atoms::placeholder())?,
         search_placeholder: component_string_attr(term, atoms::search_placeholder())?,
-        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        size: component_enum_attr(term, atoms::size(), &vec!["xs", "sm", "md", "lg"])?,
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         cleanable: component_bool_attr(term, atoms::cleanable())?.unwrap_or(false),
         loading: component_bool_attr(term, atoms::loading())?.unwrap_or(false),
@@ -1806,15 +1786,15 @@ pub(crate) struct SwitchComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_switch_component(
-    term: Term,
+pub(crate) fn decode_generated_switch_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<SwitchComponentNode> {
     Ok(SwitchComponentNode {
         style: decode_style(term)?,
         id: component_id(term)?,
         checked: component_bool_attr(term, atoms::checked())?.unwrap_or(false),
         label: component_required_string_attr(term, atoms::label())?,
-        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        size: component_enum_attr(term, atoms::size(), &vec!["xs", "sm", "md", "lg"])?,
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         loading: component_bool_attr(term, atoms::loading())?.unwrap_or(false),
         change: component_string_attr(term, atoms::phx_change())?,
@@ -1835,8 +1815,8 @@ pub(crate) struct RadioGroupComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_radio_group_component(
-    term: Term,
+pub(crate) fn decode_generated_radio_group_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<RadioGroupComponentNode> {
     Ok(RadioGroupComponentNode {
         style: decode_style(term)?,
@@ -1847,9 +1827,9 @@ pub(crate) fn decode_generated_radio_group_component(
         orientation: component_enum_attr(
             term,
             atoms::orientation(),
-            &["horizontal", "vertical"],
+            &vec!["horizontal", "vertical"],
         )?,
-        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        size: component_enum_attr(term, atoms::size(), &vec!["xs", "sm", "md", "lg"])?,
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         change: component_string_attr(term, atoms::phx_change())?,
     })
@@ -1869,8 +1849,8 @@ pub(crate) struct AccordionComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_accordion_component(
-    term: Term,
+pub(crate) fn decode_generated_accordion_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<AccordionComponentNode> {
     Ok(AccordionComponentNode {
         style: decode_style(term)?,
@@ -1878,7 +1858,7 @@ pub(crate) fn decode_generated_accordion_component(
         expanded: component_string_list_attr(term, atoms::expanded())?,
         multiple: component_bool_attr(term, atoms::multiple())?.unwrap_or(false),
         bordered: component_bool_attr(term, atoms::bordered())?.unwrap_or(true),
-        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        size: component_enum_attr(term, atoms::size(), &vec!["xs", "sm", "md", "lg"])?,
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         children: decode_children(term)?,
         change: component_string_attr(term, atoms::phx_change())?,
@@ -1895,8 +1875,8 @@ pub(crate) struct AccordionItemComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_accordion_item_component(
-    term: Term,
+pub(crate) fn decode_generated_accordion_item_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<AccordionItemComponentNode> {
     Ok(AccordionItemComponentNode {
         style: decode_style(term)?,
@@ -1928,8 +1908,8 @@ pub(crate) struct VirtualListComponentNode {
     pub(crate) range: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_virtual_list_component(
-    term: Term,
+pub(crate) fn decode_generated_virtual_list_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<VirtualListComponentNode> {
     Ok(VirtualListComponentNode {
         style: decode_style(term)?,
@@ -1945,9 +1925,9 @@ pub(crate) fn decode_generated_virtual_list_component(
         reveal_strategy: component_enum_attr(
                 term,
                 atoms::reveal_strategy(),
-                &["nearest", "top", "center", "bottom"],
+                &vec!["nearest", "top", "center", "bottom"],
             )?
-            .or(Some("nearest".to_string())),
+            .then(|value| value.or(Some("nearest".to_string()))),
         total_count: component_non_negative_integer_attr(term, atoms::total_count())?
             .unwrap_or(0),
         offset: component_non_negative_integer_attr(term, atoms::offset())?.unwrap_or(0),
@@ -1971,8 +1951,8 @@ pub(crate) struct VirtualListItemComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_virtual_list_item_component(
-    term: Term,
+pub(crate) fn decode_generated_virtual_list_item_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<VirtualListItemComponentNode> {
     Ok(VirtualListItemComponentNode {
         style: decode_style(term)?,
@@ -2009,8 +1989,8 @@ pub(crate) struct DataTableComponentNode {
     pub(crate) range: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_data_table_component(
-    term: Term,
+pub(crate) fn decode_generated_data_table_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<DataTableComponentNode> {
     Ok(DataTableComponentNode {
         style: decode_style(term)?,
@@ -2027,16 +2007,16 @@ pub(crate) fn decode_generated_data_table_component(
         reveal_strategy: component_enum_attr(
                 term,
                 atoms::reveal_strategy(),
-                &["nearest", "top", "center", "bottom"],
+                &vec!["nearest", "top", "center", "bottom"],
             )?
-            .or(Some("nearest".to_string())),
+            .then(|value| value.or(Some("nearest".to_string()))),
         sort_column: component_string_attr(term, atoms::sort_column())?,
         sort_direction: component_enum_attr(
                 term,
                 atoms::sort_direction(),
-                &["none", "ascending", "descending"],
+                &vec!["none", "ascending", "descending"],
             )?
-            .or(Some("none".to_string())),
+            .then(|value| value.or(Some("none".to_string()))),
         total_count: component_non_negative_integer_attr(term, atoms::total_count())?
             .unwrap_or(0),
         offset: component_non_negative_integer_attr(term, atoms::offset())?.unwrap_or(0),
@@ -2066,16 +2046,20 @@ pub(crate) struct TableColumnComponentNode {
     pub(crate) sortable: bool,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_table_column_component(
-    term: Term,
+pub(crate) fn decode_generated_table_column_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<TableColumnComponentNode> {
     Ok(TableColumnComponentNode {
         style: decode_style(term)?,
         id: component_id(term)?,
         label: component_string_attr(term, atoms::label())?.unwrap_or_default(),
         width: component_positive_number_attr(term, atoms::width())?.unwrap_or(160.0),
-        align: component_enum_attr(term, atoms::align(), &["left", "center", "right"])?
-            .or(Some("left".to_string())),
+        align: component_enum_attr(
+                term,
+                atoms::align(),
+                &vec!["left", "center", "right"],
+            )?
+            .then(|value| value.or(Some("left".to_string()))),
         sortable: component_bool_attr(term, atoms::sortable())?.unwrap_or(false),
     })
 }
@@ -2089,8 +2073,8 @@ pub(crate) struct TableRowComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_table_row_component(
-    term: Term,
+pub(crate) fn decode_generated_table_row_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<TableRowComponentNode> {
     Ok(TableRowComponentNode {
         style: decode_style(term)?,
@@ -2122,8 +2106,8 @@ pub(crate) struct TreeComponentNode {
     pub(crate) range: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_tree_component(
-    term: Term,
+pub(crate) fn decode_generated_tree_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<TreeComponentNode> {
     Ok(TreeComponentNode {
         style: decode_style(term)?,
@@ -2139,9 +2123,9 @@ pub(crate) fn decode_generated_tree_component(
         reveal_strategy: component_enum_attr(
                 term,
                 atoms::reveal_strategy(),
-                &["nearest", "top", "center", "bottom"],
+                &vec!["nearest", "top", "center", "bottom"],
             )?
-            .or(Some("nearest".to_string())),
+            .then(|value| value.or(Some("nearest".to_string()))),
         total_count: component_non_negative_integer_attr(term, atoms::total_count())?
             .unwrap_or(0),
         offset: component_non_negative_integer_attr(term, atoms::offset())?.unwrap_or(0),
@@ -2172,8 +2156,8 @@ pub(crate) struct TreeItemComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_tree_item_component(
-    term: Term,
+pub(crate) fn decode_generated_tree_item_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<TreeItemComponentNode> {
     Ok(TreeItemComponentNode {
         style: decode_style(term)?,
@@ -2215,15 +2199,15 @@ pub(crate) struct CodeViewerComponentNode {
     pub(crate) click: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_code_viewer_component(
-    term: Term,
+pub(crate) fn decode_generated_code_viewer_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<CodeViewerComponentNode> {
     Ok(CodeViewerComponentNode {
         style: decode_style(term)?,
         id: component_id(term)?,
         label: component_string_attr(term, atoms::label())?,
-        mode: component_enum_attr(term, atoms::mode(), &["plain", "diff"])?
-            .or(Some("plain".to_string())),
+        mode: component_enum_attr(term, atoms::mode(), &vec!["plain", "diff"])?
+            .then(|value| value.or(Some("plain".to_string()))),
         selected: component_string_attr(term, atoms::selected())?,
         selected_index: component_non_negative_integer_attr(
             term,
@@ -2234,9 +2218,9 @@ pub(crate) fn decode_generated_code_viewer_component(
         reveal_strategy: component_enum_attr(
                 term,
                 atoms::reveal_strategy(),
-                &["nearest", "top", "center", "bottom"],
+                &vec!["nearest", "top", "center", "bottom"],
             )?
-            .or(Some("nearest".to_string())),
+            .then(|value| value.or(Some("nearest".to_string()))),
         total_count: component_non_negative_integer_attr(term, atoms::total_count())?
             .unwrap_or(0),
         offset: component_non_negative_integer_attr(term, atoms::offset())?.unwrap_or(0),
@@ -2269,8 +2253,8 @@ pub(crate) struct CodeLineComponentNode {
     pub(crate) disabled: bool,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_code_line_component(
-    term: Term,
+pub(crate) fn decode_generated_code_line_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<CodeLineComponentNode> {
     Ok(CodeLineComponentNode {
         style: decode_style(term)?,
@@ -2280,18 +2264,12 @@ pub(crate) fn decode_generated_code_line_component(
         kind: component_enum_attr(
                 term,
                 atoms::kind(),
-                &[
-                    "context",
-                    "addition",
-                    "deletion",
-                    "hunk",
-                    "debug",
-                    "info",
-                    "warning",
-                    "error",
+                &vec![
+                    "context", "addition", "deletion", "hunk", "debug", "info",
+                    "warning", "error"
                 ],
             )?
-            .or(Some("context".to_string())),
+            .then(|value| value.or(Some("context".to_string()))),
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
     })
 }
@@ -2310,8 +2288,8 @@ pub(crate) struct TabsComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_tabs_component(
-    term: Term,
+pub(crate) fn decode_generated_tabs_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<TabsComponentNode> {
     Ok(TabsComponentNode {
         style: decode_style(term)?,
@@ -2321,9 +2299,9 @@ pub(crate) fn decode_generated_tabs_component(
         variant: component_enum_attr(
             term,
             atoms::variant(),
-            &["tab", "outline", "pill", "segmented", "underline"],
+            &vec!["tab", "outline", "pill", "segmented", "underline"],
         )?,
-        size: component_enum_attr(term, atoms::size(), &["xs", "sm", "md", "lg"])?,
+        size: component_enum_attr(term, atoms::size(), &vec!["xs", "sm", "md", "lg"])?,
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         menu: component_bool_attr(term, atoms::menu())?.unwrap_or(false),
         change: component_string_attr(term, atoms::phx_change())?,
@@ -2348,8 +2326,8 @@ pub(crate) struct SliderComponentNode {
     pub(crate) release: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_generated_slider_component(
-    term: Term,
+pub(crate) fn decode_generated_slider_component<'a>(
+    term: Term<'a>,
 ) -> NifResult<SliderComponentNode> {
     Ok(SliderComponentNode {
         style: decode_style(term)?,
@@ -2362,11 +2340,11 @@ pub(crate) fn decode_generated_slider_component(
         orientation: component_enum_attr(
                 term,
                 atoms::orientation(),
-                &["horizontal", "vertical"],
+                &vec!["horizontal", "vertical"],
             )?
-            .or(Some("horizontal".to_string())),
-        scale: component_enum_attr(term, atoms::scale(), &["linear", "logarithmic"])?
-            .or(Some("linear".to_string())),
+            .then(|value| value.or(Some("horizontal".to_string()))),
+        scale: component_enum_attr(term, atoms::scale(), &vec!["linear", "logarithmic"])?
+            .then(|value| value.or(Some("linear".to_string()))),
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         reverse: component_bool_attr(term, atoms::reverse())?.unwrap_or(false),
         change: component_string_attr(term, atoms::phx_change())?,
