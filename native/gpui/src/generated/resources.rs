@@ -9,22 +9,6 @@ pub(crate) struct RasterData {
     pub(crate) stride: Option<u32>,
     pub(crate) data: Vec<u8>,
 }
-#[cfg(feature = "real-gpui")]
-pub(crate) fn decode_raster_resource(term: Term) -> NifResult<RasterData> {
-    Ok(RasterData {
-        width: term.map_get(atoms::width())?.decode::<u32>()?,
-        height: term.map_get(atoms::height())?.decode::<u32>()?,
-        format: term
-            .map_get(atoms::format())?
-            .atom_to_string()
-            .unwrap_or_else(|_| "rgba8".to_string()),
-        stride: term
-            .map_get(atoms::stride())
-            .ok()
-            .and_then(|value| value.decode::<u32>().ok()),
-        data: term.map_get(atoms::data())?.decode::<Binary>()?.as_slice().to_vec(),
-    })
-}
 #[derive(Clone, Debug, Default)]
 #[cfg(feature = "real-gpui")]
 pub(crate) struct ResourceRefData {
@@ -32,9 +16,39 @@ pub(crate) struct ResourceRefData {
     pub(crate) resource_type: String,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_resource_ref_data(term: Term) -> NifResult<ResourceRefData> {
+pub(crate) fn decode_raster_resource<'a>(term: Term<'a>) -> NifResult<RasterData> {
+    let width = term.map_get(atoms::width())?.decode::<u32>()?;
+    let height = term.map_get(atoms::height())?.decode::<u32>()?;
+    let format_term = term.map_get(atoms::format())?;
+    let format = match format_term.atom_to_string() {
+        Ok(decoded) => decoded,
+        Err(_reason) => "rgba8".to_string(),
+    };
+    let stride = match term.map_get(atoms::stride()) {
+        Ok(field_value) => field_value.decode::<u32>().ok(),
+        Err(_reason) => None,
+    };
+    let data = term
+        .map_get(atoms::data())?
+        .decode::<Binary>()?
+        .then(|binary| binary.as_slice().to_vec());
+    Ok(RasterData {
+        width: width,
+        height: height,
+        format: format,
+        stride: stride,
+        data: data,
+    })
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_resource_ref_data<'a>(
+    term: Term<'a>,
+) -> NifResult<ResourceRefData> {
+    let id = term.map_get(atoms::id())?.decode::<String>()?;
+    let resource_type_term = term.map_get(atoms::type_atom())?;
+    let resource_type = resource_type_term.atom_to_string()?;
     Ok(ResourceRefData {
-        id: term.map_get(atoms::id())?.decode::<String>()?,
-        resource_type: term.map_get(atoms::type_atom())?.atom_to_string()?,
+        id: id,
+        resource_type: resource_type,
     })
 }
