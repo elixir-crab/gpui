@@ -14,13 +14,13 @@ defmodule GPUI.Codegen.Native.Schema do
 
   @spec items() :: [AST.item()]
   def items do
-    components = GPUI.Schema.components()
-
     [
       SchemaTypes.component_kind_item(),
-      generated_decoder_helpers(),
+      Decoder.asts(),
+      Elements.items(),
       Style.items(GPUI.Schema.style_specs()),
-      generated_component_contracts(components),
+      ComponentContracts.items(),
+      ComponentDefinitions.items(),
       SchemaTypes.element_node_item(),
       SchemaTypes.element_tag_item(),
       Dispatch.items(),
@@ -31,10 +31,4 @@ defmodule GPUI.Codegen.Native.Schema do
 
   @spec registry_items() :: [AST.item()]
   def registry_items, do: Registry.items()
-
-  defp generated_decoder_helpers, do: Decoder.asts() ++ Elements.items()
-
-  defp generated_component_contracts(_components) do
-    ComponentContracts.items() ++ ComponentDefinitions.items()
-  end
 end
