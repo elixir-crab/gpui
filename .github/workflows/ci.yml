@@ -21,6 +21,7 @@ jobs:
       latest-otp: "29.0.2"
       latest-command: mix ci_fast
       run-min: false
+      rust-toolchain: "1.95.0"
       rust-components: ""
       extra-env: |
         RUST_FONTCONFIG_DLOPEN=1
@@ -36,7 +37,7 @@ jobs:
       ERL_FLAGS: "+S 4:4"
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.95.0
         with:
           components: rustfmt
       - uses: elixir-vibe/actions/setup-elixir@v1

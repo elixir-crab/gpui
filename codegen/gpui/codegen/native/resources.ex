@@ -48,6 +48,8 @@ defmodule GPUI.Codegen.Native.ResourceDefinitions do
     fields = Enum.map(resource.fields, fn {name, _type} -> {name, Macro.var(name, nil)} end)
 
     quote do
+      @allow RustQ.Clippy.redundant_field_names()
+      @allow RustQ.Clippy.lint(:match_single_binding)
       @spec unquote(decoder)(term()) ::
               R.nif_result(R.path(unquote(resource_struct_name(resource.name))))
       defrust unquote(decoder)(term) do

@@ -793,6 +793,8 @@ pub(crate) fn apply_generated_style_attr<'a>(
     }
 }
 #[cfg(feature = "real-gpui")]
+#[allow(unreachable_patterns)]
+#[allow(clippy::single_match)]
 pub(crate) fn apply_generated_render_styles(
     element: gpui::Div,
     style: StyleAttrs,
@@ -1279,6 +1281,8 @@ pub(crate) struct ButtonComponentNode {
     pub(crate) click: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_button_component<'a>(
     term: Term<'a>,
 ) -> NifResult<ButtonComponentNode> {
@@ -1316,6 +1320,8 @@ pub(crate) struct ProgressComponentNode {
     pub(crate) indeterminate: bool,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_progress_component<'a>(
     term: Term<'a>,
 ) -> NifResult<ProgressComponentNode> {
@@ -1342,6 +1348,8 @@ pub(crate) struct FilePickerComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_file_picker_component<'a>(
     term: Term<'a>,
 ) -> NifResult<FilePickerComponentNode> {
@@ -1368,6 +1376,8 @@ pub(crate) struct CopyButtonComponentNode {
     pub(crate) click: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_copy_button_component<'a>(
     term: Term<'a>,
 ) -> NifResult<CopyButtonComponentNode> {
@@ -1395,6 +1405,8 @@ pub(crate) struct PopoverComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_popover_component<'a>(
     term: Term<'a>,
 ) -> NifResult<PopoverComponentNode> {
@@ -1428,6 +1440,8 @@ pub(crate) struct PopoverTriggerComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_popover_trigger_component<'a>(
     term: Term<'a>,
 ) -> NifResult<PopoverTriggerComponentNode> {
@@ -1444,6 +1458,8 @@ pub(crate) struct PopoverContentComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_popover_content_component<'a>(
     term: Term<'a>,
 ) -> NifResult<PopoverContentComponentNode> {
@@ -1464,6 +1480,8 @@ pub(crate) struct TooltipComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_tooltip_component<'a>(
     term: Term<'a>,
 ) -> NifResult<TooltipComponentNode> {
@@ -1484,6 +1502,8 @@ pub(crate) struct TooltipTriggerComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_tooltip_trigger_component<'a>(
     term: Term<'a>,
 ) -> NifResult<TooltipTriggerComponentNode> {
@@ -1509,6 +1529,8 @@ pub(crate) struct DialogComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_dialog_component<'a>(
     term: Term<'a>,
 ) -> NifResult<DialogComponentNode> {
@@ -1534,6 +1556,8 @@ pub(crate) struct DialogTriggerComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_dialog_trigger_component<'a>(
     term: Term<'a>,
 ) -> NifResult<DialogTriggerComponentNode> {
@@ -1550,6 +1574,8 @@ pub(crate) struct DialogContentComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_dialog_content_component<'a>(
     term: Term<'a>,
 ) -> NifResult<DialogContentComponentNode> {
@@ -1573,6 +1599,8 @@ pub(crate) struct DropdownMenuComponentNode {
     pub(crate) select: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_dropdown_menu_component<'a>(
     term: Term<'a>,
 ) -> NifResult<DropdownMenuComponentNode> {
@@ -1606,6 +1634,8 @@ pub(crate) struct DropdownMenuTriggerComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_dropdown_menu_trigger_component<'a>(
     term: Term<'a>,
 ) -> NifResult<DropdownMenuTriggerComponentNode> {
@@ -1625,6 +1655,8 @@ pub(crate) struct DropdownMenuItemComponentNode {
     pub(crate) checked: bool,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_dropdown_menu_item_component<'a>(
     term: Term<'a>,
 ) -> NifResult<DropdownMenuItemComponentNode> {
@@ -1650,6 +1682,8 @@ pub(crate) struct CheckboxComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_checkbox_component<'a>(
     term: Term<'a>,
 ) -> NifResult<CheckboxComponentNode> {
@@ -1683,6 +1717,8 @@ pub(crate) struct InputComponentNode {
     pub(crate) submit: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_input_component<'a>(
     term: Term<'a>,
 ) -> NifResult<InputComponentNode> {
@@ -1719,6 +1755,8 @@ pub(crate) struct SelectComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_select_component<'a>(
     term: Term<'a>,
 ) -> NifResult<SelectComponentNode> {
@@ -1754,6 +1792,8 @@ pub(crate) struct ComboboxComponentNode {
     pub(crate) search: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_combobox_component<'a>(
     term: Term<'a>,
 ) -> NifResult<ComboboxComponentNode> {
@@ -1787,6 +1827,8 @@ pub(crate) struct SwitchComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_switch_component<'a>(
     term: Term<'a>,
 ) -> NifResult<SwitchComponentNode> {
@@ -1816,6 +1858,8 @@ pub(crate) struct RadioGroupComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_radio_group_component<'a>(
     term: Term<'a>,
 ) -> NifResult<RadioGroupComponentNode> {
@@ -1850,6 +1894,8 @@ pub(crate) struct AccordionComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_accordion_component<'a>(
     term: Term<'a>,
 ) -> NifResult<AccordionComponentNode> {
@@ -1876,6 +1922,8 @@ pub(crate) struct AccordionItemComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_accordion_item_component<'a>(
     term: Term<'a>,
 ) -> NifResult<AccordionItemComponentNode> {
@@ -1909,6 +1957,8 @@ pub(crate) struct VirtualListComponentNode {
     pub(crate) range: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_virtual_list_component<'a>(
     term: Term<'a>,
 ) -> NifResult<VirtualListComponentNode> {
@@ -1954,6 +2004,8 @@ pub(crate) struct VirtualListItemComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_virtual_list_item_component<'a>(
     term: Term<'a>,
 ) -> NifResult<VirtualListItemComponentNode> {
@@ -1992,6 +2044,8 @@ pub(crate) struct DataTableComponentNode {
     pub(crate) range: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_data_table_component<'a>(
     term: Term<'a>,
 ) -> NifResult<DataTableComponentNode> {
@@ -2053,6 +2107,8 @@ pub(crate) struct TableColumnComponentNode {
     pub(crate) sortable: bool,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_table_column_component<'a>(
     term: Term<'a>,
 ) -> NifResult<TableColumnComponentNode> {
@@ -2082,6 +2138,8 @@ pub(crate) struct TableRowComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_table_row_component<'a>(
     term: Term<'a>,
 ) -> NifResult<TableRowComponentNode> {
@@ -2115,6 +2173,8 @@ pub(crate) struct TreeComponentNode {
     pub(crate) range: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_tree_component<'a>(
     term: Term<'a>,
 ) -> NifResult<TreeComponentNode> {
@@ -2167,6 +2227,8 @@ pub(crate) struct TreeItemComponentNode {
     pub(crate) children: Vec<ElementNode>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_tree_item_component<'a>(
     term: Term<'a>,
 ) -> NifResult<TreeItemComponentNode> {
@@ -2210,6 +2272,8 @@ pub(crate) struct CodeViewerComponentNode {
     pub(crate) click: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_code_viewer_component<'a>(
     term: Term<'a>,
 ) -> NifResult<CodeViewerComponentNode> {
@@ -2268,6 +2332,8 @@ pub(crate) struct CodeLineComponentNode {
     pub(crate) disabled: bool,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_code_line_component<'a>(
     term: Term<'a>,
 ) -> NifResult<CodeLineComponentNode> {
@@ -2305,6 +2371,8 @@ pub(crate) struct TabsComponentNode {
     pub(crate) change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_tabs_component<'a>(
     term: Term<'a>,
 ) -> NifResult<TabsComponentNode> {
@@ -2343,6 +2411,8 @@ pub(crate) struct SliderComponentNode {
     pub(crate) release: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_generated_slider_component<'a>(
     term: Term<'a>,
 ) -> NifResult<SliderComponentNode> {
@@ -2593,6 +2663,7 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
     }
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_closure)]
 pub(crate) fn decode_generated_element_node<'a>(
     term: Term<'a>,
     tag: GeneratedElementTag,

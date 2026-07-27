@@ -33,6 +33,8 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
         unquote(style_case)
       end
 
+      @allow :unreachable_patterns
+      @allow RustQ.Clippy.lint(:single_match)
       @spec apply_generated_render_styles(R.path({:gpui, :Div}), style_attrs()) ::
               R.path({:gpui, :Div})
       defrust apply_generated_render_styles(element, style) do

@@ -51,9 +51,9 @@ defmodule Examples.ComponentGallery.View do
 
     ~GPUI"""
     <div class="flex grow w-full" style={[background: {:rgb, 0xF8FAFC}]}>
-      <div class="flex flex-col w-[260px] gap-4 p-4" style={[background: {:rgb, 0x0B1220}]}>
+      <div class="flex flex-col w-[220px] gap-3 p-3" style={[background: {:rgb, 0x0B1220}]}>
         <div class="flex items-center gap-3 p-2">
-          <div class="flex items-center justify-center w-[38px] h-[38px] rounded-lg" style={[background: {:rgb, 0x2563EB}]}>
+          <div class="flex items-center justify-center w-[30px] h-[30px] rounded-md" style={[background: {:rgb, 0x2563EB}]}>
             <text class="text-white font-semibold">G</text>
           </div>
           <div class="flex flex-col">
@@ -83,10 +83,10 @@ defmodule Examples.ComponentGallery.View do
       </div>
 
       <div class="flex grow flex-col">
-        <div class="flex items-center justify-between px-6 py-4" style={[background: {:rgb, 0xFFFFFF}]}>
+        <div class="flex items-center justify-between px-4 py-2" style={[background: {:rgb, 0xFFFFFF}]}>
           <div class="flex flex-col gap-1">
-            <text class="text-2xl font-semibold" style={[color: {:rgb, 0x0F172A}]}>{active.title}</text>
-            <text style={[color: {:rgb, 0x475569}]}>{active.description}</text>
+            <text class="text-lg font-semibold" style={[color: {:rgb, 0x0F172A}]}>{active.title}</text>
+            <text class="text-sm" style={[color: {:rgb, 0x475569}]}>{active.description}</text>
           </div>
           <div class="flex items-center gap-3">
             <text style={[color: {:rgb, 0x64748B}]}>Interactive, controlled state</text>
@@ -94,9 +94,9 @@ defmodule Examples.ComponentGallery.View do
           </div>
         </div>
 
-        <div class="flex grow p-6" style={[background: {:rgb, 0xE2E8F0}]}>
+        <scroll class="flex grow p-3" style={[background: {:rgb, 0xE2E8F0}]}>
           {story(active.id, assigns)}
-        </div>
+        </scroll>
       </div>
     </div>
     """
@@ -203,7 +203,7 @@ defmodule Examples.ComponentGallery.View do
     assigns = %{assigns: assigns}
 
     ~GPUI"""
-    <div class="flex grow flex-col gap-5">
+    <div class="flex grow flex-col gap-3">
       {section("Action hierarchy", "Variants communicate priority without changing event semantics.", button_examples())}
       {section("Progress & clipboard", "Feedback remains accessible and controlled by Elixir.", feedback_examples(assigns.assigns))}
     </div>
@@ -214,14 +214,14 @@ defmodule Examples.ComponentGallery.View do
     assigns = %{assigns: assigns}
 
     ~GPUI"""
-    <div class="flex grow gap-5">
-      <div class="flex grow flex-col gap-4 p-5 rounded-lg" style={[background: {:rgb, 0xFFFFFF}]}>
-        <text class="text-xl font-semibold" style={[color: {:rgb, 0x0F172A}]}>Profile controls</text>
+    <div class="flex grow gap-3">
+      <div class="flex grow flex-col gap-3 p-3 rounded-md" style={[background: {:rgb, 0xFFFFFF}]}>
+        <text class="font-semibold" style={[color: {:rgb, 0x0F172A}]}>Profile controls</text>
         <UI.input id="gallery-name" label="Display name" value={assigns.assigns.name} cleanable={true} phx-change="name_changed" />
         <UI.select id="gallery-language" label="Language" value={assigns.assigns.language} options={[{"Elixir", "elixir"}, {"Rust", "rust"}]} phx-change="language_changed" />
         <UI.combobox id="gallery-framework" label="Framework" value={assigns.assigns.framework} options={["Phoenix", "LiveView", "Ash"]} phx-change="framework_changed" />
       </div>
-      <div class="flex grow flex-col gap-5">
+      <div class="flex grow flex-col gap-3">
         {section("Preferences", "Boolean and exclusive choices.", preference_examples(assigns.assigns))}
         {section("Range", "The value remains application-owned.", range_example(assigns.assigns))}
       </div>
@@ -295,10 +295,10 @@ defmodule Examples.ComponentGallery.View do
     assigns = %{title: title, description: description, child: child}
 
     ~GPUI"""
-    <div class="flex flex-col gap-4 p-5 rounded-lg" style={[background: {:rgb, 0xFFFFFF}]}>
-      <div class="flex flex-col gap-1">
-        <text class="text-xl font-semibold" style={[color: {:rgb, 0x0F172A}]}>{assigns.title}</text>
-        <text style={[color: {:rgb, 0x64748B}]}>{assigns.description}</text>
+    <div class="flex flex-col gap-3 p-3 rounded-md" style={[background: {:rgb, 0xFFFFFF}]}>
+      <div class="flex flex-col">
+        <text class="font-semibold" style={[color: {:rgb, 0x0F172A}]}>{assigns.title}</text>
+        <text class="text-sm" style={[color: {:rgb, 0x64748B}]}>{assigns.description}</text>
       </div>
       {assigns.child}
     </div>
@@ -307,7 +307,7 @@ defmodule Examples.ComponentGallery.View do
 
   defp button_examples do
     ~GPUI"""
-    <div class="flex flex-wrap gap-3">
+    <div class="flex flex-wrap gap-2">
       <UI.button id="button-default" label="Default" />
       <UI.button id="button-primary" label="Primary" variant="primary" />
       <UI.button id="button-success" label="Success" variant="success" />
@@ -321,7 +321,7 @@ defmodule Examples.ComponentGallery.View do
 
   defp feedback_examples(_assigns) do
     ~GPUI"""
-    <div class="flex items-center gap-5">
+    <div class="flex items-center gap-3">
       <div class="flex grow flex-col gap-2">
         <div class="flex justify-between">
           <text style={[color: {:rgb, 0x334155}]}>Deployment</text>

@@ -50,6 +50,8 @@ defmodule GPUI.Codegen.Native.ComponentDefinitionMacros do
         end)
 
     quote do
+      @allow RustQ.Clippy.redundant_field_names()
+      @allow RustQ.Clippy.lint(:useless_vec)
       @spec unquote(decoder)(term()) :: R.nif_result(unquote(type_name)())
       defrust unquote(decoder)(term) do
         {:ok, struct_literal(unquote(struct), unquote(fields))}

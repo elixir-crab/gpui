@@ -11,10 +11,10 @@ defmodule Examples.MusicLibrary.View do
 
     ~GPUI"""
     <div class="flex grow w-full bg-slate-900">
-      <div class="flex flex-col w-[220px] gap-5 p-5" style={[background: {:rgb, 0x0B1220}]}>
+      <div class="flex flex-col w-[180px] gap-3 p-3" style={[background: {:rgb, 0x0B1220}]}>
         <div class="flex items-center gap-3">
-          <div class="flex items-center justify-center w-[42px] h-[42px] rounded-lg" style={[background: {:rgb, 0x7C3AED}]}>
-            <text class="text-white text-xl font-semibold">A</text>
+          <div class="flex items-center justify-center w-[32px] h-[32px] rounded-md" style={[background: {:rgb, 0x7C3AED}]}>
+            <text class="text-white font-semibold">A</text>
           </div>
           <div class="flex flex-col">
             <text class="text-white text-lg font-semibold">Afterglow</text>
@@ -51,7 +51,7 @@ defmodule Examples.MusicLibrary.View do
       </div>
 
       <div class="flex grow flex-col">
-        <div class="flex items-center justify-between gap-4 p-5" style={[background: {:rgb, 0x111827}]}>
+        <div class="flex items-center justify-between gap-3 px-3 py-2" style={[background: {:rgb, 0x111827}]}>
           <UI.input
             id="music-search"
             label="Search music"
@@ -67,10 +67,10 @@ defmodule Examples.MusicLibrary.View do
         </div>
 
         <div class="flex grow h-[600px]">
-          <div class="flex grow flex-col gap-4 p-6">
+          <div class="flex grow flex-col gap-2 p-3">
             <div class="flex items-end justify-between">
               <div class="flex flex-col gap-1">
-                <text class="text-white text-2xl font-semibold">{section_title(assigns.section)}</text>
+                <text class="text-white text-lg font-semibold">{section_title(assigns.section)}</text>
                 <text style={[color: {:rgb, 0x94A3B8}]}>{collection_summary(tracks, assigns.query)}</text>
               </div>
               <UI.select
@@ -85,10 +85,10 @@ defmodule Examples.MusicLibrary.View do
             {track_list(tracks, assigns.selected_id)}
           </div>
 
-          <div class="flex flex-col w-[310px] gap-5 p-6" style={[background: {:rgb, 0x0F172A}]}>
+          <scroll class="flex flex-col w-[260px] gap-3 p-3" style={[background: {:rgb, 0x0F172A}]}>
             {now_playing(playing, assigns.playing)}
             {track_details(selected)}
-          </div>
+          </scroll>
         </div>
 
         {player_bar(playing, assigns)}
@@ -176,7 +176,7 @@ defmodule Examples.MusicLibrary.View do
       label="Music tracks"
       selected={selected_id}
       reveal={selected_id}
-      item_height={68}
+      item_height={48}
       phx-change="track_selected"
       class="grow"
     >
@@ -214,7 +214,7 @@ defmodule Examples.MusicLibrary.View do
     assigns = %{initials: track.initials, color: track.color}
 
     ~GPUI"""
-    <div class="flex items-center justify-center w-[44px] h-[44px] rounded-md" style={[background: {:rgb, assigns.color}]}>
+    <div class="flex items-center justify-center w-[32px] h-[32px] rounded-sm" style={[background: {:rgb, assigns.color}]}>
       <text class="text-white font-semibold">{assigns.initials}</text>
     </div>
     """
@@ -224,7 +224,7 @@ defmodule Examples.MusicLibrary.View do
     assigns = %{title: track.title, artist: track.artist}
 
     ~GPUI"""
-    <div class="flex flex-col w-[230px]">
+    <div class="flex flex-col w-[190px]">
       <text class="text-white font-semibold">{assigns.title}</text>
       <text style={[color: {:rgb, 0x94A3B8}]}>{assigns.artist}</text>
     </div>
@@ -235,7 +235,7 @@ defmodule Examples.MusicLibrary.View do
     assigns = %{value: value, color: color}
 
     ~GPUI"""
-    <div class="flex w-[125px]"><text style={[color: {:rgb, assigns.color}]}>{assigns.value}</text></div>
+    <div class="flex w-[100px]"><text style={[color: {:rgb, assigns.color}]}>{assigns.value}</text></div>
     """
   end
 
@@ -248,11 +248,11 @@ defmodule Examples.MusicLibrary.View do
         <text style={[color: {:rgb, 0x94A3B8}]}>NOW PLAYING</text>
         <text style={[color: {:rgb, 0x22C55E}]}>{if(assigns.playing, do: "● LIVE", else: "PAUSED")}</text>
       </div>
-      <div class="flex items-center justify-center h-[210px] rounded-lg" style={[background: {:rgb, assigns.track.color}]}>
+      <div class="flex items-center justify-center h-[140px] rounded-md" style={[background: {:rgb, assigns.track.color}]}>
         <text class="text-white text-3xl font-semibold">{assigns.track.initials}</text>
       </div>
       <div class="flex flex-col gap-1">
-        <text class="text-white text-xl font-semibold">{assigns.track.title}</text>
+        <text class="text-white font-semibold">{assigns.track.title}</text>
         <text style={[color: {:rgb, 0x94A3B8}]}>{assigns.track.artist}</text>
       </div>
     </div>
@@ -286,7 +286,7 @@ defmodule Examples.MusicLibrary.View do
     player = %{track: track, assigns: assigns}
 
     ~GPUI"""
-    <div class="flex items-center gap-5 h-[140px] px-5 py-4" style={[background: {:rgb, 0xE2E8F0}]}>
+    <div class="flex items-center gap-3 h-[104px] px-3 py-2" style={[background: {:rgb, 0xE2E8F0}]}>
       <div class="flex items-center gap-3 w-[250px]">
         {album_art(player.track)}
         <div class="flex flex-col">

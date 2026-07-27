@@ -13,6 +13,7 @@ on:
       - "lib/gpui/display/native.ex"
       - "lib/gpui/runtime.ex"
       - "lib/gpui/session.ex"
+      - "rust-toolchain.toml"
       - "rustq.exs"
       - "mix.exs"
       - "mix.lock"
@@ -34,7 +35,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.95.0
       - uses: Swatinem/rust-cache@v2
         with:
           key: rust-audit
@@ -51,6 +52,7 @@ jobs:
       latest-otp: "29.0.2"
       latest-command: mix ci_native
       run-min: false
+      rust-toolchain: "1.95.0"
       apt-packages: libxkbcommon-dev libxkbcommon-x11-dev
       extra-env: |
         RUST_FONTCONFIG_DLOPEN=1
@@ -70,7 +72,7 @@ jobs:
       GALLIUM_DRIVER: llvmpipe
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.95.0
       - uses: elixir-vibe/actions/setup-elixir@v1
         with:
           otp-version: "29.0.2"
@@ -103,7 +105,7 @@ jobs:
       RUST_FONTCONFIG_DLOPEN: "1"
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.95.0
         with:
           components: clippy,rustfmt
       - uses: elixir-vibe/actions/setup-elixir@v1

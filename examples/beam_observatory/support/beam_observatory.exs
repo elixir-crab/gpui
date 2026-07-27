@@ -31,7 +31,7 @@ defmodule Examples.BeamObservatory.Sampler do
   def snapshot do
     processes = Collector.collect()
     tables = Model.scan_tables()
-    memory = :erlang.memory()
+    memory = :erlang.memory() |> Map.new()
     run_queue = :erlang.statistics(:run_queue)
 
     %{
@@ -58,13 +58,13 @@ defmodule Examples.BeamObservatory.View do
 
     ~GPUI"""
     <div class="flex grow flex-col w-full" style={[background: {:rgb, 0x07111F}]}>
-      <div class="flex items-center justify-between px-6 py-5" style={[background: {:rgb, 0x0B1728}]}>
+      <div class="flex items-center justify-between px-4 py-2" style={[background: {:rgb, 0x0B1728}]}>
         <div class="flex items-center gap-4">
-          <div class="flex items-center justify-center w-[44px] h-[44px] rounded-lg" style={[background: {:rgb, 0x14B8A6}]}>
-            <text class="text-white text-xl font-semibold">B</text>
+          <div class="flex items-center justify-center w-[32px] h-[32px] rounded-md" style={[background: {:rgb, 0x14B8A6}]}>
+            <text class="text-white font-semibold">B</text>
           </div>
           <div class="flex flex-col gap-1">
-            <text class="text-white text-2xl font-semibold">BEAM Observatory</text>
+            <text class="text-white text-lg font-semibold">BEAM Observatory</text>
             <text style={[color: {:rgb, 0x94A3B8}]}>Runtime health · sampled {assigns.sampled_at}</text>
           </div>
         </div>
@@ -74,7 +74,7 @@ defmodule Examples.BeamObservatory.View do
         </div>
       </div>
 
-      <div class="flex gap-4 px-6 py-4">
+      <div class="flex gap-2 px-4 py-2">
         {metric_card("Processes", length(assigns.processes), "#{length(filtered)} visible", 0x38BDF8)}
         {metric_card("BEAM memory", format_bytes(assigns.memory.total), "binary #{format_bytes(assigns.memory.binary)}", 0xA78BFA)}
         {metric_card("Run queue", assigns.run_queue, "#{assigns.schedulers} schedulers", status_color(assigns.run_queue))}
@@ -82,9 +82,9 @@ defmodule Examples.BeamObservatory.View do
         {metric_card("Ports", assigns.ports, "native resources", 0x34D399)}
       </div>
 
-      <div class="flex grow gap-4 px-6 pb-6">
-        <div class="flex flex-col w-[300px] gap-4">
-          <div class="flex flex-col gap-4 p-4 rounded-lg" style={[background: {:rgb, 0x0F1D31}]}>
+      <div class="flex grow gap-2 px-4 pb-4" style={[min_height: {:px, 0}]}>
+        <div class="flex flex-col w-[260px] gap-2">
+          <div class="flex flex-col gap-3 p-3 rounded-md" style={[background: {:rgb, 0x0F1D31}]}>
             <div class="flex flex-col gap-1">
               <text class="text-white text-lg font-semibold">Memory map</text>
               <text style={[color: {:rgb, 0x94A3B8}]}>Where the VM is spending bytes</text>
@@ -96,7 +96,7 @@ defmodule Examples.BeamObservatory.View do
             {memory_bar("Atoms", assigns.memory.atom, assigns.memory.total, 0xFB7185)}
           </div>
 
-          <div class="flex grow flex-col gap-3 p-4 rounded-lg" style={[background: {:rgb, 0x0F1D31}]}>
+          <div class="flex grow flex-col gap-2 p-3 rounded-md" style={[background: {:rgb, 0x0F1D31}]}>
             <text class="text-white text-lg font-semibold">Runtime signals</text>
             {signal("Scheduler pressure", pressure(assigns.run_queue, assigns.schedulers), status_color(assigns.run_queue))}
             {signal("Largest mailbox", largest_mailbox(assigns.processes), 0xF59E0B)}
@@ -105,7 +105,7 @@ defmodule Examples.BeamObservatory.View do
           </div>
         </div>
 
-        <div class="flex grow flex-col gap-3 p-4 rounded-lg" style={[background: {:rgb, 0xF8FAFC}]}>
+        <div class="flex grow flex-col gap-2 p-3 rounded-md" style={[background: {:rgb, 0xF8FAFC}, min_height: {:px, 0}]}>
           <div class="flex items-end justify-between gap-4">
             <div class="flex flex-col gap-1">
               <text class="text-xl font-semibold" style={[color: {:rgb, 0x0F172A}]}>Hot processes</text>
@@ -116,7 +116,7 @@ defmodule Examples.BeamObservatory.View do
           {process_table(filtered, assigns.selected_pid)}
         </div>
 
-        <div class="flex flex-col w-[330px] gap-4 p-5 rounded-lg" style={[background: {:rgb, 0x0F1D31}]}>
+        <div class="flex flex-col w-[290px] gap-2 p-3 rounded-md" style={[background: {:rgb, 0x0F1D31}]}>
           {process_inspector(selected)}
           <div class="flex flex-col gap-3">
             <div class="flex items-center justify-between">
@@ -157,9 +157,9 @@ defmodule Examples.BeamObservatory.View do
     assigns = %{label: label, value: value, detail: detail, color: color}
 
     ~GPUI"""
-    <div class="flex grow flex-col gap-2 p-4 rounded-lg" style={[background: {:rgb, 0x0F1D31}]}>
+    <div class="flex grow flex-col gap-1 p-2 rounded-md" style={[background: {:rgb, 0x0F1D31}]}>
       <div class="flex items-center gap-2"><div class="w-[8px] h-[8px] rounded-full" style={[background: {:rgb, assigns.color}]} /><text style={[color: {:rgb, 0x94A3B8}]}>{assigns.label}</text></div>
-      <text class="text-white text-2xl font-semibold">{assigns.value}</text>
+      <text class="text-white text-lg font-semibold">{assigns.value}</text>
       <text style={[color: {:rgb, 0x64748B}]}>{assigns.detail}</text>
     </div>
     """
@@ -181,7 +181,7 @@ defmodule Examples.BeamObservatory.View do
     assigns = %{label: label, value: value, color: color}
 
     ~GPUI"""
-    <div class="flex items-center justify-between gap-3 p-3 rounded-md" style={[background: {:rgb, 0x15243A}]}>
+    <div class="flex items-center justify-between gap-2 p-2 rounded-md" style={[background: {:rgb, 0x15243A}]}>
       <text style={[color: {:rgb, 0x94A3B8}]}>{assigns.label}</text>
       <text class="font-semibold" style={[color: {:rgb, assigns.color}]}>{assigns.value}</text>
     </div>
@@ -222,10 +222,10 @@ defmodule Examples.BeamObservatory.View do
       label: "Hot processes",
       selected: selected,
       reveal: selected,
-      item_height: 58,
-      header_height: 44,
+      item_height: 38,
+      header_height: 30,
       "phx-change": "process_selected",
-      class: "grow",
+      class: "h-[620px]",
       children: columns ++ rows
     })
   end
@@ -282,6 +282,8 @@ defmodule Examples.BeamObservatory.View do
     query = assigns.query |> String.trim() |> String.downcase()
 
     assigns.processes
+    |> Enum.sort_by(& &1.memory, :desc)
+    |> Enum.take(200)
     |> Enum.filter(fn process ->
       query == "" or
         Enum.any?(
@@ -289,8 +291,6 @@ defmodule Examples.BeamObservatory.View do
           &String.contains?(String.downcase(&1), query)
         )
     end)
-    |> Enum.sort_by(& &1.memory, :desc)
-    |> Enum.take(200)
   end
 
   defp table_memory(tables), do: "#{Enum.reduce(tables, 0, &(&1.memory + &2))} words"

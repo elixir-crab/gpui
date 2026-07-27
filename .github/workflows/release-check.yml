@@ -18,7 +18,7 @@ jobs:
       RUST_FONTCONFIG_DLOPEN: "1"
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.95.0
       - uses: elixir-vibe/actions/setup-elixir@v1
         with:
           otp-version: "29.0.2"

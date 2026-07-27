@@ -79,6 +79,7 @@ defmodule GPUI.Codegen.Native.DispatchDefinitions do
       {:case, [], [quote(do: generated_component_kind(tag)), [do: clauses]]}
 
     quote do
+      @allow RustQ.Clippy.lint(:redundant_closure)
       @spec decode_generated_element_node(term(), R.path(:GeneratedElementTag)) ::
               R.nif_result(R.path(:ElementNode))
       defrust(decode_generated_element_node(term, tag), do: unquote(body))

@@ -20,9 +20,9 @@ defmodule Examples.ElixirWorkbench.View do
 
     ~GPUI"""
     <div class="flex grow flex-col w-full" style={[background: {:rgb, 0x0A1220}]}>
-      <div class="flex items-center justify-between px-5 py-3" style={[background: {:rgb, 0x111C2E}]}>
+      <div class="flex items-center justify-between px-3 py-2" style={[background: {:rgb, 0x111C2E}]}>
         <div class="flex items-center gap-3">
-          <div class="flex items-center justify-center w-[36px] h-[36px] rounded-md" style={[background: {:rgb, 0xF97316}]}><text class="text-white font-semibold">E</text></div>
+          <div class="flex items-center justify-center w-[28px] h-[28px] rounded-sm" style={[background: {:rgb, 0xF97316}]}><text class="text-white font-semibold">E</text></div>
           <div class="flex flex-col"><text class="text-white font-semibold">Elixir Workbench</text><text style={[color: {:rgb, 0x94A3B8}]}>{assigns.repository.name} · {assigns.repository.branch}</text></div>
         </div>
         <div class="flex items-center gap-3">
@@ -31,28 +31,28 @@ defmodule Examples.ElixirWorkbench.View do
         </div>
       </div>
 
-      <div class="flex grow">
-        <div class="flex flex-col w-[300px]" style={[background: {:rgb, 0x0D1727}]}>
-          <div class="flex flex-col gap-3 p-3">
+      <div class="flex h-[820px]" style={[min_height: {:px, 0}]}>
+        <div class="flex flex-col w-[260px]" style={[background: {:rgb, 0x0D1727}, min_height: {:px, 0}]}>
+          <div class="flex flex-col gap-2 p-2">
             <UI.input id="file-filter" label="Filter files" value={assigns.query} placeholder="Filter project" cleanable={true} phx-change="filter_changed" />
             <UI.select id="status-filter" label="File status" value={assigns.status} options={[{"All files", "all"}, {"Changed", "modified"}, {"Untracked", "untracked"}, {"Clean", "clean"}]} phx-change="status_changed" />
           </div>
           <div class="flex items-center justify-between px-4 py-2"><text style={[color: {:rgb, 0x94A3B8}]}>EXPLORER</text><text style={[color: {:rgb, 0xF97316}]}>{length(entries)}</text></div>
-          {repository_tree(entries, selected_id, assigns.expanded)}
+          <div class="flex flex-col h-[650px]">{repository_tree(entries, selected_id, assigns.expanded)}</div>
           <div class="flex flex-col gap-2 p-3" style={[background: {:rgb, 0x111C2E}]}>
             <div class="flex justify-between"><text class="text-white">Working tree</text><text style={[color: {:rgb, 0xF59E0B}]}>{assigns.repository.counts.changed} changed</text></div>
             <text style={[color: {:rgb, 0x64748B}]}>{assigns.repository.counts.total} tracked and untracked files</text>
           </div>
         </div>
 
-        <div class="flex grow flex-col">
+        <div class="flex grow flex-col" style={[min_height: {:px, 0}]}>
           <div class="flex items-center justify-between px-4 py-2" style={[background: {:rgb, 0x172236}]}>
             <div class="flex items-center gap-3"><text class="text-white">{preview_title(assigns.preview)}</text><text style={[color: status_color(assigns.preview.status)]}>{status_label(assigns.preview.status)}</text></div>
             <UI.copy_button id="copy-path" label="Copy path" text={assigns.preview.path} phx-click="path_copied" />
           </div>
-          {code_panel(assigns)}
+          <div class="flex h-[510px]">{code_panel(assigns)}</div>
 
-          <div class="flex flex-col h-[280px]" style={[background: {:rgb, 0x0B1321}]}>
+          <div class="flex flex-col h-[220px]" style={[background: {:rgb, 0x0B1321}]}>
             <div class="flex items-center justify-between px-4 py-2" style={[background: {:rgb, 0x111C2E}]}>
               <div class="flex items-center gap-4"><text class="text-white font-semibold">Runtime console</text><text style={[color: {:rgb, 0x94A3B8}]}>{length(visible_logs)} events</text></div>
               <div class="flex items-center gap-3"><UI.select id="log-level" label="Log level" value={assigns.log_level} options={[{"All", "all"}, {"Errors", "error"}, {"Warnings", "warning"}, {"Info", "info"}]} phx-change="log_level_changed" /><UI.button id="clear-logs" label="Clear" phx-click="clear-logs" /></div>
@@ -61,7 +61,7 @@ defmodule Examples.ElixirWorkbench.View do
           </div>
         </div>
 
-        <div class="flex flex-col w-[330px] gap-4 p-4" style={[background: {:rgb, 0x0D1727}]}>
+        <scroll class="flex flex-col w-[290px] gap-3 p-3" style={[background: {:rgb, 0x0D1727}]}>
           <div class="flex flex-col gap-3">
             <text class="text-white text-lg font-semibold">File context</text>
             {context_detail("Path", assigns.preview.path)}
@@ -76,7 +76,7 @@ defmodule Examples.ElixirWorkbench.View do
             <div class="flex items-center justify-between"><text style={[color: {:rgb, 0x94A3B8}]}>Tests</text><text style={[color: {:rgb, 0x38BDF8}]}>166 passing</text></div>
           </div>
           {selected_log(assigns)}
-        </div>
+        </scroll>
       </div>
 
       <Overlay.dialog id="workbench-command" open={assigns.command_open} title="Run project command" width={480} phx-change="command_changed">
@@ -143,10 +143,10 @@ defmodule Examples.ElixirWorkbench.View do
       label: "Repository files",
       selected: selected,
       reveal: selected,
-      item_height: 38,
+      item_height: 28,
       "phx-change": "file_selected",
       "phx-toggle": "directory_toggled",
-      class: "grow",
+      class: "h-[650px]",
       children: items
     })
   end
@@ -176,10 +176,10 @@ defmodule Examples.ElixirWorkbench.View do
       mode: if(assigns.preview.mode == :diff, do: "diff", else: "plain"),
       selected: assigns.line_selected,
       reveal: assigns.line_selected,
-      item_height: 28,
+      item_height: 22,
       max_columns: 140,
       "phx-change": "line_selected",
-      class: "grow",
+      class: "h-[510px]",
       children: lines
     })
   end
@@ -197,10 +197,10 @@ defmodule Examples.ElixirWorkbench.View do
       label: "Runtime events",
       selected: selected,
       reveal: selected,
-      item_height: 28,
+      item_height: 22,
       max_columns: 160,
       "phx-change": "log_selected",
-      class: "grow",
+      class: "h-[160px]",
       children: lines
     })
   end
@@ -262,9 +262,9 @@ defmodule Examples.ElixirWorkbench.View do
   defp status_label(status) when is_atom(status),
     do: status |> Atom.to_string() |> String.capitalize()
 
-  defp status_color(:modified), do: [color: {:rgb, 0xF59E0B}]
-  defp status_color(:untracked), do: [color: {:rgb, 0x34D399}]
-  defp status_color(_status), do: [color: {:rgb, 0x94A3B8}]
+  defp status_color(:modified), do: {:rgb, 0xF59E0B}
+  defp status_color(:untracked), do: {:rgb, 0x34D399}
+  defp status_color(_status), do: {:rgb, 0x94A3B8}
   defp code_kind(:notice), do: "info"
 
   defp code_kind(kind) when kind in [:context, :addition, :deletion, :hunk],

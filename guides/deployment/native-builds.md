@@ -21,6 +21,11 @@ pass.
 
 ## Source builds
 
+The repository pins Rust 1.95.0 in `rust-toolchain.toml`, including Clippy and
+rustfmt. Rustup selects it automatically from the project directory. This
+version is required by the pinned GPUI revision, which uses standard-library
+APIs unavailable in older compilers.
+
 Native compilation is opt-in so renderer-independent consumers and tests do not
 need a Rust toolchain. Enable it outside tests:
 

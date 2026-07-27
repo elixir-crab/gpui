@@ -2,7 +2,12 @@ Code.require_file("support/elixir_workbench.exs", __DIR__)
 
 alias Examples.ElixirWorkbench.Repository
 
-path = System.argv() |> List.first() |> then(&if(&1, do: Path.expand(&1), else: File.cwd!()))
+path =
+  System.argv()
+  |> Enum.reject(&(&1 == "--"))
+  |> List.first()
+  |> then(&if(&1, do: Path.expand(&1), else: File.cwd!()))
+
 {:ok, repository} = Repository.scan(path)
 
 preview_paths =

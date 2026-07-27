@@ -16,6 +16,8 @@ pub(crate) struct ResourceRefData {
     pub(crate) resource_type: String,
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::match_single_binding)]
 pub(crate) fn decode_raster_resource<'a>(term: Term<'a>) -> NifResult<RasterData> {
     let width = term.map_get(atoms::width())?.decode::<u32>()?;
     let height = term.map_get(atoms::height())?.decode::<u32>()?;
@@ -40,6 +42,8 @@ pub(crate) fn decode_raster_resource<'a>(term: Term<'a>) -> NifResult<RasterData
     })
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::match_single_binding)]
 pub(crate) fn decode_resource_ref_data<'a>(
     term: Term<'a>,
 ) -> NifResult<ResourceRefData> {

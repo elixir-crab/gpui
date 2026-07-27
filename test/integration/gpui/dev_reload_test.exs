@@ -39,7 +39,7 @@ defmodule GPUI.DevTest do
 
     {:ok, watcher} = GPUI.Dev.watch(runtime, files: [path], debounce: 10)
     assert Process.alive?(watcher)
-    Process.sleep(100)
+    Process.sleep(750)
 
     File.write!(path, source(module, "after"))
 
