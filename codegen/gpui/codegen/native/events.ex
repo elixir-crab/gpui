@@ -157,7 +157,7 @@ defmodule GPUI.Codegen.Native.Events do
     |> Enum.map(&%{&1 | vis: :crate})
   end
 
-  defp type_items, do: __MODULE__.__rustq_type_items__()
+  defp type_items, do: MetaAST.generated_type_items(__MODULE__)
 
   defp find_type!(items, name) do
     Enum.find(items, &match?(%AST.Enum{name: ^name}, &1)) ||
@@ -168,10 +168,5 @@ defmodule GPUI.Codegen.Native.Events do
     %{enum | vis: :crate, derive: derive, attrs: [A.attr(:allow, [:dead_code]) | enum.attrs]}
   end
 
-  defp impl_item!(target) do
-    Enum.find(__MODULE__.__rustq_items__(), fn
-      %AST.Impl{target: %AST.TypePath{parts: [^target]}} -> true
-      _item -> false
-    end) || raise "missing generated #{target} impl"
-  end
+  defp impl_item!(target), do: MetaAST.impl!(__MODULE__, target)
 end

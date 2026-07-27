@@ -50,6 +50,7 @@ defmodule GPUI.Codegen.Native.SchemaTypes do
   use RustQ.Meta
 
   alias GPUI.Codegen.Native.SchemaTypeMacros
+  alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
 
@@ -74,9 +75,7 @@ defmodule GPUI.Codegen.Native.SchemaTypes do
   end
 
   defp type_item!(name, opts) do
-    item =
-      Enum.find(__MODULE__.__rustq_type_items__(), &match?(%AST.Enum{name: ^name}, &1)) ||
-        raise "missing generated schema enum #{name}"
+    item = MetaAST.enum_type_item!(__MODULE__, name)
 
     %{
       item

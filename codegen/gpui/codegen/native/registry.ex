@@ -87,6 +87,7 @@ defmodule GPUI.Codegen.Native.Registry do
   use RustQ.Meta
 
   alias GPUI.Codegen.Native.RegistryDefinitions
+  alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
 
   require RegistryDefinitions
@@ -101,15 +102,10 @@ defmodule GPUI.Codegen.Native.Registry do
     ]
   end
 
-  defp impl_item! do
-    Enum.find(__MODULE__.__rustq_items__(), &match?(%AST.Impl{}, &1)) ||
-      raise "missing generated ComponentRegistry impl"
-  end
+  defp impl_item!, do: MetaAST.impl!(__MODULE__, :ComponentRegistry)
 
   defp type_item!(name, opts \\ []) do
-    item =
-      Enum.find(__MODULE__.__rustq_type_items__(), &match?(%AST.Enum{name: ^name}, &1)) ||
-        raise "missing generated registry enum #{name}"
+    item = MetaAST.enum_type_item!(__MODULE__, name)
 
     %{item | derive: Keyword.get(opts, :derive, []), vis: nil}
   end
