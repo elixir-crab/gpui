@@ -100,8 +100,9 @@ defmodule GPUI.Codegen.Native.ResourceDefinitions do
     [
       quote do
         unquote(value) =
-          decode_as!(term.map_get(unquote(atom_call(source))), R.path(:Binary))
-          |> then(fn binary -> binary.as_slice().to_vec() end)
+          case decode_as!(term.map_get(unquote(atom_call(source))), R.path(:Binary)) do
+            binary -> binary.as_slice().to_vec()
+          end
       end
     ]
   end

@@ -28,10 +28,9 @@ pub(crate) fn decode_raster_resource<'a>(term: Term<'a>) -> NifResult<RasterData
         Ok(field_value) => field_value.decode::<u32>().ok(),
         Err(_reason) => None,
     };
-    let data = term
-        .map_get(atoms::data())?
-        .decode::<Binary>()?
-        .then(|binary| binary.as_slice().to_vec());
+    let data = match term.map_get(atoms::data())?.decode::<Binary>()? {
+        binary => binary.as_slice().to_vec(),
+    };
     Ok(RasterData {
         width: width,
         height: height,

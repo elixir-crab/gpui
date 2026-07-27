@@ -1403,15 +1403,17 @@ pub(crate) fn decode_generated_popover_component<'a>(
         id: component_id(term)?,
         label: component_required_string_attr(term, atoms::label())?,
         open: component_bool_attr(term, atoms::open())?.unwrap_or(false),
-        anchor: component_enum_attr(
-                term,
-                atoms::anchor(),
-                &vec![
-                    "top_left", "top_center", "top_right", "bottom_left",
-                    "bottom_center", "bottom_right", "left_center", "right_center"
-                ],
-            )?
-            .then(|value| value.or(Some("top_left".to_string()))),
+        anchor: match component_enum_attr(
+            term,
+            atoms::anchor(),
+            &vec![
+                "top_left", "top_center", "top_right", "bottom_left", "bottom_center",
+                "bottom_right", "left_center", "right_center"
+            ],
+        )? {
+            Some(value) => Some(value),
+            None => Some("top_left".to_string()),
+        },
         appearance: component_bool_attr(term, atoms::appearance())?.unwrap_or(true),
         closable: component_bool_attr(term, atoms::closable())?.unwrap_or(true),
         children: decode_children(term)?,
@@ -1579,15 +1581,17 @@ pub(crate) fn decode_generated_dropdown_menu_component<'a>(
         id: component_id(term)?,
         label: component_required_string_attr(term, atoms::label())?,
         open: component_bool_attr(term, atoms::open())?.unwrap_or(false),
-        anchor: component_enum_attr(
-                term,
-                atoms::anchor(),
-                &vec![
-                    "top_left", "top_center", "top_right", "bottom_left",
-                    "bottom_center", "bottom_right", "left_center", "right_center"
-                ],
-            )?
-            .then(|value| value.or(Some("top_left".to_string()))),
+        anchor: match component_enum_attr(
+            term,
+            atoms::anchor(),
+            &vec![
+                "top_left", "top_center", "top_right", "bottom_left", "bottom_center",
+                "bottom_right", "left_center", "right_center"
+            ],
+        )? {
+            Some(value) => Some(value),
+            None => Some("top_left".to_string()),
+        },
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         children: decode_children(term)?,
         change: component_string_attr(term, atoms::phx_change())?,
@@ -1919,12 +1923,14 @@ pub(crate) fn decode_generated_virtual_list_component<'a>(
         )?,
         reveal: component_string_attr(term, atoms::reveal())?,
         reveal_index: component_non_negative_integer_attr(term, atoms::reveal_index())?,
-        reveal_strategy: component_enum_attr(
-                term,
-                atoms::reveal_strategy(),
-                &vec!["nearest", "top", "center", "bottom"],
-            )?
-            .then(|value| value.or(Some("nearest".to_string()))),
+        reveal_strategy: match component_enum_attr(
+            term,
+            atoms::reveal_strategy(),
+            &vec!["nearest", "top", "center", "bottom"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("nearest".to_string()),
+        },
         total_count: component_non_negative_integer_attr(term, atoms::total_count())?
             .unwrap_or(0),
         offset: component_non_negative_integer_attr(term, atoms::offset())?.unwrap_or(0),
@@ -2001,19 +2007,23 @@ pub(crate) fn decode_generated_data_table_component<'a>(
         selected_column: component_string_attr(term, atoms::selected_column())?,
         reveal: component_string_attr(term, atoms::reveal())?,
         reveal_index: component_non_negative_integer_attr(term, atoms::reveal_index())?,
-        reveal_strategy: component_enum_attr(
-                term,
-                atoms::reveal_strategy(),
-                &vec!["nearest", "top", "center", "bottom"],
-            )?
-            .then(|value| value.or(Some("nearest".to_string()))),
+        reveal_strategy: match component_enum_attr(
+            term,
+            atoms::reveal_strategy(),
+            &vec!["nearest", "top", "center", "bottom"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("nearest".to_string()),
+        },
         sort_column: component_string_attr(term, atoms::sort_column())?,
-        sort_direction: component_enum_attr(
-                term,
-                atoms::sort_direction(),
-                &vec!["none", "ascending", "descending"],
-            )?
-            .then(|value| value.or(Some("none".to_string()))),
+        sort_direction: match component_enum_attr(
+            term,
+            atoms::sort_direction(),
+            &vec!["none", "ascending", "descending"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("none".to_string()),
+        },
         total_count: component_non_negative_integer_attr(term, atoms::total_count())?
             .unwrap_or(0),
         offset: component_non_negative_integer_attr(term, atoms::offset())?.unwrap_or(0),
@@ -2051,12 +2061,14 @@ pub(crate) fn decode_generated_table_column_component<'a>(
         id: component_id(term)?,
         label: component_string_attr(term, atoms::label())?.unwrap_or_default(),
         width: component_positive_number_attr(term, atoms::width())?.unwrap_or(160.0),
-        align: component_enum_attr(
-                term,
-                atoms::align(),
-                &vec!["left", "center", "right"],
-            )?
-            .then(|value| value.or(Some("left".to_string()))),
+        align: match component_enum_attr(
+            term,
+            atoms::align(),
+            &vec!["left", "center", "right"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("left".to_string()),
+        },
         sortable: component_bool_attr(term, atoms::sortable())?.unwrap_or(false),
     })
 }
@@ -2117,12 +2129,14 @@ pub(crate) fn decode_generated_tree_component<'a>(
         )?,
         reveal: component_string_attr(term, atoms::reveal())?,
         reveal_index: component_non_negative_integer_attr(term, atoms::reveal_index())?,
-        reveal_strategy: component_enum_attr(
-                term,
-                atoms::reveal_strategy(),
-                &vec!["nearest", "top", "center", "bottom"],
-            )?
-            .then(|value| value.or(Some("nearest".to_string()))),
+        reveal_strategy: match component_enum_attr(
+            term,
+            atoms::reveal_strategy(),
+            &vec!["nearest", "top", "center", "bottom"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("nearest".to_string()),
+        },
         total_count: component_non_negative_integer_attr(term, atoms::total_count())?
             .unwrap_or(0),
         offset: component_non_negative_integer_attr(term, atoms::offset())?.unwrap_or(0),
@@ -2203,8 +2217,10 @@ pub(crate) fn decode_generated_code_viewer_component<'a>(
         style: decode_style(term)?,
         id: component_id(term)?,
         label: component_string_attr(term, atoms::label())?,
-        mode: component_enum_attr(term, atoms::mode(), &vec!["plain", "diff"])?
-            .then(|value| value.or(Some("plain".to_string()))),
+        mode: match component_enum_attr(term, atoms::mode(), &vec!["plain", "diff"])? {
+            Some(value) => Some(value),
+            None => Some("plain".to_string()),
+        },
         selected: component_string_attr(term, atoms::selected())?,
         selected_index: component_non_negative_integer_attr(
             term,
@@ -2212,12 +2228,14 @@ pub(crate) fn decode_generated_code_viewer_component<'a>(
         )?,
         reveal: component_string_attr(term, atoms::reveal())?,
         reveal_index: component_non_negative_integer_attr(term, atoms::reveal_index())?,
-        reveal_strategy: component_enum_attr(
-                term,
-                atoms::reveal_strategy(),
-                &vec!["nearest", "top", "center", "bottom"],
-            )?
-            .then(|value| value.or(Some("nearest".to_string()))),
+        reveal_strategy: match component_enum_attr(
+            term,
+            atoms::reveal_strategy(),
+            &vec!["nearest", "top", "center", "bottom"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("nearest".to_string()),
+        },
         total_count: component_non_negative_integer_attr(term, atoms::total_count())?
             .unwrap_or(0),
         offset: component_non_negative_integer_attr(term, atoms::offset())?.unwrap_or(0),
@@ -2258,15 +2276,17 @@ pub(crate) fn decode_generated_code_line_component<'a>(
         id: component_id(term)?,
         text: component_string_attr(term, atoms::text())?.unwrap_or_default(),
         number: component_non_negative_integer_attr(term, atoms::number())?,
-        kind: component_enum_attr(
-                term,
-                atoms::kind(),
-                &vec![
-                    "context", "addition", "deletion", "hunk", "debug", "info",
-                    "warning", "error"
-                ],
-            )?
-            .then(|value| value.or(Some("context".to_string()))),
+        kind: match component_enum_attr(
+            term,
+            atoms::kind(),
+            &vec![
+                "context", "addition", "deletion", "hunk", "debug", "info", "warning",
+                "error"
+            ],
+        )? {
+            Some(value) => Some(value),
+            None => Some("context".to_string()),
+        },
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
     })
 }
@@ -2334,14 +2354,22 @@ pub(crate) fn decode_generated_slider_component<'a>(
         min: component_number_attr(term, atoms::min())?.unwrap_or(0.0),
         max: component_number_attr(term, atoms::max())?.unwrap_or(100.0),
         step: component_number_attr(term, atoms::step())?.unwrap_or(1.0),
-        orientation: component_enum_attr(
-                term,
-                atoms::orientation(),
-                &vec!["horizontal", "vertical"],
-            )?
-            .then(|value| value.or(Some("horizontal".to_string()))),
-        scale: component_enum_attr(term, atoms::scale(), &vec!["linear", "logarithmic"])?
-            .then(|value| value.or(Some("linear".to_string()))),
+        orientation: match component_enum_attr(
+            term,
+            atoms::orientation(),
+            &vec!["horizontal", "vertical"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("horizontal".to_string()),
+        },
+        scale: match component_enum_attr(
+            term,
+            atoms::scale(),
+            &vec!["linear", "logarithmic"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("linear".to_string()),
+        },
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         reverse: component_bool_attr(term, atoms::reverse())?.unwrap_or(false),
         change: component_string_attr(term, atoms::phx_change())?,

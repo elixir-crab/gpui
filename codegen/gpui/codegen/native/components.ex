@@ -152,8 +152,10 @@ defmodule GPUI.Codegen.Native.ComponentDefinitionMacros do
 
   defp component_decoder_expr(name, {:default, {:enum, values}, default}) do
     quote do
-      unwrap!(component_enum_attr(term, unquote(atom_call(name)), ref(unquote(values))))
-      |> then(fn value -> value.or(some(unquote(default).to_string())) end)
+      case unwrap!(component_enum_attr(term, unquote(atom_call(name)), ref(unquote(values)))) do
+        {:some, value} -> some(value)
+        :none -> some(unquote(default).to_string())
+      end
     end
   end
 

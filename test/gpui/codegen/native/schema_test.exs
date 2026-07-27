@@ -20,6 +20,7 @@ defmodule GPUI.Codegen.Native.SchemaTest do
     assert Enum.any?(Syn.functions(parsed), &(&1.name == "render_generated_component_node"))
 
     assert_unique_named_items(parsed)
+    refute source =~ ".then("
   end
 
   test "composes a deterministic, structurally valid component registry" do
