@@ -17,7 +17,9 @@ defmodule GPUI.Codegen.Native.RegistryDefinitions do
       @type component_kind :: R.enum(unquote(component_kind_variants))
       @type stateful_component :: R.enum(unquote(stateful_component_variants))
 
-      unquote_splicing(functions)
+      defrustimpl ComponentRegistry, vis: :crate do
+        (unquote_splicing(functions))
+      end
     end
   end
 
@@ -86,7 +88,6 @@ defmodule GPUI.Codegen.Native.Registry do
 
   alias GPUI.Codegen.Native.RegistryDefinitions
   alias RustQ.Rust.AST
-  alias RustQ.Rust.AST.Builder, as: A
 
   require RegistryDefinitions
   RegistryDefinitions.define_registry()
@@ -96,22 +97,13 @@ defmodule GPUI.Codegen.Native.Registry do
     [
       type_item!(:ComponentKind, derive: [:Clone, :Copy, :Debug, :Eq, :Hash, :PartialEq]),
       type_item!(:StatefulComponent),
-      registry_impl()
+      impl_item!()
     ]
   end
 
-  defp registry_impl do
-    functions =
-      __MODULE__.__rustq_asts__()
-      |> Enum.filter(&match?(%AST.Function{}, &1))
-      |> Enum.map(&as_method/1)
-
-    A.impl(:ComponentRegistry, items: functions)
-  end
-
-  defp as_method(%AST.Function{args: [first | rest]} = function) do
-    receiver = %{first | name: :self, receiver: true, mutable: true, type: nil}
-    %{function | args: [receiver | rest], vis: :crate}
+  defp impl_item! do
+    Enum.find(__MODULE__.__rustq_items__(), &match?(%AST.Impl{}, &1)) ||
+      raise "missing generated ComponentRegistry impl"
   end
 
   defp type_item!(name, opts \\ []) do
