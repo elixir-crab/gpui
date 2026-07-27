@@ -19,6 +19,7 @@ require_file("codegen/gpui/codegen/native/style.ex")
 require_file("codegen/gpui/codegen/native/atoms.ex")
 require_file("codegen/gpui/codegen/native/resources.ex")
 require_file("codegen/gpui/codegen/native/renderers.ex")
+require_file("codegen/gpui/codegen/native/schema_types.ex")
 require_file("codegen/gpui/codegen/native/schema.ex")
 
 rust "native/gpui/src/generated/atoms.rs" do

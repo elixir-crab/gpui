@@ -7,6 +7,7 @@ defmodule GPUI.Codegen.Native.Schema do
   alias GPUI.Codegen.Native.Dispatch
   alias GPUI.Codegen.Native.Elements
   alias GPUI.Codegen.Native.Renderers
+  alias GPUI.Codegen.Native.SchemaTypes
   alias GPUI.Codegen.Native.Style
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
@@ -17,7 +18,6 @@ defmodule GPUI.Codegen.Native.Schema do
   @spec items() :: [AST.item()]
   def items do
     components = GPUI.Schema.components()
-    elements = GPUI.Schema.native_tags()
 
     renderer_nodes =
       components
@@ -27,12 +27,12 @@ defmodule GPUI.Codegen.Native.Schema do
     renderers = Renderers.for_nodes!(renderer_nodes)
 
     [
-      generated_component_specs(components),
+      SchemaTypes.component_kind_item(),
       generated_decoder_helpers(),
       Style.items(GPUI.Schema.style_specs()),
       generated_component_contracts(components),
-      generated_element_node_enum(components),
-      generated_enum_decl(:GeneratedElementTag, elements ++ [:Unknown]),
+      SchemaTypes.element_node_item(),
+      SchemaTypes.element_tag_item(),
       Dispatch.items(),
       generated_component_renderer(components, renderers)
     ]
@@ -51,11 +51,6 @@ defmodule GPUI.Codegen.Native.Schema do
   end
 
   defp generated_decoder_helpers, do: Decoder.asts() ++ Elements.items()
-
-  defp generated_component_specs(components) do
-    kinds = components |> Enum.map(& &1.kind) |> Enum.uniq()
-    generated_enum_decl(:GeneratedComponentKind, kinds ++ [:Unknown])
-  end
 
   defp generated_component_contracts(_components) do
     ComponentContracts.items() ++ ComponentDefinitions.items()
@@ -163,34 +158,6 @@ defmodule GPUI.Codegen.Native.Schema do
   defp registry_type(component),
     do: component |> registry_variant() |> then(&String.to_atom("Component#{&1}"))
 
-  defp generated_element_node_enum(components) do
-    component_variants =
-      components
-      |> Enum.filter(&component_contract?/1)
-      |> Enum.map(fn component ->
-        %AST.EnumVariant{
-          name: rust_variant(component.kind),
-          tuple: [T.path(component_node_name(component))]
-        }
-      end)
-
-    %AST.Enum{
-      name: :ElementNode,
-      vis: :crate,
-      derive: [:Clone, :Debug],
-      attrs: [A.attr(:cfg, feature: "real-gpui")],
-      variants:
-        [%AST.EnumVariant{name: :Viewport, tuple: [T.path(:ViewportNode)]}] ++
-          [%AST.EnumVariant{name: :Div, tuple: [T.path(:ContainerNode)]}] ++
-          [%AST.EnumVariant{name: :Input, tuple: [T.path(:InputNode)]}] ++
-          component_variants ++
-          [
-            %AST.EnumVariant{name: :Image, tuple: [T.path(:ImageNode)]},
-            %AST.EnumVariant{name: :Text, tuple: [T.path(:TextNode)]}
-          ]
-    }
-  end
-
   defp component_contract?(component),
     do: component.kind |> Atom.to_string() |> String.ends_with?("_component")
 
@@ -236,15 +203,6 @@ defmodule GPUI.Codegen.Native.Schema do
       ],
       returns: T.path([:gpui, :AnyElement]),
       body: [A.return_stmt(A.match_expr(:node, arms))]
-    }
-  end
-
-  defp generated_enum_decl(name, variants) do
-    %AST.Enum{
-      name: name,
-      derive: [:Clone, :Copy, :Debug, :Eq, :PartialEq],
-      variants: Enum.map(variants, &%AST.EnumVariant{name: rust_variant(&1)}),
-      vis: :pub
     }
   end
 
