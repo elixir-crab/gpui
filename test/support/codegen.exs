@@ -14,6 +14,7 @@ for file <- ~w(
   resources.ex
   renderers.ex
   renderer_dispatch.ex
+  registry.ex
   schema_types.ex
   schema.ex
 ) do

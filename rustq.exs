@@ -20,6 +20,7 @@ require_file("codegen/gpui/codegen/native/atoms.ex")
 require_file("codegen/gpui/codegen/native/resources.ex")
 require_file("codegen/gpui/codegen/native/renderers.ex")
 require_file("codegen/gpui/codegen/native/renderer_dispatch.ex")
+require_file("codegen/gpui/codegen/native/registry.ex")
 require_file("codegen/gpui/codegen/native/schema_types.ex")
 require_file("codegen/gpui/codegen/native/schema.ex")
 
