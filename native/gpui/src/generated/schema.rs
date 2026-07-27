@@ -1240,27 +1240,24 @@ pub(crate) fn accumulate_radio_option(
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn remember_value(
-    values: HashSet<String>,
+    mut values: HashSet<String>,
     value: String,
 ) -> Option<HashSet<String>> {
-    let mut values = values;
     if value.is_empty() || !values.insert(value) { None } else { Some(values) }
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn append_select_option(
-    options: Vec<SelectOptionNode>,
+    mut options: Vec<SelectOptionNode>,
     option: SelectOptionNode,
 ) -> Vec<SelectOptionNode> {
-    let mut options = options;
     options.push(option);
     options
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn append_radio_option(
-    options: Vec<RadioOptionNode>,
+    mut options: Vec<RadioOptionNode>,
     option: RadioOptionNode,
 ) -> Vec<RadioOptionNode> {
-    let mut options = options;
     options.push(option);
     options
 }

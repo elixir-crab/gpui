@@ -4,7 +4,6 @@ defmodule GPUI.Codegen.Native.ComponentContracts do
   use RustQ.Meta
 
   alias RustQ.Meta.AST, as: MetaAST
-  alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Type, as: R
 
@@ -164,21 +163,9 @@ defmodule GPUI.Codegen.Native.ComponentContracts do
 
     functions =
       Enum.map(MetaAST.functions(__MODULE__), fn ast ->
-        ast
-        |> mark_owned_accumulator_mutable()
-        |> then(&%{&1 | vis: :crate, attrs: [A.attr(:cfg, feature: "real-gpui") | &1.attrs]})
+        %{ast | vis: :crate, attrs: [A.attr(:cfg, feature: "real-gpui") | ast.attrs]}
       end)
 
     structs ++ functions
   end
-
-  # RustQ rc.3 does not yet infer mutable owned arguments from standard-library
-  # methods. Shadow only the accumulator; the behavior remains Rusty-Elixir.
-  defp mark_owned_accumulator_mutable(%AST.Function{name: name} = function)
-       when name in [:remember_value, :append_select_option, :append_radio_option] do
-    accumulator = function.args |> hd() |> Map.fetch!(:name)
-    %{function | body: [A.let_mut(accumulator, A.var(accumulator)) | function.body]}
-  end
-
-  defp mark_owned_accumulator_mutable(function), do: function
 end
