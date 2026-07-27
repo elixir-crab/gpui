@@ -6,25 +6,17 @@ defmodule GPUI.Codegen.Native.Schema do
   alias GPUI.Codegen.Native.Decoder
   alias GPUI.Codegen.Native.Dispatch
   alias GPUI.Codegen.Native.Elements
-  alias GPUI.Codegen.Native.Renderers
+  alias GPUI.Codegen.Native.RendererDispatch
   alias GPUI.Codegen.Native.SchemaTypes
   alias GPUI.Codegen.Native.Style
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Rust.AST.PatternBuilder, as: P
   alias RustQ.Rust.AST.TypeBuilder, as: T
-  alias RustQ.Rust.Identifier
 
   @spec items() :: [AST.item()]
   def items do
     components = GPUI.Schema.components()
-
-    renderer_nodes =
-      components
-      |> Enum.filter(&component_contract?/1)
-      |> Enum.map(&component_node_name/1)
-
-    renderers = Renderers.for_nodes!(renderer_nodes)
 
     [
       SchemaTypes.component_kind_item(),
@@ -34,7 +26,7 @@ defmodule GPUI.Codegen.Native.Schema do
       SchemaTypes.element_node_item(),
       SchemaTypes.element_tag_item(),
       Dispatch.items(),
-      generated_component_renderer(components, renderers)
+      RendererDispatch.item()
     ]
     |> List.flatten()
   end
@@ -157,55 +149,4 @@ defmodule GPUI.Codegen.Native.Schema do
 
   defp registry_type(component),
     do: component |> registry_variant() |> then(&String.to_atom("Component#{&1}"))
-
-  defp component_contract?(component),
-    do: component.kind |> Atom.to_string() |> String.ends_with?("_component")
-
-  defp component_node_name(component),
-    do:
-      component.kind
-      |> Atom.to_string()
-      |> Macro.camelize()
-      |> Kernel.<>("Node")
-      |> String.to_atom()
-
-  defp generated_component_renderer(components, renderers) do
-    arms =
-      components
-      |> Enum.filter(&component_contract?/1)
-      |> Enum.map(fn component ->
-        variant = rust_variant(component.kind)
-        renderer = Map.fetch!(renderers, component_node_name(component))
-
-        %AST.Arm{
-          pattern: P.path_tuple([:ElementNode, variant], [:node]),
-          body: [A.return_stmt(A.path_call(renderer.path, renderer.args))]
-        }
-      end)
-      |> Kernel.++([
-        %AST.Arm{
-          pattern: P.wildcard(),
-          body: [A.return_stmt(A.macro_call(:unreachable))]
-        }
-      ])
-
-    %AST.Function{
-      name: :render_generated_component_node,
-      vis: :crate,
-      attrs: [A.attr(:cfg, feature: "real-gpui")],
-      args: [
-        A.arg(:node, T.path(:ElementNode)),
-        A.arg(:element_id, T.path(:usize)),
-        A.arg(
-          :context,
-          T.mut_ref(T.path([:element, :ElementRenderContext], lifetimes: [:_, :_]))
-        )
-      ],
-      returns: T.path([:gpui, :AnyElement]),
-      body: [A.return_stmt(A.match_expr(:node, arms))]
-    }
-  end
-
-  defp rust_variant(value),
-    do: value |> Atom.to_string() |> Macro.camelize() |> Identifier.atom!()
 end
