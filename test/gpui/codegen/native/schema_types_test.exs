@@ -1,6 +1,4 @@
 defmodule GPUI.Codegen.Native.SchemaTypesTest do
-  Code.require_file("../../../../codegen/gpui/codegen/native/schema_types.ex", __DIR__)
-
   use ExUnit.Case, async: true
 
   alias GPUI.Codegen.Native.SchemaTypes

@@ -1,7 +1,4 @@
 defmodule GPUI.Codegen.Native.RendererDispatchTest do
-  Code.require_file("../../../../codegen/gpui/codegen/native/renderers.ex", __DIR__)
-  Code.require_file("../../../../codegen/gpui/codegen/native/renderer_dispatch.ex", __DIR__)
-
   use ExUnit.Case, async: true
 
   alias GPUI.Codegen.Native.RendererDispatch

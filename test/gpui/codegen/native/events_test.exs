@@ -1,6 +1,4 @@
 defmodule GPUI.Codegen.Native.EventsTest do
-  Code.require_file("../../../../codegen/gpui/codegen/native/events.ex", __DIR__)
-
   use ExUnit.Case, async: true
 
   alias GPUI.Codegen.Native.Events

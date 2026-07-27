@@ -1,6 +1,4 @@
 defmodule GPUI.Codegen.Native.StyleTest do
-  Code.require_file("../../../../codegen/gpui/codegen/native/style.ex", __DIR__)
-
   use ExUnit.Case, async: true
 
   alias GPUI.Codegen.Native.Style

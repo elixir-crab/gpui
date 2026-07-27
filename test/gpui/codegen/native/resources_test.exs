@@ -1,6 +1,4 @@
 defmodule GPUI.Codegen.Native.ResourcesTest do
-  Code.require_file("../../../../codegen/gpui/codegen/native/resources.ex", __DIR__)
-
   use ExUnit.Case, async: true
 
   alias GPUI.Codegen.Native.Resources
