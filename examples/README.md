@@ -13,6 +13,17 @@ RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/02_focus_timer.exs
 RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/03_settings_form.exs
 ```
 
+For iterative UI work, replace `mix run` with `mix gpui.dev`. The development
+runner recompiles explicitly watched Elixir source files and rerenders the open
+window while preserving its current assigns:
+
+```bash
+RUST_FONTCONFIG_DLOPEN=1 mix gpui.dev examples/getting_started/03_settings_form.exs
+```
+
+Native, schema, mount/default-state, and window-topology changes still require a
+restart.
+
 1. **Hello Window** introduces views, applications, and OTP supervision.
 2. **Focus Timer** adds controlled events and updates from a supervised worker.
 3. **Settings Form** combines form controls, dynamic styling, and a dialog.
@@ -20,45 +31,58 @@ RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/03_settings_form.exs
 The modules are separated into `getting_started/support/` so the examples can
 be loaded and tested through `GPUI.Test` without opening native windows.
 
-## Process explorer
+## Component gallery
 
-The first substantial example inspects live processes on the current BEAM node:
-
-```bash
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/process_explorer/run.exs
-```
-
-It combines a supervised sampler, periodic root-view messages, filtering,
-sorting, a virtualized accessible data table, explicit empty/filter states,
-selection, and a details pane. See
-[`process_explorer/README.md`](process_explorer/README.md) for its architecture.
-
-## ETS table explorer
-
-The ETS explorer keeps table and object models in a supervised source process,
-loads selected table objects asynchronously with explicit bounds, and presents
-two source-backed data tables:
+The canonical native-component reference is a searchable story gallery. It
+combines controls, overlays, navigation, collections, trees, and code/diff
+presentation in one interactive application:
 
 ```bash
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/ets_table_explorer/run.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/component_gallery/run.exs
 ```
 
-See [`ets_table_explorer/README.md`](ets_table_explorer/README.md) for its
-server-local inspection semantics, bounds, and stale-operation handling.
+Pass a story ID after `--` to open it directly. See
+[`component_gallery/README.md`](component_gallery/README.md) for available
+stories and the live-reload workflow.
 
-## Log and trace explorer
+## Music library
 
-The log explorer attaches a lightweight OTP Logger handler to a supervised,
-bounded source process. It supports asynchronous filtering, pause/resume,
-follow-tail, source-backed native virtualization, retained-event details, and
-display-side message copying:
+Afterglow presents a polished desktop music collection with sidebar navigation,
+controlled search and sorting, a virtualized track list, track details, and a
+complete now-playing control bar:
 
 ```bash
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/log_trace_explorer/run.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/music_library/run.exs
 ```
 
-See [`log_trace_explorer/README.md`](log_trace_explorer/README.md) for its
-retention, Logger-handler, and stale-filter semantics.
+See [`music_library/README.md`](music_library/README.md) for the controlled
+playback state and deterministic catalog.
+
+## BEAM Observatory
+
+BEAM Observatory consolidates process and ETS inspection into one runtime
+health application with summary metrics, a declarative memory map, pressure
+signals, hot-process drill-down, and ranked tables:
+
+```bash
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/beam_observatory/run.exs
+```
+
+See [`beam_observatory/README.md`](beam_observatory/README.md) for its sampling
+and state model.
+
+## Elixir Workbench
+
+Elixir Workbench combines repository navigation, source and diff presentation,
+runtime logs, diagnostics, clipboard actions, and a command dialog into one
+split-pane developer tool:
+
+```bash
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/elixir_workbench/run.exs -- path/to/repository
+```
+
+See [`elixir_workbench/README.md`](elixir_workbench/README.md) for its composed
+feature set.
 
 ## Image palette
 
@@ -72,19 +96,6 @@ RUST_FONTCONFIG_DLOPEN=1 mix run examples/image_palette/run.exs -- path/to/image
 
 See [`image_palette/README.md`](image_palette/README.md) for its worker and
 analysis architecture.
-
-## Git repository browser
-
-The repository browser scans a server-local Git working tree, presents an
-expandable virtualized hierarchy, filters by path and status, and presents
-bounded source-backed file and diff previews:
-
-```bash
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/git_repository_browser/run.exs -- path/to/repository
-```
-
-See [`git_repository_browser/README.md`](git_repository_browser/README.md) for
-its supervision, bounds, and local/remote filesystem semantics.
 
 ## Feature examples
 

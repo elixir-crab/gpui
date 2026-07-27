@@ -79,6 +79,10 @@ defmodule GPUI.Runtime do
   def send_view(runtime, window_id, message),
     do: GenServer.call(runtime, {:send_view, window_id, message}, @call_timeout)
 
+  @doc "Rerenders every window from its current module and assigns, then synchronizes the display."
+  @spec refresh(GenServer.server()) :: {:ok, GPUI.Snapshot.t()} | {:error, term()}
+  def refresh(runtime), do: GenServer.call(runtime, :refresh, @call_timeout)
+
   @doc "Injects an event into the active display without dispatching it immediately."
   @spec inject_event(GenServer.server(), map()) :: {:ok, term()} | {:error, term()}
   def inject_event(runtime, event),
@@ -181,20 +185,15 @@ defmodule GPUI.Runtime do
   end
 
   def handle_call({:send_view, window_id, message}, _from, state) do
-    case GPUI.Session.send_view(state.session, window_id, message) do
-      {:ok, snapshot} ->
-        case sync_display(state, snapshot) do
-          :ok ->
-            state = GPUI.UpdateSubscribers.publish_update(state, self(), [], snapshot)
-            {:reply, {:ok, snapshot}, state}
+    state.session
+    |> GPUI.Session.send_view(window_id, message)
+    |> synchronized_snapshot_reply(state)
+  end
 
-          {:error, reason} ->
-            {:reply, {:error, reason}, state}
-        end
-
-      {:error, _reason} = error ->
-        {:reply, error, state}
-    end
+  def handle_call(:refresh, _from, state) do
+    state.session
+    |> GPUI.Session.refresh()
+    |> synchronized_snapshot_reply(state)
   end
 
   def handle_call(:drain_events, _from, state) do
@@ -295,6 +294,20 @@ defmodule GPUI.Runtime do
   catch
     :exit, _reason -> :ok
   end
+
+  defp synchronized_snapshot_reply({:ok, snapshot}, state) do
+    case sync_display(state, snapshot) do
+      :ok ->
+        state = GPUI.UpdateSubscribers.publish_update(state, self(), [], snapshot)
+        {:reply, {:ok, snapshot}, state}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
+  end
+
+  defp synchronized_snapshot_reply({:error, _reason} = error, state),
+    do: {:reply, error, state}
 
   defp drain_display_events(state) do
     case GPUI.Display.drain(state.display_module, state.display) do

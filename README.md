@@ -45,12 +45,14 @@ RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/03_settings_form.exs
 
 They cover the minimal application structure, OTP-driven updates, controlled
 native components, dialogs, dynamic styling, and deterministic tests. The
-larger [`process_explorer`](examples/process_explorer/README.md),
-[`log_trace_explorer`](examples/log_trace_explorer/README.md),
-[`image_palette`](examples/image_palette/README.md), and
-[`git_repository_browser`](examples/git_repository_browser/README.md) examples
-apply those pieces to live process data, bounded Logger streams, image work,
-and virtualized repository trees and diffs.
+searchable [`component_gallery`](examples/component_gallery/README.md) is the
+canonical interactive reference for component states and combinations. The
+larger [`music_library`](examples/music_library/README.md),
+[`beam_observatory`](examples/beam_observatory/README.md),
+[`elixir_workbench`](examples/elixir_workbench/README.md), and
+[`image_palette`](examples/image_palette/README.md) examples apply those pieces
+to music interaction, runtime observability, repository and log workflows, and
+image analysis.
 
 See [Getting started](guides/introduction/getting-started.md) for installation,
 native prerequisites, supervision, controlled components, and event handling.

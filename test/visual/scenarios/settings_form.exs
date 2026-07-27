@@ -1,7 +1,4 @@
-Code.require_file(
-  "../../../examples/getting_started/support/settings_form.exs",
-  __DIR__
-)
+GPUITest.Examples.load!(:settings_form)
 
 defmodule GPUITest.Visual.SettingsForm.Scenario do
   @behaviour GPUI.Dev.Visual.Scenario

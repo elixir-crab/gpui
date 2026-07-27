@@ -1,4 +1,4 @@
-Code.require_file("../../../../examples/image_palette/support/image_palette.exs", __DIR__)
+GPUITest.Examples.load!(:image_palette)
 
 defmodule GPUI.Native.ImagePaletteE2ETest do
   use ExUnit.Case, async: false

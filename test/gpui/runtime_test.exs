@@ -37,6 +37,31 @@ defmodule GPUI.RuntimeTest do
     end
   end
 
+  defmodule RefreshView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(assigns), do: %GPUI.Element{type: :text, children: [renderer().(assigns)]}
+
+    defp renderer do
+      :persistent_term.get({__MODULE__, :renderer}, fn assigns -> "before #{assigns.name}" end)
+    end
+  end
+
+  defmodule RefreshApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(_args) do
+      {:ok,
+       [
+         window "Refresh" do
+           root(RefreshView, name: "preserved")
+         end
+       ]}
+    end
+  end
+
   defmodule EmptyApp do
     use GPUI.Application
 
@@ -209,6 +234,9 @@ defmodule GPUI.RuntimeTest do
              GPUI.Runtime.put_resource(runtime, "preview", %{})
 
     assert {:error, {:display_sync_failed, {:invalid_display_return, :sync, :invalid_sync}}} =
+             GPUI.Runtime.refresh(runtime)
+
+    assert {:error, {:display_sync_failed, {:invalid_display_return, :sync, :invalid_sync}}} =
              GPUI.Runtime.request_frame(runtime)
 
     set_display_mode(display, :invalid_inject)
@@ -375,6 +403,42 @@ defmodule GPUI.RuntimeTest do
                     %GPUI.Runtime.Update{revision: 1, events: [], snapshot: ^snapshot}}
 
     assert {:error, :window_not_found} = GPUI.Runtime.send_view(runtime, 999, :ignored)
+  end
+
+  test "refresh rerenders current assigns and synchronizes subscribers" do
+    :persistent_term.put(
+      {RefreshView, :renderer},
+      fn assigns -> "before #{assigns.name}" end
+    )
+
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(
+        app: RefreshApp,
+        display: GPUI.Test.Display,
+        display_opts: [owner: self()],
+        poll_interval: nil
+      )
+
+    assert_receive {:gpui_snapshot, %{windows: [%{root: %{tree: before_tree}}]}}
+    assert get_in(before_tree, [:children, Access.at(0), :children]) == ["before preserved"]
+    assert :ok = GPUI.Runtime.subscribe(runtime)
+
+    :persistent_term.put(
+      {RefreshView, :renderer},
+      fn assigns -> "after #{assigns.name}" end
+    )
+
+    assert {:ok,
+            %{windows: [%{root: %{assigns: %{name: "preserved"}, tree: after_tree}}]} =
+              snapshot} = GPUI.Runtime.refresh(runtime)
+
+    assert get_in(after_tree, [:children, Access.at(0), :children]) == ["after preserved"]
+    assert_receive {:gpui_snapshot, ^snapshot}
+
+    assert_receive {:gpui, ^runtime,
+                    %GPUI.Runtime.Update{revision: 1, events: [], snapshot: ^snapshot}}
+  after
+    :persistent_term.erase({RefreshView, :renderer})
   end
 
   test "runtime frame barriers delegate to the active display" do

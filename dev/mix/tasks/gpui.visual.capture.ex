@@ -90,7 +90,9 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
     @scenario_dir
     |> Path.join("*.exs")
     |> Path.wildcard()
-    |> Enum.each(&Code.require_file/1)
+    |> Enum.each(fn path ->
+      path |> Path.basename(".exs") |> GPUI.Dev.Visual.ScenarioLoader.load!()
+    end)
 
     :code.all_loaded()
     |> Enum.map(&elem(&1, 0))

@@ -1,7 +1,4 @@
-Code.require_file(
-  "../../../examples/getting_started/support/hello_window.exs",
-  __DIR__
-)
+GPUITest.Examples.load!(:hello_window)
 
 defmodule GPUITest.Visual.HelloWindow.Scenario do
   @behaviour GPUI.Dev.Visual.Scenario

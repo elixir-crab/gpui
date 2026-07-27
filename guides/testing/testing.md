@@ -82,8 +82,12 @@ without running timers in a test.
 
 The repository separates tests by purpose:
 
-- `test/gpui/` contains focused unit and schema/template tests;
-- `test/integration/` contains runtime, transport, and remote-flow tests;
+- `test/gpui/` contains focused unit, deterministic view-state, and
+  schema/template tests;
+- `test/integration/gpui/examples/` contains example source processes,
+  Logger/ETS/filesystem work, cancellation, and other cross-process flows;
+- `test/integration/` contains remaining runtime, transport, and remote-flow
+  tests;
 - `test/e2e/` contains real native-window tests;
 - `test/support/` contains reusable displays and native drivers.
 
@@ -127,10 +131,12 @@ Install the Linux E2E dependencies with:
 sudo apt-get install xvfb xdotool libxkbcommon-dev libxkbcommon-x11-dev
 ```
 
-Behavioral E2E assertions are not a substitute for visual review. Visual
-scenarios live under `test/visual/scenarios/`, separate from application
-examples, and provide deterministic data plus declarative state transitions.
-Capture one scenario or the complete suite with:
+Behavioral E2E assertions are not a substitute for visual review. Deterministic
+capture definitions currently live under `test/visual/scenarios/`; they are
+capture-tool support rather than ExUnit test runners. The consolidated
+component gallery is the canonical component capture surface, while product
+showcases retain scenario-specific states. Capture one scenario or the complete
+suite with:
 
 ```bash
 RUST_FONTCONFIG_DLOPEN=1 mix gpui.visual.capture \
@@ -139,9 +145,9 @@ RUST_FONTCONFIG_DLOPEN=1 mix gpui.visual.capture \
   --output tmp/gpui-visual-dark
 
 RUST_FONTCONFIG_DLOPEN=1 mix gpui.visual.capture \
-  --scenario process_explorer \
+  --scenario beam_observatory \
   --theme dark \
-  --output tmp/process-explorer-visual
+  --output tmp/beam-observatory-visual
 
 RUST_FONTCONFIG_DLOPEN=1 mix gpui.visual.capture --all --output tmp/gpui-visual
 ```

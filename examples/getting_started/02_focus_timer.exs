@@ -13,4 +13,4 @@ children = [
 {:ok, _supervisor} = Supervisor.start_link(children, strategy: :one_for_one)
 
 IO.puts("Focus Timer is running. Press Ctrl+C twice to exit.")
-Process.sleep(:infinity)
+GPUI.Dev.wait(runtime, files: [Path.join(__DIR__, "support/focus_timer.exs")])

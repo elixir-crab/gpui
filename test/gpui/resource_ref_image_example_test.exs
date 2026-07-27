@@ -1,7 +1,4 @@
-Code.require_file(
-  "../../examples/features/support/resource_ref_image.exs",
-  __DIR__
-)
+GPUITest.Examples.load!(:resource_ref_image)
 
 defmodule GPUI.ResourceRefImageExampleTest do
   use GPUI.Test, async: true

@@ -151,6 +151,7 @@ defmodule GPUI.MixProject do
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.3", only: [:dev, :release], runtime: false},
+      {:file_system, "~> 1.0"},
       {:phoenix_live_view, "~> 1.2.6"},
       {:rustler, "~> 0.38.0", runtime: false},
       {:rustler_precompiled, "~> 0.9"},

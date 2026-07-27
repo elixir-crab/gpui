@@ -54,6 +54,10 @@ defmodule GPUI.Session do
   def send_view(session, window_id, message),
     do: GenServer.call(session, {:send_view, window_id, message})
 
+  @doc "Rerenders every window with its current module and assigns."
+  @spec refresh(GenServer.server()) :: {:ok, snapshot()} | {:error, term()}
+  def refresh(session), do: GenServer.call(session, :refresh)
+
   @doc "Converts a declarative window into its serializable representation."
   @spec window_payload(WindowSpec.t()) :: map()
   def window_payload(%WindowSpec{} = window) do
@@ -89,6 +93,21 @@ defmodule GPUI.Session do
   def handle_call(:windows, _from, state), do: {:reply, state.windows, state}
 
   def handle_call(:snapshot, _from, state), do: {:reply, snapshot_from_state(state), state}
+
+  def handle_call(:refresh, _from, state) do
+    reply =
+      try do
+        {:ok, snapshot_from_state(state)}
+      catch
+        :error, reason when is_exception(reason) ->
+          {:error, {:render_failed, reason, __STACKTRACE__}}
+
+        kind, reason ->
+          {:error, {:render_failed, {kind, reason}, __STACKTRACE__}}
+      end
+
+    {:reply, reply, state}
+  end
 
   def handle_call({:put_resource, id, resource}, _from, state) do
     {:reply, :ok, put_in(state.resources[to_string(id)], resource)}

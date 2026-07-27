@@ -22,4 +22,9 @@ if path != "" do
   })
 end
 
-Process.sleep(:infinity)
+GPUI.Dev.wait(runtime,
+  files: [
+    Path.join(__DIR__, "support/analysis.exs"),
+    Path.join(__DIR__, "support/image_palette.exs")
+  ]
+)

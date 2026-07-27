@@ -75,7 +75,7 @@ end
 />
 ```
 
-The Git Repository Browser, Process Explorer, and Log/Trace Explorer use this
+The repository workspace, process table, and log stream examples use this
 pattern for refresh, pause, clear, and filter-focus commands.
 
 ## Deterministic tests

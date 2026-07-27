@@ -1,5 +1,5 @@
-for example <- ~w(hello_window focus_timer settings_form) do
-  Code.require_file("../../examples/getting_started/support/#{example}.exs", __DIR__)
+for example <- ~w(hello_window focus_timer settings_form)a do
+  GPUITest.Examples.load!(example)
 end
 
 defmodule GPUI.GettingStartedExamplesTest do

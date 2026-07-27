@@ -1,7 +1,4 @@
-Code.require_file(
-  "../../../examples/getting_started/support/focus_timer.exs",
-  __DIR__
-)
+GPUITest.Examples.load!(:focus_timer)
 
 defmodule GPUITest.Visual.FocusTimer.Scenario do
   @behaviour GPUI.Dev.Visual.Scenario

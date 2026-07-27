@@ -1,4 +1,5 @@
 Code.require_file("../support/ssl_certs.exs", __DIR__)
+Code.require_file("support/examples.ex", __DIR__)
 Code.require_file("support/codegen.exs", __DIR__)
 
 if Mix.env() == :e2e do
