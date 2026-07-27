@@ -26,12 +26,14 @@ defmodule GPUI.Codegen.Native.EventsTest do
              Enum.map(input_kinds(), &String.to_atom(rust_variant(&1)))
   end
 
-  test "keeps Rust-only encoder and atom implementations explicit" do
+  test "generates encoder and atom methods from typed Rusty-Elixir implementations" do
     source = Events.items() |> Rust.render_all()
 
     assert source =~ "impl EventValue"
+    assert source =~ "fn encode<'a>(&self, env: Env<'a>) -> Term<'a>"
     assert source =~ "Self::Nil => atoms::nil().encode(env)"
     assert source =~ "impl InputKind"
+    assert source =~ "fn atom(&self) -> Atom"
 
     for kind <- input_kinds() do
       assert source =~ "Self::#{rust_variant(kind)} => atoms::#{kind}()"

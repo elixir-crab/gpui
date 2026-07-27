@@ -11,12 +11,54 @@ defmodule GPUI.Codegen.Native.EventDefinitions do
     end
   end
 
+  defmacro define_event_impls do
+    input_kind_clauses =
+      Enum.map(input_kinds(), fn kind ->
+        variant = type_variant(kind)
+        atom_call = remote_call(:Atoms, kind)
+
+        {:->, [], [[quote(do: enum_variant(Self, unquote(variant)))], atom_call]}
+      end)
+
+    quote do
+      defrustimpl EventValue do
+        @spec encode(
+                R.ref(event_value()),
+                R.path(:Env, R.lifetime(:a))
+              ) :: R.path(:Term, R.lifetime(:a))
+        defrust encode(self, env) do
+          case self do
+            enum_variant(Self, :string, value) -> value.encode(env)
+            enum_variant(Self, :strings, value) -> value.encode(env)
+            enum_variant(Self, :boolean, value) -> value.encode(env)
+            enum_variant(Self, :number, value) -> value.encode(env)
+            enum_variant(Self, nil) -> Atoms.nil().encode(env)
+          end
+        end
+      end
+
+      defrustimpl InputKind do
+        @spec atom(R.ref(input_kind())) :: R.path(:Atom)
+        defrust atom(self) do
+          case self do
+            (unquote_splicing(input_kind_clauses))
+          end
+        end
+      end
+    end
+  end
+
   @doc false
   def input_kinds do
     GPUI.Schema.components()
     |> Enum.flat_map(&Keyword.keys(&1.events))
     |> Enum.uniq()
     |> Enum.reject(&(&1 == :click))
+  end
+
+  defp remote_call(module, function) do
+    module = {:__aliases__, [], [module]}
+    {{:., [], [module, function]}, [], []}
   end
 
   defp type_variant(:keydown), do: :key_down
@@ -33,9 +75,6 @@ defmodule GPUI.Codegen.Native.Events do
   alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
-  alias RustQ.Rust.AST.PatternBuilder, as: P
-  alias RustQ.Rust.AST.TypeBuilder, as: T
-  alias RustQ.Rust.Identifier
   alias RustQ.Type, as: R
 
   require EventDefinitions
@@ -50,6 +89,7 @@ defmodule GPUI.Codegen.Native.Events do
           )
 
   EventDefinitions.define_input_kind()
+  EventDefinitions.define_event_impls()
 
   @spec decode_event_value(term()) :: R.option(event_value())
   defrust decode_event_value(term) do
@@ -104,17 +144,16 @@ defmodule GPUI.Codegen.Native.Events do
 
     [
       configure_enum(event_value, [:Clone, :Debug]),
-      event_value_impl(),
+      impl_item!(:EventValue),
       configure_enum(input_kind, [:Clone, :Copy, :Debug]),
-      input_kind_impl(input_kinds()),
+      impl_item!(:InputKind),
       rusty_items()
     ]
     |> List.flatten()
   end
 
   def rusty_items do
-    __MODULE__
-    |> MetaAST.functions()
+    [MetaAST.function!(__MODULE__, :decode_event_value)]
     |> Enum.map(&%{&1 | vis: :crate})
   end
 
@@ -129,64 +168,10 @@ defmodule GPUI.Codegen.Native.Events do
     %{enum | vis: :crate, derive: derive, attrs: [A.attr(:allow, [:dead_code]) | enum.attrs]}
   end
 
-  defp event_value_impl do
-    encode = %AST.Function{
-      name: :encode,
-      lifetimes: [:a],
-      args: [A.receiver(), A.arg(:env, T.path(:Env, lifetimes: [:a]))],
-      returns: T.path(:Term, lifetimes: [:a]),
-      body: [
-        A.return_stmt(
-          A.match_expr(:self, [
-            event_value_arm(:String),
-            event_value_arm(:Strings),
-            event_value_arm(:Boolean),
-            event_value_arm(:Number),
-            %AST.Arm{
-              pattern: P.path([:Self, :Nil]),
-              body: [A.return_stmt(A.method(A.path_call([:atoms, nil]), :encode, [:env]))]
-            }
-          ])
-        )
-      ]
-    }
-
-    A.impl(:EventValue, items: [encode])
+  defp impl_item!(target) do
+    Enum.find(__MODULE__.__rustq_items__(), fn
+      %AST.Impl{target: %AST.TypePath{parts: [^target]}} -> true
+      _item -> false
+    end) || raise "missing generated #{target} impl"
   end
-
-  defp event_value_arm(variant) do
-    %AST.Arm{
-      pattern: P.path_tuple([:Self, variant], [:value]),
-      body: [A.return_stmt(A.method(:value, :encode, [:env]))]
-    }
-  end
-
-  defp input_kind_impl(kinds) do
-    atom_function = %AST.Function{
-      name: :atom,
-      args: [A.receiver()],
-      returns: T.path(:Atom),
-      body: [
-        A.return_stmt(
-          A.match_expr(
-            :self,
-            Enum.map(kinds, fn kind ->
-              %AST.Arm{
-                pattern: P.path([:Self, variant(kind)]),
-                body: [A.return_stmt(A.path_call([:atoms, kind]))]
-              }
-            end)
-          )
-        )
-      ]
-    }
-
-    A.impl(:InputKind, items: [atom_function])
-  end
-
-  defp input_kinds, do: EventDefinitions.input_kinds()
-
-  defp variant(:keydown), do: :KeyDown
-  defp variant(:keyup), do: :KeyUp
-  defp variant(kind), do: kind |> Atom.to_string() |> Macro.camelize() |> Identifier.atom!()
 end
