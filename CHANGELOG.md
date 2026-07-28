@@ -2,6 +2,8 @@
 
 ## 0.1.1
 
+- Expanded the Tailwind-compatible normalizer with flex shorthands, decimal spacing, fractional and percentage dimensions, safe arbitrary pixel/color/opacity values, exact arbitrary radii, and exact preservation of unsupported classes; replaced static minimum-height styles in the showcase applications with `min-h-0` utilities.
+
 - Added bounded renderer-independent window commands with cross-platform modified shortcuts, native post-dispatch matching that preserves focused input behavior, local/remote event routing, deterministic command tests, and command-driven Git, process, and log/trace dogfood workflows.
 - Added renderer-independent controlled field composition, visible help/error feedback, input Enter submission, monotonic native focus requests, deterministic submission testing, and validation-driven Settings Form and external-consumer examples.
 - Required semantic names for buttons, checkboxes, text inputs, selectors, comboboxes, popover/menu triggers, and dialogs; propagated controlled values, placeholders, password roles, selected labels, and expanded overlay state into native accessibility metadata.

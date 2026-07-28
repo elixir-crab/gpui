@@ -90,10 +90,29 @@ defmodule GPUI.Codegen.Native.Decoder do
     if atom_eq(term, "full") do
       some(full_length())
     else
-      case px_value(term) do
-        {:some, value} -> some(pixel_length(value))
-        :none -> nil
+      case decode_as(term, {term(), term()}) do
+        {:ok, {unit, fraction}} ->
+          if atom_eq(unit, "fraction") do
+            case number_value(fraction) do
+              {:some, value} when value >= 0.0 and value <= 1.0 -> some(fraction_length(value))
+              {:some, _other} -> nil
+              :none -> nil
+            end
+          else
+            px_length_value(term)
+          end
+
+        {:error, _reason} ->
+          px_length_value(term)
       end
+    end
+  end
+
+  @spec px_length_value(term()) :: R.option(R.path({:gpui, :DefiniteLength}))
+  defrust px_length_value(term) do
+    case px_value(term) do
+      {:some, value} -> some(pixel_length(value))
+      :none -> nil
     end
   end
 
@@ -300,9 +319,16 @@ defmodule GPUI.Codegen.Native.Decoder do
       attrs = [A.attr(:cfg, feature: "real-gpui") | ast.attrs]
 
       attrs =
-        if ast.name == :length_value,
-          do: [A.attr(:allow, [A.path([:clippy, :manual_map])]) | attrs],
-          else: attrs
+        case ast.name do
+          :length_value ->
+            [A.attr(:allow, [A.path([:clippy, :manual_range_contains])]) | attrs]
+
+          :px_length_value ->
+            [A.attr(:allow, [A.path([:clippy, :manual_map])]) | attrs]
+
+          _other ->
+            attrs
+        end
 
       %{ast | vis: :crate, attrs: attrs}
     end)

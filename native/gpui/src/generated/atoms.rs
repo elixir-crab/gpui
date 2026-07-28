@@ -11,7 +11,7 @@ mod atoms {
         "closable", close_button = "close_button", color = "color", command = "command",
         commands = "commands", compact = "compact", dark = "dark", data = "data", delay =
         "delay", disabled = "disabled", display = "display", error = "error", event =
-        "event", expanded = "expanded", first = "first", flex_direction =
+        "event", expanded = "expanded", first = "first", flex = "flex", flex_direction =
         "flex_direction", flex_grow = "flex_grow", flex_shrink = "flex_shrink", flex_wrap
         = "flex_wrap", focus_request = "focus_request", font_size = "font_size",
         font_weight = "font_weight", format = "format", gap = "gap", header_height =

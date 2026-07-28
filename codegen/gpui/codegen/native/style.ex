@@ -18,6 +18,11 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
         Gpui.relative(1.0)
       end
 
+      @spec fraction_length(R.f32()) :: R.path({:gpui, :DefiniteLength})
+      defrust fraction_length(value) do
+        Gpui.relative(value)
+      end
+
       @spec pixel_length(R.f32()) :: R.path({:gpui, :DefiniteLength})
       defrust pixel_length(value) do
         Gpui.px(value).into()

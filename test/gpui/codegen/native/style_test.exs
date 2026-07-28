@@ -21,6 +21,9 @@ defmodule GPUI.Codegen.Native.StyleTest do
     assert MetaAST.function!(Style, :full_length) |> Rust.render() =~
              "fn full_length() -> gpui::DefiniteLength"
 
+    assert MetaAST.function!(Style, :fraction_length) |> Rust.render() =~
+             "gpui::relative(value)"
+
     assert MetaAST.function!(Style, :pixel_length) |> Rust.render() =~
              "gpui::px(value).into()"
 

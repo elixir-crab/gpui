@@ -490,6 +490,19 @@ defmodule GPUI.Schema do
         {:enum_methods, [{"flex", :flex}, {"block", :block}, {"grid", :grid}, {"none", :hidden}]}
     },
     %Style{
+      name: :flex,
+      field: :flex,
+      type: :atom_string,
+      render:
+        {:enum_methods,
+         [
+           {"one", :flex_1},
+           {"auto", :flex_auto},
+           {"initial", :flex_initial},
+           {"none", :flex_none}
+         ]}
+    },
+    %Style{
       name: :flex_direction,
       field: :flex_direction,
       type: :atom_string,

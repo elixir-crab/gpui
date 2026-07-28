@@ -104,16 +104,36 @@ pub(crate) fn px_value<'a>(term: Term<'a>) -> Option<f32> {
         }
     }
 }
-#[allow(clippy::manual_map)]
+#[allow(clippy::manual_range_contains)]
 #[cfg(feature = "real-gpui")]
 pub(crate) fn length_value<'a>(term: Term<'a>) -> Option<gpui::DefiniteLength> {
     if atom_eq(term, "full") {
         Some(full_length())
     } else {
-        match px_value(term) {
-            Some(value) => Some(pixel_length(value)),
-            None => None,
+        match term.decode::<(Term<'a>, Term<'a>)>() {
+            Ok((unit, fraction)) => {
+                if atom_eq(unit, "fraction") {
+                    match number_value(fraction) {
+                        Some(value) if value >= 0.0 && value <= 1.0 => {
+                            Some(fraction_length(value))
+                        }
+                        Some(_other) => None,
+                        None => None,
+                    }
+                } else {
+                    px_length_value(term)
+                }
+            }
+            Err(_reason) => px_length_value(term),
         }
+    }
+}
+#[allow(clippy::manual_map)]
+#[cfg(feature = "real-gpui")]
+pub(crate) fn px_length_value<'a>(term: Term<'a>) -> Option<gpui::DefiniteLength> {
+    match px_value(term) {
+        Some(value) => Some(pixel_length(value)),
+        None => None,
     }
 }
 #[cfg(feature = "real-gpui")]
@@ -511,6 +531,7 @@ pub(crate) fn decode_text_node<'a>(
 #[cfg(feature = "real-gpui")]
 pub(crate) struct StyleAttrs {
     pub(crate) display: Option<String>,
+    pub(crate) flex: Option<String>,
     pub(crate) flex_direction: Option<String>,
     pub(crate) align_items: Option<String>,
     pub(crate) justify_content: Option<String>,
@@ -553,6 +574,10 @@ pub(crate) fn full_length() -> gpui::DefiniteLength {
     gpui::relative(1.0)
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn fraction_length(value: f32) -> gpui::DefiniteLength {
+    gpui::relative(value)
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn pixel_length(value: f32) -> gpui::DefiniteLength {
     gpui::px(value).into()
 }
@@ -571,6 +596,12 @@ pub(crate) fn apply_generated_style_attr<'a>(
             let value = atom_string(term);
             let valid = value.is_some();
             attrs.display = value;
+            valid
+        }
+        value if value == atoms::flex() => {
+            let value = atom_string(term);
+            let valid = value.is_some();
+            attrs.flex = value;
             valid
         }
         value if value == atoms::flex_direction() => {
@@ -812,6 +843,21 @@ pub(crate) fn apply_generated_render_styles(
         }
         Some("none") => {
             element = element.hidden();
+        }
+        _ => {}
+    };
+    match style.flex.as_deref() {
+        Some("one") => {
+            element = element.flex_1();
+        }
+        Some("auto") => {
+            element = element.flex_auto();
+        }
+        Some("initial") => {
+            element = element.flex_initial();
+        }
+        Some("none") => {
+            element = element.flex_none();
         }
         _ => {}
     };

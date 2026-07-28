@@ -82,7 +82,7 @@ defmodule Examples.BeamObservatory.View do
         {metric_card("Ports", assigns.ports, "native resources", 0x34D399)}
       </div>
 
-      <div class="flex grow gap-2 px-4 pb-4" style={[min_height: {:px, 0}]}>
+      <div class="flex grow min-h-0 gap-2 px-4 pb-4">
         <div class="flex flex-col w-[260px] gap-2">
           <div class="flex flex-col gap-3 p-3 rounded-md" style={[background: {:rgb, 0x0F1D31}]}>
             <div class="flex flex-col gap-1">
@@ -105,7 +105,7 @@ defmodule Examples.BeamObservatory.View do
           </div>
         </div>
 
-        <div class="flex grow flex-col gap-2 p-3 rounded-md" style={[background: {:rgb, 0xF8FAFC}, min_height: {:px, 0}]}>
+        <div class="flex grow min-h-0 flex-col gap-2 p-3 rounded-md" style={[background: {:rgb, 0xF8FAFC}]}>
           <div class="flex items-end justify-between gap-4">
             <div class="flex flex-col gap-1">
               <text class="text-xl font-semibold" style={[color: {:rgb, 0x0F172A}]}>Hot processes</text>

@@ -6,18 +6,7 @@ defmodule GPUI.Tailwind do
   Unknown classes are preserved under `:class` by callers for future handling.
   """
 
-  @spacing_scale %{
-    "0" => 0.0,
-    "1" => 4.0,
-    "2" => 8.0,
-    "3" => 12.0,
-    "4" => 16.0,
-    "5" => 20.0,
-    "6" => 24.0,
-    "8" => 32.0,
-    "10" => 40.0,
-    "12" => 48.0
-  }
+  @spacing_unit 4.0
 
   @colors %{
     "black" => {:rgb, 0x000000},
@@ -75,6 +64,10 @@ defmodule GPUI.Tailwind do
     |> Map.update!(:unknown, &Enum.reverse/1)
   end
 
+  defp normalize_class("flex-1", acc), do: put_style(acc, :flex, :one)
+  defp normalize_class("flex-auto", acc), do: put_style(acc, :flex, :auto)
+  defp normalize_class("flex-initial", acc), do: put_style(acc, :flex, :initial)
+  defp normalize_class("flex-none", acc), do: put_style(acc, :flex, :none)
   defp normalize_class("flex", acc), do: put_style(acc, :display, :flex)
   defp normalize_class("block", acc), do: put_style(acc, :display, :block)
   defp normalize_class("grid", acc), do: put_style(acc, :display, :grid)
@@ -112,11 +105,16 @@ defmodule GPUI.Tailwind do
   defp normalize_class("border", acc), do: put_style(acc, :border_width, {:px, 1.0})
   defp normalize_class("border-" <> color, acc), do: color(acc, :border_color, color, "border-")
 
-  defp normalize_class("rounded" <> suffix, acc) do
+  defp normalize_class("rounded" <> suffix = class, acc) do
     radius =
-      if suffix == "", do: {:px, 4.0}, else: rounded_radius(String.trim_leading(suffix, "-"))
+      if suffix == "",
+        do: {:ok, {:px, 4.0}},
+        else: rounded_radius(String.trim_leading(suffix, "-"))
 
-    put_style(acc, :border_radius, radius)
+    case radius do
+      {:ok, value} -> put_style(acc, :border_radius, value)
+      :error -> unknown(acc, class)
+    end
   end
 
   defp normalize_class("gap-" <> value, acc), do: spacing(acc, :gap, value)
@@ -159,18 +157,30 @@ defmodule GPUI.Tailwind do
       Map.has_key?(@text_sizes, value) ->
         put_style(acc, :font_size, {:px, Map.fetch!(@text_sizes, value)})
 
-      Map.has_key?(@colors, value) ->
-        put_style(acc, :color, Map.fetch!(@colors, value))
+      match?({:ok, _value}, parse_arbitrary_px(value)) ->
+        {:ok, px} = parse_arbitrary_px(value)
+        put_style(acc, :font_size, {:px, px})
 
       true ->
-        unknown(acc, "text-#{value}")
+        color(acc, :color, value, "text-")
     end
   end
 
   defp line_height(value, acc) do
-    case Map.fetch(@line_heights, value) do
-      {:ok, px} -> put_style(acc, :line_height, {:px, px})
-      :error -> unknown(acc, "leading-#{value}")
+    case {Map.fetch(@line_heights, value), parse_arbitrary_px(value)} do
+      {{:ok, px}, _arbitrary} -> put_style(acc, :line_height, {:px, px})
+      {:error, {:ok, px}} -> put_style(acc, :line_height, {:px, px})
+      {:error, :error} -> unknown(acc, "leading-#{value}")
+    end
+  end
+
+  defp opacity("[" <> _rest = value, acc) do
+    case parse_arbitrary_number(value) do
+      {:ok, opacity} when opacity >= 0.0 and opacity <= 1.0 ->
+        put_style(acc, :opacity, opacity)
+
+      _other ->
+        unknown(acc, "opacity-#{value}")
     end
   end
 
@@ -184,57 +194,170 @@ defmodule GPUI.Tailwind do
   defp color(acc, key, value, prefix) do
     case Map.fetch(@colors, value) do
       {:ok, color} -> put_style(acc, key, color)
-      :error -> unknown(acc, prefix <> value)
+      :error -> arbitrary_color(acc, key, value, prefix)
     end
   end
 
+  defp arbitrary_color(acc, key, "[#" <> rest = value, prefix) do
+    with hex when hex != rest <- String.trim_trailing(rest, "]"),
+         6 <- byte_size(hex),
+         {rgb, ""} <- Integer.parse(hex, 16) do
+      put_style(acc, key, {:rgb, rgb})
+    else
+      _other -> unknown(acc, prefix <> value)
+    end
+  end
+
+  defp arbitrary_color(acc, _key, value, prefix), do: unknown(acc, prefix <> value)
+
   defp spacing(acc, key, value) do
-    case Map.fetch(@spacing_scale, value) do
+    case parse_spacing(value) do
       {:ok, px} -> put_style(acc, key, {:px, px})
-      :error -> unknown(acc, "#{key}-#{value}")
+      :error -> unknown(acc, class_name(key, value))
     end
   end
 
   defp length_value(acc, key, value) do
     case parse_length(value) do
       {:ok, length} -> put_style(acc, key, length)
-      :error -> unknown(acc, "#{key}-#{value}")
+      :error -> unknown(acc, class_name(key, value))
     end
+  end
+
+  defp class_name(key, value) do
+    prefix =
+      %{
+        gap: "gap",
+        padding: "p",
+        padding_x: "px",
+        padding_y: "py",
+        padding_top: "pt",
+        padding_right: "pr",
+        padding_bottom: "pb",
+        padding_left: "pl",
+        margin: "m",
+        margin_x: "mx",
+        margin_y: "my",
+        margin_top: "mt",
+        margin_right: "mr",
+        margin_bottom: "mb",
+        margin_left: "ml",
+        width: "w",
+        height: "h",
+        min_width: "min-w",
+        max_width: "max-w",
+        min_height: "min-h",
+        max_height: "max-h"
+      }
+      |> Map.fetch!(key)
+
+    "#{prefix}-#{value}"
   end
 
   defp parse_length("full"), do: {:ok, :full}
 
-  defp parse_length("[" <> rest) do
-    with value when value != rest <- String.trim_trailing(rest, "]"),
-         {:ok, number} <- parse_px(value) do
-      {:ok, {:px, number}}
-    else
-      _ -> :error
+  defp parse_length("[" <> _rest = value) do
+    case parse_arbitrary(value) do
+      {:ok, {:px, number}} -> {:ok, {:px, number}}
+      {:ok, {:percent, percentage}} -> {:ok, {:fraction, percentage / 100}}
+      :error -> :error
     end
   end
 
   defp parse_length(value) do
-    case Map.fetch(@spacing_scale, value) do
+    case parse_fraction(value) do
+      {:ok, fraction} -> {:ok, {:fraction, fraction}}
+      :error -> parse_spacing_length(value)
+    end
+  end
+
+  defp parse_spacing_length(value) do
+    case parse_spacing(value) do
       {:ok, px} -> {:ok, {:px, px}}
       :error -> :error
     end
   end
 
-  defp parse_px(value) do
-    value = String.trim_trailing(value, "px")
-
+  defp parse_spacing(value) do
     case Float.parse(value) do
-      {number, ""} -> {:ok, number}
-      _ -> :error
+      {number, ""} when number >= 0.0 -> {:ok, number * @spacing_unit}
+      _other -> parse_arbitrary_px(value)
     end
   end
 
-  defp rounded_radius("none"), do: {:px, 0.0}
-  defp rounded_radius("sm"), do: {:px, 2.0}
-  defp rounded_radius("md"), do: {:px, 6.0}
-  defp rounded_radius("lg"), do: {:px, 8.0}
-  defp rounded_radius("full"), do: :full
-  defp rounded_radius(_), do: {:px, 4.0}
+  defp parse_fraction(value) do
+    case String.split(value, "/", parts: 2) do
+      [numerator, denominator] ->
+        with {numerator, ""} <- Float.parse(numerator),
+             {denominator, ""} when denominator > 0.0 <- Float.parse(denominator),
+             fraction when fraction >= 0.0 and fraction <= 1.0 <- numerator / denominator do
+          {:ok, fraction}
+        else
+          _other -> :error
+        end
+
+      _other ->
+        :error
+    end
+  end
+
+  defp parse_arbitrary_px(value) do
+    case parse_arbitrary(value) do
+      {:ok, {:px, px}} -> {:ok, px}
+      _other -> :error
+    end
+  end
+
+  defp parse_arbitrary_number("[" <> rest) do
+    with value when value != rest <- String.trim_trailing(rest, "]"),
+         {number, ""} <- Float.parse(value) do
+      {:ok, number}
+    else
+      _other -> :error
+    end
+  end
+
+  defp parse_arbitrary_number(_value), do: :error
+
+  defp parse_arbitrary("[" <> rest) do
+    case String.trim_trailing(rest, "]") do
+      ^rest ->
+        :error
+
+      value ->
+        cond do
+          String.ends_with?(value, "px") -> parse_unit(value, "px", :px)
+          String.ends_with?(value, "%") -> parse_unit(value, "%", :percent)
+          true -> :error
+        end
+    end
+  end
+
+  defp parse_arbitrary(_value), do: :error
+
+  defp parse_unit(value, suffix, unit) do
+    value = String.trim_trailing(value, suffix)
+
+    case Float.parse(value) do
+      {number, ""} -> {:ok, {unit, number}}
+      _other -> :error
+    end
+  end
+
+  defp rounded_radius("[" <> _rest = value) do
+    case parse_arbitrary_px(value) do
+      {:ok, px} -> {:ok, {:px, px}}
+      :error -> :error
+    end
+  end
+
+  defp rounded_radius("none"), do: {:ok, {:px, 0.0}}
+  defp rounded_radius("sm"), do: {:ok, {:px, 2.0}}
+  defp rounded_radius("md"), do: {:ok, {:px, 6.0}}
+  defp rounded_radius("lg"), do: {:ok, {:px, 8.0}}
+  defp rounded_radius("full"), do: {:ok, :full}
+  defp rounded_radius(value) when value in ["", "DEFAULT"], do: {:ok, {:px, 4.0}}
+  defp rounded_radius(_value), do: :error
 
   defp put_style(acc, key, value),
     do: update_in(acc.style, &[{key, value} | Keyword.delete(&1, key)])

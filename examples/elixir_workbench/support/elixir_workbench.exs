@@ -31,8 +31,8 @@ defmodule Examples.ElixirWorkbench.View do
         </div>
       </div>
 
-      <div class="flex h-[820px]" style={[min_height: {:px, 0}]}>
-        <div class="flex flex-col w-[260px]" style={[background: {:rgb, 0x0D1727}, min_height: {:px, 0}]}>
+      <div class="flex min-h-0 h-[820px]">
+        <div class="flex min-h-0 flex-col w-[260px]" style={[background: {:rgb, 0x0D1727}]}>
           <div class="flex flex-col gap-2 p-2">
             <UI.input id="file-filter" label="Filter files" value={assigns.query} placeholder="Filter project" cleanable={true} phx-change="filter_changed" />
             <UI.select id="status-filter" label="File status" value={assigns.status} options={[{"All files", "all"}, {"Changed", "modified"}, {"Untracked", "untracked"}, {"Clean", "clean"}]} phx-change="status_changed" />
@@ -45,7 +45,7 @@ defmodule Examples.ElixirWorkbench.View do
           </div>
         </div>
 
-        <div class="flex grow flex-col" style={[min_height: {:px, 0}]}>
+        <div class="flex grow min-h-0 flex-col">
           <div class="flex items-center justify-between px-4 py-2" style={[background: {:rgb, 0x172236}]}>
             <div class="flex items-center gap-3"><text class="text-white">{preview_title(assigns.preview)}</text><text style={[color: status_color(assigns.preview.status)]}>{status_label(assigns.preview.status)}</text></div>
             <UI.copy_button id="copy-path" label="Copy path" text={assigns.preview.path} phx-click="path_copied" />
@@ -61,7 +61,7 @@ defmodule Examples.ElixirWorkbench.View do
           </div>
         </div>
 
-        <scroll class="flex flex-col w-[290px] gap-3 p-3" style={[background: {:rgb, 0x0D1727}]}>
+        <scroll class="flex min-h-0 flex-col w-[290px] gap-3 p-3" style={[background: {:rgb, 0x0D1727}]}>
           <div class="flex flex-col gap-3">
             <text class="text-white text-lg font-semibold">File context</text>
             {context_detail("Path", assigns.preview.path)}

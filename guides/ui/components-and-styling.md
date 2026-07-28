@@ -499,24 +499,34 @@ and remote displays.
 ## Styling
 
 Templates normalize a constrained Tailwind-compatible vocabulary into typed
-native style attributes. Supported groups include:
+native style attributes. Static layout and design values should use classes;
+reserve `style` for runtime values that cannot be known in the template.
+Supported groups include:
 
-- flex display, direction, wrapping, alignment, growth, and shrink;
-- foreground and background colors;
-- typography, weight, and opacity;
-- padding, margin, and gaps;
-- width, height, and minimum/maximum dimensions;
-- borders, border colors, and radius.
+- flex display, direction, wrapping, alignment, growth, shrink, and the
+  `flex-1`, `flex-auto`, `flex-initial`, and `flex-none` shorthands;
+- foreground and background colors, including arbitrary six-digit RGB values
+  such as `bg-[#101828]`;
+- typography, weight, line height, and opacity, including safe arbitrary pixel
+  and numeric values;
+- padding, margin, and gaps using Tailwind's numeric spacing convention where
+  one unit is four pixels, including decimal values such as `gap-1.5`;
+- width, height, and minimum/maximum dimensions using spacing values, arbitrary
+  pixels, percentages, or fractions such as `w-1/2`;
+- borders, border colors, and radius, including exact arbitrary pixel radii.
 
 ```elixir
-<div class="flex flex-col w-[420px] min-h-[240px] gap-4 p-4 bg-slate-900">
-  <text class="text-white text-xl font-semibold">Settings</text>
+<div class="flex flex-1 min-h-0 w-1/2 gap-1.5 p-4 bg-[#101828]">
+  <text class="text-[#f8fafc] text-[13px] leading-[18px] font-semibold">Settings</text>
 </div>
 ```
 
-Unsupported classes remain in the serialized `class` attribute instead of being
-silently reinterpreted. Programmatic trees can use helpers such as `GPUI.style/3`,
-`GPUI.px/1`, and `GPUI.rgb/1`.
+Use the semantic `<scroll>` element for scrolling. An overflow utility is not
+accepted as a substitute because GPUI scrolling requires native scroll state and
+behavior. Unsupported variants and CSS expressions, such as `hover:*`,
+`mx-auto`, or `w-[calc(...)]`, remain in the serialized `class` attribute
+instead of being silently reinterpreted. Programmatic trees can use helpers such
+as `GPUI.style/3`, `GPUI.px/1`, and `GPUI.rgb/1`.
 
 ## Themes
 
