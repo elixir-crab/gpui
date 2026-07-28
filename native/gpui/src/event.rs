@@ -1,7 +1,29 @@
 #[cfg(feature = "components")]
 use crate::TextTransaction;
 use crate::{atoms, SharedRuntime};
+#[cfg(feature = "components")]
+use rustler::NifMap;
 use rustler::{Atom, Encoder, Env, NifResult, Term};
+
+#[cfg(feature = "components")]
+#[derive(Clone, Debug, NifMap)]
+pub(crate) struct TextViewportGeometry {
+    pub(crate) first_visible_row: u64,
+    pub(crate) last_visible_row: u64,
+    pub(crate) scroll_x: f64,
+    pub(crate) scroll_y: f64,
+}
+
+#[cfg(feature = "components")]
+#[derive(Clone, Debug, NifMap)]
+pub(crate) struct TextCaretGeometry {
+    pub(crate) line: u64,
+    pub(crate) utf16_offset: u64,
+    pub(crate) x: f64,
+    pub(crate) y: f64,
+    pub(crate) width: f64,
+    pub(crate) height: f64,
+}
 
 #[cfg(feature = "components")]
 use crate::element::component::display::FileDialogResult;
@@ -36,6 +58,20 @@ pub(crate) enum NativeEvent {
         window_id: u64,
         event: String,
         selections: Vec<crate::TextSelection>,
+        revision: u64,
+    },
+    #[cfg(feature = "components")]
+    Viewport {
+        window_id: u64,
+        event: String,
+        value: TextViewportGeometry,
+        revision: u64,
+    },
+    #[cfg(feature = "components")]
+    Geometry {
+        window_id: u64,
+        event: String,
+        value: TextCaretGeometry,
         revision: u64,
     },
     WindowClosed {
@@ -137,6 +173,38 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
                 (atoms::window_id(), window_id.encode(env)),
                 (atoms::event(), event.encode(env)),
                 (atoms::value(), selections.encode(env)),
+                (atoms::revision(), revision.encode(env)),
+            ],
+        ),
+        #[cfg(feature = "components")]
+        NativeEvent::Viewport {
+            window_id,
+            event,
+            value,
+            revision,
+        } => encode_event_map(
+            env,
+            vec![
+                (atoms::type_atom(), atoms::viewport().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
+                (atoms::value(), value.encode(env)),
+                (atoms::revision(), revision.encode(env)),
+            ],
+        ),
+        #[cfg(feature = "components")]
+        NativeEvent::Geometry {
+            window_id,
+            event,
+            value,
+            revision,
+        } => encode_event_map(
+            env,
+            vec![
+                (atoms::type_atom(), atoms::geometry().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
+                (atoms::value(), value.encode(env)),
                 (atoms::revision(), revision.encode(env)),
             ],
         ),

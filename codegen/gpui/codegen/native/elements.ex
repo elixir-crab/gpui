@@ -45,7 +45,9 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:tab_size) => R.u64(),
           required(:hard_tabs) => boolean(),
           required(:transaction) => R.option(String.t()),
-          required(:selection_change) => R.option(String.t())
+          required(:selection_change) => R.option(String.t()),
+          required(:viewport_change) => R.option(String.t()),
+          required(:geometry_change) => R.option(String.t())
         }
 
   @type input_node :: %{
@@ -214,7 +216,9 @@ defmodule GPUI.Codegen.Native.Elements do
          tab_size: unwrap!(component_positive_integer_attr(term, Atoms.tab_size())).unwrap_or(2),
          hard_tabs: unwrap!(component_bool_attr(term, Atoms.hard_tabs())).unwrap_or(false),
          transaction: string_attr(term, Atoms.phx_transaction()),
-         selection_change: string_attr(term, Atoms.phx_selection_change())
+         selection_change: string_attr(term, Atoms.phx_selection_change()),
+         viewport_change: string_attr(term, Atoms.phx_viewport_change()),
+         geometry_change: string_attr(term, Atoms.phx_geometry_change())
        )
      )}
   end

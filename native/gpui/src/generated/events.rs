@@ -34,6 +34,8 @@ pub(crate) enum InputKind {
     Release,
     Transaction,
     Selection,
+    Viewport,
+    Geometry,
     KeyDown,
     KeyUp,
 }
@@ -51,6 +53,8 @@ impl InputKind {
             Self::Release => atoms::release(),
             Self::Transaction => atoms::transaction(),
             Self::Selection => atoms::selection(),
+            Self::Viewport => atoms::viewport(),
+            Self::Geometry => atoms::geometry(),
             Self::KeyDown => atoms::keydown(),
             Self::KeyUp => atoms::keyup(),
         }

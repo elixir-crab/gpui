@@ -475,7 +475,12 @@ defmodule GPUI.Schema do
       tag: :text_surface,
       kind: :text_surface,
       stateful: true,
-      events: [transaction: :"phx-transaction", selection: :"phx-selection-change"],
+      events: [
+        transaction: :"phx-transaction",
+        selection: :"phx-selection-change",
+        viewport: :"phx-viewport-change",
+        geometry: :"phx-geometry-change"
+      ],
       attrs: [
         id: :required_string,
         buffer: :text_buffer,

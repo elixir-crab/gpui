@@ -127,7 +127,9 @@ defmodule GPUI.MixProject do
           GPUI.Text.Edit,
           GPUI.Text.Selection,
           GPUI.Text.Transaction,
-          GPUI.Text.Snapshot
+          GPUI.Text.Snapshot,
+          GPUI.Text.Viewport,
+          GPUI.Text.CaretGeometry
         ],
         Displays: [GPUI.Display, GPUI.Display.Native],
         Elements: [

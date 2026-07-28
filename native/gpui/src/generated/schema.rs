@@ -385,6 +385,8 @@ pub(crate) struct TextSurfaceNode {
     pub(crate) hard_tabs: bool,
     pub(crate) transaction: Option<String>,
     pub(crate) selection_change: Option<String>,
+    pub(crate) viewport_change: Option<String>,
+    pub(crate) geometry_change: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_element_node<'a>(term: Term<'a>) -> NifResult<ElementNode> {
@@ -528,6 +530,8 @@ pub(crate) fn decode_text_surface_node<'a>(
             hard_tabs: component_bool_attr(term, atoms::hard_tabs())?.unwrap_or(false),
             transaction: string_attr(term, atoms::phx_transaction()),
             selection_change: string_attr(term, atoms::phx_selection_change()),
+            viewport_change: string_attr(term, atoms::phx_viewport_change()),
+            geometry_change: string_attr(term, atoms::phx_geometry_change()),
         }),
     )
 }

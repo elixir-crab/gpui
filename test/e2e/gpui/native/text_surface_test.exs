@@ -21,6 +21,8 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
           focus_request={assigns.primary_focus}
           phx-transaction="text-transaction"
           phx-selection-change="selection-changed"
+          phx-viewport-change="viewport-changed"
+          phx-geometry-change="geometry-changed"
         />
         <text_surface
           id="mirror-surface"
@@ -41,6 +43,16 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
 
     def handle_event("selection-changed", %{revision: revision}, assigns),
       do: {:noreply, %{assigns | revision: revision, selections: assigns.selections + 1}}
+
+    def handle_event("viewport-changed", %{revision: revision, value: viewport}, assigns) do
+      true = viewport.first_visible_row <= viewport.last_visible_row
+      {:noreply, %{assigns | revision: revision, viewports: assigns.viewports + 1}}
+    end
+
+    def handle_event("geometry-changed", %{revision: revision, value: geometry}, assigns) do
+      true = geometry.line >= 0 and geometry.utf16_offset >= 0
+      {:noreply, %{assigns | revision: revision, geometries: assigns.geometries + 1}}
+    end
   end
 
   defmodule SharedSurfaceApp do
@@ -58,6 +70,8 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
              revision: 0,
              transactions: 0,
              selections: 0,
+             viewports: 0,
+             geometries: 0,
              primary_focus: 1,
              mirror_focus: 0
            )
@@ -77,6 +91,13 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
     on_exit(fn -> Desktop.stop_process(runtime) end)
 
     window_id = Desktop.window_id!(title)
+
+    Desktop.eventually(fn ->
+      assert %{viewports: viewports, geometries: geometries} = assigns(runtime)
+      assert viewports > 0
+      assert geometries > 0
+    end)
+
     Desktop.click!(window_id, 120, 70)
     Desktop.key!(window_id, "End")
     Desktop.type!(window_id, "-native")

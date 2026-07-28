@@ -230,6 +230,8 @@ defmodule GPUI.Session do
               :range,
               :transaction,
               :selection,
+              :viewport,
+              :geometry,
               :keydown,
               :keyup
             ] do

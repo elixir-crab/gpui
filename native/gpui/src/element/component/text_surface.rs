@@ -22,6 +22,8 @@ impl std::fmt::Debug for TextSurfaceNode {
             .field("hard_tabs", &self.hard_tabs)
             .field("transaction", &self.transaction)
             .field("selection_change", &self.selection_change)
+            .field("viewport_change", &self.viewport_change)
+            .field("geometry_change", &self.geometry_change)
             .finish_non_exhaustive()
     }
 }
@@ -88,6 +90,10 @@ pub(crate) struct ComponentTextSurface {
     pub(crate) event_revision: std::sync::Arc<std::sync::atomic::AtomicU64>,
     pub(crate) transaction_event: std::sync::Arc<std::sync::Mutex<Option<String>>>,
     pub(crate) selection_event: std::sync::Arc<std::sync::Mutex<Option<String>>>,
+    pub(crate) viewport_event: Option<String>,
+    pub(crate) geometry_event: Option<String>,
+    pub(crate) last_viewport: Option<(usize, usize, i32, i32)>,
+    pub(crate) last_caret: Option<(u64, u64, i32, i32, i32, i32)>,
     pub(crate) focus_request: u64,
     pub(crate) text: String,
     pub(crate) selected_range: std::ops::Range<usize>,
@@ -205,6 +211,10 @@ pub(crate) fn render(
                 event_revision,
                 transaction_event,
                 selection_event,
+                viewport_event: node.viewport_change.clone(),
+                geometry_event: node.geometry_change.clone(),
+                last_viewport: None,
+                last_caret: None,
                 focus_request: 0,
                 text: snapshot.text,
                 selected_range,
@@ -223,6 +233,8 @@ pub(crate) fn render(
     if let Ok(mut event) = surface.selection_event.lock() {
         *event = node.selection_change.clone();
     }
+    surface.viewport_event = node.viewport_change.clone();
+    surface.geometry_event = node.geometry_change.clone();
 
     let native_text = surface.state.read(context.cx).value().to_string();
     if let Ok(revision) = node.buffer.revision() {
@@ -285,6 +297,8 @@ pub(crate) fn render(
         }
     }
 
+    emit_geometry_events(surface, &context.runtime, context.window_id, context.cx);
+
     surface.state.update(context.cx, |state, cx| {
         state.set_soft_wrap(node.soft_wrap, context.window, cx);
         state.set_show_whitespaces(node.show_whitespaces, context.window, cx);
@@ -325,6 +339,84 @@ pub(crate) fn render(
         .size_full()
         .child(apply_component_styles(input, node.style))
         .into_any_element()
+}
+
+#[cfg(feature = "components")]
+fn emit_geometry_events(
+    surface: &mut ComponentTextSurface,
+    runtime: &crate::SharedRuntime,
+    window_id: u64,
+    cx: &gpui::App,
+) {
+    use crate::{TextCaretGeometry, TextViewportGeometry};
+
+    let state = surface.state.read(cx);
+    let revision = surface
+        .event_revision
+        .load(std::sync::atomic::Ordering::Acquire);
+
+    if let (Some(event), Some(range)) = (&surface.viewport_event, state.visible_row_range()) {
+        let scroll = state.scroll_offset();
+        let key = (
+            range.start,
+            range.end,
+            f32::from(scroll.x).round() as i32,
+            f32::from(scroll.y).round() as i32,
+        );
+        if surface.last_viewport != Some(key) {
+            surface.last_viewport = Some(key);
+            let _ = push_event(
+                runtime,
+                NativeEvent::Viewport {
+                    window_id,
+                    event: event.clone(),
+                    value: TextViewportGeometry {
+                        first_visible_row: range.start as u64,
+                        last_visible_row: range.end.saturating_sub(1) as u64,
+                        scroll_x: f32::from(scroll.x) as f64,
+                        scroll_y: f32::from(scroll.y) as f64,
+                    },
+                    revision,
+                },
+            );
+        }
+    }
+
+    if let Some(event) = &surface.geometry_event {
+        let selected = state.selected_range();
+        let caret = selected.end;
+        if let Some(bounds) = state.range_to_bounds(&(caret..caret)) {
+            if let Ok(selection) = byte_range_to_selection(&surface.text, caret..caret) {
+                let key = (
+                    selection.head.line,
+                    selection.head.utf16_offset,
+                    f32::from(bounds.origin.x).round() as i32,
+                    f32::from(bounds.origin.y).round() as i32,
+                    f32::from(bounds.size.width).round() as i32,
+                    f32::from(bounds.size.height).round() as i32,
+                );
+                if surface.last_caret != Some(key) {
+                    surface.last_caret = Some(key);
+                    let _ = push_event(
+                        runtime,
+                        NativeEvent::Geometry {
+                            window_id,
+                            event: event.clone(),
+                            value: TextCaretGeometry {
+                                line: selection.head.line,
+                                utf16_offset: selection.head.utf16_offset,
+                                x: f32::from(bounds.origin.x) as f64,
+                                y: f32::from(bounds.origin.y) as f64,
+                                width: f32::from(bounds.size.width) as f64,
+                                height: f32::from(bounds.size.height) as f64,
+                            },
+                            revision,
+                        },
+                    );
+                }
+            }
+        }
+    }
 }
 
 #[cfg(feature = "components")]

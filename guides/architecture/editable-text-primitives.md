@@ -115,6 +115,13 @@ menus, or status bars. External buffer transactions, undo, and redo are
 reconciled into a mounted surface from the buffer revision without echoing them
 as local input.
 
+The first geometry contract emits revision-tagged, deduplicated viewport and
+primary-caret facts through optional `phx-viewport-change` and
+`phx-geometry-change` events. `GPUI.Text.Viewport` reports visible visual rows
+and native scroll offsets; `GPUI.Text.CaretGeometry` reports zero-based UTF-16
+logical position plus window-relative native pixel bounds. Geometry is emitted
+only after layout exists and only when its bounded value changes.
+
 The feature demonstration includes application-owned external edit, undo, and
 redo controls so reconciliation can be exercised without treating persistence
 or document commands as renderer policy.

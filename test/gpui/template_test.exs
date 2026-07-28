@@ -607,6 +607,8 @@ defmodule GPUI.TemplateTest do
              type: :text_surface,
              attrs: %{
                :"phx-transaction" => "changed",
+               :"phx-viewport-change" => "viewport",
+               :"phx-geometry-change" => "geometry",
                buffer: ref,
                id: "document",
                focus_request: 2,
@@ -620,6 +622,8 @@ defmodule GPUI.TemplateTest do
                focus_request={2}
                tab_size={4}
                phx-transaction="changed"
+               phx-viewport-change="viewport"
+               phx-geometry-change="geometry"
              />
              """
              |> GPUI.Element.to_payload()

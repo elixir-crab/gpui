@@ -25,6 +25,8 @@ mod text_buffer;
 #[cfg(any(feature = "components", feature = "real-gpui"))]
 use event::EventValue;
 use event::{decode_event_value, encode_native_event, push_event, InputKind, NativeEvent};
+#[cfg(feature = "components")]
+use event::{TextCaretGeometry, TextViewportGeometry};
 #[cfg(feature = "real-gpui")]
 use input::{bind_input_keys, NativeTextInput};
 #[cfg(feature = "real-gpui")]

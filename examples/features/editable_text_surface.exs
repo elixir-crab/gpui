@@ -25,10 +25,16 @@ defmodule Features.EditableTextSurface.View do
           tab_size={2}
           phx-transaction="text-transaction"
           phx-selection-change="selection-changed"
+          phx-viewport-change="viewport-changed"
+          phx-geometry-change="geometry-changed"
         />
       </div>
       <div class="flex items-center justify-between px-4 py-2 bg-slate-800 border-t border-slate-700">
-        <text class="text-xs text-slate-400">{assigns.status}</text>
+        <div class="flex items-center gap-3">
+          <text class="text-xs text-slate-400">{assigns.visible}</text>
+          <text class="text-xs text-slate-400">{assigns.caret}</text>
+          <text class="text-xs text-slate-400">{assigns.status}</text>
+        </div>
         <div class="flex items-center gap-2">
           <button phx-click="external-edit" class="px-3 py-1 bg-slate-700 rounded">External edit</button>
           <button phx-click="undo" class="px-3 py-1 bg-slate-700 rounded">Undo</button>
@@ -46,6 +52,18 @@ defmodule Features.EditableTextSurface.View do
 
   def handle_event("selection-changed", %{value: selections, revision: revision}, assigns),
     do: {:noreply, %{assigns | revision: revision, status: "#{length(selections)} selection(s)"}}
+
+  def handle_event("viewport-changed", %{value: viewport}, assigns) do
+    viewport = GPUI.Text.Viewport.from_event(viewport)
+    visible = "rows #{viewport.first_visible_row + 1}–#{viewport.last_visible_row + 1}"
+    {:noreply, %{assigns | visible: visible}}
+  end
+
+  def handle_event("geometry-changed", %{value: caret}, assigns) do
+    caret = GPUI.Text.CaretGeometry.from_event(caret)
+    label = "Ln #{caret.line + 1}, Col #{caret.utf16_offset + 1}"
+    {:noreply, %{assigns | caret: label}}
+  end
 
   def handle_event("focus-editor", _event, assigns),
     do: {:noreply, %{assigns | focus_request: assigns.focus_request + 1}}
@@ -112,7 +130,14 @@ defmodule Features.EditableTextSurface.App do
         "# Neutral editable text\n\nThis surface owns no file, language, gutter, or IDE policy.\nEdit me with native keyboard and IME input.\n"
       )
 
-    assigns = %{buffer: buffer, revision: 0, focus_request: 1, status: "Ready"}
+    assigns = %{
+      buffer: buffer,
+      revision: 0,
+      focus_request: 1,
+      visible: "viewport pending",
+      caret: "geometry pending",
+      status: "Ready"
+    }
 
     {:ok,
      [
