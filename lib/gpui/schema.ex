@@ -472,6 +472,22 @@ defmodule GPUI.Schema do
     %Component{tag: :item, kind: :container, events: [click: :"phx-click"]},
     %Component{tag: :icon, kind: :text},
     %Component{
+      tag: :text_surface,
+      kind: :text_surface,
+      stateful: true,
+      events: [transaction: :"phx-transaction", selection: :"phx-selection-change"],
+      attrs: [
+        id: :required_string,
+        buffer: :text_buffer,
+        focus_request: {:default, :non_negative_integer, 0},
+        disabled: :boolean,
+        soft_wrap: :boolean,
+        show_whitespaces: :boolean,
+        tab_size: {:default, :positive_integer, 2},
+        hard_tabs: :boolean
+      ]
+    },
+    %Component{
       tag: :input,
       kind: :input,
       events: [change: :"phx-change", keydown: :"phx-keydown", keyup: :"phx-keyup"],
@@ -932,6 +948,10 @@ defmodule GPUI.Schema do
 
   defp validate_attr!(_tag, _name, :resource, value) when is_map(value), do: :ok
 
+  defp validate_attr!(_tag, _name, :text_buffer, %{__struct__: GPUI.Text.Buffer, ref: ref})
+       when is_reference(ref),
+       do: :ok
+
   defp validate_attr!(tag, name, {:enum, values}, value) do
     if value in values,
       do: :ok,
@@ -954,6 +974,7 @@ defmodule GPUI.Schema do
     do: "an options list"
 
   defp expected_attr_type(:resource), do: "a resource map"
+  defp expected_attr_type(:text_buffer), do: "a GPUI.Text.Buffer"
 
   defp invalid_attr!(tag, name, expected, value) do
     raise ArgumentError,

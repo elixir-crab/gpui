@@ -64,6 +64,7 @@ native prerequisites, supervision, controlled components, and event handling.
 - HEEx-style templates with aliases, named slots, and schema-backed styling.
 - Controlled native form controls, progress, display-side file/clipboard actions, overlays, source-backed lists/trees/data tables, monospaced code/diff viewing, and platform-aware window commands.
 - Persistent native Rope text buffers with explicit UTF-16 coordinates, revisioned atomic edits, selections, and undo/redo primitives.
+- A low-level `<text_surface>` renderer primitive that attaches native input and IME handling directly to a persistent text buffer and emits revisioned transactions and plural selection updates.
 - Common image decoding, validated rasters, and reusable local or remote resources.
 - Local native and remote TCP/SSL displays.
 - Public deterministic ExUnit helpers that do not require a native library or display.

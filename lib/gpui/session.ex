@@ -228,6 +228,8 @@ defmodule GPUI.Session do
               :search,
               :submit,
               :range,
+              :transaction,
+              :selection,
               :keydown,
               :keyup
             ] do

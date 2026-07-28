@@ -11,6 +11,7 @@ defmodule GPUI.Codegen.Native.SchemaTypeMacros do
       [
         viewport: [quote(do: R.path(:ViewportNode))],
         div: [quote(do: R.path(:ContainerNode))],
+        text_surface: [quote(do: R.path(:TextSurfaceNode))],
         input: [quote(do: R.path(:InputNode))]
       ] ++
         (components

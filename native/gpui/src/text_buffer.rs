@@ -1,10 +1,20 @@
 use ropey::{LineType, Rope};
 use rustler::NifMap;
 use std::collections::{HashMap, VecDeque};
+#[cfg(feature = "components")]
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 
 const MAX_HISTORY: usize = 1_000;
 const MAX_TRANSACTION_IDS: usize = 4_096;
+#[cfg(feature = "components")]
+static NEXT_NATIVE_TRANSACTION_ID: AtomicU64 = AtomicU64::new(1);
+
+#[cfg(feature = "components")]
+pub(crate) fn next_native_transaction_id(surface_id: &str) -> String {
+    let sequence = NEXT_NATIVE_TRANSACTION_ID.fetch_add(1, Ordering::Relaxed);
+    format!("native-{surface_id}-{sequence}")
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, NifMap)]
 pub(crate) struct TextPosition {
@@ -98,6 +108,8 @@ pub(crate) enum TextBufferError {
     TransactionConflict,
     NothingToUndo,
     NothingToRedo,
+    #[cfg(feature = "components")]
+    NoChange,
     LockFailed,
 }
 
@@ -121,6 +133,56 @@ impl TextBufferResource {
                 transaction_order: VecDeque::new(),
             }),
         })
+    }
+
+    #[cfg(feature = "components")]
+    pub(crate) fn revision(&self) -> Result<u64, TextBufferError> {
+        self.state
+            .lock()
+            .map(|state| state.revision)
+            .map_err(|_| TextBufferError::LockFailed)
+    }
+
+    #[cfg(feature = "components")]
+    pub(crate) fn replace_from_surface(
+        &self,
+        base_revision: u64,
+        transaction_id: String,
+        text: String,
+        selection: TextSelection,
+    ) -> Result<(TextTransaction, u64), TextBufferError> {
+        let mut state = self.state.lock().map_err(|_| TextBufferError::LockFailed)?;
+        require_revision(&state, base_revision)?;
+        let selections = vec![selection];
+        let next_text = Rope::from(text.clone());
+        validate_selections(&next_text, &selections)?;
+        let edit = minimal_replacement_edit(&state.text.to_string(), &text);
+        let transaction = TextTransaction {
+            id: transaction_id,
+            base_revision,
+            origin: "local".into(),
+            edits: edit.into_iter().collect(),
+            selections: selections.clone(),
+        };
+        if transaction.edits.is_empty() && state.selections == selections {
+            return Err(TextBufferError::NoChange);
+        }
+        let entry = HistoryEntry {
+            before_text: state.text.clone(),
+            before_selections: state.selections.clone(),
+            after_text: next_text.clone(),
+            after_selections: selections.clone(),
+        };
+        state.text = next_text;
+        state.selections = selections;
+        state.revision = state.revision.saturating_add(1);
+        state.undo.push_back(entry);
+        if state.undo.len() > MAX_HISTORY {
+            state.undo.pop_front();
+        }
+        state.redo.clear();
+        let revision = state.revision;
+        Ok((transaction, revision))
     }
 
     pub(crate) fn snapshot(&self) -> Result<TextSnapshot, TextBufferError> {
@@ -308,6 +370,85 @@ fn position_to_byte(text: &Rope, position: &TextPosition) -> Result<usize, TextB
     }
 }
 
+#[cfg(any(test, feature = "components"))]
+fn minimal_replacement_edit(before: &str, after: &str) -> Option<TextEdit> {
+    if before == after {
+        return None;
+    }
+
+    let prefix = before
+        .char_indices()
+        .zip(after.char_indices())
+        .take_while(|((_, left), (_, right))| left == right)
+        .map(|((offset, character), _)| offset + character.len_utf8())
+        .last()
+        .unwrap_or(0);
+    let before_tail = &before[prefix..];
+    let after_tail = &after[prefix..];
+    let suffix = before_tail
+        .chars()
+        .rev()
+        .zip(after_tail.chars().rev())
+        .take_while(|(left, right)| left == right)
+        .map(|(character, _)| character.len_utf8())
+        .sum::<usize>();
+    let before_end = before.len() - suffix;
+    let after_end = after.len() - suffix;
+    let rope = Rope::from(before);
+
+    Some(TextEdit {
+        range: TextRange {
+            start: byte_to_position(&rope, prefix),
+            end: byte_to_position(&rope, before_end),
+        },
+        text: after[prefix..after_end].to_string(),
+    })
+}
+
+#[cfg(any(test, feature = "components"))]
+fn byte_to_position(text: &Rope, byte_offset: usize) -> TextPosition {
+    let byte_offset = byte_offset.min(text.len());
+    let line = text.byte_to_line_idx(byte_offset, LineType::LF);
+    let line_start = text.line_to_byte_idx(line, LineType::LF);
+    let utf16_offset = text
+        .slice(line_start..byte_offset)
+        .chars()
+        .map(char::len_utf16)
+        .sum::<usize>();
+    TextPosition {
+        line: line as u64,
+        utf16_offset: utf16_offset as u64,
+    }
+}
+
+#[cfg(any(test, feature = "components"))]
+pub(crate) fn selection_to_byte_range(
+    text: &str,
+    selection: &TextSelection,
+) -> Result<std::ops::Range<usize>, TextBufferError> {
+    let rope = Rope::from(text);
+    let anchor = position_to_byte(&rope, &selection.anchor)?;
+    let head = position_to_byte(&rope, &selection.head)?;
+    Ok(anchor.min(head)..anchor.max(head))
+}
+
+#[cfg(any(test, feature = "components"))]
+pub(crate) fn byte_range_to_selection(
+    text: &str,
+    range: std::ops::Range<usize>,
+) -> Result<TextSelection, TextBufferError> {
+    let rope = Rope::from(text);
+    if range.start > range.end || range.end > rope.len() {
+        return Err(TextBufferError::InvalidSelection);
+    }
+    Ok(TextSelection {
+        id: "primary".into(),
+        anchor: byte_to_position(&rope, range.start),
+        head: byte_to_position(&rope, range.end),
+        primary: true,
+    })
+}
+
 fn require_revision(state: &TextBufferState, revision: u64) -> Result<(), TextBufferError> {
     if revision == state.revision {
         Ok(())
@@ -370,6 +511,27 @@ mod tests {
             }],
             selections: selection(position(0, 2)),
         }
+    }
+
+    #[test]
+    fn minimal_native_edits_preserve_unicode_boundaries() {
+        let edit = minimal_replacement_edit("a🎉b", "a中🎉b").unwrap();
+        assert_eq!(edit.range.start, position(0, 1));
+        assert_eq!(edit.range.end, position(0, 1));
+        assert_eq!(edit.text, "中");
+
+        let edit = minimal_replacement_edit("a🎉b", "ab").unwrap();
+        assert_eq!(edit.range.start, position(0, 1));
+        assert_eq!(edit.range.end, position(0, 3));
+        assert_eq!(edit.text, "");
+    }
+
+    #[test]
+    fn native_selection_ranges_use_utf16_coordinates() {
+        let selection = byte_range_to_selection("a🎉中", 1..5).unwrap();
+        assert_eq!(selection.anchor, position(0, 1));
+        assert_eq!(selection.head, position(0, 3));
+        assert_eq!(selection_to_byte_range("a🎉中", &selection).unwrap(), 1..5);
     }
 
     #[test]

@@ -32,6 +32,8 @@ pub(crate) enum InputKind {
     Sort,
     Toggle,
     Release,
+    Transaction,
+    Selection,
     KeyDown,
     KeyUp,
 }
@@ -47,6 +49,8 @@ impl InputKind {
             Self::Sort => atoms::sort(),
             Self::Toggle => atoms::toggle(),
             Self::Release => atoms::release(),
+            Self::Transaction => atoms::transaction(),
+            Self::Selection => atoms::selection(),
             Self::KeyDown => atoms::keydown(),
             Self::KeyUp => atoms::keyup(),
         }

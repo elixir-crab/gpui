@@ -99,6 +99,14 @@ analysis architecture.
 
 ## Feature examples
 
+`features/editable_text_surface.exs` demonstrates composing a gutter, neutral
+editable surface, focus control, and application-owned status state around one
+persistent native text buffer:
+
+```bash
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/features/run_editable_text_surface.exs
+```
+
 `features/resource_ref_image.exs` demonstrates installing a raster once and
 rendering a lightweight reusable resource reference:
 

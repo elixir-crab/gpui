@@ -44,6 +44,7 @@ defmodule GPUI.SchemaTest do
              :list,
              :item,
              :icon,
+             :text_surface,
              :input,
              :img,
              :text
@@ -56,6 +57,8 @@ defmodule GPUI.SchemaTest do
     assert :"phx-range" in GPUI.Schema.events()
     assert :"phx-toggle" in GPUI.Schema.events()
     assert :"phx-copy" in GPUI.Schema.events()
+    assert :"phx-transaction" in GPUI.Schema.events()
+    assert :"phx-selection-change" in GPUI.Schema.events()
     assert :ui_progress in GPUI.Schema.identified_tags()
     assert :ui_file_picker in GPUI.Schema.identified_tags()
     assert :ui_copy_button in GPUI.Schema.identified_tags()
@@ -70,10 +73,11 @@ defmodule GPUI.SchemaTest do
     assert :ui_tree_item in GPUI.Schema.identified_tags()
     assert :ui_code_viewer in GPUI.Schema.identified_tags()
     assert :ui_code_line in GPUI.Schema.identified_tags()
+    assert :text_surface in GPUI.Schema.identified_tags()
 
     assert GPUI.Schema.component!(:ui_input).required_events == [:"phx-change"]
     assert GPUI.Schema.component!(:ui_slider).required_events == [:"phx-change"]
-    assert GPUI.Schema.component!(:ui_button).required_events == []
+    assert GPUI.Schema.component!(:text_surface).required_events == []
 
     assert Enum.map(GPUI.Schema.stateful_components(), & &1.kind) == [
              :popover_component,
@@ -86,7 +90,8 @@ defmodule GPUI.SchemaTest do
              :data_table_component,
              :tree_component,
              :code_viewer_component,
-             :slider_component
+             :slider_component,
+             :text_surface
            ]
 
     assert :raster in GPUI.Schema.resources()

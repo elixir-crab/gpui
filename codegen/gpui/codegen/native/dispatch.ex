@@ -102,6 +102,7 @@ defmodule GPUI.Codegen.Native.DispatchDefinitions do
 
   defp primitive_decoder(:viewport), do: :decode_viewport_node
   defp primitive_decoder(:container), do: :decode_container_node
+  defp primitive_decoder(:text_surface), do: :decode_text_surface_node
   defp primitive_decoder(:input), do: :decode_input_node
   defp primitive_decoder(:image), do: :decode_image_node
   defp primitive_decoder(:text), do: :decode_text_node

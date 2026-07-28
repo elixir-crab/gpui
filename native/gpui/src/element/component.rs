@@ -9,6 +9,7 @@ pub(crate) mod radio;
 pub(crate) mod slider;
 pub(crate) mod switch;
 pub(crate) mod tabs;
+pub(crate) mod text_surface;
 pub(crate) mod tree;
 pub(crate) mod uniform_collection;
 pub(crate) mod virtual_list;

@@ -1,3 +1,5 @@
+#[cfg(feature = "components")]
+use crate::TextTransaction;
 use crate::{atoms, SharedRuntime};
 use rustler::{Atom, Encoder, Env, NifResult, Term};
 
@@ -21,6 +23,20 @@ pub(crate) enum NativeEvent {
         window_id: u64,
         event: String,
         value: Option<EventValue>,
+    },
+    #[cfg(feature = "components")]
+    Transaction {
+        window_id: u64,
+        event: String,
+        transaction: TextTransaction,
+        revision: u64,
+    },
+    #[cfg(feature = "components")]
+    Selection {
+        window_id: u64,
+        event: String,
+        selections: Vec<crate::TextSelection>,
+        revision: u64,
     },
     WindowClosed {
         window_id: u64,
@@ -92,6 +108,38 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
 
             encode_event_map(env, entries)
         }
+        #[cfg(feature = "components")]
+        NativeEvent::Transaction {
+            window_id,
+            event,
+            transaction,
+            revision,
+        } => encode_event_map(
+            env,
+            vec![
+                (atoms::type_atom(), atoms::transaction().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
+                (atoms::value(), transaction.encode(env)),
+                (atoms::revision(), revision.encode(env)),
+            ],
+        ),
+        #[cfg(feature = "components")]
+        NativeEvent::Selection {
+            window_id,
+            event,
+            selections,
+            revision,
+        } => encode_event_map(
+            env,
+            vec![
+                (atoms::type_atom(), atoms::selection().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
+                (atoms::value(), selections.encode(env)),
+                (atoms::revision(), revision.encode(env)),
+            ],
+        ),
         NativeEvent::WindowClosed { window_id } => encode_event_map(
             env,
             vec![

@@ -65,6 +65,8 @@ defmodule GPUI.Codegen.Native.RegistryDefinitions do
     end
   end
 
+  defp registry_method(%{kind: :text_surface}), do: :text_surface
+
   defp registry_method(component) do
     component.kind
     |> Atom.to_string()

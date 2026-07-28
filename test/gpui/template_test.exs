@@ -600,6 +600,40 @@ defmodule GPUI.TemplateTest do
     end
   end
 
+  test "text surface validates and serializes its native buffer reference" do
+    {:ok, buffer} = GPUI.Text.Buffer.new("hello")
+
+    assert %{
+             type: :text_surface,
+             attrs: %{
+               :"phx-transaction" => "changed",
+               buffer: ref,
+               id: "document",
+               focus_request: 2,
+               tab_size: 4
+             }
+           } =
+             ~GPUI"""
+             <text_surface
+               id="document"
+               buffer={buffer}
+               focus_request={2}
+               tab_size={4}
+               phx-transaction="changed"
+             />
+             """
+             |> GPUI.Element.to_payload()
+
+    assert is_reference(ref)
+
+    assert_raise ArgumentError, ~r/must be a GPUI.Text.Buffer/, fn ->
+      ~GPUI"""
+      <text_surface id="invalid" buffer="not-a-buffer" />
+      """
+      |> GPUI.Element.to_payload()
+    end
+  end
+
   test "serialized component trees reject duplicate stable ids" do
     tree =
       ~GPUI"""

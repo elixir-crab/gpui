@@ -3,6 +3,7 @@ use super::component::data_table::ComponentDataTable;
 use super::component::tree::ComponentTree;
 use super::component::virtual_list::ComponentVirtualList;
 use super::controlled::SharedBinding;
+use crate::element::component::text_surface::ComponentTextSurface;
 use crate::{gpui, push_event, EventValue, InputKind, NativeEvent, SharedRuntime};
 use gpui_component::{
     combobox::ComboboxState,

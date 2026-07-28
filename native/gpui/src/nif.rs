@@ -65,6 +65,8 @@ fn encode_text_buffer_error<'a>(env: Env<'a>, error: TextBufferError) -> NifResu
         TextBufferError::TransactionConflict => atoms::transaction_conflict().encode(env),
         TextBufferError::NothingToUndo => atoms::nothing_to_undo().encode(env),
         TextBufferError::NothingToRedo => atoms::nothing_to_redo().encode(env),
+        #[cfg(feature = "components")]
+        TextBufferError::NoChange => atoms::transaction_conflict().encode(env),
         TextBufferError::LockFailed => atoms::text_buffer_lock_failed().encode(env),
     };
     Ok((atoms::error(), reason).encode(env))

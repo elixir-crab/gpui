@@ -39,6 +39,7 @@ pub enum GeneratedComponentKind {
     TabsComponent,
     SliderComponent,
     Text,
+    TextSurface,
     Input,
     Image,
     Unknown,
@@ -370,6 +371,21 @@ pub(crate) struct TextNode {
 pub(crate) struct ViewportNode {
     pub(crate) children: Vec<ElementNode>,
 }
+#[derive(Clone)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct TextSurfaceNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) buffer: ResourceArc<TextBufferResource>,
+    pub(crate) focus_request: u64,
+    pub(crate) disabled: bool,
+    pub(crate) soft_wrap: bool,
+    pub(crate) show_whitespaces: bool,
+    pub(crate) tab_size: u64,
+    pub(crate) hard_tabs: bool,
+    pub(crate) transaction: Option<String>,
+    pub(crate) selection_change: Option<String>,
+}
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_element_node<'a>(term: Term<'a>) -> NifResult<ElementNode> {
     match term.decode::<String>() {
@@ -484,6 +500,36 @@ pub(crate) fn non_empty_string_attr<'a>(term: Term<'a>, attr: Atom) -> Option<St
         Some(value) => if value.is_empty() { None } else { Some(value) }
         None => None,
     }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_text_surface_node<'a>(
+    term: Term<'a>,
+    _tag: GeneratedElementTag,
+) -> NifResult<ElementNode> {
+    let attrs = term.map_get(atoms::attrs())?;
+    Ok(
+        ElementNode::TextSurface(TextSurfaceNode {
+            style: decode_style(term)?,
+            id: attrs.map_get(atoms::id())?.decode::<String>()?,
+            buffer: attrs
+                .map_get(atoms::buffer())?
+                .decode::<ResourceArc<TextBufferResource>>()?,
+            focus_request: component_non_negative_integer_attr(
+                    term,
+                    atoms::focus_request(),
+                )?
+                .unwrap_or(0),
+            disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+            soft_wrap: component_bool_attr(term, atoms::soft_wrap())?.unwrap_or(false),
+            show_whitespaces: component_bool_attr(term, atoms::show_whitespaces())?
+                .unwrap_or(false),
+            tab_size: component_positive_integer_attr(term, atoms::tab_size())?
+                .unwrap_or(2),
+            hard_tabs: component_bool_attr(term, atoms::hard_tabs())?.unwrap_or(false),
+            transaction: string_attr(term, atoms::phx_transaction()),
+            selection_change: string_attr(term, atoms::phx_selection_change()),
+        }),
+    )
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_input_node<'a>(
@@ -2622,6 +2668,7 @@ pub(crate) fn decode_generated_slider_component<'a>(
 pub(crate) enum ElementNode {
     Viewport(ViewportNode),
     Div(ContainerNode),
+    TextSurface(TextSurfaceNode),
     Input(InputNode),
     ButtonComponent(ButtonComponentNode),
     ProgressComponent(ProgressComponentNode),
@@ -2704,6 +2751,7 @@ pub enum GeneratedElementTag {
     List,
     Item,
     Icon,
+    TextSurface,
     Input,
     Img,
     Text,
@@ -2753,6 +2801,7 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "list" => GeneratedElementTag::List,
         "item" => GeneratedElementTag::Item,
         "icon" => GeneratedElementTag::Icon,
+        "text_surface" => GeneratedElementTag::TextSurface,
         "input" => GeneratedElementTag::Input,
         "img" => GeneratedElementTag::Img,
         "text" => GeneratedElementTag::Text,
@@ -2827,6 +2876,7 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::List => GeneratedComponentKind::Container,
         GeneratedElementTag::Item => GeneratedComponentKind::Container,
         GeneratedElementTag::Icon => GeneratedComponentKind::Text,
+        GeneratedElementTag::TextSurface => GeneratedComponentKind::TextSurface,
         GeneratedElementTag::Input => GeneratedComponentKind::Input,
         GeneratedElementTag::Img => GeneratedComponentKind::Image,
         GeneratedElementTag::Text => GeneratedComponentKind::Text,
@@ -2979,6 +3029,7 @@ pub(crate) fn decode_generated_element_node<'a>(
                 .map(|node| ElementNode::SliderComponent(node))
         }
         GeneratedComponentKind::Text => decode_text_node(term, tag),
+        GeneratedComponentKind::TextSurface => decode_text_surface_node(term, tag),
         GeneratedComponentKind::Input => decode_input_node(term, tag),
         GeneratedComponentKind::Image => decode_image_node(term, tag),
         GeneratedComponentKind::Unknown => Err(rustler::Error::BadArg),

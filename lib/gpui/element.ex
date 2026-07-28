@@ -36,9 +36,19 @@ defmodule GPUI.Element do
   def to_payload(value) when is_integer(value) or is_float(value) or is_atom(value), do: value
 
   defp payload(%__MODULE__{} = element) do
+    attrs =
+      if element.type == :text_surface do
+        element.attrs
+        |> Map.new()
+        |> GPUI.Schema.validate_component_assigns!(element.type)
+        |> Map.to_list()
+      else
+        element.attrs
+      end
+
     %{
       type: element.type,
-      attrs: element.attrs |> normalize_class_attr() |> attrs_to_payload(),
+      attrs: attrs |> normalize_class_attr() |> attrs_to_payload(),
       children: Enum.map(element.children, &payload/1)
     }
   end
@@ -106,6 +116,7 @@ defmodule GPUI.Element do
 
   defp attr_value_to_payload(%GPUI.Raster{} = raster), do: GPUI.Raster.to_payload(raster)
   defp attr_value_to_payload(%GPUI.ResourceRef{} = ref), do: GPUI.ResourceRef.to_payload(ref)
+  defp attr_value_to_payload(%GPUI.Text.Buffer{ref: ref}), do: ref
 
   defp attr_value_to_payload(value) when is_list(value) do
     Enum.map(value, fn

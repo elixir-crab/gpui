@@ -98,12 +98,22 @@ persistent native Rope resource with:
 
 It does not know about files, saving, languages, syntax highlighting, or IDEs.
 
-## Later renderer primitives
+## Renderer primitive
 
-A later renderer-level editable text surface will refer to a persistent buffer
-and expose generic transaction, selection, focus, and viewport events. It will
-not live under `GPUI.UI` and will not render line numbers, tabs, diagnostics,
-completion menus, or status bars.
+The low-level `<text_surface>` primitive refers directly to a persistent
+`GPUI.Text.Buffer`. It keeps immediate keyboard and IME changes native, updates
+the Rope before notifying Elixir, and emits revisioned transaction and plural
+selection events. A monotonically changing `focus_request` value requests focus
+without turning focus into application-owned boolean state.
+
+The primitive accepts generic input behavior such as soft wrapping, whitespace
+display, tab width, hard tabs, and disabled state. It deliberately does not live
+under `GPUI.UI` and does not render line numbers, tabs, diagnostics, completion
+menus, or status bars. External buffer transactions, undo, and redo are
+reconciled into a mounted surface from the buffer revision without echoing them
+as local input.
+
+## Later renderer primitives
 
 Independent projection inputs will eventually cover:
 

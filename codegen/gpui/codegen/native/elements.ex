@@ -34,6 +34,20 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:style) => R.path(:StyleAttrs)
         }
 
+  @type text_surface_node :: %{
+          required(:style) => R.path(:StyleAttrs),
+          required(:id) => String.t(),
+          required(:buffer) => R.resource(R.path(:TextBufferResource)),
+          required(:focus_request) => R.u64(),
+          required(:disabled) => boolean(),
+          required(:soft_wrap) => boolean(),
+          required(:show_whitespaces) => boolean(),
+          required(:tab_size) => R.u64(),
+          required(:hard_tabs) => boolean(),
+          required(:transaction) => R.option(String.t()),
+          required(:selection_change) => R.option(String.t())
+        }
+
   @type input_node :: %{
           required(:style) => R.path(:StyleAttrs),
           required(:value) => String.t(),
@@ -177,6 +191,34 @@ defmodule GPUI.Codegen.Native.Elements do
     end
   end
 
+  @spec decode_text_surface_node(term(), R.path(:GeneratedElementTag)) ::
+          R.nif_result(R.path(:ElementNode))
+  defrust decode_text_surface_node(term, _tag) do
+    attrs = unwrap!(term.map_get(Atoms.attrs()))
+
+    {:ok,
+     enum_variant(
+       ElementNode,
+       :text_surface,
+       struct_literal(TextSurfaceNode,
+         style: unwrap!(decode_style(term)),
+         id: decode_as!(attrs.map_get(Atoms.id()), String.t()),
+         buffer:
+           decode_as!(attrs.map_get(Atoms.buffer()), R.resource(R.path(:TextBufferResource))),
+         focus_request:
+           unwrap!(component_non_negative_integer_attr(term, Atoms.focus_request())).unwrap_or(0),
+         disabled: unwrap!(component_bool_attr(term, Atoms.disabled())).unwrap_or(false),
+         soft_wrap: unwrap!(component_bool_attr(term, Atoms.soft_wrap())).unwrap_or(false),
+         show_whitespaces:
+           unwrap!(component_bool_attr(term, Atoms.show_whitespaces())).unwrap_or(false),
+         tab_size: unwrap!(component_positive_integer_attr(term, Atoms.tab_size())).unwrap_or(2),
+         hard_tabs: unwrap!(component_bool_attr(term, Atoms.hard_tabs())).unwrap_or(false),
+         transaction: string_attr(term, Atoms.phx_transaction()),
+         selection_change: string_attr(term, Atoms.phx_selection_change())
+       )
+     )}
+  end
+
   @spec decode_input_node(term(), R.path(:GeneratedElementTag)) ::
           R.nif_result(R.path(:ElementNode))
   defrust decode_input_node(term, _tag) do
@@ -244,7 +286,15 @@ defmodule GPUI.Codegen.Native.Elements do
         attrs: [A.attr(:cfg, feature: "real-gpui")],
         vis: :crate,
         field_vis: :crate
-      )
+      ) ++
+        MetaAST.struct_type_items(
+          __MODULE__,
+          [:text_surface_node],
+          derive: [:Clone],
+          attrs: [A.attr(:cfg, feature: "real-gpui")],
+          vis: :crate,
+          field_vis: :crate
+        )
 
     structs ++ asts()
   end

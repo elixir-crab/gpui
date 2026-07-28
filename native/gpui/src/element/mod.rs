@@ -57,6 +57,9 @@ impl ElementNode {
                 context.window_id,
             ),
             Self::Input(input) => render_input_primitive(element_id, input, context),
+            Self::TextSurface(surface) => {
+                render_text_surface_primitive(element_id, surface, context)
+            }
             Self::Div(node) => render_container_primitive(
                 element_id,
                 node.tag,
@@ -177,6 +180,15 @@ pub(crate) fn apply_container_semantics(element: gpui::Div, tag: GeneratedElemen
         GeneratedElementTag::Span => element,
         _ => element,
     }
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn render_text_surface_primitive(
+    element_id: usize,
+    surface: TextSurfaceNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    component::text_surface::render(element_id, surface, context)
 }
 
 #[cfg(feature = "real-gpui")]

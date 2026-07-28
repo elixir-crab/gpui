@@ -13,6 +13,7 @@ enum ComponentKind {
     Tree,
     CodeViewer,
     Slider,
+    TextSurface,
 }
 enum StatefulComponent {
     Popover(ComponentPopover),
@@ -26,6 +27,7 @@ enum StatefulComponent {
     Tree(ComponentTree),
     CodeViewer(ComponentCodeViewer),
     Slider(ComponentSlider),
+    TextSurface(ComponentTextSurface),
 }
 impl ComponentRegistry {
     pub(crate) fn popover_mut(&mut self, id: &str) -> Option<&mut ComponentPopover> {
@@ -218,5 +220,25 @@ impl ComponentRegistry {
         let key = ComponentKey::new(ComponentKind::Slider, id);
         self.active.insert(key.clone());
         self.entries.insert(key, StatefulComponent::Slider(component)).is_none()
+    }
+    pub(crate) fn text_surface_mut(
+        &mut self,
+        id: &str,
+    ) -> Option<&mut ComponentTextSurface> {
+        let key = ComponentKey::new(ComponentKind::TextSurface, id);
+        self.active.insert(key.clone());
+        match self.entries.get_mut(&key) {
+            Some(StatefulComponent::TextSurface(component)) => Some(component),
+            _ => None,
+        }
+    }
+    pub(crate) fn insert_text_surface(
+        &mut self,
+        id: &str,
+        component: ComponentTextSurface,
+    ) -> bool {
+        let key = ComponentKey::new(ComponentKind::TextSurface, id);
+        self.active.insert(key.clone());
+        self.entries.insert(key, StatefulComponent::TextSurface(component)).is_none()
     }
 }
