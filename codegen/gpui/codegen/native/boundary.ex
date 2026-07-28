@@ -9,6 +9,11 @@ defmodule GPUI.Codegen.Native.Boundary do
   def nifs do
     [
       start_runtime: [schedule: :dirty_io],
+      text_buffer_new: [schedule: :dirty_cpu],
+      text_buffer_snapshot: [schedule: :dirty_cpu],
+      text_buffer_transact: [schedule: :dirty_cpu],
+      text_buffer_undo: [schedule: :dirty_cpu],
+      text_buffer_redo: [schedule: :dirty_cpu],
       decode_image: [schedule: :dirty_cpu],
       open_window: [schedule: :dirty_io, real_only: true],
       update_window: [schedule: :dirty_io, real_only: true],

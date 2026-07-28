@@ -21,6 +21,7 @@ mod input;
 #[cfg(feature = "real-gpui")]
 mod resource;
 mod runtime;
+mod text_buffer;
 #[cfg(any(feature = "components", feature = "real-gpui"))]
 use event::EventValue;
 use event::{decode_event_value, encode_native_event, push_event, InputKind, NativeEvent};
@@ -29,6 +30,7 @@ use input::{bind_input_keys, NativeTextInput};
 #[cfg(feature = "real-gpui")]
 use resource::{decode_raster_resource, decode_resource_ref, ImageData, RasterData};
 use runtime::{RuntimeResource, SharedRuntime};
+use text_buffer::{TextBufferError, TextBufferResource, TextSelection, TextTransaction};
 
 include!("generated/atoms.rs");
 include!("generated/schema.rs");

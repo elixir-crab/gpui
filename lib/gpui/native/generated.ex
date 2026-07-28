@@ -6,6 +6,26 @@ defmodule GPUI.Native.Generated do
         :erlang.nif_error(:nif_not_loaded)
       end
 
+      def text_buffer_new(_text, _revision, _selections) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def text_buffer_snapshot(_buffer) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def text_buffer_transact(_buffer, _transaction) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def text_buffer_undo(_buffer, _base_revision) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def text_buffer_redo(_buffer, _base_revision) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
       def decode_image(_bytes) do
         :erlang.nif_error(:nif_not_loaded)
       end

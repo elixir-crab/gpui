@@ -93,6 +93,7 @@ defmodule GPUI.MixProject do
         "CHANGELOG.md",
         "guides/introduction/getting-started.md",
         "guides/architecture/sessions-and-displays.md",
+        "guides/architecture/editable-text-primitives.md",
         "guides/ui/components-and-styling.md",
         "guides/ui/commands-and-shortcuts.md",
         "guides/ui/overlays-and-menus.md",
@@ -118,6 +119,15 @@ defmodule GPUI.MixProject do
           GPUI.Runtime,
           GPUI.Runtime.Update,
           GPUI.View
+        ],
+        Text: [
+          GPUI.Text.Buffer,
+          GPUI.Text.Position,
+          GPUI.Text.Range,
+          GPUI.Text.Edit,
+          GPUI.Text.Selection,
+          GPUI.Text.Transaction,
+          GPUI.Text.Snapshot
         ],
         Displays: [GPUI.Display, GPUI.Display.Native],
         Elements: [

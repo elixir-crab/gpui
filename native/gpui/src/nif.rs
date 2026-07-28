@@ -1,5 +1,75 @@
 use crate::*;
 
+pub(crate) fn text_buffer_new_impl<'a>(
+    env: Env<'a>,
+    text: String,
+    revision: u64,
+    selections: Vec<TextSelection>,
+) -> NifResult<Term<'a>> {
+    match TextBufferResource::new(text, revision, selections) {
+        Ok(buffer) => Ok((atoms::ok(), ResourceArc::new(buffer)).encode(env)),
+        Err(error) => encode_text_buffer_error(env, error),
+    }
+}
+
+pub(crate) fn text_buffer_snapshot_impl<'a>(
+    env: Env<'a>,
+    buffer: ResourceArc<TextBufferResource>,
+) -> NifResult<Term<'a>> {
+    encode_text_buffer_result(env, buffer.snapshot())
+}
+
+pub(crate) fn text_buffer_transact_impl<'a>(
+    env: Env<'a>,
+    buffer: ResourceArc<TextBufferResource>,
+    transaction: TextTransaction,
+) -> NifResult<Term<'a>> {
+    encode_text_buffer_result(env, buffer.transact(transaction))
+}
+
+pub(crate) fn text_buffer_undo_impl<'a>(
+    env: Env<'a>,
+    buffer: ResourceArc<TextBufferResource>,
+    base_revision: u64,
+) -> NifResult<Term<'a>> {
+    encode_text_buffer_result(env, buffer.undo(base_revision))
+}
+
+pub(crate) fn text_buffer_redo_impl<'a>(
+    env: Env<'a>,
+    buffer: ResourceArc<TextBufferResource>,
+    base_revision: u64,
+) -> NifResult<Term<'a>> {
+    encode_text_buffer_result(env, buffer.redo(base_revision))
+}
+
+fn encode_text_buffer_result<'a, T: Encoder>(
+    env: Env<'a>,
+    result: Result<T, TextBufferError>,
+) -> NifResult<Term<'a>> {
+    match result {
+        Ok(value) => Ok((atoms::ok(), value).encode(env)),
+        Err(error) => encode_text_buffer_error(env, error),
+    }
+}
+
+fn encode_text_buffer_error<'a>(env: Env<'a>, error: TextBufferError) -> NifResult<Term<'a>> {
+    let reason = match error {
+        TextBufferError::InvalidPosition => atoms::invalid_position().encode(env),
+        TextBufferError::InvalidRange => atoms::invalid_range().encode(env),
+        TextBufferError::InvalidSelection => atoms::invalid_selection().encode(env),
+        TextBufferError::OverlappingEdits => atoms::overlapping_edits().encode(env),
+        TextBufferError::StaleRevision(current) => {
+            return Ok((atoms::error(), (atoms::stale_revision(), current)).encode(env));
+        }
+        TextBufferError::TransactionConflict => atoms::transaction_conflict().encode(env),
+        TextBufferError::NothingToUndo => atoms::nothing_to_undo().encode(env),
+        TextBufferError::NothingToRedo => atoms::nothing_to_redo().encode(env),
+        TextBufferError::LockFailed => atoms::text_buffer_lock_failed().encode(env),
+    };
+    Ok((atoms::error(), reason).encode(env))
+}
+
 pub(crate) fn decode_image_impl<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
     let (width, height, data) = match image_decode::decode(bytes.as_slice()) {
         Ok(decoded) => decoded,

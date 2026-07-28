@@ -25,6 +25,7 @@ gpui-component = { git = "https://github.com/longbridge/gpui-component", rev = "
 gpui-component-assets = { git = "https://github.com/longbridge/gpui-component", rev = "3c270ed2", optional = true }
 image = { version = "0.25.10", default-features = false, features = ["bmp", "gif", "ico", "jpeg", "png", "tiff", "webp"] }
 futures = { version = "0.3", optional = true }
+ropey = { version = "=2.0.0-beta.1", features = ["metric_lines_lf", "metric_utf16"] }
 unicode-segmentation = { version = "1.12", optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]

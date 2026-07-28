@@ -5,6 +5,46 @@ fn start_runtime<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
     start_runtime_impl(env)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
+fn text_buffer_new<'a>(
+    env: Env<'a>,
+    text: String,
+    revision: u64,
+    selections: Vec<TextSelection>,
+) -> NifResult<Term<'a>> {
+    text_buffer_new_impl(env, text, revision, selections)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn text_buffer_snapshot<'a>(
+    env: Env<'a>,
+    buffer: ResourceArc<TextBufferResource>,
+) -> NifResult<Term<'a>> {
+    text_buffer_snapshot_impl(env, buffer)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn text_buffer_transact<'a>(
+    env: Env<'a>,
+    buffer: ResourceArc<TextBufferResource>,
+    transaction: TextTransaction,
+) -> NifResult<Term<'a>> {
+    text_buffer_transact_impl(env, buffer, transaction)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn text_buffer_undo<'a>(
+    env: Env<'a>,
+    buffer: ResourceArc<TextBufferResource>,
+    base_revision: u64,
+) -> NifResult<Term<'a>> {
+    text_buffer_undo_impl(env, buffer, base_revision)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn text_buffer_redo<'a>(
+    env: Env<'a>,
+    buffer: ResourceArc<TextBufferResource>,
+    base_revision: u64,
+) -> NifResult<Term<'a>> {
+    text_buffer_redo_impl(env, buffer, base_revision)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
 fn decode_image<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
     decode_image_impl(env, bytes)
 }

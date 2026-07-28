@@ -2,6 +2,8 @@
 
 ## 0.1.1
 
+- Added generic persistent native Rope text buffers with explicit UTF-16 positions, revisioned atomic transactions, plural selections, idempotent delivery, stale-revision protection, and monotonic undo/redo, without introducing an opinionated editor component.
+
 - Added GPUI-native flex-basis, overflow clipping, whitespace, text alignment and ellipsis/truncation, and cursor utilities to the Tailwind-compatible style protocol.
 - Normalized Tailwind-compatible classes on programmatically constructed `GPUI.UI` component trees before serialization, matching template behavior, and fixed `mix gpui.dev --no-compile` native availability detection.
 

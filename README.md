@@ -63,6 +63,7 @@ native prerequisites, supervision, controlled components, and event handling.
 - A process-global native GPUI loop that safely owns multiple runtimes and windows.
 - HEEx-style templates with aliases, named slots, and schema-backed styling.
 - Controlled native form controls, progress, display-side file/clipboard actions, overlays, source-backed lists/trees/data tables, monospaced code/diff viewing, and platform-aware window commands.
+- Persistent native Rope text buffers with explicit UTF-16 coordinates, revisioned atomic edits, selections, and undo/redo primitives.
 - Common image decoding, validated rasters, and reusable local or remote resources.
 - Local native and remote TCP/SSL displays.
 - Public deterministic ExUnit helpers that do not require a native library or display.
@@ -73,6 +74,7 @@ native prerequisites, supervision, controlled components, and event handling.
 
 - [Getting started](guides/introduction/getting-started.md)
 - [Sessions, runtimes, and displays](guides/architecture/sessions-and-displays.md)
+- [Editable text primitives](guides/architecture/editable-text-primitives.md)
 - [Components and styling](guides/ui/components-and-styling.md)
 - [Commands and keyboard shortcuts](guides/ui/commands-and-shortcuts.md)
 - [Overlays and menus](guides/ui/overlays-and-menus.md)

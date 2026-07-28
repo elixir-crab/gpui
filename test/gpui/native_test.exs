@@ -50,6 +50,11 @@ defmodule GPUI.NativeTest do
     Code.ensure_loaded!(GPUI.Native)
 
     assert function_exported?(GPUI.Native, :decode_image, 1)
+    assert function_exported?(GPUI.Native, :text_buffer_new, 3)
+    assert function_exported?(GPUI.Native, :text_buffer_snapshot, 1)
+    assert function_exported?(GPUI.Native, :text_buffer_transact, 2)
+    assert function_exported?(GPUI.Native, :text_buffer_undo, 2)
+    assert function_exported?(GPUI.Native, :text_buffer_redo, 2)
     assert function_exported?(GPUI.Native, :open_window, 2)
     assert function_exported?(GPUI.Native, :update_window, 3)
     assert function_exported?(GPUI.Native, :close_window, 2)
