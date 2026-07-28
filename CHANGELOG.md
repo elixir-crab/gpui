@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Added native E2E coverage for two editable surfaces sharing one persistent buffer across local typing, external edits, undo, redo, and reconciliation without external-event echo.
 - Added the neutral `<text_surface>` renderer primitive, backed by `GPUI.Text.Buffer`, with native immediate input/IME behavior, focus-request tokens, external revision reconciliation, minimal local text transactions, plural selection events, and selection-only revisions that do not pollute document undo history.
 - Added generic persistent native Rope text buffers with explicit UTF-16 positions, revisioned atomic transactions, plural selections, idempotent delivery, stale-revision protection, and monotonic undo/redo, without introducing an opinionated editor component.
 

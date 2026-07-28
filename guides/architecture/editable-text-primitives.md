@@ -115,6 +115,10 @@ menus, or status bars. External buffer transactions, undo, and redo are
 reconciled into a mounted surface from the buffer revision without echoing them
 as local input.
 
+The feature demonstration includes application-owned external edit, undo, and
+redo controls so reconciliation can be exercised without treating persistence
+or document commands as renderer policy.
+
 ## Later renderer primitives
 
 Independent projection inputs will eventually cover:

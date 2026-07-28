@@ -29,7 +29,12 @@ defmodule Features.EditableTextSurface.View do
       </div>
       <div class="flex items-center justify-between px-4 py-2 bg-slate-800 border-t border-slate-700">
         <text class="text-xs text-slate-400">{assigns.status}</text>
-        <button phx-click="focus-editor" class="px-3 py-1 bg-blue-600 rounded">Focus</button>
+        <div class="flex items-center gap-2">
+          <button phx-click="external-edit" class="px-3 py-1 bg-slate-700 rounded">External edit</button>
+          <button phx-click="undo" class="px-3 py-1 bg-slate-700 rounded">Undo</button>
+          <button phx-click="redo" class="px-3 py-1 bg-slate-700 rounded">Redo</button>
+          <button phx-click="focus-editor" class="px-3 py-1 bg-blue-600 rounded">Focus</button>
+        </div>
       </div>
     </div>
     """
@@ -44,6 +49,57 @@ defmodule Features.EditableTextSurface.View do
 
   def handle_event("focus-editor", _event, assigns),
     do: {:noreply, %{assigns | focus_request: assigns.focus_request + 1}}
+
+  def handle_event("external-edit", _event, assigns) do
+    {:ok, snapshot} = GPUI.Text.Buffer.snapshot(assigns.buffer)
+    position = end_position(snapshot.text)
+
+    {:ok, %{revision: revision}} =
+      GPUI.Text.Buffer.transact(assigns.buffer, %GPUI.Text.Transaction{
+        id: "demo-external-#{System.unique_integer([:positive])}",
+        base_revision: snapshot.revision,
+        edits: [GPUI.Text.Edit.new(GPUI.Text.Range.new(position, position), "\nExternal edit")],
+        selections: [GPUI.Text.Selection.caret("primary", position, primary: true)]
+      })
+
+    {:noreply, %{assigns | revision: revision, status: "External edit applied"}}
+  end
+
+  def handle_event("undo", _event, assigns) do
+    {:ok, snapshot} = GPUI.Text.Buffer.snapshot(assigns.buffer)
+
+    case GPUI.Text.Buffer.undo(assigns.buffer, snapshot.revision) do
+      {:ok, updated} ->
+        {:noreply, %{assigns | revision: updated.revision, status: "Undo applied"}}
+
+      {:error, :nothing_to_undo} ->
+        {:noreply, %{assigns | status: "Nothing to undo"}}
+    end
+  end
+
+  def handle_event("redo", _event, assigns) do
+    {:ok, snapshot} = GPUI.Text.Buffer.snapshot(assigns.buffer)
+
+    case GPUI.Text.Buffer.redo(assigns.buffer, snapshot.revision) do
+      {:ok, updated} ->
+        {:noreply, %{assigns | revision: updated.revision, status: "Redo applied"}}
+
+      {:error, :nothing_to_redo} ->
+        {:noreply, %{assigns | status: "Nothing to redo"}}
+    end
+  end
+
+  defp end_position(text) do
+    lines = String.split(text, "\n", trim: false)
+    line = length(lines) - 1
+    content = List.last(lines)
+    GPUI.Text.Position.new(line, content |> :unicode.characters_to_binary() |> utf16_length())
+  end
+
+  defp utf16_length(text) do
+    utf16 = :unicode.characters_to_binary(text, :utf8, {:utf16, :little})
+    Kernel.div(byte_size(utf16), 2)
+  end
 end
 
 defmodule Features.EditableTextSurface.App do
