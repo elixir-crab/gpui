@@ -129,7 +129,8 @@ defmodule GPUI.MixProject do
           GPUI.Text.Transaction,
           GPUI.Text.Snapshot,
           GPUI.Text.Viewport,
-          GPUI.Text.CaretGeometry
+          GPUI.Text.CaretGeometry,
+          GPUI.Text.RangeGeometry
         ],
         Displays: [GPUI.Display, GPUI.Display.Native],
         Elements: [

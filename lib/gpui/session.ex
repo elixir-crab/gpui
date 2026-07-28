@@ -232,6 +232,7 @@ defmodule GPUI.Session do
               :selection,
               :viewport,
               :geometry,
+              :range_geometry,
               :keydown,
               :keyup
             ] do

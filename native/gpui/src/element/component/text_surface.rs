@@ -84,6 +84,9 @@ impl SelectionSync {
 }
 
 #[cfg(feature = "components")]
+type RangeGeometryKey = (u64, u64, u64, u64, i32, i32, i32, i32);
+
+#[cfg(feature = "components")]
 pub(crate) struct ComponentTextSurface {
     pub(crate) state: gpui::Entity<gpui_component::input::InputState>,
     pub(crate) revision: u64,
@@ -92,8 +95,10 @@ pub(crate) struct ComponentTextSurface {
     pub(crate) selection_event: std::sync::Arc<std::sync::Mutex<Option<String>>>,
     pub(crate) viewport_event: Option<String>,
     pub(crate) geometry_event: Option<String>,
+    pub(crate) range_geometry_event: Option<String>,
     pub(crate) last_viewport: Option<(usize, usize, i32, i32)>,
     pub(crate) last_caret: Option<(u64, u64, i32, i32, i32, i32)>,
+    pub(crate) last_range_geometry: Option<Vec<RangeGeometryKey>>,
     pub(crate) focus_request: u64,
     pub(crate) text: String,
     pub(crate) selected_range: std::ops::Range<usize>,
@@ -213,8 +218,10 @@ pub(crate) fn render(
                 selection_event,
                 viewport_event: node.viewport_change.clone(),
                 geometry_event: node.geometry_change.clone(),
+                range_geometry_event: node.range_geometry_change.clone(),
                 last_viewport: None,
                 last_caret: None,
+                last_range_geometry: None,
                 focus_request: 0,
                 text: snapshot.text,
                 selected_range,
@@ -235,6 +242,7 @@ pub(crate) fn render(
     }
     surface.viewport_event = node.viewport_change.clone();
     surface.geometry_event = node.geometry_change.clone();
+    surface.range_geometry_event = node.range_geometry_change.clone();
 
     let native_text = surface.state.read(context.cx).value().to_string();
     if let Ok(revision) = node.buffer.revision() {
@@ -297,7 +305,13 @@ pub(crate) fn render(
         }
     }
 
-    emit_geometry_events(surface, &context.runtime, context.window_id, context.cx);
+    emit_geometry_events(
+        surface,
+        &node.geometry_ranges,
+        &context.runtime,
+        context.window_id,
+        context.cx,
+    );
 
     surface.state.update(context.cx, |state, cx| {
         state.set_soft_wrap(node.soft_wrap, context.window, cx);
@@ -344,6 +358,7 @@ pub(crate) fn render(
 #[cfg(feature = "components")]
 fn emit_geometry_events(
     surface: &mut ComponentTextSurface,
+    requested_ranges: &[crate::TextRange],
     runtime: &crate::SharedRuntime,
     window_id: u64,
     cx: &gpui::App,
@@ -417,6 +432,49 @@ fn emit_geometry_events(
             }
         }
     }
+
+    if let Some(event) = &surface.range_geometry_event {
+        let mut key = Vec::new();
+        let mut geometries = Vec::new();
+        for range in requested_ranges.iter().take(64) {
+            let Ok(byte_range) = crate::text_buffer::range_to_byte_range(&surface.text, range)
+            else {
+                continue;
+            };
+            let Some(bounds) = state.range_to_bounds(&byte_range) else {
+                continue;
+            };
+            key.push((
+                range.start.line,
+                range.start.utf16_offset,
+                range.end.line,
+                range.end.utf16_offset,
+                f32::from(bounds.origin.x).round() as i32,
+                f32::from(bounds.origin.y).round() as i32,
+                f32::from(bounds.size.width).round() as i32,
+                f32::from(bounds.size.height).round() as i32,
+            ));
+            geometries.push(crate::TextRangeGeometry {
+                range: range.clone(),
+                x: f32::from(bounds.origin.x) as f64,
+                y: f32::from(bounds.origin.y) as f64,
+                width: f32::from(bounds.size.width) as f64,
+                height: f32::from(bounds.size.height) as f64,
+            });
+        }
+        if surface.last_range_geometry.as_ref() != Some(&key) {
+            surface.last_range_geometry = Some(key);
+            let _ = push_event(
+                runtime,
+                NativeEvent::RangeGeometry {
+                    window_id,
+                    event: event.clone(),
+                    value: geometries,
+                    revision,
+                },
+            );
+        }
+    }
 }
 
 #[cfg(feature = "components")]
@@ -429,12 +487,18 @@ fn error_placeholder(message: &str) -> gpui::AnyElement {
 }
 
 #[cfg(not(feature = "components"))]
+fn acknowledge_geometry_contract(node: &TextSurfaceNode) {
+    let _ = (&node.geometry_ranges, &node.range_geometry_change);
+}
+
+#[cfg(not(feature = "components"))]
 pub(crate) fn render(
     _element_id: usize,
     node: TextSurfaceNode,
     _context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     use gpui::{IntoElement, ParentElement};
+    acknowledge_geometry_contract(&node);
     let text = node
         .buffer
         .snapshot()

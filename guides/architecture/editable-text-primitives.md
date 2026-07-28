@@ -122,6 +122,13 @@ and native scroll offsets; `GPUI.Text.CaretGeometry` reports zero-based UTF-16
 logical position plus window-relative native pixel bounds. Geometry is emitted
 only after layout exists and only when its bounded value changes.
 
+The first bounded request contract accepts up to 64 declarative
+`geometry_ranges` and emits currently laid-out bounds through
+`phx-range-geometry-change`. `GPUI.Text.RangeGeometry` preserves the requested
+logical range and reports its window-relative bounding rectangle. Wrapped
+ranges currently produce one enclosing rectangle; per-visual-row rectangles
+remain a later extension.
+
 The feature demonstration includes application-owned external edit, undo, and
 redo controls so reconciliation can be exercised without treating persistence
 or document commands as renderer policy.

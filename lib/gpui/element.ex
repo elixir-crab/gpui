@@ -117,6 +117,8 @@ defmodule GPUI.Element do
   defp attr_value_to_payload(%GPUI.Raster{} = raster), do: GPUI.Raster.to_payload(raster)
   defp attr_value_to_payload(%GPUI.ResourceRef{} = ref), do: GPUI.ResourceRef.to_payload(ref)
   defp attr_value_to_payload(%GPUI.Text.Buffer{ref: ref}), do: ref
+  defp attr_value_to_payload(%GPUI.Text.Position{} = position), do: Map.from_struct(position)
+  defp attr_value_to_payload(%GPUI.Text.Range{} = range), do: map_struct_values(range)
 
   defp attr_value_to_payload(value) when is_list(value) do
     Enum.map(value, fn
@@ -127,4 +129,10 @@ defmodule GPUI.Element do
 
   defp attr_value_to_payload(value) when is_tuple(value), do: Tuple.to_list(value)
   defp attr_value_to_payload(value), do: value
+
+  defp map_struct_values(struct) do
+    struct
+    |> Map.from_struct()
+    |> Map.new(fn {key, value} -> {key, attr_value_to_payload(value)} end)
+  end
 end

@@ -443,6 +443,20 @@ fn byte_to_position(text: &Rope, byte_offset: usize) -> TextPosition {
 }
 
 #[cfg(any(test, feature = "components"))]
+pub(crate) fn range_to_byte_range(
+    text: &str,
+    range: &TextRange,
+) -> Result<std::ops::Range<usize>, TextBufferError> {
+    let rope = Rope::from(text);
+    let start = position_to_byte(&rope, &range.start)?;
+    let end = position_to_byte(&rope, &range.end)?;
+    if end < start {
+        return Err(TextBufferError::InvalidRange);
+    }
+    Ok(start..end)
+}
+
+#[cfg(any(test, feature = "components"))]
 pub(crate) fn selection_to_byte_range(
     text: &str,
     selection: &TextSelection,
@@ -532,6 +546,15 @@ mod tests {
             }],
             selections: selection(position(0, 2)),
         }
+    }
+
+    #[test]
+    fn text_ranges_convert_utf16_positions_to_bytes() {
+        let range = TextRange {
+            start: position(0, 1),
+            end: position(0, 3),
+        };
+        assert_eq!(range_to_byte_range("a🎉b", &range), Ok(1..5));
     }
 
     #[test]

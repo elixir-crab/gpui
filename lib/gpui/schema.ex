@@ -479,7 +479,8 @@ defmodule GPUI.Schema do
         transaction: :"phx-transaction",
         selection: :"phx-selection-change",
         viewport: :"phx-viewport-change",
-        geometry: :"phx-geometry-change"
+        geometry: :"phx-geometry-change",
+        range_geometry: :"phx-range-geometry-change"
       ],
       attrs: [
         id: :required_string,
@@ -489,7 +490,8 @@ defmodule GPUI.Schema do
         soft_wrap: :boolean,
         show_whitespaces: :boolean,
         tab_size: {:default, :positive_integer, 2},
-        hard_tabs: :boolean
+        hard_tabs: :boolean,
+        geometry_ranges: :text_ranges
       ]
     },
     %Component{
@@ -957,6 +959,15 @@ defmodule GPUI.Schema do
        when is_reference(ref),
        do: :ok
 
+  defp validate_attr!(tag, name, :text_ranges, value) when is_list(value) do
+    if Enum.count_until(value, 65) <= 64 and
+         Enum.all?(value, &match?(%{__struct__: GPUI.Text.Range}, &1)) do
+      :ok
+    else
+      invalid_attr!(tag, name, "at most 64 GPUI.Text.Range values", value)
+    end
+  end
+
   defp validate_attr!(tag, name, {:enum, values}, value) do
     if value in values,
       do: :ok,
@@ -980,6 +991,7 @@ defmodule GPUI.Schema do
 
   defp expected_attr_type(:resource), do: "a resource map"
   defp expected_attr_type(:text_buffer), do: "a GPUI.Text.Buffer"
+  defp expected_attr_type(:text_ranges), do: "at most 64 GPUI.Text.Range values"
 
   defp invalid_attr!(tag, name, expected, value) do
     raise ArgumentError,

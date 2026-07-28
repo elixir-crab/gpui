@@ -36,6 +36,7 @@ pub(crate) enum InputKind {
     Selection,
     Viewport,
     Geometry,
+    RangeGeometry,
     KeyDown,
     KeyUp,
 }
@@ -55,6 +56,7 @@ impl InputKind {
             Self::Selection => atoms::selection(),
             Self::Viewport => atoms::viewport(),
             Self::Geometry => atoms::geometry(),
+            Self::RangeGeometry => atoms::range_geometry(),
             Self::KeyDown => atoms::keydown(),
             Self::KeyUp => atoms::keyup(),
         }

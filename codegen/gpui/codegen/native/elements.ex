@@ -44,10 +44,12 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:show_whitespaces) => boolean(),
           required(:tab_size) => R.u64(),
           required(:hard_tabs) => boolean(),
+          required(:geometry_ranges) => R.vec(R.path(:TextRange)),
           required(:transaction) => R.option(String.t()),
           required(:selection_change) => R.option(String.t()),
           required(:viewport_change) => R.option(String.t()),
-          required(:geometry_change) => R.option(String.t())
+          required(:geometry_change) => R.option(String.t()),
+          required(:range_geometry_change) => R.option(String.t())
         }
 
   @type input_node :: %{
@@ -193,6 +195,20 @@ defmodule GPUI.Codegen.Native.Elements do
     end
   end
 
+  @spec text_ranges_attr(term(), atom()) :: R.nif_result(R.vec(R.path(:TextRange)))
+  defrustp text_ranges_attr(term, attr) do
+    case term.map_get(Atoms.attrs()) do
+      {:ok, attrs} ->
+        case attrs.map_get(attr) do
+          {:ok, value} -> decode_as(value, R.vec(R.path(:TextRange)))
+          {:error, _missing} -> {:ok, []}
+        end
+
+      {:error, _missing} ->
+        {:ok, []}
+    end
+  end
+
   @spec decode_text_surface_node(term(), R.path(:GeneratedElementTag)) ::
           R.nif_result(R.path(:ElementNode))
   defrust decode_text_surface_node(term, _tag) do
@@ -215,10 +231,12 @@ defmodule GPUI.Codegen.Native.Elements do
            unwrap!(component_bool_attr(term, Atoms.show_whitespaces())).unwrap_or(false),
          tab_size: unwrap!(component_positive_integer_attr(term, Atoms.tab_size())).unwrap_or(2),
          hard_tabs: unwrap!(component_bool_attr(term, Atoms.hard_tabs())).unwrap_or(false),
+         geometry_ranges: unwrap!(text_ranges_attr(term, Atoms.geometry_ranges())),
          transaction: string_attr(term, Atoms.phx_transaction()),
          selection_change: string_attr(term, Atoms.phx_selection_change()),
          viewport_change: string_attr(term, Atoms.phx_viewport_change()),
-         geometry_change: string_attr(term, Atoms.phx_geometry_change())
+         geometry_change: string_attr(term, Atoms.phx_geometry_change()),
+         range_geometry_change: string_attr(term, Atoms.phx_range_geometry_change())
        )
      )}
   end

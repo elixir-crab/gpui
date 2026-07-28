@@ -26,6 +26,16 @@ pub(crate) struct TextCaretGeometry {
 }
 
 #[cfg(feature = "components")]
+#[derive(Clone, Debug, NifMap)]
+pub(crate) struct TextRangeGeometry {
+    pub(crate) range: crate::TextRange,
+    pub(crate) x: f64,
+    pub(crate) y: f64,
+    pub(crate) width: f64,
+    pub(crate) height: f64,
+}
+
+#[cfg(feature = "components")]
 use crate::element::component::display::FileDialogResult;
 
 include!("generated/events.rs");
@@ -72,6 +82,13 @@ pub(crate) enum NativeEvent {
         window_id: u64,
         event: String,
         value: TextCaretGeometry,
+        revision: u64,
+    },
+    #[cfg(feature = "components")]
+    RangeGeometry {
+        window_id: u64,
+        event: String,
+        value: Vec<TextRangeGeometry>,
         revision: u64,
     },
     WindowClosed {
@@ -202,6 +219,22 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             env,
             vec![
                 (atoms::type_atom(), atoms::geometry().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
+                (atoms::value(), value.encode(env)),
+                (atoms::revision(), revision.encode(env)),
+            ],
+        ),
+        #[cfg(feature = "components")]
+        NativeEvent::RangeGeometry {
+            window_id,
+            event,
+            value,
+            revision,
+        } => encode_event_map(
+            env,
+            vec![
+                (atoms::type_atom(), atoms::range_geometry().to_term(env)),
                 (atoms::window_id(), window_id.encode(env)),
                 (atoms::event(), event.encode(env)),
                 (atoms::value(), value.encode(env)),

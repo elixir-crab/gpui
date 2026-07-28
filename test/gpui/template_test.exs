@@ -603,13 +603,22 @@ defmodule GPUI.TemplateTest do
   test "text surface validates and serializes its native buffer reference" do
     {:ok, buffer} = GPUI.Text.Buffer.new("hello")
 
+    range = GPUI.Text.Range.new(GPUI.Text.Position.new(0, 0), GPUI.Text.Position.new(0, 2))
+
     assert %{
              type: :text_surface,
              attrs: %{
                :"phx-transaction" => "changed",
                :"phx-viewport-change" => "viewport",
                :"phx-geometry-change" => "geometry",
+               :"phx-range-geometry-change" => "ranges",
                buffer: ref,
+               geometry_ranges: [
+                 %{
+                   start: %{line: 0, utf16_offset: 0},
+                   end: %{line: 0, utf16_offset: 2}
+                 }
+               ],
                id: "document",
                focus_request: 2,
                tab_size: 4
@@ -619,11 +628,13 @@ defmodule GPUI.TemplateTest do
              <text_surface
                id="document"
                buffer={buffer}
+               geometry_ranges={[range]}
                focus_request={2}
                tab_size={4}
                phx-transaction="changed"
                phx-viewport-change="viewport"
                phx-geometry-change="geometry"
+               phx-range-geometry-change="ranges"
              />
              """
              |> GPUI.Element.to_payload()
@@ -633,6 +644,15 @@ defmodule GPUI.TemplateTest do
     assert_raise ArgumentError, ~r/must be a GPUI.Text.Buffer/, fn ->
       ~GPUI"""
       <text_surface id="invalid" buffer="not-a-buffer" />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/at most 64 GPUI.Text.Range values/, fn ->
+      ranges = List.duplicate(range, 65)
+
+      ~GPUI"""
+      <text_surface id="too-many" buffer={buffer} geometry_ranges={ranges} />
       """
       |> GPUI.Element.to_payload()
     end

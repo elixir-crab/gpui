@@ -26,12 +26,14 @@ mod text_buffer;
 use event::EventValue;
 use event::{decode_event_value, encode_native_event, push_event, InputKind, NativeEvent};
 #[cfg(feature = "components")]
-use event::{TextCaretGeometry, TextViewportGeometry};
+use event::{TextCaretGeometry, TextRangeGeometry, TextViewportGeometry};
 #[cfg(feature = "real-gpui")]
 use input::{bind_input_keys, NativeTextInput};
 #[cfg(feature = "real-gpui")]
 use resource::{decode_raster_resource, decode_resource_ref, ImageData, RasterData};
 use runtime::{RuntimeResource, SharedRuntime};
+#[cfg(feature = "real-gpui")]
+use text_buffer::TextRange;
 #[cfg(feature = "components")]
 use text_buffer::{byte_range_to_selection, next_native_transaction_id, selection_to_byte_range};
 use text_buffer::{TextBufferError, TextBufferResource, TextSelection, TextTransaction};

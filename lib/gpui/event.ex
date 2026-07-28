@@ -18,6 +18,7 @@ defmodule GPUI.Event do
           | :selection
           | :viewport
           | :geometry
+          | :range_geometry
           | :keydown
           | :keyup
           | :window_closed

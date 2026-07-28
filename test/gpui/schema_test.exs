@@ -61,6 +61,7 @@ defmodule GPUI.SchemaTest do
     assert :"phx-selection-change" in GPUI.Schema.events()
     assert :"phx-viewport-change" in GPUI.Schema.events()
     assert :"phx-geometry-change" in GPUI.Schema.events()
+    assert :"phx-range-geometry-change" in GPUI.Schema.events()
     assert :ui_progress in GPUI.Schema.identified_tags()
     assert :ui_file_picker in GPUI.Schema.identified_tags()
     assert :ui_copy_button in GPUI.Schema.identified_tags()

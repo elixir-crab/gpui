@@ -28,6 +28,7 @@ defmodule GPUI.Schema.Component do
           | :radio_options
           | :resource
           | :text_buffer
+          | :text_ranges
 
   @type attr_type ::
           scalar_type()

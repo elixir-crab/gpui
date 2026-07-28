@@ -23,16 +23,19 @@ defmodule Features.EditableTextSurface.View do
           buffer={assigns.buffer}
           focus_request={assigns.focus_request}
           tab_size={2}
+          geometry_ranges={assigns.geometry_ranges}
           phx-transaction="text-transaction"
           phx-selection-change="selection-changed"
           phx-viewport-change="viewport-changed"
           phx-geometry-change="geometry-changed"
+          phx-range-geometry-change="range-geometry-changed"
         />
       </div>
       <div class="flex items-center justify-between px-4 py-2 bg-slate-800 border-t border-slate-700">
         <div class="flex items-center gap-3">
           <text class="text-xs text-slate-400">{assigns.visible}</text>
           <text class="text-xs text-slate-400">{assigns.caret}</text>
+          <text class="text-xs text-slate-400">{assigns.ranges}</text>
           <text class="text-xs text-slate-400">{assigns.status}</text>
         </div>
         <div class="flex items-center gap-2">
@@ -63,6 +66,11 @@ defmodule Features.EditableTextSurface.View do
     caret = GPUI.Text.CaretGeometry.from_event(caret)
     label = "Ln #{caret.line + 1}, Col #{caret.utf16_offset + 1}"
     {:noreply, %{assigns | caret: label}}
+  end
+
+  def handle_event("range-geometry-changed", %{value: ranges}, assigns) do
+    ranges = Enum.map(ranges, &GPUI.Text.RangeGeometry.from_event/1)
+    {:noreply, %{assigns | ranges: "#{length(ranges)} range(s) laid out"}}
   end
 
   def handle_event("focus-editor", _event, assigns),
@@ -130,12 +138,17 @@ defmodule Features.EditableTextSurface.App do
         "# Neutral editable text\n\nThis surface owns no file, language, gutter, or IDE policy.\nEdit me with native keyboard and IME input.\n"
       )
 
+    requested_range =
+      GPUI.Text.Range.new(GPUI.Text.Position.new(0, 0), GPUI.Text.Position.new(0, 7))
+
     assigns = %{
       buffer: buffer,
+      geometry_ranges: [requested_range],
       revision: 0,
       focus_request: 1,
       visible: "viewport pending",
       caret: "geometry pending",
+      ranges: "range geometry pending",
       status: "Ready"
     }
 
