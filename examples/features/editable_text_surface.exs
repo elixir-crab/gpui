@@ -39,8 +39,8 @@ defmodule Features.EditableTextSurface.View do
   def handle_event("text-transaction", %{revision: revision}, assigns),
     do: {:noreply, %{assigns | revision: revision, status: "Native transaction applied"}}
 
-  def handle_event("selection-changed", %{value: selections}, assigns),
-    do: {:noreply, %{assigns | status: "#{length(selections)} selection(s)"}}
+  def handle_event("selection-changed", %{value: selections, revision: revision}, assigns),
+    do: {:noreply, %{assigns | revision: revision, status: "#{length(selections)} selection(s)"}}
 
   def handle_event("focus-editor", _event, assigns),
     do: {:noreply, %{assigns | focus_request: assigns.focus_request + 1}}

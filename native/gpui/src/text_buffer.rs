@@ -185,6 +185,24 @@ impl TextBufferResource {
         Ok((transaction, revision))
     }
 
+    #[cfg(feature = "components")]
+    pub(crate) fn update_selection_from_surface(
+        &self,
+        base_revision: u64,
+        selection: TextSelection,
+    ) -> Result<u64, TextBufferError> {
+        let mut state = self.state.lock().map_err(|_| TextBufferError::LockFailed)?;
+        require_revision(&state, base_revision)?;
+        let selections = vec![selection];
+        validate_selections(&state.text, &selections)?;
+        if state.selections == selections {
+            return Err(TextBufferError::NoChange);
+        }
+        state.selections = selections;
+        state.revision = state.revision.saturating_add(1);
+        Ok(state.revision)
+    }
+
     pub(crate) fn snapshot(&self) -> Result<TextSnapshot, TextBufferError> {
         let state = self.state.lock().map_err(|_| TextBufferError::LockFailed)?;
         Ok(snapshot(&state))
@@ -233,14 +251,17 @@ impl TextBufferResource {
             after_text: next_text.clone(),
             after_selections: transaction.selections.clone(),
         };
+        let changes_text = !transaction.edits.is_empty();
         state.text = next_text;
         state.selections = transaction.selections.clone();
         state.revision = state.revision.saturating_add(1);
-        state.undo.push_back(entry);
-        if state.undo.len() > MAX_HISTORY {
-            state.undo.pop_front();
+        if changes_text {
+            state.undo.push_back(entry);
+            if state.undo.len() > MAX_HISTORY {
+                state.undo.pop_front();
+            }
+            state.redo.clear();
         }
-        state.redo.clear();
 
         let revision = state.revision;
         remember_transaction(&mut state, transaction.clone(), revision);
@@ -648,6 +669,40 @@ mod tests {
             )),
             Err(TextBufferError::StaleRevision(1))
         );
+    }
+
+    #[test]
+    fn selection_only_transactions_do_not_create_undo_history() {
+        let buffer = TextBufferResource::new("ab".into(), 0, selection(position(0, 0))).unwrap();
+        let moved = TextTransaction {
+            id: "move-selection".into(),
+            base_revision: 0,
+            origin: "external".into(),
+            edits: vec![],
+            selections: selection(position(0, 1)),
+        };
+
+        let result = buffer.transact(moved).unwrap();
+        assert_eq!(result.revision, 1);
+        let snapshot = buffer.snapshot().unwrap();
+        assert_eq!(snapshot.text, "ab");
+        assert!(!snapshot.can_undo);
+        assert!(!snapshot.can_redo);
+        assert_eq!(buffer.undo(1), Err(TextBufferError::NothingToUndo));
+    }
+
+    #[cfg(feature = "components")]
+    #[test]
+    fn native_selection_updates_do_not_create_undo_history() {
+        let buffer = TextBufferResource::new("a🎉b".into(), 0, selection(position(0, 0))).unwrap();
+        let moved = byte_range_to_selection("a🎉b", 1..5).unwrap();
+
+        assert_eq!(buffer.update_selection_from_surface(0, moved), Ok(1));
+        let snapshot = buffer.snapshot().unwrap();
+        assert_eq!(snapshot.selections[0].anchor, position(0, 1));
+        assert_eq!(snapshot.selections[0].head, position(0, 3));
+        assert!(!snapshot.can_undo);
+        assert_eq!(buffer.undo(1), Err(TextBufferError::NothingToUndo));
     }
 
     #[test]

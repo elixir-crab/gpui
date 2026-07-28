@@ -103,8 +103,10 @@ It does not know about files, saving, languages, syntax highlighting, or IDEs.
 The low-level `<text_surface>` primitive refers directly to a persistent
 `GPUI.Text.Buffer`. It keeps immediate keyboard and IME changes native, updates
 the Rope before notifying Elixir, and emits revisioned transaction and plural
-selection events. A monotonically changing `focus_request` value requests focus
-without turning focus into application-owned boolean state.
+selection events. Selection-only movement advances the shared buffer revision but
+does not create document undo entries or clear redo history. A monotonically
+changing `focus_request` value requests focus without turning focus into
+application-owned boolean state.
 
 The primitive accepts generic input behavior such as soft wrapping, whitespace
 display, tab width, hard tabs, and disabled state. It deliberately does not live

@@ -33,8 +33,7 @@ struct SelectionSync {
     buffer: rustler::ResourceArc<crate::TextBufferResource>,
     runtime: crate::SharedRuntime,
     window_id: u64,
-    surface_id: String,
-    transaction_event: std::sync::Arc<std::sync::Mutex<Option<String>>>,
+    event_revision: std::sync::Arc<std::sync::atomic::AtomicU64>,
     selection_event: std::sync::Arc<std::sync::Mutex<Option<String>>>,
 }
 
@@ -52,32 +51,17 @@ impl SelectionSync {
         if snapshot.selections == [selection.clone()] {
             return;
         }
-        let transaction_id = next_native_transaction_id(&self.surface_id);
-        let Ok((transaction, revision)) = self.buffer.replace_from_surface(
-            snapshot.revision,
-            transaction_id,
-            text,
-            selection.clone(),
-        ) else {
-            return;
-        };
-
-        if let Some(event) = self
-            .transaction_event
-            .lock()
-            .ok()
-            .and_then(|event| event.clone())
+        let revision = match self
+            .buffer
+            .update_selection_from_surface(snapshot.revision, selection.clone())
         {
-            let _ = push_event(
-                &self.runtime,
-                NativeEvent::Transaction {
-                    window_id: self.window_id,
-                    event,
-                    transaction,
-                    revision,
-                },
-            );
-        }
+            Ok(revision) => revision,
+            Err(crate::TextBufferError::NoChange) => return,
+            Err(_error) => return,
+        };
+        self.event_revision
+            .store(revision, std::sync::atomic::Ordering::Release);
+
         if let Some(event) = self
             .selection_event
             .lock()
@@ -101,6 +85,7 @@ impl SelectionSync {
 pub(crate) struct ComponentTextSurface {
     pub(crate) state: gpui::Entity<gpui_component::input::InputState>,
     pub(crate) revision: u64,
+    pub(crate) event_revision: std::sync::Arc<std::sync::atomic::AtomicU64>,
     pub(crate) transaction_event: std::sync::Arc<std::sync::Mutex<Option<String>>>,
     pub(crate) selection_event: std::sync::Arc<std::sync::Mutex<Option<String>>>,
     pub(crate) focus_request: u64,
@@ -147,6 +132,9 @@ pub(crate) fn render(
         let buffer = node.buffer.clone();
         let event_buffer = buffer.clone();
         let revision = snapshot.revision;
+        let event_revision =
+            std::sync::Arc::new(std::sync::atomic::AtomicU64::new(snapshot.revision));
+        let subscription_revision = event_revision.clone();
         let selected_range = snapshot
             .selections
             .iter()
@@ -169,10 +157,8 @@ pub(crate) fn render(
                     Ok(selection) => selection,
                     Err(_error) => return,
                 };
-                let current_revision = match event_buffer.revision() {
-                    Ok(revision) => revision,
-                    Err(_error) => return,
-                };
+                let current_revision =
+                    subscription_revision.load(std::sync::atomic::Ordering::Acquire);
                 let transaction_id = next_native_transaction_id(&event_surface_id);
                 let Ok((transaction, revision)) = event_buffer.replace_from_surface(
                     current_revision,
@@ -182,6 +168,7 @@ pub(crate) fn render(
                 ) else {
                     return;
                 };
+                subscription_revision.store(revision, std::sync::atomic::Ordering::Release);
                 if let Some(event) = event_transaction
                     .lock()
                     .ok()
@@ -215,6 +202,7 @@ pub(crate) fn render(
             ComponentTextSurface {
                 state,
                 revision,
+                event_revision,
                 transaction_event,
                 selection_event,
                 focus_request: 0,
@@ -240,6 +228,9 @@ pub(crate) fn render(
     if let Ok(revision) = node.buffer.revision() {
         if revision > surface.revision && native_text == surface.text {
             surface.revision = revision;
+            surface
+                .event_revision
+                .store(revision, std::sync::atomic::Ordering::Release);
         }
     }
 
@@ -253,6 +244,9 @@ pub(crate) fn render(
                 .unwrap_or(0..0);
             let is_local_state = native_text == snapshot.text;
             surface.revision = snapshot.revision;
+            surface
+                .event_revision
+                .store(snapshot.revision, std::sync::atomic::Ordering::Release);
             surface.text = snapshot.text.clone();
             surface.selected_range = snapshot_range.clone();
             if !is_local_state {
@@ -267,26 +261,15 @@ pub(crate) fn render(
     let current_range = surface.state.read(context.cx).selected_range();
     if current_range != surface.selected_range {
         if let Ok(selection) = byte_range_to_selection(&surface.text, current_range.clone()) {
-            let transaction_id = next_native_transaction_id(&surface_id);
-            if let Ok((transaction, revision)) = node.buffer.replace_from_surface(
-                surface.revision,
-                transaction_id,
-                surface.text.clone(),
-                selection.clone(),
-            ) {
+            if let Ok(revision) = node
+                .buffer
+                .update_selection_from_surface(surface.revision, selection.clone())
+            {
                 surface.revision = revision;
+                surface
+                    .event_revision
+                    .store(revision, std::sync::atomic::Ordering::Release);
                 surface.selected_range = current_range;
-                if let Some(event) = node.transaction.clone() {
-                    let _ = push_event(
-                        &context.runtime,
-                        NativeEvent::Transaction {
-                            window_id: context.window_id,
-                            event,
-                            transaction,
-                            revision,
-                        },
-                    );
-                }
                 if let Some(event) = node.selection_change.clone() {
                     let _ = push_event(
                         &context.runtime,
@@ -321,8 +304,7 @@ pub(crate) fn render(
         buffer: node.buffer.clone(),
         runtime: context.runtime.clone(),
         window_id: context.window_id,
-        surface_id: surface_id.clone(),
-        transaction_event: surface.transaction_event.clone(),
+        event_revision: surface.event_revision.clone(),
         selection_event: surface.selection_event.clone(),
     };
     let mouse_selection_sync = selection_sync.clone();
