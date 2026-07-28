@@ -19,49 +19,49 @@ defmodule Examples.ElixirWorkbench.View do
     visible_logs = visible_logs(assigns)
 
     ~GPUI"""
-    <div class="flex grow flex-col w-full" style={[background: {:rgb, 0x0A1220}]}>
-      <div class="flex items-center justify-between px-3 py-2" style={[background: {:rgb, 0x111C2E}]}>
+    <div class="flex grow flex-col w-full bg-[#0A1220]">
+      <div class="flex items-center justify-between px-3 py-2 bg-[#111C2E]">
         <div class="flex items-center gap-3">
-          <div class="flex items-center justify-center w-[28px] h-[28px] rounded-sm" style={[background: {:rgb, 0xF97316}]}><text class="text-white font-semibold">E</text></div>
-          <div class="flex flex-col"><text class="text-white font-semibold">Elixir Workbench</text><text style={[color: {:rgb, 0x94A3B8}]}>{assigns.repository.name} · {assigns.repository.branch}</text></div>
+          <div class="flex items-center justify-center w-[28px] h-[28px] rounded-sm bg-[#F97316]"><text class="text-white font-semibold">E</text></div>
+          <div class="flex min-w-0 flex-col"><text class="text-white font-semibold">Elixir Workbench</text><text class="truncate text-[#94A3B8]">{assigns.repository.name} · {assigns.repository.branch}</text></div>
         </div>
         <div class="flex items-center gap-3">
-          <text style={[color: {:rgb, 0x34D399}]}>● Runtime connected</text>
+          <text class="text-[#34D399]">● Runtime connected</text>
           <UI.button id="command-palette" label="Run command" variant="primary" phx-click="command-palette" />
         </div>
       </div>
 
       <div class="flex min-h-0 h-[820px]">
-        <div class="flex min-h-0 flex-col w-[260px]" style={[background: {:rgb, 0x0D1727}]}>
+        <div class="flex min-h-0 flex-col w-[260px] bg-[#0D1727]">
           <div class="flex flex-col gap-2 p-2">
             <UI.input id="file-filter" label="Filter files" value={assigns.query} placeholder="Filter project" cleanable={true} phx-change="filter_changed" />
             <UI.select id="status-filter" label="File status" value={assigns.status} options={[{"All files", "all"}, {"Changed", "modified"}, {"Untracked", "untracked"}, {"Clean", "clean"}]} phx-change="status_changed" />
           </div>
-          <div class="flex items-center justify-between px-4 py-2"><text style={[color: {:rgb, 0x94A3B8}]}>EXPLORER</text><text style={[color: {:rgb, 0xF97316}]}>{length(entries)}</text></div>
+          <div class="flex items-center justify-between px-4 py-2"><text class="text-[#94A3B8]">EXPLORER</text><text class="text-[#F97316]">{length(entries)}</text></div>
           <div class="flex flex-col h-[650px]">{repository_tree(entries, selected_id, assigns.expanded)}</div>
-          <div class="flex flex-col gap-2 p-3" style={[background: {:rgb, 0x111C2E}]}>
-            <div class="flex justify-between"><text class="text-white">Working tree</text><text style={[color: {:rgb, 0xF59E0B}]}>{assigns.repository.counts.changed} changed</text></div>
-            <text style={[color: {:rgb, 0x64748B}]}>{assigns.repository.counts.total} tracked and untracked files</text>
+          <div class="flex flex-col gap-2 p-3 bg-[#111C2E]">
+            <div class="flex justify-between"><text class="text-white">Working tree</text><text class="text-[#F59E0B]">{assigns.repository.counts.changed} changed</text></div>
+            <text class="truncate text-[#64748B]">{assigns.repository.counts.total} tracked and untracked files</text>
           </div>
         </div>
 
         <div class="flex grow min-h-0 flex-col">
-          <div class="flex items-center justify-between px-4 py-2" style={[background: {:rgb, 0x172236}]}>
-            <div class="flex items-center gap-3"><text class="text-white">{preview_title(assigns.preview)}</text><text style={[color: status_color(assigns.preview.status)]}>{status_label(assigns.preview.status)}</text></div>
+          <div class="flex items-center justify-between px-4 py-2 bg-[#172236]">
+            <div class="flex min-w-0 items-center gap-3"><text class="truncate text-white">{preview_title(assigns.preview)}</text><text style={[color: status_color(assigns.preview.status)]}>{status_label(assigns.preview.status)}</text></div>
             <UI.copy_button id="copy-path" label="Copy path" text={assigns.preview.path} phx-click="path_copied" />
           </div>
           <div class="flex h-[510px]">{code_panel(assigns)}</div>
 
-          <div class="flex flex-col h-[220px]" style={[background: {:rgb, 0x0B1321}]}>
-            <div class="flex items-center justify-between px-4 py-2" style={[background: {:rgb, 0x111C2E}]}>
-              <div class="flex items-center gap-4"><text class="text-white font-semibold">Runtime console</text><text style={[color: {:rgb, 0x94A3B8}]}>{length(visible_logs)} events</text></div>
+          <div class="flex flex-col h-[220px] bg-[#0B1321]">
+            <div class="flex items-center justify-between px-4 py-2 bg-[#111C2E]">
+              <div class="flex items-center gap-4"><text class="text-white font-semibold">Runtime console</text><text class="text-[#94A3B8]">{length(visible_logs)} events</text></div>
               <div class="flex items-center gap-3"><UI.select id="log-level" label="Log level" value={assigns.log_level} options={[{"All", "all"}, {"Errors", "error"}, {"Warnings", "warning"}, {"Info", "info"}]} phx-change="log_level_changed" /><UI.button id="clear-logs" label="Clear" phx-click="clear-logs" /></div>
             </div>
             {log_console(visible_logs, assigns.log_selected)}
           </div>
         </div>
 
-        <scroll class="flex min-h-0 flex-col w-[290px] gap-3 p-3" style={[background: {:rgb, 0x0D1727}]}>
+        <scroll class="flex min-h-0 flex-col w-[290px] gap-3 p-3 bg-[#0D1727]">
           <div class="flex flex-col gap-3">
             <text class="text-white text-lg font-semibold">File context</text>
             {context_detail("Path", assigns.preview.path)}
@@ -69,11 +69,11 @@ defmodule Examples.ElixirWorkbench.View do
             {context_detail("Status", status_label(assigns.preview.status))}
             {context_detail("Lines", length(assigns.preview.lines))}
           </div>
-          <div class="flex flex-col gap-3 p-4 rounded-lg" style={[background: {:rgb, 0x142238}]}>
+          <div class="flex flex-col gap-3 p-4 rounded-lg bg-[#142238]">
             <text class="text-white font-semibold">Diagnostics</text>
-            <div class="flex items-center justify-between"><text style={[color: {:rgb, 0x94A3B8}]}>Errors</text><text style={[color: {:rgb, 0x34D399}]}>0</text></div>
-            <div class="flex items-center justify-between"><text style={[color: {:rgb, 0x94A3B8}]}>Warnings</text><text style={[color: {:rgb, 0xF59E0B}]}>2</text></div>
-            <div class="flex items-center justify-between"><text style={[color: {:rgb, 0x94A3B8}]}>Tests</text><text style={[color: {:rgb, 0x38BDF8}]}>166 passing</text></div>
+            <div class="flex items-center justify-between"><text class="text-[#94A3B8]">Errors</text><text class="text-[#34D399]">0</text></div>
+            <div class="flex items-center justify-between"><text class="text-[#94A3B8]">Warnings</text><text class="text-[#F59E0B]">2</text></div>
+            <div class="flex items-center justify-between"><text class="text-[#94A3B8]">Tests</text><text class="text-[#38BDF8]">166 passing</text></div>
           </div>
           {selected_log(assigns)}
         </scroll>
@@ -134,6 +134,7 @@ defmodule Examples.ElixirWorkbench.View do
           expanded: entry.kind == :directory and MapSet.member?(expanded, entry.path),
           position: entry.position,
           set_size: entry.set_size,
+          style: [color: {:rgb, 0xCBD5E1}],
           children: [entry_label(entry)]
         })
       end)
@@ -207,7 +208,7 @@ defmodule Examples.ElixirWorkbench.View do
 
   defp empty_console do
     ~GPUI"""
-    <div class="flex grow items-center justify-center"><text style={[color: {:rgb, 0x64748B}]}>Console cleared</text></div>
+    <div class="flex grow items-center justify-center"><text class="text-[#64748B]">Console cleared</text></div>
     """
   end
 
@@ -220,7 +221,7 @@ defmodule Examples.ElixirWorkbench.View do
 
   defp empty_log_detail do
     ~GPUI"""
-    <div class="flex flex-col gap-2 p-4 rounded-lg" style={[background: {:rgb, 0x142238}]}><text class="text-white font-semibold">Event details</text><text style={[color: {:rgb, 0x94A3B8}]}>Select a console event.</text></div>
+    <div class="flex flex-col gap-2 p-4 rounded-lg bg-[#142238]"><text class="text-white font-semibold">Event details</text><text class="text-[#94A3B8]">Select a console event.</text></div>
     """
   end
 
@@ -228,7 +229,7 @@ defmodule Examples.ElixirWorkbench.View do
     assigns = %{event: event}
 
     ~GPUI"""
-    <div class="flex flex-col gap-2 p-4 rounded-lg" style={[background: {:rgb, 0x142238}]}><text class="text-white font-semibold">{String.upcase(assigns.event.level)}</text><text style={[color: {:rgb, 0x38BDF8}]}>{assigns.event.source}</text><text style={[color: {:rgb, 0xCBD5E1}]}>{assigns.event.message}</text></div>
+    <div class="flex flex-col gap-2 p-4 rounded-lg bg-[#142238]"><text class="text-white font-semibold">{String.upcase(assigns.event.level)}</text><text class="truncate text-[#38BDF8]">{assigns.event.source}</text><text class="text-[#CBD5E1]">{assigns.event.message}</text></div>
     """
   end
 
@@ -236,7 +237,7 @@ defmodule Examples.ElixirWorkbench.View do
     assigns = %{label: label, value: value}
 
     ~GPUI"""
-    <div class="flex flex-col gap-1"><text style={[color: {:rgb, 0x64748B}]}>{assigns.label}</text><text class="text-white">{assigns.value}</text></div>
+    <div class="flex min-w-0 flex-col gap-1"><text class="text-[#64748B]">{assigns.label}</text><text class="truncate text-white">{assigns.value}</text></div>
     """
   end
 

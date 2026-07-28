@@ -57,19 +57,19 @@ defmodule Examples.BeamObservatory.View do
     selected = Enum.find(assigns.processes, &(&1.pid == assigns.selected_pid))
 
     ~GPUI"""
-    <div class="flex grow flex-col w-full" style={[background: {:rgb, 0x07111F}]}>
-      <div class="flex items-center justify-between px-4 py-2" style={[background: {:rgb, 0x0B1728}]}>
+    <div class="flex grow flex-col w-full bg-[#07111F]">
+      <div class="flex items-center justify-between px-4 py-2 bg-[#0B1728]">
         <div class="flex items-center gap-4">
-          <div class="flex items-center justify-center w-[32px] h-[32px] rounded-md" style={[background: {:rgb, 0x14B8A6}]}>
+          <div class="flex items-center justify-center w-[32px] h-[32px] rounded-md bg-[#14B8A6]">
             <text class="text-white font-semibold">B</text>
           </div>
           <div class="flex flex-col gap-1">
             <text class="text-white text-lg font-semibold">BEAM Observatory</text>
-            <text style={[color: {:rgb, 0x94A3B8}]}>Runtime health · sampled {assigns.sampled_at}</text>
+            <text class="text-[#94A3B8]">Runtime health · sampled {assigns.sampled_at}</text>
           </div>
         </div>
         <div class="flex items-center gap-3">
-          <text style={[color: {:rgb, 0x34D399}]}>● LIVE</text>
+          <text class="text-[#34D399]">● LIVE</text>
           <UI.button id="toggle-pause" label={if(assigns.paused, do: "Resume", else: "Pause")} variant={if(assigns.paused, do: "primary", else: "default")} phx-click="toggle-pause" />
         </div>
       </div>
@@ -84,10 +84,10 @@ defmodule Examples.BeamObservatory.View do
 
       <div class="flex grow min-h-0 gap-2 px-4 pb-4">
         <div class="flex flex-col w-[260px] gap-2">
-          <div class="flex flex-col gap-3 p-3 rounded-md" style={[background: {:rgb, 0x0F1D31}]}>
+          <div class="flex flex-col gap-3 p-3 rounded-md bg-[#0F1D31]">
             <div class="flex flex-col gap-1">
               <text class="text-white text-lg font-semibold">Memory map</text>
-              <text style={[color: {:rgb, 0x94A3B8}]}>Where the VM is spending bytes</text>
+              <text class="text-[#94A3B8]">Where the VM is spending bytes</text>
             </div>
             {memory_bar("Processes", assigns.memory.processes, assigns.memory.total, 0x38BDF8)}
             {memory_bar("Binary", assigns.memory.binary, assigns.memory.total, 0xA78BFA)}
@@ -96,7 +96,7 @@ defmodule Examples.BeamObservatory.View do
             {memory_bar("Atoms", assigns.memory.atom, assigns.memory.total, 0xFB7185)}
           </div>
 
-          <div class="flex grow flex-col gap-2 p-3 rounded-md" style={[background: {:rgb, 0x0F1D31}]}>
+          <div class="flex grow flex-col gap-2 p-3 rounded-md bg-[#0F1D31]">
             <text class="text-white text-lg font-semibold">Runtime signals</text>
             {signal("Scheduler pressure", pressure(assigns.run_queue, assigns.schedulers), status_color(assigns.run_queue))}
             {signal("Largest mailbox", largest_mailbox(assigns.processes), 0xF59E0B)}
@@ -105,23 +105,23 @@ defmodule Examples.BeamObservatory.View do
           </div>
         </div>
 
-        <div class="flex grow min-h-0 flex-col gap-2 p-3 rounded-md" style={[background: {:rgb, 0xF8FAFC}]}>
+        <div class="flex grow min-h-0 flex-col gap-2 p-3 rounded-md overflow-hidden bg-[#F8FAFC]">
           <div class="flex items-end justify-between gap-4">
             <div class="flex flex-col gap-1">
-              <text class="text-xl font-semibold" style={[color: {:rgb, 0x0F172A}]}>Hot processes</text>
-              <text style={[color: {:rgb, 0x64748B}]}>Sorted by memory with mailbox and reduction pressure</text>
+              <text class="text-xl font-semibold text-[#0F172A]">Hot processes</text>
+              <text class="truncate text-[#64748B]">Sorted by memory with mailbox and reduction pressure</text>
             </div>
             <UI.input id="process-filter" label="Filter processes" value={assigns.query} placeholder="PID, name, or function" cleanable={true} phx-change="filter_changed" />
           </div>
           {process_table(filtered, assigns.selected_pid)}
         </div>
 
-        <div class="flex flex-col w-[290px] gap-2 p-3 rounded-md" style={[background: {:rgb, 0x0F1D31}]}>
+        <div class="flex flex-col w-[290px] gap-2 p-3 rounded-md overflow-hidden bg-[#0F1D31]">
           {process_inspector(selected)}
           <div class="flex flex-col gap-3">
             <div class="flex items-center justify-between">
               <text class="text-white text-lg font-semibold">Largest ETS tables</text>
-              <text style={[color: {:rgb, 0xF59E0B}]}>{length(assigns.tables)}</text>
+              <text class="text-[#F59E0B]">{length(assigns.tables)}</text>
             </div>
             {table_rankings(assigns.tables)}
           </div>

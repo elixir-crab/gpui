@@ -3,6 +3,7 @@
 ## 0.1.1
 
 - Added GPUI-native flex-basis, overflow clipping, whitespace, text alignment and ellipsis/truncation, and cursor utilities to the Tailwind-compatible style protocol.
+- Normalized Tailwind-compatible classes on programmatically constructed `GPUI.UI` component trees before serialization, matching template behavior, and fixed `mix gpui.dev --no-compile` native availability detection.
 
 - Expanded the Tailwind-compatible normalizer with flex shorthands, decimal spacing, fractional and percentage dimensions, safe arbitrary pixel/color/opacity values, exact arbitrary radii, and exact preservation of unsupported classes; replaced static minimum-height styles in the showcase applications with `min-h-0` utilities.
 

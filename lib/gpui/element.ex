@@ -38,12 +38,36 @@ defmodule GPUI.Element do
   defp payload(%__MODULE__{} = element) do
     %{
       type: element.type,
-      attrs: attrs_to_payload(element.attrs),
+      attrs: element.attrs |> normalize_class_attr() |> attrs_to_payload(),
       children: Enum.map(element.children, &payload/1)
     }
   end
 
   defp payload(value), do: to_payload(value)
+
+  defp normalize_class_attr(attrs) do
+    case Keyword.fetch(attrs, :class) do
+      {:ok, class} when is_binary(class) ->
+        %{style: class_style, unknown: unknown} = GPUI.Tailwind.normalize(class)
+        style = merge_styles(class_style, Keyword.get(attrs, :style, []))
+
+        attrs
+        |> Keyword.delete(:class)
+        |> put_attr(:style, style, style != [])
+        |> put_attr(:class, Enum.join(unknown, " "), unknown != [])
+
+      _other ->
+        attrs
+    end
+  end
+
+  defp merge_styles(class_style, style) when is_list(style), do: Keyword.merge(class_style, style)
+
+  defp merge_styles(class_style, style) when is_map(style),
+    do: class_style |> Map.new() |> Map.merge(style) |> Map.to_list()
+
+  defp put_attr(attrs, _key, _value, false), do: attrs
+  defp put_attr(attrs, key, value, true), do: Keyword.put(attrs, key, value)
 
   defp validate_component_ids!(element) do
     element

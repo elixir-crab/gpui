@@ -1,6 +1,28 @@
 defmodule GPUI.TailwindTest do
   use ExUnit.Case, async: true
 
+  test "programmatic UI components normalize classes before serialization" do
+    payload =
+      GPUI.UI.tree_item(%{
+        id: "file",
+        class: "flex items-center px-2 truncate cursor-pointer unknown-class",
+        style: [color: {:rgb, 0xFFFFFF}],
+        children: ["long filename"]
+      })
+      |> GPUI.Element.to_payload()
+
+    assert payload.attrs.class == "unknown-class"
+
+    assert payload.attrs.style == [
+             display: :flex,
+             align_items: :center,
+             padding_x: [:px, 8.0],
+             truncate: true,
+             cursor: :pointer,
+             color: [:rgb, 0xFFFFFF]
+           ]
+  end
+
   test "normalizes a useful Tailwind subset" do
     assert %{
              style: [
