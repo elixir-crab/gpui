@@ -20,11 +20,14 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
           buffer={assigns.buffer}
           focus_request={assigns.primary_focus}
           geometry_ranges={assigns.geometry_ranges}
+          scroll_request={assigns.scroll_request}
+          scroll_to={assigns.scroll_to}
           phx-transaction="text-transaction"
           phx-selection-change="selection-changed"
           phx-viewport-change="viewport-changed"
           phx-geometry-change="geometry-changed"
           phx-range-geometry-change="range-geometry-changed"
+          phx-hit-test="hit-tested"
         />
         <text_surface
           id="mirror-surface"
@@ -60,6 +63,11 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
       true = Enum.count_until(ranges, 65) <= 64
       {:noreply, %{assigns | revision: revision, range_geometries: length(ranges)}}
     end
+
+    def handle_event("hit-tested", %{revision: revision, value: position}, assigns) do
+      true = position.line >= 0 and position.utf16_offset >= 0
+      {:noreply, %{assigns | revision: revision, hit_tests: assigns.hit_tests + 1}}
+    end
   end
 
   defmodule SharedSurfaceApp do
@@ -75,12 +83,15 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
            root(SharedSurfaceView,
              buffer: buffer,
              geometry_ranges: [Range.new(Position.new(0, 0), Position.new(0, 3))],
+             scroll_request: 0,
+             scroll_to: Position.new(0, 0),
              revision: 0,
              transactions: 0,
              selections: 0,
              viewports: 0,
              geometries: 0,
              range_geometries: 0,
+             hit_tests: 0,
              primary_focus: 1,
              mirror_focus: 0
            )
@@ -111,6 +122,12 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
     end)
 
     Desktop.click!(window_id, 120, 70)
+
+    Desktop.eventually(fn ->
+      assert %{hit_tests: hit_tests} = assigns(runtime)
+      assert hit_tests > 0
+    end)
+
     Desktop.key!(window_id, "End")
     Desktop.type!(window_id, "-native")
 

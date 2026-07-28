@@ -480,7 +480,8 @@ defmodule GPUI.Schema do
         selection: :"phx-selection-change",
         viewport: :"phx-viewport-change",
         geometry: :"phx-geometry-change",
-        range_geometry: :"phx-range-geometry-change"
+        range_geometry: :"phx-range-geometry-change",
+        hit_test: :"phx-hit-test"
       ],
       attrs: [
         id: :required_string,
@@ -491,7 +492,9 @@ defmodule GPUI.Schema do
         show_whitespaces: :boolean,
         tab_size: {:default, :positive_integer, 2},
         hard_tabs: :boolean,
-        geometry_ranges: :text_ranges
+        geometry_ranges: :text_ranges,
+        scroll_request: {:default, :non_negative_integer, 0},
+        scroll_to: :text_position
       ]
     },
     %Component{
@@ -959,6 +962,8 @@ defmodule GPUI.Schema do
        when is_reference(ref),
        do: :ok
 
+  defp validate_attr!(_tag, _name, :text_position, %{__struct__: GPUI.Text.Position}), do: :ok
+
   defp validate_attr!(tag, name, :text_ranges, value) when is_list(value) do
     if Enum.count_until(value, 65) <= 64 and
          Enum.all?(value, &match?(%{__struct__: GPUI.Text.Range}, &1)) do
@@ -992,6 +997,7 @@ defmodule GPUI.Schema do
   defp expected_attr_type(:resource), do: "a resource map"
   defp expected_attr_type(:text_buffer), do: "a GPUI.Text.Buffer"
   defp expected_attr_type(:text_ranges), do: "at most 64 GPUI.Text.Range values"
+  defp expected_attr_type(:text_position), do: "a GPUI.Text.Position"
 
   defp invalid_attr!(tag, name, expected, value) do
     raise ArgumentError,

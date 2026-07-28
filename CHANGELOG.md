@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Added declarative scroll-to-position request tokens and asynchronous native point-to-position hit-test events for text surfaces.
 - Added bounded declarative range-geometry requests for text surfaces, limited to 64 ranges and emitted only for currently laid-out content.
 - Added revision-tagged, deduplicated text-surface viewport and primary-caret geometry events with public coordinate-space types.
 - Added native E2E coverage for two editable surfaces sharing one persistent buffer across local typing, external edits, undo, redo, and reconciliation without external-event echo.

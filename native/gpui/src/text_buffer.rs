@@ -443,6 +443,14 @@ fn byte_to_position(text: &Rope, byte_offset: usize) -> TextPosition {
 }
 
 #[cfg(any(test, feature = "components"))]
+pub(crate) fn position_to_byte_offset(
+    text: &str,
+    position: &TextPosition,
+) -> Result<usize, TextBufferError> {
+    position_to_byte(&Rope::from(text), position)
+}
+
+#[cfg(any(test, feature = "components"))]
 pub(crate) fn range_to_byte_range(
     text: &str,
     range: &TextRange,
@@ -546,6 +554,11 @@ mod tests {
             }],
             selections: selection(position(0, 2)),
         }
+    }
+
+    #[test]
+    fn positions_convert_utf16_offsets_to_bytes() {
+        assert_eq!(position_to_byte_offset("a🎉b", &position(0, 3)), Ok(5));
     }
 
     #[test]

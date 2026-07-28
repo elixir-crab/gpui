@@ -129,6 +129,13 @@ logical range and reports its window-relative bounding rectangle. Wrapped
 ranges currently produce one enclosing rectangle; per-visual-row rectangles
 remain a later extension.
 
+A monotonically increasing `scroll_request` token paired with `scroll_to` moves
+the native primary caret to an explicit UTF-16 position and lets the existing
+native input machinery reveal it without changing document text. Optional
+`phx-hit-test` events report the post-click logical UTF-16 position selected by
+native text hit testing. Neither contract introduces synchronous pointer NIF
+traffic.
+
 The feature demonstration includes application-owned external edit, undo, and
 redo controls so reconciliation can be exercised without treating persistence
 or document commands as renderer policy.

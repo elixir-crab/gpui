@@ -37,6 +37,7 @@ pub(crate) enum InputKind {
     Viewport,
     Geometry,
     RangeGeometry,
+    HitTest,
     KeyDown,
     KeyUp,
 }
@@ -57,6 +58,7 @@ impl InputKind {
             Self::Viewport => atoms::viewport(),
             Self::Geometry => atoms::geometry(),
             Self::RangeGeometry => atoms::range_geometry(),
+            Self::HitTest => atoms::hit_test(),
             Self::KeyDown => atoms::keydown(),
             Self::KeyUp => atoms::keyup(),
         }

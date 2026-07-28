@@ -2,8 +2,8 @@
 use crate::element::component::apply_component_styles;
 #[cfg(feature = "components")]
 use crate::{
-    byte_range_to_selection, next_native_transaction_id, push_event, selection_to_byte_range,
-    NativeEvent,
+    byte_range_to_selection, next_native_transaction_id, position_to_byte_offset, push_event,
+    selection_to_byte_range, NativeEvent,
 };
 use crate::{gpui, ElementRenderContext, TextSurfaceNode};
 
@@ -96,6 +96,8 @@ pub(crate) struct ComponentTextSurface {
     pub(crate) viewport_event: Option<String>,
     pub(crate) geometry_event: Option<String>,
     pub(crate) range_geometry_event: Option<String>,
+    pub(crate) hit_test_event: Option<String>,
+    pub(crate) scroll_request: u64,
     pub(crate) last_viewport: Option<(usize, usize, i32, i32)>,
     pub(crate) last_caret: Option<(u64, u64, i32, i32, i32, i32)>,
     pub(crate) last_range_geometry: Option<Vec<RangeGeometryKey>>,
@@ -219,6 +221,8 @@ pub(crate) fn render(
                 viewport_event: node.viewport_change.clone(),
                 geometry_event: node.geometry_change.clone(),
                 range_geometry_event: node.range_geometry_change.clone(),
+                hit_test_event: node.hit_test.clone(),
+                scroll_request: 0,
                 last_viewport: None,
                 last_caret: None,
                 last_range_geometry: None,
@@ -243,6 +247,7 @@ pub(crate) fn render(
     surface.viewport_event = node.viewport_change.clone();
     surface.geometry_event = node.geometry_change.clone();
     surface.range_geometry_event = node.range_geometry_change.clone();
+    surface.hit_test_event = node.hit_test.clone();
 
     let native_text = surface.state.read(context.cx).value().to_string();
     if let Ok(revision) = node.buffer.revision() {
@@ -305,6 +310,17 @@ pub(crate) fn render(
         }
     }
 
+    if surface.scroll_request != node.scroll_request {
+        surface.scroll_request = node.scroll_request;
+        if let Some(position) = &node.scroll_to {
+            if let Ok(offset) = position_to_byte_offset(&surface.text, position) {
+                surface.state.update(context.cx, |state, cx| {
+                    state.set_selected_range(offset..offset, cx)
+                });
+            }
+        }
+    }
+
     emit_geometry_events(
         surface,
         &node.geometry_ranges,
@@ -337,6 +353,13 @@ pub(crate) fn render(
     };
     let mouse_selection_sync = selection_sync.clone();
 
+    let hit_state = surface.state.clone();
+    let hit_runtime = context.runtime.clone();
+    let hit_event = surface.hit_test_event.clone();
+    let hit_revision = surface.event_revision.clone();
+    let hit_text = surface.text.clone();
+    let hit_window_id = context.window_id;
+
     let input = Input::new(&surface.state)
         .disabled(node.disabled)
         .appearance(false)
@@ -348,7 +371,22 @@ pub(crate) fn render(
         .track_focus(&focus.tab_stop(!node.disabled))
         .on_key_up(move |_event, _window, cx| selection_sync.run(cx))
         .on_mouse_up(gpui::MouseButton::Left, move |_event, _window, cx| {
-            mouse_selection_sync.run(cx)
+            mouse_selection_sync.run(cx);
+            if let Some(event_name) = &hit_event {
+                let selected = hit_state.read(cx).selected_range();
+                if let Ok(position) = byte_range_to_selection(&hit_text, selected.end..selected.end)
+                {
+                    let _ = push_event(
+                        &hit_runtime,
+                        NativeEvent::HitTest {
+                            window_id: hit_window_id,
+                            event: event_name.clone(),
+                            value: position.head,
+                            revision: hit_revision.load(std::sync::atomic::Ordering::Acquire),
+                        },
+                    );
+                }
+            }
         })
         .size_full()
         .child(apply_component_styles(input, node.style))
@@ -488,7 +526,13 @@ fn error_placeholder(message: &str) -> gpui::AnyElement {
 
 #[cfg(not(feature = "components"))]
 fn acknowledge_geometry_contract(node: &TextSurfaceNode) {
-    let _ = (&node.geometry_ranges, &node.range_geometry_change);
+    let _ = (
+        &node.geometry_ranges,
+        &node.range_geometry_change,
+        node.scroll_request,
+        &node.scroll_to,
+        &node.hit_test,
+    );
 }
 
 #[cfg(not(feature = "components"))]

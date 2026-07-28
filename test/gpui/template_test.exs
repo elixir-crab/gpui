@@ -612,6 +612,7 @@ defmodule GPUI.TemplateTest do
                :"phx-viewport-change" => "viewport",
                :"phx-geometry-change" => "geometry",
                :"phx-range-geometry-change" => "ranges",
+               :"phx-hit-test" => "hit",
                buffer: ref,
                geometry_ranges: [
                  %{
@@ -619,6 +620,8 @@ defmodule GPUI.TemplateTest do
                    end: %{line: 0, utf16_offset: 2}
                  }
                ],
+               scroll_request: 3,
+               scroll_to: %{line: 0, utf16_offset: 2},
                id: "document",
                focus_request: 2,
                tab_size: 4
@@ -629,12 +632,15 @@ defmodule GPUI.TemplateTest do
                id="document"
                buffer={buffer}
                geometry_ranges={[range]}
+               scroll_request={3}
+               scroll_to={GPUI.Text.Position.new(0, 2)}
                focus_request={2}
                tab_size={4}
                phx-transaction="changed"
                phx-viewport-change="viewport"
                phx-geometry-change="geometry"
                phx-range-geometry-change="ranges"
+               phx-hit-test="hit"
              />
              """
              |> GPUI.Element.to_payload()

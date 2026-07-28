@@ -32,10 +32,15 @@ use input::{bind_input_keys, NativeTextInput};
 #[cfg(feature = "real-gpui")]
 use resource::{decode_raster_resource, decode_resource_ref, ImageData, RasterData};
 use runtime::{RuntimeResource, SharedRuntime};
+#[cfg(any(feature = "components", feature = "real-gpui"))]
+use text_buffer::TextPosition;
 #[cfg(feature = "real-gpui")]
 use text_buffer::TextRange;
 #[cfg(feature = "components")]
-use text_buffer::{byte_range_to_selection, next_native_transaction_id, selection_to_byte_range};
+use text_buffer::{
+    byte_range_to_selection, next_native_transaction_id, position_to_byte_offset,
+    selection_to_byte_range,
+};
 use text_buffer::{TextBufferError, TextBufferResource, TextSelection, TextTransaction};
 
 include!("generated/atoms.rs");

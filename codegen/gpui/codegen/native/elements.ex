@@ -45,11 +45,14 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:tab_size) => R.u64(),
           required(:hard_tabs) => boolean(),
           required(:geometry_ranges) => R.vec(R.path(:TextRange)),
+          required(:scroll_request) => R.u64(),
+          required(:scroll_to) => R.option(R.path(:TextPosition)),
           required(:transaction) => R.option(String.t()),
           required(:selection_change) => R.option(String.t()),
           required(:viewport_change) => R.option(String.t()),
           required(:geometry_change) => R.option(String.t()),
-          required(:range_geometry_change) => R.option(String.t())
+          required(:range_geometry_change) => R.option(String.t()),
+          required(:hit_test) => R.option(String.t())
         }
 
   @type input_node :: %{
@@ -209,6 +212,15 @@ defmodule GPUI.Codegen.Native.Elements do
     end
   end
 
+  @spec text_position_attr(term(), atom()) :: R.nif_result(R.option(R.path(:TextPosition)))
+  defrustp text_position_attr(term, attr) do
+    case component_attr(term, attr) do
+      {:ok, {:some, value}} -> {:ok, some(decode_as!(value, R.path(:TextPosition)))}
+      {:ok, nil} -> {:ok, nil}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   @spec decode_text_surface_node(term(), R.path(:GeneratedElementTag)) ::
           R.nif_result(R.path(:ElementNode))
   defrust decode_text_surface_node(term, _tag) do
@@ -232,11 +244,15 @@ defmodule GPUI.Codegen.Native.Elements do
          tab_size: unwrap!(component_positive_integer_attr(term, Atoms.tab_size())).unwrap_or(2),
          hard_tabs: unwrap!(component_bool_attr(term, Atoms.hard_tabs())).unwrap_or(false),
          geometry_ranges: unwrap!(text_ranges_attr(term, Atoms.geometry_ranges())),
+         scroll_request:
+           unwrap!(component_non_negative_integer_attr(term, Atoms.scroll_request())).unwrap_or(0),
+         scroll_to: unwrap!(text_position_attr(term, Atoms.scroll_to())),
          transaction: string_attr(term, Atoms.phx_transaction()),
          selection_change: string_attr(term, Atoms.phx_selection_change()),
          viewport_change: string_attr(term, Atoms.phx_viewport_change()),
          geometry_change: string_attr(term, Atoms.phx_geometry_change()),
-         range_geometry_change: string_attr(term, Atoms.phx_range_geometry_change())
+         range_geometry_change: string_attr(term, Atoms.phx_range_geometry_change()),
+         hit_test: string_attr(term, Atoms.phx_hit_test())
        )
      )}
   end

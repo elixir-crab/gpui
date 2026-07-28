@@ -24,11 +24,14 @@ defmodule Features.EditableTextSurface.View do
           focus_request={assigns.focus_request}
           tab_size={2}
           geometry_ranges={assigns.geometry_ranges}
+          scroll_request={assigns.scroll_request}
+          scroll_to={assigns.scroll_to}
           phx-transaction="text-transaction"
           phx-selection-change="selection-changed"
           phx-viewport-change="viewport-changed"
           phx-geometry-change="geometry-changed"
           phx-range-geometry-change="range-geometry-changed"
+          phx-hit-test="hit-tested"
         />
       </div>
       <div class="flex items-center justify-between px-4 py-2 bg-slate-800 border-t border-slate-700">
@@ -36,12 +39,14 @@ defmodule Features.EditableTextSurface.View do
           <text class="text-xs text-slate-400">{assigns.visible}</text>
           <text class="text-xs text-slate-400">{assigns.caret}</text>
           <text class="text-xs text-slate-400">{assigns.ranges}</text>
+          <text class="text-xs text-slate-400">{assigns.hit}</text>
           <text class="text-xs text-slate-400">{assigns.status}</text>
         </div>
         <div class="flex items-center gap-2">
           <button phx-click="external-edit" class="px-3 py-1 bg-slate-700 rounded">External edit</button>
           <button phx-click="undo" class="px-3 py-1 bg-slate-700 rounded">Undo</button>
           <button phx-click="redo" class="px-3 py-1 bg-slate-700 rounded">Redo</button>
+          <button phx-click="scroll-start" class="px-3 py-1 bg-slate-700 rounded">Scroll start</button>
           <button phx-click="focus-editor" class="px-3 py-1 bg-blue-600 rounded">Focus</button>
         </div>
       </div>
@@ -73,8 +78,16 @@ defmodule Features.EditableTextSurface.View do
     {:noreply, %{assigns | ranges: "#{length(ranges)} range(s) laid out"}}
   end
 
+  def handle_event("hit-tested", %{value: position}, assigns) do
+    hit = "Hit Ln #{position.line + 1}, Col #{position.utf16_offset + 1}"
+    {:noreply, %{assigns | hit: hit}}
+  end
+
   def handle_event("focus-editor", _event, assigns),
     do: {:noreply, %{assigns | focus_request: assigns.focus_request + 1}}
+
+  def handle_event("scroll-start", _event, assigns),
+    do: {:noreply, %{assigns | scroll_request: assigns.scroll_request + 1}}
 
   def handle_event("external-edit", _event, assigns) do
     {:ok, snapshot} = GPUI.Text.Buffer.snapshot(assigns.buffer)
@@ -144,11 +157,14 @@ defmodule Features.EditableTextSurface.App do
     assigns = %{
       buffer: buffer,
       geometry_ranges: [requested_range],
+      scroll_request: 0,
+      scroll_to: GPUI.Text.Position.new(0, 0),
       revision: 0,
       focus_request: 1,
       visible: "viewport pending",
       caret: "geometry pending",
       ranges: "range geometry pending",
+      hit: "hit test pending",
       status: "Ready"
     }
 

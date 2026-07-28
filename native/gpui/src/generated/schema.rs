@@ -384,11 +384,14 @@ pub(crate) struct TextSurfaceNode {
     pub(crate) tab_size: u64,
     pub(crate) hard_tabs: bool,
     pub(crate) geometry_ranges: Vec<TextRange>,
+    pub(crate) scroll_request: u64,
+    pub(crate) scroll_to: Option<TextPosition>,
     pub(crate) transaction: Option<String>,
     pub(crate) selection_change: Option<String>,
     pub(crate) viewport_change: Option<String>,
     pub(crate) geometry_change: Option<String>,
     pub(crate) range_geometry_change: Option<String>,
+    pub(crate) hit_test: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_element_node<'a>(term: Term<'a>) -> NifResult<ElementNode> {
@@ -521,6 +524,17 @@ pub(crate) fn text_ranges_attr<'a>(
     }
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn text_position_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+) -> NifResult<Option<TextPosition>> {
+    match component_attr(term, attr) {
+        Ok(Some(value)) => Ok(Some(value.decode::<TextPosition>()?)),
+        Ok(None) => Ok(None),
+        Err(reason) => Err(reason),
+    }
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn decode_text_surface_node<'a>(
     term: Term<'a>,
     _tag: GeneratedElementTag,
@@ -546,11 +560,18 @@ pub(crate) fn decode_text_surface_node<'a>(
                 .unwrap_or(2),
             hard_tabs: component_bool_attr(term, atoms::hard_tabs())?.unwrap_or(false),
             geometry_ranges: text_ranges_attr(term, atoms::geometry_ranges())?,
+            scroll_request: component_non_negative_integer_attr(
+                    term,
+                    atoms::scroll_request(),
+                )?
+                .unwrap_or(0),
+            scroll_to: text_position_attr(term, atoms::scroll_to())?,
             transaction: string_attr(term, atoms::phx_transaction()),
             selection_change: string_attr(term, atoms::phx_selection_change()),
             viewport_change: string_attr(term, atoms::phx_viewport_change()),
             geometry_change: string_attr(term, atoms::phx_geometry_change()),
             range_geometry_change: string_attr(term, atoms::phx_range_geometry_change()),
+            hit_test: string_attr(term, atoms::phx_hit_test()),
         }),
     )
 }
