@@ -27,6 +27,9 @@ defmodule GPUI.Codegen.Native.StyleTest do
     assert MetaAST.function!(Style, :pixel_length) |> Rust.render() =~
              "gpui::px(value).into()"
 
+    assert MetaAST.function!(Style, :auto_flex_basis) |> Rust.render() =~
+             "gpui::Length::Auto"
+
     assert MetaAST.function!(Style, :default_style) |> Rust.render() =~
              "StyleAttrs::default()"
   end
@@ -45,6 +48,9 @@ defmodule GPUI.Codegen.Native.StyleTest do
     assert source =~ "element = element.flex();"
     assert source =~ "gpui::FontWeight::BOLD"
     assert source =~ "element = element.border_color(gpui::rgb(value));"
+    assert source =~ "element = element.flex_basis(value);"
+    assert source =~ "element = element.truncate();"
+    assert source =~ "element = element.cursor_pointer();"
   end
 
   test "keeps one decoding arm for every style contract" do

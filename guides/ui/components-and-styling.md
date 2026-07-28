@@ -503,21 +503,25 @@ native style attributes. Static layout and design values should use classes;
 reserve `style` for runtime values that cannot be known in the template.
 Supported groups include:
 
-- flex display, direction, wrapping, alignment, growth, shrink, and the
-  `flex-1`, `flex-auto`, `flex-initial`, and `flex-none` shorthands;
+- flex display, direction, wrapping, alignment, growth, shrink, the
+  `flex-1`, `flex-auto`, `flex-initial`, and `flex-none` shorthands, and basis
+  values such as `basis-1/2` or `basis-[240px]`;
 - foreground and background colors, including arbitrary six-digit RGB values
   such as `bg-[#101828]`;
-- typography, weight, line height, and opacity, including safe arbitrary pixel
-  and numeric values;
+- typography, weight, line height, alignment, whitespace, ellipsis/truncation,
+  and opacity, including safe arbitrary pixel and numeric values;
 - padding, margin, and gaps using Tailwind's numeric spacing convention where
   one unit is four pixels, including decimal values such as `gap-1.5`;
 - width, height, and minimum/maximum dimensions using spacing values, arbitrary
   pixels, percentages, or fractions such as `w-1/2`;
-- borders, border colors, and radius, including exact arbitrary pixel radii.
+- borders, border colors, and radius, including exact arbitrary pixel radii;
+- hidden overflow clipping and native cursor feedback.
 
 ```elixir
-<div class="flex flex-1 min-h-0 w-1/2 gap-1.5 p-4 bg-[#101828]">
-  <text class="text-[#f8fafc] text-[13px] leading-[18px] font-semibold">Settings</text>
+<div class="flex flex-1 basis-1/2 min-h-0 gap-1.5 p-4 overflow-hidden bg-[#101828]">
+  <text class="truncate text-[#f8fafc] text-[13px] leading-[18px] font-semibold">
+    Settings
+  </text>
 </div>
 ```
 

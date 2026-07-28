@@ -136,6 +136,18 @@ pub(crate) fn px_length_value<'a>(term: Term<'a>) -> Option<gpui::DefiniteLength
         None => None,
     }
 }
+#[allow(clippy::manual_map)]
+#[cfg(feature = "real-gpui")]
+pub(crate) fn flex_basis_value<'a>(term: Term<'a>) -> Option<gpui::Length> {
+    if atom_eq(term, "auto") {
+        Some(auto_flex_basis())
+    } else {
+        match length_value(term) {
+            Some(value) => Some(value.into()),
+            None => None,
+        }
+    }
+}
 #[cfg(feature = "real-gpui")]
 pub(crate) fn radius_value<'a>(term: Term<'a>) -> Option<f32> {
     if atom_eq(term, "full") { Some(9999.0) } else { px_value(term) }
@@ -532,12 +544,19 @@ pub(crate) fn decode_text_node<'a>(
 pub(crate) struct StyleAttrs {
     pub(crate) display: Option<String>,
     pub(crate) flex: Option<String>,
+    pub(crate) flex_basis: Option<gpui::Length>,
     pub(crate) flex_direction: Option<String>,
     pub(crate) align_items: Option<String>,
     pub(crate) justify_content: Option<String>,
     pub(crate) flex_wrap: Option<String>,
     pub(crate) flex_grow: Option<f32>,
     pub(crate) flex_shrink: Option<f32>,
+    pub(crate) overflow: Option<String>,
+    pub(crate) white_space: Option<String>,
+    pub(crate) text_overflow: Option<String>,
+    pub(crate) text_align: Option<String>,
+    pub(crate) truncate: bool,
+    pub(crate) cursor: Option<String>,
     pub(crate) background: Option<u32>,
     pub(crate) color: Option<u32>,
     pub(crate) font_size: Option<f32>,
@@ -582,6 +601,10 @@ pub(crate) fn pixel_length(value: f32) -> gpui::DefiniteLength {
     gpui::px(value).into()
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn auto_flex_basis() -> gpui::Length {
+    gpui::Length::Auto
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn default_style() -> StyleAttrs {
     StyleAttrs::default()
 }
@@ -602,6 +625,12 @@ pub(crate) fn apply_generated_style_attr<'a>(
             let value = atom_string(term);
             let valid = value.is_some();
             attrs.flex = value;
+            valid
+        }
+        value if value == atoms::flex_basis() => {
+            let value = flex_basis_value(term);
+            let valid = value.is_some();
+            attrs.flex_basis = value;
             valid
         }
         value if value == atoms::flex_direction() => {
@@ -638,6 +667,42 @@ pub(crate) fn apply_generated_style_attr<'a>(
             let value = number_value(term);
             let valid = value.is_some();
             attrs.flex_shrink = value;
+            valid
+        }
+        value if value == atoms::overflow() => {
+            let value = atom_string(term);
+            let valid = value.is_some();
+            attrs.overflow = value;
+            valid
+        }
+        value if value == atoms::white_space() => {
+            let value = atom_string(term);
+            let valid = value.is_some();
+            attrs.white_space = value;
+            valid
+        }
+        value if value == atoms::text_overflow() => {
+            let value = atom_string(term);
+            let valid = value.is_some();
+            attrs.text_overflow = value;
+            valid
+        }
+        value if value == atoms::text_align() => {
+            let value = atom_string(term);
+            let valid = value.is_some();
+            attrs.text_align = value;
+            valid
+        }
+        value if value == atoms::truncate() => {
+            let value = atom_eq(term, "true");
+            let valid = value;
+            attrs.truncate = value;
+            valid
+        }
+        value if value == atoms::cursor() => {
+            let value = atom_string(term);
+            let valid = value.is_some();
+            attrs.cursor = value;
             valid
         }
         value if value == atoms::background() => {
@@ -861,6 +926,12 @@ pub(crate) fn apply_generated_render_styles(
         }
         _ => {}
     };
+    match style.flex_basis {
+        Some(value) => {
+            element = element.flex_basis(value);
+        }
+        _ => {}
+    };
     match style.flex_direction.as_deref() {
         Some("column") => {
             element = element.flex_col();
@@ -936,6 +1007,60 @@ pub(crate) fn apply_generated_render_styles(
     match style.flex_shrink {
         Some(value) => {
             element = element.flex_shrink(value);
+        }
+        _ => {}
+    };
+    match style.overflow.as_deref() {
+        Some("hidden") => {
+            element = element.overflow_hidden();
+        }
+        _ => {}
+    };
+    match style.white_space.as_deref() {
+        Some("normal") => {
+            element = element.whitespace_normal();
+        }
+        Some("nowrap") => {
+            element = element.whitespace_nowrap();
+        }
+        _ => {}
+    };
+    match style.text_overflow.as_deref() {
+        Some("ellipsis") => {
+            element = element.text_ellipsis();
+        }
+        _ => {}
+    };
+    match style.text_align.as_deref() {
+        Some("left") => {
+            element = element.text_left();
+        }
+        Some("center") => {
+            element = element.text_center();
+        }
+        Some("right") => {
+            element = element.text_right();
+        }
+        _ => {}
+    };
+    if style.truncate {
+        element = element.truncate();
+    }
+    match style.cursor.as_deref() {
+        Some("default") => {
+            element = element.cursor_default();
+        }
+        Some("pointer") => {
+            element = element.cursor_pointer();
+        }
+        Some("text") => {
+            element = element.cursor_text();
+        }
+        Some("move") => {
+            element = element.cursor_move();
+        }
+        Some("not_allowed") => {
+            element = element.cursor_not_allowed();
         }
         _ => {}
     };

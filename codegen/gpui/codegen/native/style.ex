@@ -28,6 +28,11 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
         Gpui.px(value).into()
       end
 
+      @spec auto_flex_basis() :: R.path({:gpui, :Length})
+      defrust auto_flex_basis() do
+        Gpui.Length.Auto
+      end
+
       @spec default_style() :: style_attrs()
       defrust default_style() do
         StyleAttrs.default()
@@ -62,6 +67,9 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
   defp style_field_type(:length),
     do: quote(do: R.option(R.path({:gpui, :DefiniteLength})))
 
+  defp style_field_type(:flex_basis),
+    do: quote(do: R.option(R.path({:gpui, :Length})))
+
   defp style_clause(spec) do
     value = Macro.var(:value, nil)
     attrs = Macro.var(:attrs, nil)
@@ -92,6 +100,7 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
   defp style_decode_call(:number), do: quote(do: number_value(term))
   defp style_decode_call(:px), do: quote(do: px_value(term))
   defp style_decode_call(:length), do: quote(do: length_value(term))
+  defp style_decode_call(:flex_basis), do: quote(do: flex_basis_value(term))
   defp style_decode_call(:radius), do: quote(do: radius_value(term))
 
   defp render_statement(%{field: field, render: :flex_if_true}) do
@@ -100,6 +109,16 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
     quote do
       if unquote(style_field) do
         assign!(element, element.flex())
+      end
+    end
+  end
+
+  defp render_statement(%{field: field, render: :truncate_if_true}) do
+    style_field = field_access(:style, field)
+
+    quote do
+      if unquote(style_field) do
+        assign!(element, element.truncate())
       end
     end
   end
@@ -118,10 +137,10 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
   end
 
   defp render_statement(%{field: field, render: {:option_method, method, unit}})
-       when unit in [:rgb, :px, :length, :f32] do
+       when unit in [:rgb, :px, :length, :flex_basis, :f32] do
     rendered_value =
       case unit do
-        unit when unit in [:f32, :length] -> Macro.var(:value, nil)
+        unit when unit in [:f32, :length, :flex_basis] -> Macro.var(:value, nil)
         unit -> {{:., [], [{:__aliases__, [], [:Gpui]}, unit]}, [], [Macro.var(:value, nil)]}
       end
 

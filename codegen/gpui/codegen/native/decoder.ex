@@ -116,6 +116,18 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
+  @spec flex_basis_value(term()) :: R.option(R.path({:gpui, :Length}))
+  defrust flex_basis_value(term) do
+    if atom_eq(term, "auto") do
+      some(auto_flex_basis())
+    else
+      case length_value(term) do
+        {:some, value} -> some(value.into())
+        :none -> nil
+      end
+    end
+  end
+
   @spec radius_value(term()) :: R.option(R.f32())
   defrust radius_value(term) do
     if atom_eq(term, "full") do
@@ -323,7 +335,7 @@ defmodule GPUI.Codegen.Native.Decoder do
           :length_value ->
             [A.attr(:allow, [A.path([:clippy, :manual_range_contains])]) | attrs]
 
-          :px_length_value ->
+          name when name in [:px_length_value, :flex_basis_value] ->
             [A.attr(:allow, [A.path([:clippy, :manual_map])]) | attrs]
 
           _other ->

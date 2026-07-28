@@ -356,8 +356,11 @@ defmodule GPUI.Native.LifecycleE2ETest do
           align_items: :stretch,
           justify_content: :between,
           flex_wrap: :wrap,
+          flex_basis: {:fraction, 0.5},
           flex_grow: 1.0,
           flex_shrink: 0.0,
+          overflow: :hidden,
+          cursor: :pointer,
           opacity: 0.9,
           padding_x: {:px, 8.0},
           padding_y: {:px, 4.0},
@@ -376,7 +379,10 @@ defmodule GPUI.Native.LifecycleE2ETest do
               color: {:rgb, 0xFFFFFF},
               font_size: {:px, 18.0},
               font_weight: :bold,
-              line_height: {:px, 24.0}
+              line_height: {:px, 24.0},
+              white_space: :nowrap,
+              text_overflow: :ellipsis,
+              text_align: :center
             ]
           },
           children: ["Expanded styles"]

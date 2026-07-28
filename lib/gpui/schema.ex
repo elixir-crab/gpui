@@ -503,6 +503,12 @@ defmodule GPUI.Schema do
          ]}
     },
     %Style{
+      name: :flex_basis,
+      field: :flex_basis,
+      type: :flex_basis,
+      render: {:option_method, :flex_basis, :flex_basis}
+    },
+    %Style{
       name: :flex_direction,
       field: :flex_direction,
       type: :atom_string,
@@ -563,6 +569,46 @@ defmodule GPUI.Schema do
       field: :flex_shrink,
       type: :number,
       render: {:option_method, :flex_shrink, :f32}
+    },
+    %Style{
+      name: :overflow,
+      field: :overflow,
+      type: :atom_string,
+      render: {:enum_methods, [{"hidden", :overflow_hidden}]}
+    },
+    %Style{
+      name: :white_space,
+      field: :white_space,
+      type: :atom_string,
+      render: {:enum_methods, [{"normal", :whitespace_normal}, {"nowrap", :whitespace_nowrap}]}
+    },
+    %Style{
+      name: :text_overflow,
+      field: :text_overflow,
+      type: :atom_string,
+      render: {:enum_methods, [{"ellipsis", :text_ellipsis}]}
+    },
+    %Style{
+      name: :text_align,
+      field: :text_align,
+      type: :atom_string,
+      render:
+        {:enum_methods, [{"left", :text_left}, {"center", :text_center}, {"right", :text_right}]}
+    },
+    %Style{name: :truncate, field: :truncate, type: {:atom_eq, true}, render: :truncate_if_true},
+    %Style{
+      name: :cursor,
+      field: :cursor,
+      type: :atom_string,
+      render:
+        {:enum_methods,
+         [
+           {"default", :cursor_default},
+           {"pointer", :cursor_pointer},
+           {"text", :cursor_text},
+           {"move", :cursor_move},
+           {"not_allowed", :cursor_not_allowed}
+         ]}
     },
     %Style{
       name: :background,

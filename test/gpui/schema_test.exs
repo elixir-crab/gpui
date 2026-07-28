@@ -95,6 +95,13 @@ defmodule GPUI.SchemaTest do
     assert :flex_wrap in GPUI.Schema.styles()
     assert :opacity in GPUI.Schema.styles()
     assert :border_color in GPUI.Schema.styles()
+    assert :flex_basis in GPUI.Schema.styles()
+    assert :overflow in GPUI.Schema.styles()
+    assert :white_space in GPUI.Schema.styles()
+    assert :text_overflow in GPUI.Schema.styles()
+    assert :text_align in GPUI.Schema.styles()
+    assert :truncate in GPUI.Schema.styles()
+    assert :cursor in GPUI.Schema.styles()
   end
 
   test "derives public option documentation from component contracts" do

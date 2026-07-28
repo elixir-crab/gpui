@@ -2,6 +2,8 @@
 
 ## 0.1.1
 
+- Added GPUI-native flex-basis, overflow clipping, whitespace, text alignment and ellipsis/truncation, and cursor utilities to the Tailwind-compatible style protocol.
+
 - Expanded the Tailwind-compatible normalizer with flex shorthands, decimal spacing, fractional and percentage dimensions, safe arbitrary pixel/color/opacity values, exact arbitrary radii, and exact preservation of unsupported classes; replaced static minimum-height styles in the showcase applications with `min-h-0` utilities.
 
 - Added bounded renderer-independent window commands with cross-platform modified shortcuts, native post-dispatch matching that preserves focused input behavior, local/remote event routing, deterministic command tests, and command-driven Git, process, and log/trace dogfood workflows.

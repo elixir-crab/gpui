@@ -49,6 +49,57 @@ defmodule GPUI.TailwindTest do
     end
   end
 
+  test "normalizes flex basis using lengths and auto" do
+    assert %{style: style, unknown: []} =
+             GPUI.Tailwind.normalize("basis-0 w-24 h-60 min-w-0 max-h-64")
+
+    assert Keyword.fetch!(style, :flex_basis) == {:px, 0.0}
+    assert Keyword.fetch!(style, :width) == {:px, 96.0}
+    assert Keyword.fetch!(style, :height) == {:px, 240.0}
+    assert Keyword.fetch!(style, :min_width) == {:px, 0.0}
+    assert Keyword.fetch!(style, :max_height) == {:px, 256.0}
+
+    for {class, expected} <- [
+          {"basis-auto", :auto},
+          {"basis-full", :full},
+          {"basis-1/2", {:fraction, 0.5}},
+          {"basis-[240px]", {:px, 240.0}}
+        ] do
+      assert %{style: [flex_basis: ^expected], unknown: []} = GPUI.Tailwind.normalize(class)
+    end
+  end
+
+  test "normalizes clipping and dense text behavior" do
+    assert %{
+             style: [
+               overflow: :hidden,
+               white_space: :nowrap,
+               text_overflow: :ellipsis,
+               text_align: :right,
+               truncate: true
+             ],
+             unknown: []
+           } =
+             GPUI.Tailwind.normalize(
+               "overflow-hidden whitespace-nowrap text-ellipsis text-right truncate"
+             )
+
+    assert %{style: [white_space: :normal, text_align: :left], unknown: ["text-clip"]} =
+             GPUI.Tailwind.normalize("whitespace-normal text-left text-clip")
+  end
+
+  test "normalizes native cursor behavior" do
+    for {class, expected} <- [
+          {"cursor-default", :default},
+          {"cursor-pointer", :pointer},
+          {"cursor-text", :text},
+          {"cursor-move", :move},
+          {"cursor-not-allowed", :not_allowed}
+        ] do
+      assert %{style: [cursor: ^expected], unknown: []} = GPUI.Tailwind.normalize(class)
+    end
+  end
+
   test "normalizes numeric scales and safe arbitrary values" do
     assert %{
              style: [

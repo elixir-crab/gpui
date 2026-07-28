@@ -82,6 +82,8 @@ defmodule GPUI.Tailwind do
   defp normalize_class("flex-wrap", acc), do: put_style(acc, :flex_wrap, :wrap)
   defp normalize_class("flex-wrap-reverse", acc), do: put_style(acc, :flex_wrap, :wrap_reverse)
   defp normalize_class("flex-nowrap", acc), do: put_style(acc, :flex_wrap, :nowrap)
+  defp normalize_class("basis-auto", acc), do: put_style(acc, :flex_basis, :auto)
+  defp normalize_class("basis-" <> value, acc), do: length_value(acc, :flex_basis, value)
   defp normalize_class("grow", acc), do: put_style(acc, :flex_grow, 1.0)
   defp normalize_class("grow-0", acc), do: put_style(acc, :flex_grow, 0.0)
   defp normalize_class("shrink", acc), do: put_style(acc, :flex_shrink, 1.0)
@@ -97,6 +99,19 @@ defmodule GPUI.Tailwind do
   defp normalize_class("justify-between", acc), do: put_style(acc, :justify_content, :between)
   defp normalize_class("justify-around", acc), do: put_style(acc, :justify_content, :around)
   defp normalize_class("justify-evenly", acc), do: put_style(acc, :justify_content, :evenly)
+  defp normalize_class("overflow-hidden", acc), do: put_style(acc, :overflow, :hidden)
+  defp normalize_class("whitespace-normal", acc), do: put_style(acc, :white_space, :normal)
+  defp normalize_class("whitespace-nowrap", acc), do: put_style(acc, :white_space, :nowrap)
+  defp normalize_class("text-ellipsis", acc), do: put_style(acc, :text_overflow, :ellipsis)
+  defp normalize_class("text-left", acc), do: put_style(acc, :text_align, :left)
+  defp normalize_class("text-center", acc), do: put_style(acc, :text_align, :center)
+  defp normalize_class("text-right", acc), do: put_style(acc, :text_align, :right)
+  defp normalize_class("truncate", acc), do: put_style(acc, :truncate, true)
+  defp normalize_class("cursor-default", acc), do: put_style(acc, :cursor, :default)
+  defp normalize_class("cursor-pointer", acc), do: put_style(acc, :cursor, :pointer)
+  defp normalize_class("cursor-text", acc), do: put_style(acc, :cursor, :text)
+  defp normalize_class("cursor-move", acc), do: put_style(acc, :cursor, :move)
+  defp normalize_class("cursor-not-allowed", acc), do: put_style(acc, :cursor, :not_allowed)
   defp normalize_class("font-light", acc), do: put_style(acc, :font_weight, :light)
   defp normalize_class("font-normal", acc), do: put_style(acc, :font_weight, :normal)
   defp normalize_class("font-medium", acc), do: put_style(acc, :font_weight, :medium)
@@ -242,6 +257,7 @@ defmodule GPUI.Tailwind do
         margin_right: "mr",
         margin_bottom: "mb",
         margin_left: "ml",
+        flex_basis: "basis",
         width: "w",
         height: "h",
         min_width: "min-w",
