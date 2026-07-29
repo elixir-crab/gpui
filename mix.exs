@@ -131,7 +131,8 @@ defmodule GPUI.MixProject do
           GPUI.Text.Viewport,
           GPUI.Text.CaretGeometry,
           GPUI.Text.RangeGeometry,
-          GPUI.Text.Rectangle
+          GPUI.Text.Rectangle,
+          GPUI.Text.Decoration
         ],
         Displays: [GPUI.Display, GPUI.Display.Native],
         Elements: [

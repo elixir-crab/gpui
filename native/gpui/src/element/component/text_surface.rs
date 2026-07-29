@@ -346,6 +346,9 @@ pub(crate) fn render(
             .defer(context.cx, move |window, cx| focus.focus(window, cx));
     }
 
+    let decoration_quads =
+        decoration_quads(&surface.state, &surface.text, &node.decorations, context.cx);
+
     let selection_sync = SelectionSync {
         state: surface.state.clone(),
         buffer: node.buffer.clone(),
@@ -369,7 +372,28 @@ pub(crate) fn render(
         .bordered(false)
         .focus_bordered(false)
         .h_full();
+    let decorations = gpui::canvas(
+        |_bounds, _window, _cx| {},
+        move |_bounds, _prepaint, window, _cx| {
+            for (bounds, background, underline) in &decoration_quads {
+                if let Some(color) = background {
+                    window.paint_quad(gpui::fill(*bounds, gpui::rgb(*color)));
+                }
+                if let Some(color) = underline {
+                    let underline_bounds = gpui::Bounds::new(
+                        gpui::point(bounds.origin.x, bounds.bottom() - gpui::px(2.)),
+                        gpui::size(bounds.size.width, gpui::px(2.)),
+                    );
+                    window.paint_quad(gpui::fill(underline_bounds, gpui::rgb(*color)));
+                }
+            }
+        },
+    )
+    .absolute()
+    .inset_0();
+
     gpui::div()
+        .relative()
         .id(format!("text-surface-{surface_id}"))
         .track_focus(&focus.tab_stop(!node.disabled))
         .on_key_up(move |_event, _window, cx| selection_sync.run(cx))
@@ -393,7 +417,30 @@ pub(crate) fn render(
         })
         .size_full()
         .child(apply_component_styles(input, node.style))
+        .child(decorations)
         .into_any_element()
+}
+
+#[cfg(feature = "components")]
+type DecorationQuad = (gpui::Bounds<gpui::Pixels>, Option<u32>, Option<u32>);
+
+#[cfg(feature = "components")]
+fn decoration_quads(
+    state: &gpui::Entity<gpui_component::input::InputState>,
+    text: &str,
+    decorations: &[crate::TextDecorationNode],
+    cx: &gpui::App,
+) -> Vec<DecorationQuad> {
+    let state = state.read(cx);
+    decorations
+        .iter()
+        .take(256)
+        .filter_map(|decoration| {
+            let range = crate::text_buffer::range_to_byte_range(text, &decoration.range).ok()?;
+            let bounds = state.range_to_bounds(&range)?;
+            Some((bounds, decoration.background, decoration.underline))
+        })
+        .collect()
 }
 
 #[cfg(feature = "components")]
@@ -586,6 +633,7 @@ fn acknowledge_geometry_contract(node: &TextSurfaceNode) {
         node.scroll_request,
         &node.scroll_to,
         &node.hit_test,
+        &node.decorations,
     );
 }
 

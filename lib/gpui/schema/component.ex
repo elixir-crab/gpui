@@ -30,6 +30,7 @@ defmodule GPUI.Schema.Component do
           | :text_buffer
           | :text_ranges
           | :text_position
+          | :text_decorations
 
   @type attr_type ::
           scalar_type()

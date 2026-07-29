@@ -20,6 +20,7 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
           buffer={assigns.buffer}
           focus_request={assigns.primary_focus}
           geometry_ranges={assigns.geometry_ranges}
+          decorations={assigns.decorations}
           scroll_request={assigns.scroll_request}
           scroll_to={assigns.scroll_to}
           phx-transaction="text-transaction"
@@ -84,6 +85,12 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
            root(SharedSurfaceView,
              buffer: buffer,
              geometry_ranges: [Range.new(Position.new(0, 0), Position.new(0, 3))],
+             decorations: [
+               GPUI.Text.Decoration.new(Range.new(Position.new(0, 0), Position.new(0, 3)),
+                 background: 0x263D66,
+                 underline: 0x60A5FA
+               )
+             ],
              scroll_request: 0,
              scroll_to: Position.new(0, 0),
              revision: 0,

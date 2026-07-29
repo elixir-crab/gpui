@@ -22,6 +22,7 @@ defmodule Features.EditableTextSurface.View do
           buffer={assigns.buffer}
           focus_request={assigns.focus_request}
           tab_size={2}
+          decorations={assigns.decorations}
           geometry_ranges={assigns.geometry_ranges}
           scroll_request={assigns.scroll_request}
           scroll_to={assigns.scroll_to}
@@ -179,8 +180,15 @@ defmodule Features.EditableTextSurface.App do
     requested_range =
       GPUI.Text.Range.new(GPUI.Text.Position.new(0, 0), GPUI.Text.Position.new(0, 7))
 
+    decoration =
+      GPUI.Text.Decoration.new(requested_range,
+        background: 0x263D66,
+        underline: 0x60A5FA
+      )
+
     assigns = %{
       buffer: buffer,
+      decorations: [decoration],
       geometry_ranges: [requested_range],
       scroll_request: 0,
       scroll_to: GPUI.Text.Position.new(0, 0),

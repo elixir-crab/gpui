@@ -10,15 +10,15 @@ mod atoms {
         = "checked", children = "children", cleanable = "cleanable", click = "click",
         closable = "closable", close_button = "close_button", color = "color", command =
         "command", commands = "commands", compact = "compact", cursor = "cursor", dark =
-        "dark", data = "data", delay = "delay", disabled = "disabled", display =
-        "display", error = "error", event = "event", expanded = "expanded", first =
-        "first", flex = "flex", flex_basis = "flex_basis", flex_direction =
-        "flex_direction", flex_grow = "flex_grow", flex_shrink = "flex_shrink", flex_wrap
-        = "flex_wrap", focus_request = "focus_request", font_size = "font_size",
-        font_weight = "font_weight", format = "format", gap = "gap", geometry =
-        "geometry", geometry_ranges = "geometry_ranges", hard_tabs = "hard_tabs",
-        header_height = "header_height", height = "height", hit_test = "hit_test",
-        hoverable = "hoverable", id = "id", indeterminate = "indeterminate",
+        "dark", data = "data", decorations = "decorations", delay = "delay", disabled =
+        "disabled", display = "display", error = "error", event = "event", expanded =
+        "expanded", first = "first", flex = "flex", flex_basis = "flex_basis",
+        flex_direction = "flex_direction", flex_grow = "flex_grow", flex_shrink =
+        "flex_shrink", flex_wrap = "flex_wrap", focus_request = "focus_request",
+        font_size = "font_size", font_weight = "font_weight", format = "format", gap =
+        "gap", geometry = "geometry", geometry_ranges = "geometry_ranges", hard_tabs =
+        "hard_tabs", header_height = "header_height", height = "height", hit_test =
+        "hit_test", hoverable = "hoverable", id = "id", indeterminate = "indeterminate",
         invalid_position = "invalid_position", invalid_range = "invalid_range",
         invalid_selection = "invalid_selection", item_height = "item_height",
         justify_content = "justify_content", keyboard = "keyboard", keydown = "keydown",

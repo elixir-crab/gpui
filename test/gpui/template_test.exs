@@ -614,6 +614,16 @@ defmodule GPUI.TemplateTest do
                :"phx-range-geometry-change" => "ranges",
                :"phx-hit-test" => "hit",
                buffer: ref,
+               decorations: [
+                 %{
+                   range: %{
+                     start: %{line: 0, utf16_offset: 0},
+                     end: %{line: 0, utf16_offset: 2}
+                   },
+                   background: 0x112233,
+                   underline: 0x445566
+                 }
+               ],
                geometry_ranges: [
                  %{
                    start: %{line: 0, utf16_offset: 0},
@@ -631,6 +641,12 @@ defmodule GPUI.TemplateTest do
              <text_surface
                id="document"
                buffer={buffer}
+               decorations={[
+                 GPUI.Text.Decoration.new(range,
+                   background: 0x112233,
+                   underline: 0x445566
+                 )
+               ]}
                geometry_ranges={[range]}
                scroll_request={3}
                scroll_to={GPUI.Text.Position.new(0, 2)}
@@ -659,6 +675,15 @@ defmodule GPUI.TemplateTest do
 
       ~GPUI"""
       <text_surface id="too-many" buffer={buffer} geometry_ranges={ranges} />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/at most 256 GPUI.Text.Decoration values/, fn ->
+      decorations = List.duplicate(GPUI.Text.Decoration.new(range), 257)
+
+      ~GPUI"""
+      <text_surface id="too-decorated" buffer={buffer} decorations={decorations} />
       """
       |> GPUI.Element.to_payload()
     end

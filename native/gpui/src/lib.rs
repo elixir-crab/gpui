@@ -1,3 +1,5 @@
+#[cfg(feature = "real-gpui")]
+use rustler::NifMap;
 use rustler::{Atom, Binary, Encoder, Env, NifResult, ResourceArc, Term};
 
 #[cfg(feature = "real-gpui")]

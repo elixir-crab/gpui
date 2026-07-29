@@ -386,12 +386,20 @@ pub(crate) struct TextSurfaceNode {
     pub(crate) geometry_ranges: Vec<TextRange>,
     pub(crate) scroll_request: u64,
     pub(crate) scroll_to: Option<TextPosition>,
+    pub(crate) decorations: Vec<TextDecorationNode>,
     pub(crate) transaction: Option<String>,
     pub(crate) selection_change: Option<String>,
     pub(crate) viewport_change: Option<String>,
     pub(crate) geometry_change: Option<String>,
     pub(crate) range_geometry_change: Option<String>,
     pub(crate) hit_test: Option<String>,
+}
+#[derive(Clone, Debug, NifMap)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct TextDecorationNode {
+    pub(crate) range: TextRange,
+    pub(crate) background: Option<u32>,
+    pub(crate) underline: Option<u32>,
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_element_node<'a>(term: Term<'a>) -> NifResult<ElementNode> {
@@ -535,6 +543,17 @@ pub(crate) fn text_position_attr<'a>(
     }
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn text_decorations_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+) -> NifResult<Vec<TextDecorationNode>> {
+    match component_attr(term, attr) {
+        Ok(Some(value)) => value.decode::<Vec<TextDecorationNode>>(),
+        Ok(None) => Ok(vec![]),
+        Err(reason) => Err(reason),
+    }
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn decode_text_surface_node<'a>(
     term: Term<'a>,
     _tag: GeneratedElementTag,
@@ -566,6 +585,7 @@ pub(crate) fn decode_text_surface_node<'a>(
                 )?
                 .unwrap_or(0),
             scroll_to: text_position_attr(term, atoms::scroll_to())?,
+            decorations: text_decorations_attr(term, atoms::decorations())?,
             transaction: string_attr(term, atoms::phx_transaction()),
             selection_change: string_attr(term, atoms::phx_selection_change()),
             viewport_change: string_attr(term, atoms::phx_viewport_change()),

@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Added neutral bounded text decorations with range-attached RGB backgrounds and underlines, without diagnostic or language policy.
 - Expanded requested range geometry into bounded per-visual-row rectangles for wrapped text.
 - Replaced the editable-text demonstration's fixed gutter with consumer-owned line numbers driven by native visible rows, line height, and scroll offset.
 - Added declarative scroll-to-position request tokens and asynchronous native point-to-position hit-test events for text surfaces.

@@ -494,7 +494,8 @@ defmodule GPUI.Schema do
         hard_tabs: :boolean,
         geometry_ranges: :text_ranges,
         scroll_request: {:default, :non_negative_integer, 0},
-        scroll_to: :text_position
+        scroll_to: :text_position,
+        decorations: :text_decorations
       ]
     },
     %Component{
@@ -964,6 +965,24 @@ defmodule GPUI.Schema do
 
   defp validate_attr!(_tag, _name, :text_position, %{__struct__: GPUI.Text.Position}), do: :ok
 
+  defp validate_attr!(tag, name, :text_decorations, value) when is_list(value) do
+    valid? =
+      Enum.count_until(value, 257) <= 256 and
+        Enum.all?(value, fn
+          %{__struct__: GPUI.Text.Decoration, range: %{__struct__: GPUI.Text.Range}} = decoration ->
+            Enum.all?([decoration.background, decoration.underline], fn color ->
+              is_nil(color) or (is_integer(color) and color in 0..0xFFFFFF)
+            end)
+
+          _other ->
+            false
+        end)
+
+    if valid?,
+      do: :ok,
+      else: invalid_attr!(tag, name, "at most 256 GPUI.Text.Decoration values", value)
+  end
+
   defp validate_attr!(tag, name, :text_ranges, value) when is_list(value) do
     if Enum.count_until(value, 65) <= 64 and
          Enum.all?(value, &match?(%{__struct__: GPUI.Text.Range}, &1)) do
@@ -998,6 +1017,7 @@ defmodule GPUI.Schema do
   defp expected_attr_type(:text_buffer), do: "a GPUI.Text.Buffer"
   defp expected_attr_type(:text_ranges), do: "at most 64 GPUI.Text.Range values"
   defp expected_attr_type(:text_position), do: "a GPUI.Text.Position"
+  defp expected_attr_type(:text_decorations), do: "at most 256 GPUI.Text.Decoration values"
 
   defp invalid_attr!(tag, name, expected, value) do
     raise ArgumentError,

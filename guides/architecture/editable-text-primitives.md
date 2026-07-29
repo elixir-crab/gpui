@@ -136,6 +136,12 @@ native input machinery reveal it without changing document text. Optional
 native text hit testing. Neither contract introduces synchronous pointer NIF
 traffic.
 
+The first decoration contract accepts up to 256 `GPUI.Text.Decoration` values.
+Each decoration attaches an optional RGB background and/or underline to a
+logical UTF-16 range. Native painting uses current laid-out bounds while the
+consumer retains diagnostic severity, language, message, command, and service
+policy. Decorations do not alter text, selections, revisions, or history.
+
 The demonstration's gutter is now entirely consumer-owned: Elixir derives the
 visible line-number elements, row heights, and fractional vertical offset from
 `GPUI.Text.Viewport`. The renderer still exposes no gutter or editor shell.
