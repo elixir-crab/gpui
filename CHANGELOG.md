@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Replaced the editable-text demonstration's fixed gutter with consumer-owned line numbers driven by native visible rows, line height, and scroll offset.
 - Added declarative scroll-to-position request tokens and asynchronous native point-to-position hit-test events for text surfaces.
 - Added bounded declarative range-geometry requests for text surfaces, limited to 64 ranges and emitted only for currently laid-out content.
 - Added revision-tagged, deduplicated text-surface viewport and primary-caret geometry events with public coordinate-space types.

@@ -136,6 +136,10 @@ native input machinery reveal it without changing document text. Optional
 native text hit testing. Neither contract introduces synchronous pointer NIF
 traffic.
 
+The demonstration's gutter is now entirely consumer-owned: Elixir derives the
+visible line-number elements, row heights, and fractional vertical offset from
+`GPUI.Text.Viewport`. The renderer still exposes no gutter or editor shell.
+
 The feature demonstration includes application-owned external edit, undo, and
 redo controls so reconciliation can be exercised without treating persistence
 or document commands as renderer policy.

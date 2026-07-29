@@ -7,14 +7,15 @@ defmodule GPUI.Text.Viewport do
   or to the left of the viewport.
   """
 
-  @enforce_keys [:first_visible_row, :last_visible_row, :scroll_x, :scroll_y]
-  defstruct [:first_visible_row, :last_visible_row, :scroll_x, :scroll_y]
+  @enforce_keys [:first_visible_row, :last_visible_row, :scroll_x, :scroll_y, :line_height]
+  defstruct [:first_visible_row, :last_visible_row, :scroll_x, :scroll_y, :line_height]
 
   @type t :: %__MODULE__{
           first_visible_row: non_neg_integer(),
           last_visible_row: non_neg_integer(),
           scroll_x: float(),
-          scroll_y: float()
+          scroll_y: float(),
+          line_height: float()
         }
 
   @doc false

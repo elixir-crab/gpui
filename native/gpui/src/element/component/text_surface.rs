@@ -84,6 +84,9 @@ impl SelectionSync {
 }
 
 #[cfg(feature = "components")]
+type ViewportKey = (usize, usize, i32, i32, i32);
+
+#[cfg(feature = "components")]
 type RangeGeometryKey = (u64, u64, u64, u64, i32, i32, i32, i32);
 
 #[cfg(feature = "components")]
@@ -98,7 +101,7 @@ pub(crate) struct ComponentTextSurface {
     pub(crate) range_geometry_event: Option<String>,
     pub(crate) hit_test_event: Option<String>,
     pub(crate) scroll_request: u64,
-    pub(crate) last_viewport: Option<(usize, usize, i32, i32)>,
+    pub(crate) last_viewport: Option<ViewportKey>,
     pub(crate) last_caret: Option<(u64, u64, i32, i32, i32, i32)>,
     pub(crate) last_range_geometry: Option<Vec<RangeGeometryKey>>,
     pub(crate) focus_request: u64,
@@ -410,11 +413,13 @@ fn emit_geometry_events(
 
     if let (Some(event), Some(range)) = (&surface.viewport_event, state.visible_row_range()) {
         let scroll = state.scroll_offset();
+        let line_height = state.line_height().unwrap_or(gpui::px(0.));
         let key = (
             range.start,
             range.end,
             f32::from(scroll.x).round() as i32,
             f32::from(scroll.y).round() as i32,
+            f32::from(line_height).round() as i32,
         );
         if surface.last_viewport != Some(key) {
             surface.last_viewport = Some(key);
@@ -428,6 +433,7 @@ fn emit_geometry_events(
                         last_visible_row: range.end.saturating_sub(1) as u64,
                         scroll_x: f32::from(scroll.x) as f64,
                         scroll_y: f32::from(scroll.y) as f64,
+                        line_height: f32::from(line_height) as f64,
                     },
                     revision,
                 },

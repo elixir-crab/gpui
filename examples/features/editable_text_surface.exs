@@ -10,12 +10,11 @@ defmodule Features.EditableTextSurface.View do
         <text class="text-xs text-slate-400">revision {assigns.revision}</text>
       </div>
       <div class="flex grow min-h-0">
-        <div class="flex w-12 flex-col items-end gap-1 py-3 pr-3 bg-slate-950 text-slate-500">
-          <text class="text-sm">1</text>
-          <text class="text-sm">2</text>
-          <text class="text-sm">3</text>
-          <text class="text-sm">4</text>
-          <text class="text-sm">5</text>
+        <div
+          class="flex w-12 flex-col items-end pr-3 bg-slate-950 text-slate-500"
+          style={[padding_top: {:px, assigns.gutter_offset}]}
+        >
+          {gutter(assigns.visible_rows, assigns.line_height)}
         </div>
         <text_surface
           id="document"
@@ -63,8 +62,18 @@ defmodule Features.EditableTextSurface.View do
 
   def handle_event("viewport-changed", %{value: viewport}, assigns) do
     viewport = GPUI.Text.Viewport.from_event(viewport)
+    visible_rows = Enum.to_list(viewport.first_visible_row..viewport.last_visible_row)
     visible = "rows #{viewport.first_visible_row + 1}–#{viewport.last_visible_row + 1}"
-    {:noreply, %{assigns | visible: visible}}
+    gutter_offset = 12.0 + remainder(viewport.scroll_y, viewport.line_height)
+
+    {:noreply,
+     %{
+       assigns
+       | visible: visible,
+         visible_rows: visible_rows,
+         line_height: viewport.line_height,
+         gutter_offset: gutter_offset
+     }}
   end
 
   def handle_event("geometry-changed", %{value: caret}, assigns) do
@@ -128,6 +137,21 @@ defmodule Features.EditableTextSurface.View do
     end
   end
 
+  defp gutter(rows, line_height) do
+    Enum.map(rows, fn row ->
+      %GPUI.Element{
+        type: :text,
+        attrs: [class: "text-sm", style: [height: {:px, line_height}]],
+        children: [Integer.to_string(row + 1)]
+      }
+    end)
+  end
+
+  defp remainder(_scroll_y, line_height) when line_height <= 0, do: 0.0
+
+  defp remainder(scroll_y, line_height),
+    do: scroll_y - Float.floor(scroll_y / line_height) * line_height
+
   defp end_position(text) do
     lines = String.split(text, "\n", trim: false)
     line = length(lines) - 1
@@ -162,6 +186,9 @@ defmodule Features.EditableTextSurface.App do
       revision: 0,
       focus_request: 1,
       visible: "viewport pending",
+      visible_rows: [],
+      line_height: 20.0,
+      gutter_offset: 12.0,
       caret: "geometry pending",
       ranges: "range geometry pending",
       hit: "hit test pending",

@@ -12,6 +12,7 @@ pub(crate) struct TextViewportGeometry {
     pub(crate) last_visible_row: u64,
     pub(crate) scroll_x: f64,
     pub(crate) scroll_y: f64,
+    pub(crate) line_height: f64,
 }
 
 #[cfg(feature = "components")]
