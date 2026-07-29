@@ -183,7 +183,8 @@ defmodule Features.EditableTextSurface.App do
     decoration =
       GPUI.Text.Decoration.new(requested_range,
         background: 0x263D66,
-        underline: 0x60A5FA
+        underline: 0x60A5FA,
+        underline_style: :wavy
       )
 
     assigns = %{

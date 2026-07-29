@@ -88,7 +88,8 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
              decorations: [
                GPUI.Text.Decoration.new(Range.new(Position.new(0, 0), Position.new(0, 3)),
                  background: 0x263D66,
-                 underline: 0x60A5FA
+                 underline: 0x60A5FA,
+                 underline_style: :wavy
                )
              ],
              scroll_request: 0,

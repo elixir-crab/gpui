@@ -379,12 +379,8 @@ pub(crate) fn render(
                 if let Some(color) = background {
                     window.paint_quad(gpui::fill(*bounds, gpui::rgb(*color)));
                 }
-                if let Some(color) = underline {
-                    let underline_bounds = gpui::Bounds::new(
-                        gpui::point(bounds.origin.x, bounds.bottom() - gpui::px(2.)),
-                        gpui::size(bounds.size.width, gpui::px(2.)),
-                    );
-                    window.paint_quad(gpui::fill(underline_bounds, gpui::rgb(*color)));
+                if let Some((color, kind)) = underline {
+                    paint_underline(window, *bounds, *color, *kind);
                 }
             }
         },
@@ -422,7 +418,19 @@ pub(crate) fn render(
 }
 
 #[cfg(feature = "components")]
-type DecorationQuad = (gpui::Bounds<gpui::Pixels>, Option<u32>, Option<u32>);
+type DecorationQuad = (
+    gpui::Bounds<gpui::Pixels>,
+    Option<u32>,
+    Option<(u32, UnderlineKind)>,
+);
+
+#[cfg(feature = "components")]
+#[derive(Clone, Copy)]
+enum UnderlineKind {
+    Solid,
+    Dashed,
+    Wavy,
+}
 
 #[cfg(feature = "components")]
 fn decoration_quads(
@@ -438,9 +446,67 @@ fn decoration_quads(
         .filter_map(|decoration| {
             let range = crate::text_buffer::range_to_byte_range(text, &decoration.range).ok()?;
             let bounds = state.range_to_bounds(&range)?;
-            Some((bounds, decoration.background, decoration.underline))
+            let underline = decoration.underline.map(|color| {
+                let kind = match decoration.underline_style.as_str() {
+                    "dashed" => UnderlineKind::Dashed,
+                    "wavy" => UnderlineKind::Wavy,
+                    _ => UnderlineKind::Solid,
+                };
+                (color, kind)
+            });
+            Some((bounds, decoration.background, underline))
         })
         .collect()
+}
+
+#[cfg(feature = "components")]
+fn paint_underline(
+    window: &mut gpui::Window,
+    bounds: gpui::Bounds<gpui::Pixels>,
+    color: u32,
+    kind: UnderlineKind,
+) {
+    match kind {
+        UnderlineKind::Solid => {
+            let underline = gpui::Bounds::new(
+                gpui::point(bounds.origin.x, bounds.bottom() - gpui::px(2.)),
+                gpui::size(bounds.size.width, gpui::px(2.)),
+            );
+            window.paint_quad(gpui::fill(underline, gpui::rgb(color)));
+        }
+        UnderlineKind::Dashed => {
+            let mut x = bounds.origin.x;
+            while x < bounds.right() {
+                let width = (bounds.right() - x).min(gpui::px(5.));
+                let dash = gpui::Bounds::new(
+                    gpui::point(x, bounds.bottom() - gpui::px(2.)),
+                    gpui::size(width, gpui::px(2.)),
+                );
+                window.paint_quad(gpui::fill(dash, gpui::rgb(color)));
+                x += gpui::px(8.);
+            }
+        }
+        UnderlineKind::Wavy => {
+            let mut builder = gpui::PathBuilder::stroke(gpui::px(1.5));
+            let mut x = bounds.origin.x;
+            let baseline = bounds.bottom() - gpui::px(2.);
+            builder.move_to(gpui::point(x, baseline));
+            let mut up = true;
+            while x < bounds.right() {
+                x = (x + gpui::px(3.)).min(bounds.right());
+                let y = if up {
+                    baseline - gpui::px(2.)
+                } else {
+                    baseline
+                };
+                builder.line_to(gpui::point(x, y));
+                up = !up;
+            }
+            if let Ok(path) = builder.build() {
+                window.paint_path(path, gpui::rgb(color));
+            }
+        }
+    }
 }
 
 #[cfg(feature = "components")]

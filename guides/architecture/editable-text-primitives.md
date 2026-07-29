@@ -137,8 +137,8 @@ native text hit testing. Neither contract introduces synchronous pointer NIF
 traffic.
 
 The first decoration contract accepts up to 256 `GPUI.Text.Decoration` values.
-Each decoration attaches an optional RGB background and/or underline to a
-logical UTF-16 range. Native painting uses current laid-out bounds while the
+Each decoration attaches an optional RGB background and/or solid, dashed, or
+wavy RGB underline to a logical UTF-16 range. Native painting uses current
 consumer retains diagnostic severity, language, message, command, and service
 policy. Decorations do not alter text, selections, revisions, or history.
 

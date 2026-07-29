@@ -37,7 +37,8 @@ defmodule GPUI.Codegen.Native.Elements do
   @type text_decoration_node :: %{
           required(:range) => R.path(:TextRange),
           required(:background) => R.option(R.u32()),
-          required(:underline) => R.option(R.u32())
+          required(:underline) => R.option(R.u32()),
+          required(:underline_style) => String.t()
         }
 
   @type text_surface_node :: %{

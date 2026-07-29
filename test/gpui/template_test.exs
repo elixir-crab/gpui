@@ -621,7 +621,8 @@ defmodule GPUI.TemplateTest do
                      end: %{line: 0, utf16_offset: 2}
                    },
                    background: 0x112233,
-                   underline: 0x445566
+                   underline: 0x445566,
+                   underline_style: "dashed"
                  }
                ],
                geometry_ranges: [
@@ -644,7 +645,8 @@ defmodule GPUI.TemplateTest do
                decorations={[
                  GPUI.Text.Decoration.new(range,
                    background: 0x112233,
-                   underline: 0x445566
+                   underline: 0x445566,
+                   underline_style: :dashed
                  )
                ]}
                geometry_ranges={[range]}

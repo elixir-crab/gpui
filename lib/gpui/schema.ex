@@ -972,7 +972,7 @@ defmodule GPUI.Schema do
           %{__struct__: GPUI.Text.Decoration, range: %{__struct__: GPUI.Text.Range}} = decoration ->
             Enum.all?([decoration.background, decoration.underline], fn color ->
               is_nil(color) or (is_integer(color) and color in 0..0xFFFFFF)
-            end)
+            end) and decoration.underline_style in [:solid, :dashed, :wavy]
 
           _other ->
             false

@@ -400,6 +400,7 @@ pub(crate) struct TextDecorationNode {
     pub(crate) range: TextRange,
     pub(crate) background: Option<u32>,
     pub(crate) underline: Option<u32>,
+    pub(crate) underline_style: String,
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_element_node<'a>(term: Term<'a>) -> NifResult<ElementNode> {

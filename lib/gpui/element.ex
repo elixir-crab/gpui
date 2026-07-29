@@ -120,8 +120,12 @@ defmodule GPUI.Element do
   defp attr_value_to_payload(%GPUI.Text.Position{} = position), do: Map.from_struct(position)
   defp attr_value_to_payload(%GPUI.Text.Range{} = range), do: map_struct_values(range)
 
-  defp attr_value_to_payload(%GPUI.Text.Decoration{} = decoration),
-    do: map_struct_values(decoration)
+  defp attr_value_to_payload(%GPUI.Text.Decoration{} = decoration) do
+    decoration
+    |> Map.from_struct()
+    |> Map.update!(:underline_style, &Atom.to_string/1)
+    |> Map.new(fn {key, value} -> {key, attr_value_to_payload(value)} end)
+  end
 
   defp attr_value_to_payload(value) when is_list(value) do
     Enum.map(value, fn
