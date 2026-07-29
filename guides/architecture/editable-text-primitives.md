@@ -125,9 +125,9 @@ only after layout exists and only when its bounded value changes.
 The first bounded request contract accepts up to 64 declarative
 `geometry_ranges` and emits currently laid-out bounds through
 `phx-range-geometry-change`. `GPUI.Text.RangeGeometry` preserves the requested
-logical range and reports its window-relative bounding rectangle. Wrapped
-ranges currently produce one enclosing rectangle; per-visual-row rectangles
-remain a later extension.
+logical range and reports a bounded `GPUI.Text.Rectangle` for every visual row
+crossed by wrapped text. Results remain limited to 64 requested ranges and 256
+rectangles per range.
 
 A monotonically increasing `scroll_request` token paired with `scroll_to` moves
 the native primary caret to an explicit UTF-16 position and lets the existing

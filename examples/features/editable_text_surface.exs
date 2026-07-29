@@ -84,7 +84,8 @@ defmodule Features.EditableTextSurface.View do
 
   def handle_event("range-geometry-changed", %{value: ranges}, assigns) do
     ranges = Enum.map(ranges, &GPUI.Text.RangeGeometry.from_event/1)
-    {:noreply, %{assigns | ranges: "#{length(ranges)} range(s) laid out"}}
+    rectangle_count = Enum.sum(Enum.map(ranges, &length(&1.rectangles)))
+    {:noreply, %{assigns | ranges: "#{rectangle_count} visual rectangle(s)"}}
   end
 
   def handle_event("hit-tested", %{value: position}, assigns) do

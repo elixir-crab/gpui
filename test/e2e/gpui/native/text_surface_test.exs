@@ -61,7 +61,8 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
 
     def handle_event("range-geometry-changed", %{revision: revision, value: ranges}, assigns) do
       true = Enum.count_until(ranges, 65) <= 64
-      {:noreply, %{assigns | revision: revision, range_geometries: length(ranges)}}
+      rectangles = Enum.sum(Enum.map(ranges, &length(&1.rectangles)))
+      {:noreply, %{assigns | revision: revision, range_geometries: rectangles}}
     end
 
     def handle_event("hit-tested", %{revision: revision, value: position}, assigns) do

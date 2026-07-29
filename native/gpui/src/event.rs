@@ -28,12 +28,18 @@ pub(crate) struct TextCaretGeometry {
 
 #[cfg(feature = "components")]
 #[derive(Clone, Debug, NifMap)]
-pub(crate) struct TextRangeGeometry {
-    pub(crate) range: crate::TextRange,
+pub(crate) struct TextRectangle {
     pub(crate) x: f64,
     pub(crate) y: f64,
     pub(crate) width: f64,
     pub(crate) height: f64,
+}
+
+#[cfg(feature = "components")]
+#[derive(Clone, Debug, NifMap)]
+pub(crate) struct TextRangeGeometry {
+    pub(crate) range: crate::TextRange,
+    pub(crate) rectangles: Vec<TextRectangle>,
 }
 
 #[cfg(feature = "components")]

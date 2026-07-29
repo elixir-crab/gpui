@@ -3,27 +3,25 @@ defmodule GPUI.Text.RangeGeometry do
   Window-relative native pixel bounds for one requested logical text range.
 
   Range geometry is bounded to at most 64 requests per surface and includes
-  only ranges present in the current native layout. Wrapped ranges may span a
-  taller bounding rectangle; per-visual-row rectangles are a later contract.
+  only ranges present in the current native layout. Each result contains a
+  bounded rectangle for every visual row crossed by wrapped text.
   """
 
-  alias GPUI.Text.{Position, Range}
+  alias GPUI.Text.{Position, Range, Rectangle}
 
-  @enforce_keys [:range, :x, :y, :width, :height]
-  defstruct [:range, :x, :y, :width, :height]
+  @enforce_keys [:range, :rectangles]
+  defstruct [:range, :rectangles]
 
   @type t :: %__MODULE__{
           range: Range.t(),
-          x: float(),
-          y: float(),
-          width: float(),
-          height: float()
+          rectangles: [Rectangle.t()]
         }
 
   @doc false
   @spec from_event(map()) :: t()
   def from_event(%{range: %{start: start_position, end: end_position}} = value) do
     range = %Range{start: struct!(Position, start_position), end: struct!(Position, end_position)}
-    struct!(__MODULE__, %{value | range: range})
+    rectangles = Enum.map(value.rectangles, &Rectangle.from_event/1)
+    struct!(__MODULE__, %{value | range: range, rectangles: rectangles})
   end
 end

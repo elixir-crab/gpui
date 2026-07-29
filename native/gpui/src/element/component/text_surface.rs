@@ -488,22 +488,30 @@ fn emit_geometry_events(
             let Some(bounds) = state.range_to_bounds(&byte_range) else {
                 continue;
             };
-            key.push((
-                range.start.line,
-                range.start.utf16_offset,
-                range.end.line,
-                range.end.utf16_offset,
-                f32::from(bounds.origin.x).round() as i32,
-                f32::from(bounds.origin.y).round() as i32,
-                f32::from(bounds.size.width).round() as i32,
-                f32::from(bounds.size.height).round() as i32,
-            ));
+            let rectangles = split_range_bounds(bounds, state.line_height());
+            for rectangle in &rectangles {
+                key.push((
+                    range.start.line,
+                    range.start.utf16_offset,
+                    range.end.line,
+                    range.end.utf16_offset,
+                    f32::from(rectangle.origin.x).round() as i32,
+                    f32::from(rectangle.origin.y).round() as i32,
+                    f32::from(rectangle.size.width).round() as i32,
+                    f32::from(rectangle.size.height).round() as i32,
+                ));
+            }
             geometries.push(crate::TextRangeGeometry {
                 range: range.clone(),
-                x: f32::from(bounds.origin.x) as f64,
-                y: f32::from(bounds.origin.y) as f64,
-                width: f32::from(bounds.size.width) as f64,
-                height: f32::from(bounds.size.height) as f64,
+                rectangles: rectangles
+                    .into_iter()
+                    .map(|rectangle| crate::TextRectangle {
+                        x: f32::from(rectangle.origin.x) as f64,
+                        y: f32::from(rectangle.origin.y) as f64,
+                        width: f32::from(rectangle.size.width) as f64,
+                        height: f32::from(rectangle.size.height) as f64,
+                    })
+                    .collect(),
             });
         }
         if surface.last_range_geometry.as_ref() != Some(&key) {
@@ -518,6 +526,46 @@ fn emit_geometry_events(
                 },
             );
         }
+    }
+}
+
+#[cfg(feature = "components")]
+fn split_range_bounds(
+    bounds: gpui::Bounds<gpui::Pixels>,
+    line_height: Option<gpui::Pixels>,
+) -> Vec<gpui::Bounds<gpui::Pixels>> {
+    let Some(line_height) = line_height.filter(|height| *height > gpui::px(0.)) else {
+        return vec![bounds];
+    };
+    let mut rectangles = Vec::new();
+    let mut y = bounds.origin.y;
+    let bottom = bounds.bottom();
+    while y < bottom && rectangles.len() < 256 {
+        let height = (bottom - y).min(line_height);
+        rectangles.push(gpui::Bounds::new(
+            gpui::point(bounds.origin.x, y),
+            gpui::size(bounds.size.width, height),
+        ));
+        y += line_height;
+    }
+    rectangles
+}
+
+#[cfg(all(test, feature = "components"))]
+mod tests {
+    use super::split_range_bounds;
+    use crate::gpui::{bounds, point, px, size};
+
+    #[test]
+    fn wrapped_range_bounds_are_bounded_per_visual_row() {
+        let bounds = bounds(point(px(10.), px(20.)), size(px(100.), px(50.)));
+        let rectangles = split_range_bounds(bounds, Some(px(20.)));
+
+        assert_eq!(rectangles.len(), 3);
+        assert_eq!(rectangles[0].origin.y, px(20.));
+        assert_eq!(rectangles[1].origin.y, px(40.));
+        assert_eq!(rectangles[2].origin.y, px(60.));
+        assert_eq!(rectangles[2].size.height, px(10.));
     }
 }
 
