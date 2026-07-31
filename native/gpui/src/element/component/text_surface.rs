@@ -372,9 +372,15 @@ pub(crate) fn render(
         .bordered(false)
         .focus_bordered(false)
         .h_full();
+    let projection_labels = projection_labels(
+        &surface.state,
+        &surface.text,
+        &node.inline_projections,
+        context.cx,
+    );
     let decorations = gpui::canvas(
         |_bounds, _window, _cx| {},
-        move |_bounds, _prepaint, window, _cx| {
+        move |_bounds, _prepaint, window, cx| {
             for (bounds, background, underline) in &decoration_quads {
                 if let Some(color) = background {
                     window.paint_quad(gpui::fill(*bounds, gpui::rgb(*color)));
@@ -382,6 +388,31 @@ pub(crate) fn render(
                 if let Some((color, kind)) = underline {
                     paint_underline(window, *bounds, *color, *kind);
                 }
+            }
+            let text_style = window.text_style();
+            for (position, text, color) in &projection_labels {
+                let run = gpui::TextRun {
+                    len: text.len(),
+                    font: text_style.font(),
+                    color: gpui::rgb(*color).into(),
+                    background_color: None,
+                    underline: None,
+                    strikethrough: None,
+                };
+                let line = window.text_system().shape_line(
+                    text.clone().into(),
+                    text_style.font_size.to_pixels(window.rem_size()),
+                    &[run],
+                    None,
+                );
+                let _ = line.paint(
+                    *position,
+                    window.line_height(),
+                    gpui::TextAlign::Left,
+                    None,
+                    window,
+                    cx,
+                );
             }
         },
     )
@@ -415,6 +446,25 @@ pub(crate) fn render(
         .child(apply_component_styles(input, node.style))
         .child(decorations)
         .into_any_element()
+}
+
+#[cfg(feature = "components")]
+fn projection_labels(
+    state: &gpui::Entity<gpui_component::input::InputState>,
+    text: &str,
+    projections: &[crate::TextInlineProjectionNode],
+    cx: &gpui::App,
+) -> Vec<(gpui::Point<gpui::Pixels>, String, u32)> {
+    let state = state.read(cx);
+    projections
+        .iter()
+        .take(128)
+        .filter_map(|projection| {
+            let offset = position_to_byte_offset(text, &projection.position).ok()?;
+            let bounds = state.range_to_bounds(&(offset..offset))?;
+            Some((bounds.origin, projection.text.clone(), projection.color))
+        })
+        .collect()
 }
 
 #[cfg(feature = "components")]
@@ -700,6 +750,7 @@ fn acknowledge_geometry_contract(node: &TextSurfaceNode) {
         &node.scroll_to,
         &node.hit_test,
         &node.decorations,
+        &node.inline_projections,
     );
 }
 

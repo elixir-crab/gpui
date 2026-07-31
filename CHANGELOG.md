@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Added bounded non-editable inline text projections anchored to explicit UTF-16 positions without completion policy or Rope mutation.
 - Added explicit solid, dashed, and wavy underline variants to neutral text decorations.
 - Added neutral bounded text decorations with range-attached RGB backgrounds and underlines, without diagnostic or language policy.
 - Expanded requested range geometry into bounded per-visual-row rectangles for wrapped text.

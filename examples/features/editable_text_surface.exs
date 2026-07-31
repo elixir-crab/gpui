@@ -23,6 +23,7 @@ defmodule Features.EditableTextSurface.View do
           focus_request={assigns.focus_request}
           tab_size={2}
           decorations={assigns.decorations}
+          inline_projections={assigns.inline_projections}
           geometry_ranges={assigns.geometry_ranges}
           scroll_request={assigns.scroll_request}
           scroll_to={assigns.scroll_to}
@@ -187,9 +188,15 @@ defmodule Features.EditableTextSurface.App do
         underline_style: :wavy
       )
 
+    projection =
+      GPUI.Text.InlineProjection.new(GPUI.Text.Position.new(0, 23), "  ← visual only",
+        color: 0x94A3B8
+      )
+
     assigns = %{
       buffer: buffer,
       decorations: [decoration],
+      inline_projections: [projection],
       geometry_ranges: [requested_range],
       scroll_request: 0,
       scroll_to: GPUI.Text.Position.new(0, 0),

@@ -120,6 +120,9 @@ defmodule GPUI.Element do
   defp attr_value_to_payload(%GPUI.Text.Position{} = position), do: Map.from_struct(position)
   defp attr_value_to_payload(%GPUI.Text.Range{} = range), do: map_struct_values(range)
 
+  defp attr_value_to_payload(%GPUI.Text.InlineProjection{} = projection),
+    do: map_struct_values(projection)
+
   defp attr_value_to_payload(%GPUI.Text.Decoration{} = decoration) do
     decoration
     |> Map.from_struct()

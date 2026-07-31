@@ -21,6 +21,7 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
           focus_request={assigns.primary_focus}
           geometry_ranges={assigns.geometry_ranges}
           decorations={assigns.decorations}
+          inline_projections={assigns.inline_projections}
           scroll_request={assigns.scroll_request}
           scroll_to={assigns.scroll_to}
           phx-transaction="text-transaction"
@@ -91,6 +92,9 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
                  underline: 0x60A5FA,
                  underline_style: :wavy
                )
+             ],
+             inline_projections: [
+               GPUI.Text.InlineProjection.new(Position.new(0, 3), " ghost")
              ],
              scroll_request: 0,
              scroll_to: Position.new(0, 0),

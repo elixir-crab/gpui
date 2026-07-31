@@ -495,7 +495,8 @@ defmodule GPUI.Schema do
         geometry_ranges: :text_ranges,
         scroll_request: {:default, :non_negative_integer, 0},
         scroll_to: :text_position,
-        decorations: :text_decorations
+        decorations: :text_decorations,
+        inline_projections: :text_inline_projections
       ]
     },
     %Component{
@@ -965,6 +966,29 @@ defmodule GPUI.Schema do
 
   defp validate_attr!(_tag, _name, :text_position, %{__struct__: GPUI.Text.Position}), do: :ok
 
+  defp validate_attr!(tag, name, :text_inline_projections, value) when is_list(value) do
+    valid? =
+      Enum.count_until(value, 129) <= 128 and
+        Enum.all?(value, fn
+          %{
+            __struct__: GPUI.Text.InlineProjection,
+            position: %{__struct__: GPUI.Text.Position},
+            text: text,
+            color: color
+          } ->
+            is_binary(text) and byte_size(text) <= 4096 and
+              is_integer(color) and color in 0..0xFFFFFF
+
+          _other ->
+            false
+        end)
+
+    if valid?,
+      do: :ok,
+      else:
+        invalid_attr!(tag, name, "at most 128 bounded GPUI.Text.InlineProjection values", value)
+  end
+
   defp validate_attr!(tag, name, :text_decorations, value) when is_list(value) do
     valid? =
       Enum.count_until(value, 257) <= 256 and
@@ -1018,6 +1042,9 @@ defmodule GPUI.Schema do
   defp expected_attr_type(:text_ranges), do: "at most 64 GPUI.Text.Range values"
   defp expected_attr_type(:text_position), do: "a GPUI.Text.Position"
   defp expected_attr_type(:text_decorations), do: "at most 256 GPUI.Text.Decoration values"
+
+  defp expected_attr_type(:text_inline_projections),
+    do: "at most 128 bounded GPUI.Text.InlineProjection values"
 
   defp invalid_attr!(tag, name, expected, value) do
     raise ArgumentError,

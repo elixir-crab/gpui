@@ -41,6 +41,12 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:underline_style) => String.t()
         }
 
+  @type text_inline_projection_node :: %{
+          required(:position) => R.path(:TextPosition),
+          required(:text) => String.t(),
+          required(:color) => R.u32()
+        }
+
   @type text_surface_node :: %{
           required(:style) => R.path(:StyleAttrs),
           required(:id) => String.t(),
@@ -55,6 +61,7 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:scroll_request) => R.u64(),
           required(:scroll_to) => R.option(R.path(:TextPosition)),
           required(:decorations) => R.vec(R.path(:TextDecorationNode)),
+          required(:inline_projections) => R.vec(R.path(:TextInlineProjectionNode)),
           required(:transaction) => R.option(String.t()),
           required(:selection_change) => R.option(String.t()),
           required(:viewport_change) => R.option(String.t()),
@@ -239,6 +246,16 @@ defmodule GPUI.Codegen.Native.Elements do
     end
   end
 
+  @spec text_inline_projections_attr(term(), atom()) ::
+          R.nif_result(R.vec(R.path(:TextInlineProjectionNode)))
+  defrustp text_inline_projections_attr(term, attr) do
+    case component_attr(term, attr) do
+      {:ok, {:some, value}} -> decode_as(value, R.vec(R.path(:TextInlineProjectionNode)))
+      {:ok, nil} -> {:ok, []}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   @spec decode_text_surface_node(term(), R.path(:GeneratedElementTag)) ::
           R.nif_result(R.path(:ElementNode))
   defrust decode_text_surface_node(term, _tag) do
@@ -266,6 +283,8 @@ defmodule GPUI.Codegen.Native.Elements do
            unwrap!(component_non_negative_integer_attr(term, Atoms.scroll_request())).unwrap_or(0),
          scroll_to: unwrap!(text_position_attr(term, Atoms.scroll_to())),
          decorations: unwrap!(text_decorations_attr(term, Atoms.decorations())),
+         inline_projections:
+           unwrap!(text_inline_projections_attr(term, Atoms.inline_projections())),
          transaction: string_attr(term, Atoms.phx_transaction()),
          selection_change: string_attr(term, Atoms.phx_selection_change()),
          viewport_change: string_attr(term, Atoms.phx_viewport_change()),
@@ -354,7 +373,7 @@ defmodule GPUI.Codegen.Native.Elements do
         ) ++
         MetaAST.struct_type_items(
           __MODULE__,
-          [:text_decoration_node],
+          [:text_decoration_node, :text_inline_projection_node],
           derive: [:Clone, :Debug, :NifMap],
           attrs: [A.attr(:cfg, feature: "real-gpui")],
           vis: :crate,

@@ -142,6 +142,12 @@ wavy RGB underline to a logical UTF-16 range. Native painting uses current
 consumer retains diagnostic severity, language, message, command, and service
 policy. Decorations do not alter text, selections, revisions, or history.
 
+The first projection contract accepts up to 128 bounded
+`GPUI.Text.InlineProjection` values, each containing at most 4096 bytes. A
+projection anchors non-editable display text and an RGB color to an explicit
+UTF-16 position. Projection text never enters the Rope, changes selection
+coordinates, participates in history, or implies completion behavior.
+
 The demonstration's gutter is now entirely consumer-owned: Elixir derives the
 visible line-number elements, row heights, and fractional vertical offset from
 `GPUI.Text.Viewport`. The renderer still exposes no gutter or editor shell.

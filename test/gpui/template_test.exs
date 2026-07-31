@@ -631,6 +631,13 @@ defmodule GPUI.TemplateTest do
                    end: %{line: 0, utf16_offset: 2}
                  }
                ],
+               inline_projections: [
+                 %{
+                   position: %{line: 0, utf16_offset: 2},
+                   text: " ghost",
+                   color: 0x94A3B8
+                 }
+               ],
                scroll_request: 3,
                scroll_to: %{line: 0, utf16_offset: 2},
                id: "document",
@@ -650,6 +657,9 @@ defmodule GPUI.TemplateTest do
                  )
                ]}
                geometry_ranges={[range]}
+               inline_projections={[
+                 GPUI.Text.InlineProjection.new(GPUI.Text.Position.new(0, 2), " ghost")
+               ]}
                scroll_request={3}
                scroll_to={GPUI.Text.Position.new(0, 2)}
                focus_request={2}
@@ -686,6 +696,16 @@ defmodule GPUI.TemplateTest do
 
       ~GPUI"""
       <text_surface id="too-decorated" buffer={buffer} decorations={decorations} />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/at most 128 bounded GPUI.Text.InlineProjection values/, fn ->
+      projections =
+        List.duplicate(GPUI.Text.InlineProjection.new(GPUI.Text.Position.new(0, 0), "x"), 129)
+
+      ~GPUI"""
+      <text_surface id="too-projected" buffer={buffer} inline_projections={projections} />
       """
       |> GPUI.Element.to_payload()
     end
