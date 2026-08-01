@@ -13,6 +13,28 @@ defmodule GPUI.Schema do
     %Component{tag: :div, kind: :container, events: [click: :"phx-click"]},
     %Component{tag: :button, kind: :container, events: [click: :"phx-click"]},
     %Component{
+      tag: :layer,
+      kind: :anchored_layer,
+      children: true,
+      attrs: [
+        id: :required_string,
+        anchor:
+          {:default,
+           {:enum,
+            ~w(top_left top_center top_right bottom_left bottom_center bottom_right left_center right_center)},
+           "top_left"},
+        position_mode: {:default, {:enum, ~w(local window)}, "local"},
+        position_x: :number,
+        position_y: :number,
+        offset_x: {:default, :number, 0.0},
+        offset_y: {:default, :number, 0.0},
+        fit:
+          {:default, {:enum, ~w(switch_anchor snap_to_window snap_with_margin)}, "switch_anchor"},
+        margin: {:default, :non_negative_number, 0.0},
+        priority: {:default, :layer_priority, 0}
+      ]
+    },
+    %Component{
       tag: :ui_button,
       kind: :button_component,
       events: [click: :"phx-click"],
@@ -986,11 +1008,19 @@ defmodule GPUI.Schema do
 
   defp validate_attr!(_tag, _name, :number, value) when is_number(value), do: :ok
 
+  defp validate_attr!(_tag, _name, :non_negative_number, value)
+       when is_number(value) and value >= 0,
+       do: :ok
+
   defp validate_attr!(_tag, _name, :positive_number, value) when is_number(value) and value > 0,
     do: :ok
 
   defp validate_attr!(_tag, _name, :non_negative_integer, value)
        when is_integer(value) and value >= 0, do: :ok
+
+  defp validate_attr!(_tag, _name, :layer_priority, value)
+       when is_integer(value) and value in 0..1024,
+       do: :ok
 
   defp validate_attr!(_tag, _name, :positive_integer, value) when is_integer(value) and value > 0,
     do: :ok
@@ -1106,7 +1136,9 @@ defmodule GPUI.Schema do
   defp expected_attr_type(:string), do: "a string"
   defp expected_attr_type(:required_string), do: "a non-empty string"
   defp expected_attr_type(:number), do: "a number"
+  defp expected_attr_type(:non_negative_number), do: "a non-negative number"
   defp expected_attr_type(:positive_number), do: "a number greater than zero"
+  defp expected_attr_type(:layer_priority), do: "an integer from 0 through 1024"
   defp expected_attr_type(:non_negative_integer), do: "a non-negative integer"
   defp expected_attr_type(:positive_integer), do: "an integer greater than zero"
   defp expected_attr_type(:boolean), do: "a boolean"

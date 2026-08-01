@@ -57,6 +57,7 @@ impl ElementNode {
                 context.window_id,
             ),
             Self::Input(input) => render_input_primitive(element_id, input, context),
+            Self::AnchoredLayer(layer) => render_anchored_layer_primitive(layer, context),
             Self::TextSurface(surface) => {
                 render_text_surface_primitive(element_id, surface, context)
             }
@@ -71,6 +72,50 @@ impl ElementNode {
             component => render_generated_component_node(component, element_id, context),
         }
     }
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn render_anchored_layer_primitive(
+    layer: AnchoredLayerNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    use gpui::{
+        anchored, deferred, point, px, Anchor, AnchoredPositionMode, IntoElement, ParentElement,
+    };
+
+    let _stable_id = layer.id;
+    let anchor = match layer.anchor.as_str() {
+        "top_right" => Anchor::TopRight,
+        "bottom_left" => Anchor::BottomLeft,
+        "bottom_right" => Anchor::BottomRight,
+        "top_center" => Anchor::TopCenter,
+        "bottom_center" => Anchor::BottomCenter,
+        "left_center" => Anchor::LeftCenter,
+        "right_center" => Anchor::RightCenter,
+        _ => Anchor::TopLeft,
+    };
+    let mut element = anchored()
+        .anchor(anchor)
+        .position_mode(if layer.position_mode == "window" {
+            AnchoredPositionMode::Window
+        } else {
+            AnchoredPositionMode::Local
+        })
+        .offset(point(px(layer.offset_x as f32), px(layer.offset_y as f32)));
+    if let (Some(x), Some(y)) = (layer.position_x, layer.position_y) {
+        element = element.position(point(px(x as f32), px(y as f32)));
+    }
+    element = match layer.fit.as_str() {
+        "snap_to_window" => element.snap_to_window(),
+        "snap_with_margin" => element.snap_to_window_with_margin(px(layer.margin as f32)),
+        _ => element,
+    };
+    for child in layer.children {
+        element = element.child(child.render(context));
+    }
+    deferred(element)
+        .with_priority(layer.priority as usize)
+        .into_any_element()
 }
 
 #[cfg(feature = "real-gpui")]

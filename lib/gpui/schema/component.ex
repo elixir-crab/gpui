@@ -19,7 +19,9 @@ defmodule GPUI.Schema.Component do
           :string
           | :required_string
           | :number
+          | :non_negative_number
           | :positive_number
+          | :layer_priority
           | :non_negative_integer
           | :positive_integer
           | :boolean

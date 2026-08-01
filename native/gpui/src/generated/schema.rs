@@ -4,6 +4,7 @@
 pub enum GeneratedComponentKind {
     Viewport,
     Container,
+    AnchoredLayer,
     ButtonComponent,
     ProgressComponent,
     FilePickerComponent,
@@ -375,6 +376,21 @@ pub(crate) fn text_fragment<'a>(term: Term<'a>) -> NifResult<String> {
 }
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
+pub(crate) struct AnchoredLayerNode {
+    pub(crate) id: String,
+    pub(crate) anchor: String,
+    pub(crate) position_mode: String,
+    pub(crate) position_x: Option<f64>,
+    pub(crate) position_y: Option<f64>,
+    pub(crate) offset_x: f64,
+    pub(crate) offset_y: f64,
+    pub(crate) fit: String,
+    pub(crate) margin: f64,
+    pub(crate) priority: u64,
+    pub(crate) children: Vec<ElementNode>,
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
 pub(crate) struct ContainerNode {
     pub(crate) tag: GeneratedElementTag,
     pub(crate) style: StyleAttrs,
@@ -532,6 +548,30 @@ pub(crate) fn decode_container_node<'a>(
             style: decode_style(term)?,
             children: decode_children(term)?,
             click: string_attr(term, atoms::phx_click()),
+        }),
+    )
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_anchored_layer_node<'a>(
+    term: Term<'a>,
+    _tag: GeneratedElementTag,
+) -> NifResult<ElementNode> {
+    let attrs = term.map_get(atoms::attrs())?;
+    Ok(
+        ElementNode::AnchoredLayer(AnchoredLayerNode {
+            id: attrs.map_get(atoms::id())?.decode::<String>()?,
+            anchor: string_attr(term, atoms::anchor()).unwrap_or("top_left".to_string()),
+            position_mode: string_attr(term, atoms::position_mode())
+                .unwrap_or("local".to_string()),
+            position_x: component_number_attr(term, atoms::position_x())?,
+            position_y: component_number_attr(term, atoms::position_y())?,
+            offset_x: component_number_attr(term, atoms::offset_x())?.unwrap_or(0.0),
+            offset_y: component_number_attr(term, atoms::offset_y())?.unwrap_or(0.0),
+            fit: string_attr(term, atoms::fit()).unwrap_or("switch_anchor".to_string()),
+            margin: component_number_attr(term, atoms::margin())?.unwrap_or(0.0),
+            priority: component_non_negative_integer_attr(term, atoms::priority())?
+                .unwrap_or(0),
+            children: decode_children(term)?,
         }),
     )
 }
@@ -2932,6 +2972,7 @@ pub(crate) fn decode_generated_slider_component<'a>(
 pub(crate) enum ElementNode {
     Viewport(ViewportNode),
     Div(ContainerNode),
+    AnchoredLayer(AnchoredLayerNode),
     TextSurface(TextSurfaceNode),
     Input(InputNode),
     ButtonComponent(ButtonComponentNode),
@@ -2976,6 +3017,7 @@ pub enum GeneratedElementTag {
     Viewport,
     Div,
     Button,
+    Layer,
     UiButton,
     UiProgress,
     UiFilePicker,
@@ -3026,6 +3068,7 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "viewport" => GeneratedElementTag::Viewport,
         "div" => GeneratedElementTag::Div,
         "button" => GeneratedElementTag::Button,
+        "layer" => GeneratedElementTag::Layer,
         "ui_button" => GeneratedElementTag::UiButton,
         "ui_progress" => GeneratedElementTag::UiProgress,
         "ui_file_picker" => GeneratedElementTag::UiFilePicker,
@@ -3077,6 +3120,7 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::Viewport => GeneratedComponentKind::Viewport,
         GeneratedElementTag::Div => GeneratedComponentKind::Container,
         GeneratedElementTag::Button => GeneratedComponentKind::Container,
+        GeneratedElementTag::Layer => GeneratedComponentKind::AnchoredLayer,
         GeneratedElementTag::UiButton => GeneratedComponentKind::ButtonComponent,
         GeneratedElementTag::UiProgress => GeneratedComponentKind::ProgressComponent,
         GeneratedElementTag::UiFilePicker => GeneratedComponentKind::FilePickerComponent,
@@ -3156,6 +3200,7 @@ pub(crate) fn decode_generated_element_node<'a>(
     match generated_component_kind(tag) {
         GeneratedComponentKind::Viewport => decode_viewport_node(term, tag),
         GeneratedComponentKind::Container => decode_container_node(term, tag),
+        GeneratedComponentKind::AnchoredLayer => decode_anchored_layer_node(term, tag),
         GeneratedComponentKind::ButtonComponent => {
             decode_generated_button_component(term)
                 .map(|node| ElementNode::ButtonComponent(node))

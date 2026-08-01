@@ -496,6 +496,36 @@ multiple view updates, install the raster once and render
 copying the full pixel payload through each later snapshot and work across local
 and remote displays.
 
+## Anchored layers
+
+Use the neutral `<layer>` primitive when content must paint after its ancestors
+and remain fitted to the native window. A layer accepts exactly one child and
+does not own open state, dismissal, focus, or menu behavior.
+
+```elixir
+<layer
+  id="completion-popup"
+  anchor="bottom_left"
+  position_mode="window"
+  position_x={assigns.anchor_x}
+  position_y={assigns.anchor_y}
+  offset_y={6}
+  fit="snap_with_margin"
+  margin={8}
+  priority={10}
+>
+  <div class="w-[320px] rounded-md bg-slate-800">...</div>
+</layer>
+```
+
+`position_mode="window"` interprets `position_x` and `position_y` as native
+window-relative pixels. `position_mode="local"` interprets them relative to the
+layer's normal tree location; omitted coordinates use that location directly.
+Anchors identify which corner or edge-center of the child meets the position.
+The fit strategy either switches anchors when possible, snaps to the window, or
+snaps with a uniform margin. Priority is bounded to `0..1024`; it maps to GPUI's
+deferred paint order rather than pretending to be CSS `z-index`.
+
 ## Styling
 
 Templates normalize a constrained Tailwind-compatible vocabulary into typed

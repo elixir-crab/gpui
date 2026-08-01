@@ -35,6 +35,52 @@ defmodule GPUI.TemplateTest do
              """
   end
 
+  test "builds and validates neutral anchored layers" do
+    payload =
+      ~GPUI"""
+      <layer
+        id="completion"
+        anchor="bottom_left"
+        position_mode="window"
+        position_x={240}
+        position_y={120}
+        offset_y={6}
+        fit="snap_with_margin"
+        margin={8}
+        priority={12}
+      >
+        <div class="w-[320px] h-12" />
+      </layer>
+      """
+      |> GPUI.Element.to_payload()
+
+    assert payload.type == :layer
+    assert payload.attrs.id == "completion"
+    assert payload.attrs.anchor == "bottom_left"
+    assert payload.attrs.position_mode == "window"
+    assert payload.attrs.position_x == 240
+    assert payload.attrs.position_y == 120
+    assert payload.attrs.offset_y == 6
+    assert payload.attrs.fit == "snap_with_margin"
+    assert payload.attrs.margin == 8
+    assert payload.attrs.priority == 12
+    assert [%{type: :div}] = payload.children
+
+    assert_raise ArgumentError, "layer requires exactly one child", fn ->
+      ~GPUI"""
+      <layer id="empty" />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/integer from 0 through 1024/, fn ->
+      ~GPUI"""
+      <layer id="too-high" priority={1025}><div /></layer>
+      """
+      |> GPUI.Element.to_payload()
+    end
+  end
+
   test "merges normalized classes with dynamic styles at runtime" do
     dynamic_style = [background: {:rgb, 0xFFFFFF}]
 

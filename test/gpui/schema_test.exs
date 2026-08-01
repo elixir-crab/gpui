@@ -5,6 +5,7 @@ defmodule GPUI.SchemaTest do
     assert GPUI.Schema.tags() == [
              :div,
              :button,
+             :layer,
              :ui_button,
              :ui_progress,
              :ui_file_picker,

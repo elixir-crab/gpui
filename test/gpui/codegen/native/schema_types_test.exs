@@ -26,7 +26,7 @@ defmodule GPUI.Codegen.Native.SchemaTypesTest do
     element_node = SchemaTypes.element_node_item()
 
     expected =
-      [:Viewport, :Div, :TextSurface, :Input] ++
+      [:Viewport, :Div, :AnchoredLayer, :TextSurface, :Input] ++
         (GPUI.Schema.components()
          |> Enum.filter(&String.ends_with?(Atom.to_string(&1.kind), "_component"))
          |> Enum.map(&variant(&1.kind))) ++

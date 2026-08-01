@@ -36,15 +36,7 @@ defmodule GPUI.Element do
   def to_payload(value) when is_integer(value) or is_float(value) or is_atom(value), do: value
 
   defp payload(%__MODULE__{} = element) do
-    attrs =
-      if element.type == :text_surface do
-        element.attrs
-        |> Map.new()
-        |> GPUI.Schema.validate_component_assigns!(element.type)
-        |> Map.to_list()
-      else
-        element.attrs
-      end
+    attrs = validated_primitive_attrs(element)
 
     %{
       type: element.type,
@@ -54,6 +46,25 @@ defmodule GPUI.Element do
   end
 
   defp payload(value), do: to_payload(value)
+
+  defp validated_primitive_attrs(%__MODULE__{type: :layer, children: [_child], attrs: attrs}) do
+    attrs
+    |> Map.new()
+    |> GPUI.Schema.validate_component_assigns!(:layer)
+    |> Map.to_list()
+  end
+
+  defp validated_primitive_attrs(%__MODULE__{type: :layer}),
+    do: raise(ArgumentError, "layer requires exactly one child")
+
+  defp validated_primitive_attrs(%__MODULE__{type: :text_surface, attrs: attrs}) do
+    attrs
+    |> Map.new()
+    |> GPUI.Schema.validate_component_assigns!(:text_surface)
+    |> Map.to_list()
+  end
+
+  defp validated_primitive_attrs(%__MODULE__{attrs: attrs}), do: attrs
 
   defp normalize_class_attr(attrs) do
     case Keyword.fetch(attrs, :class) do

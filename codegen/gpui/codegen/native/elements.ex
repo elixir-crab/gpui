@@ -23,6 +23,20 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:click) => R.option(String.t())
         }
 
+  @type anchored_layer_node :: %{
+          required(:id) => String.t(),
+          required(:anchor) => String.t(),
+          required(:position_mode) => String.t(),
+          required(:position_x) => R.option(R.f64()),
+          required(:position_y) => R.option(R.f64()),
+          required(:offset_x) => R.f64(),
+          required(:offset_y) => R.f64(),
+          required(:fit) => String.t(),
+          required(:margin) => R.f64(),
+          required(:priority) => R.u64(),
+          required(:children) => R.vec(R.path(:ElementNode))
+        }
+
   @type image_node :: %{
           required(:image) => R.path(:ImageData),
           required(:style) => R.path(:StyleAttrs),
@@ -173,6 +187,32 @@ defmodule GPUI.Codegen.Native.Elements do
      )}
   end
 
+  @spec decode_anchored_layer_node(term(), R.path(:GeneratedElementTag)) ::
+          R.nif_result(R.path(:ElementNode))
+  defrust decode_anchored_layer_node(term, _tag) do
+    attrs = unwrap!(term.map_get(Atoms.attrs()))
+
+    {:ok,
+     enum_variant(
+       ElementNode,
+       :anchored_layer,
+       struct_literal(AnchoredLayerNode,
+         id: decode_as!(attrs.map_get(Atoms.id()), String.t()),
+         anchor: string_attr(term, Atoms.anchor()).unwrap_or("top_left".to_string()),
+         position_mode: string_attr(term, Atoms.position_mode()).unwrap_or("local".to_string()),
+         position_x: unwrap!(component_number_attr(term, Atoms.position_x())),
+         position_y: unwrap!(component_number_attr(term, Atoms.position_y())),
+         offset_x: unwrap!(component_number_attr(term, Atoms.offset_x())).unwrap_or(0.0),
+         offset_y: unwrap!(component_number_attr(term, Atoms.offset_y())).unwrap_or(0.0),
+         fit: string_attr(term, Atoms.fit()).unwrap_or("switch_anchor".to_string()),
+         margin: unwrap!(component_number_attr(term, Atoms.margin())).unwrap_or(0.0),
+         priority:
+           unwrap!(component_non_negative_integer_attr(term, Atoms.priority())).unwrap_or(0),
+         children: unwrap!(decode_children(term))
+       )
+     )}
+  end
+
   @spec decode_image_node(term(), R.path(:GeneratedElementTag)) ::
           R.nif_result(R.path(:ElementNode))
   defrust decode_image_node(term, _tag) do
@@ -305,8 +345,7 @@ defmodule GPUI.Codegen.Native.Elements do
          decorations: unwrap!(text_decorations_attr(term, Atoms.decorations())),
          inline_projections:
            unwrap!(text_inline_projections_attr(term, Atoms.inline_projections())),
-         block_projections:
-           unwrap!(text_block_projections_attr(term, Atoms.block_projections())),
+         block_projections: unwrap!(text_block_projections_attr(term, Atoms.block_projections())),
          transaction: string_attr(term, Atoms.phx_transaction()),
          selection_change: string_attr(term, Atoms.phx_selection_change()),
          viewport_change: string_attr(term, Atoms.phx_viewport_change()),
@@ -379,7 +418,14 @@ defmodule GPUI.Codegen.Native.Elements do
     structs =
       MetaAST.struct_type_items(
         __MODULE__,
-        [:viewport_node, :container_node, :image_node, :text_node, :input_node],
+        [
+          :viewport_node,
+          :container_node,
+          :anchored_layer_node,
+          :image_node,
+          :text_node,
+          :input_node
+        ],
         derive: [:Clone, :Debug],
         attrs: [A.attr(:cfg, feature: "real-gpui")],
         vis: :crate,
