@@ -23,9 +23,6 @@ defmodule GPUI.Application do
           size: 2,
           min_size: 2,
           resizable: 1,
-          on_close_request: 1,
-          on_focus: 1,
-          on_blur: 1,
           root: 1,
           root: 2,
           shortcut: 2
@@ -55,15 +52,6 @@ defmodule GPUI.Application do
         {:resizable, resizable}, spec ->
           %{spec | resizable: resizable}
 
-        {:window_event, :close_request, event}, spec ->
-          %{spec | close_request: event}
-
-        {:window_event, :focus, event}, spec ->
-          %{spec | focus: event}
-
-        {:window_event, :blur, event}, spec ->
-          %{spec | blur: event}
-
         {:root, module, assigns}, spec ->
           %{spec | root: {module, Map.new(assigns)}}
 
@@ -81,16 +69,6 @@ defmodule GPUI.Application do
 
   @doc "Declares whether the native window can be resized by the user."
   defmacro resizable(value), do: quote(do: {:resizable, unquote(value)})
-
-  @doc "Intercepts a platform close request and dispatches it to the root view."
-  defmacro on_close_request(event),
-    do: quote(do: {:window_event, :close_request, unquote(event)})
-
-  @doc "Dispatches native window activation to the root view."
-  defmacro on_focus(event), do: quote(do: {:window_event, :focus, unquote(event)})
-
-  @doc "Dispatches native window deactivation to the root view."
-  defmacro on_blur(event), do: quote(do: {:window_event, :blur, unquote(event)})
 
   @doc "Binds an application command to a modified shortcut inside `window`."
   defmacro shortcut(id, keys), do: quote(do: {:command, unquote(id), unquote(keys)})

@@ -232,18 +232,15 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
-  @spec window_optional_string(term(), atom()) :: R.nif_result(R.option(String.t()))
-  defrust window_optional_string(window, attr) do
-    case window.map_get(attr) do
+  @spec window_lifecycle(term(), R.str()) :: R.nif_result(boolean())
+  defrust window_lifecycle(window, event) do
+    case window.map_get(Atoms.lifecycle()) do
       {:ok, value} ->
-        if atom_eq(value, "nil") do
-          {:ok, nil}
-        else
-          {:ok, some(decode_as!(value, String.t()))}
-        end
+        events = decode_as!(value, R.vec(term()))
+        {:ok, events.iter().any(fn value -> atom_eq(deref(value), event) end)}
 
       {:error, _missing} ->
-        {:ok, nil}
+        {:ok, false}
     end
   end
 

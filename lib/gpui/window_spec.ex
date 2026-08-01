@@ -13,26 +13,12 @@ defmodule GPUI.WindowSpec do
           size: {pos_integer(), pos_integer()} | nil,
           min_size: {pos_integer(), pos_integer()} | nil,
           resizable: boolean(),
-          close_request: String.t() | nil,
-          focus: String.t() | nil,
-          blur: String.t() | nil,
           root: root() | nil,
           commands: [GPUI.Command.t()]
         }
 
   @enforce_keys [:title]
-  defstruct [
-    :id,
-    :title,
-    :size,
-    :min_size,
-    :root,
-    :close_request,
-    :focus,
-    :blur,
-    resizable: true,
-    commands: []
-  ]
+  defstruct [:id, :title, :size, :min_size, :root, resizable: true, commands: []]
 
   @spec validate!(t()) :: t()
   def validate!(
@@ -57,8 +43,6 @@ defmodule GPUI.WindowSpec do
 
     unless is_boolean(resizable), do: raise(ArgumentError, "window resizable must be a boolean")
 
-    validate_events!(window)
-
     unless valid_root?(root) do
       raise ArgumentError, "window root must contain a module and map or keyword assigns"
     end
@@ -74,17 +58,6 @@ defmodule GPUI.WindowSpec do
     end
 
     window
-  end
-
-  defp validate_events!(window) do
-    for {name, value} <- [
-          close_request: window.close_request,
-          focus: window.focus,
-          blur: window.blur
-        ],
-        not is_nil(value) and (not is_binary(value) or value == "") do
-      raise ArgumentError, "window #{name} event must be a non-empty string"
-    end
   end
 
   defp valid_size?(nil), do: true

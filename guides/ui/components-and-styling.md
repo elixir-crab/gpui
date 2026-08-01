@@ -583,32 +583,45 @@ runtime `<layer>` coordinates while keeping static presentation in classes.
 
 ## Window lifecycle
 
-Window declarations can constrain native resizing and subscribe the root view to
-platform lifecycle requests:
+Window declarations contain only declarative platform constraints:
 
 ```elixir
 window "Workspace" do
   size 1100, 720
   min_size 760, 480
   resizable true
-  on_close_request "window-close-requested"
-  on_focus "window-focused"
-  on_blur "window-blurred"
   root WorkspaceView
 end
 ```
 
-`min_size` and `resizable` are declarative creation options interpreted by the
-native display. A configured close-request handler intercepts the platform close
-button, emits `:window_close_request`, and keeps the window open so Elixir can
-save, confirm, or remove it through application state. The existing
-`:window_closed` event remains the final notification after a window actually
-closes.
+Views opt into lifecycle handling through an idiomatic optional behaviour
+callback rather than arbitrary routing strings:
 
-Window `:window_focus` and `:window_blur` events report native activation changes
-and are separate from element-level focus. All lifecycle event names are
-optional non-empty strings; no handler means the platform's ordinary close or
-activation behavior remains unchanged.
+```elixir
+def handle_window_event(:close_request, _event, assigns) do
+  {:noreply, %{assigns | close_dialog_open: true}}
+end
+
+def handle_window_event(:focus, _event, assigns) do
+  {:noreply, %{assigns | window_active: true}}
+end
+
+def handle_window_event(:blur, _event, assigns) do
+  {:noreply, %{assigns | window_active: false}}
+end
+```
+
+Exporting `handle_window_event/3` enables interception and activation delivery
+for the view's window. A close request remains asynchronous. Return
+`{:noreply, assigns}` to keep the window open—for example while rendering an
+application-owned confirmation dialog—or `{:close, assigns}` to approve closure.
+Ordinary `handle_event/3` handlers may also return `{:close, assigns}` after a
+confirmation action.
+
+`min_size` and `resizable` are declarative creation options interpreted by the
+native display. The existing `:window_closed` event remains an internal final
+notification after a window actually closes. Window `:focus` and `:blur`
+callbacks report native activation and are separate from element focus.
 
 ## Focus
 

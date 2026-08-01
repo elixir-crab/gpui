@@ -9,11 +9,16 @@ defmodule GPUI.View do
 
   alias GPUI.Element
 
+  @type window_event :: :close_request | :focus | :blur
+
   @callback render(map()) :: Element.t()
-  @callback handle_event(String.t(), map(), map()) :: {:noreply, map()} | {:reply, term(), map()}
+  @callback handle_event(String.t(), map(), map()) ::
+              {:noreply, map()} | {:reply, term(), map()} | {:close, map()}
+  @callback handle_window_event(window_event(), map(), map()) ::
+              {:noreply, map()} | {:close, map()}
   @callback handle_info(term(), map()) :: {:noreply, map()}
 
-  @optional_callbacks handle_info: 2
+  @optional_callbacks handle_info: 2, handle_window_event: 3
 
   defmacro __using__(_opts) do
     quote do

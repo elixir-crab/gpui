@@ -67,12 +67,18 @@ defmodule GPUI.Session do
       size: Tuple.to_list(window.size || {800, 600}),
       min_size: encode_optional_size(window.min_size),
       resizable: window.resizable,
-      close_request: window.close_request,
-      focus: window.focus,
-      blur: window.blur,
+      lifecycle: window_lifecycle(window.root),
       commands: Enum.map(window.commands, &GPUI.Command.to_payload/1),
       root: encode_root(window.root)
     }
+  end
+
+  defp window_lifecycle(nil), do: []
+
+  defp window_lifecycle({module, _assigns}) do
+    if Code.ensure_loaded?(module) and function_exported?(module, :handle_window_event, 3),
+      do: [:close_request, :focus, :blur],
+      else: []
   end
 
   defp encode_optional_size(nil), do: nil
@@ -224,13 +230,32 @@ defmodule GPUI.Session do
   end
 
   defp handle_event(
+         %{type: type, window_id: window_id} = native_event,
+         state
+       )
+       when type in [:window_close_request, :window_focus, :window_blur] do
+    case Enum.find(state.windows, &(&1.id == window_id)) do
+      %WindowSpec{root: {module, assigns}} = window ->
+        assigns = Map.new(assigns)
+        lifecycle = lifecycle_name(type)
+
+        result =
+          if function_exported?(module, :handle_window_event, 3),
+            do: module.handle_window_event(lifecycle, native_event, assigns),
+            else: {:close, assigns}
+
+        handle_window_result(result, native_event, state, window, module, lifecycle)
+
+      nil ->
+        {native_event, state}
+    end
+  end
+
+  defp handle_event(
          %{type: type, window_id: window_id, event: event} = native_event,
          state
        )
        when type in [
-              :window_close_request,
-              :window_focus,
-              :window_blur,
               :click,
               :command,
               :change,
@@ -262,10 +287,13 @@ defmodule GPUI.Session do
           {:reply, _reply, new_assigns} when is_map(new_assigns) ->
             update_window(native_event, state, window, module, new_assigns)
 
+          {:close, new_assigns} when is_map(new_assigns) ->
+            close_window(native_event, state, window, module, new_assigns)
+
           invalid ->
             raise ArgumentError,
                   "#{inspect(module)}.handle_event/3 returned #{inspect(invalid)}; " <>
-                    "expected {:noreply, assigns} or {:reply, reply, assigns}"
+                    "expected {:noreply, assigns}, {:reply, reply, assigns}, or {:close, assigns}"
         end
 
       nil ->
@@ -274,6 +302,38 @@ defmodule GPUI.Session do
   end
 
   defp handle_event(event, state), do: {event, state}
+
+  defp lifecycle_name(:window_close_request), do: :close_request
+  defp lifecycle_name(:window_focus), do: :focus
+  defp lifecycle_name(:window_blur), do: :blur
+
+  defp handle_window_result(
+         {:noreply, assigns},
+         event,
+         state,
+         window,
+         module,
+         _lifecycle
+       )
+       when is_map(assigns),
+       do: update_window(event, state, window, module, assigns)
+
+  defp handle_window_result({:close, assigns}, event, state, window, module, :close_request)
+       when is_map(assigns),
+       do: close_window(event, state, window, module, assigns)
+
+  defp handle_window_result(result, _event, _state, _window, module, lifecycle) do
+    raise ArgumentError,
+          "#{inspect(module)}.handle_window_event/3 returned #{inspect(result)} for " <>
+            "#{inspect(lifecycle)}; expected {:noreply, assigns}" <>
+            if(lifecycle == :close_request, do: " or {:close, assigns}", else: "")
+  end
+
+  defp close_window(event, state, window, module, assigns) do
+    _updated = %{window | root: {module, assigns}}
+    windows = Enum.reject(state.windows, &(&1.id == window.id))
+    {event, %{state | windows: windows}}
+  end
 
   defp update_window(event, state, window, module, assigns) do
     updated = %{window | root: {module, assigns}}

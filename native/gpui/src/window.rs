@@ -157,8 +157,8 @@ pub(crate) struct ElixirRoot {
     pub(crate) components: crate::element::component_registry::ComponentRegistry,
     command_subscription: Option<gpui::Subscription>,
     activation_subscription: Option<gpui::Subscription>,
-    focus_event: Option<String>,
-    blur_event: Option<String>,
+    focus_window: bool,
+    blur_window: bool,
     observe_commands: bool,
     #[cfg(feature = "components")]
     render_dialog_layer: bool,
@@ -174,8 +174,8 @@ impl ElixirRoot {
         window_state: SharedWindow,
         runtime: SharedRuntime,
         window_id: u64,
-        focus_event: Option<String>,
-        blur_event: Option<String>,
+        focus_window: bool,
+        blur_window: bool,
     ) -> Self {
         Self {
             window_state,
@@ -186,8 +186,8 @@ impl ElixirRoot {
             components: crate::element::component_registry::ComponentRegistry::default(),
             command_subscription: None,
             activation_subscription: None,
-            focus_event,
-            blur_event,
+            focus_window,
+            blur_window,
             observe_commands: true,
             #[cfg(feature = "components")]
             render_dialog_layer: true,
@@ -206,7 +206,7 @@ impl ElixirRoot {
         focus: gpui::FocusHandle,
         key_handler: DialogKeyHandler,
     ) -> Self {
-        let mut root = Self::new(window_state, runtime, window_id, None, None);
+        let mut root = Self::new(window_state, runtime, window_id, false, false);
         root.render_dialog_layer = false;
         root.observe_commands = false;
         root.dialog_focus = Some(focus);
@@ -219,34 +219,20 @@ impl ElixirRoot {
         window: &mut gpui::Window,
         cx: &mut gpui::Context<Self>,
     ) {
-        if self.activation_subscription.is_some()
-            || (self.focus_event.is_none() && self.blur_event.is_none())
-        {
+        if self.activation_subscription.is_some() || (!self.focus_window && !self.blur_window) {
             return;
         }
 
         let runtime = self.runtime.clone();
         let window_id = self.window_id;
-        let focus_event = self.focus_event.clone();
-        let blur_event = self.blur_event.clone();
+        let focus_window = self.focus_window;
+        let blur_window = self.blur_window;
         self.activation_subscription = Some(cx.observe_window_activation(
             window,
             move |_root, window, _cx| {
                 let focused = window.is_window_active();
-                let event = if focused {
-                    focus_event.clone()
-                } else {
-                    blur_event.clone()
-                };
-                if let Some(event) = event {
-                    let _ = push_event(
-                        &runtime,
-                        NativeEvent::WindowFocus {
-                            focused,
-                            window_id,
-                            event,
-                        },
-                    );
+                if (focused && focus_window) || (!focused && blur_window) {
+                    let _ = push_event(&runtime, NativeEvent::WindowFocus { focused, window_id });
                 }
             },
         ));
@@ -480,9 +466,9 @@ pub(crate) enum WindowCommand {
         height: f32,
         min_size: Option<(f32, f32)>,
         resizable: bool,
-        close_request: Option<String>,
-        focus: Option<String>,
-        blur: Option<String>,
+        close_request: bool,
+        focus: bool,
+        blur: bool,
         window_state: SharedWindow,
         runtime: SharedRuntime,
         reply: WindowCommandReply,
@@ -618,8 +604,8 @@ fn handle_window_command(
                     min_size,
                     resizable,
                     close_request,
-                    focus_event: focus,
-                    blur_event: blur,
+                    focus,
+                    blur,
                 },
                 window_state.clone(),
                 runtime.clone(),
@@ -877,9 +863,9 @@ struct WindowOpenConfig {
     height: f32,
     min_size: Option<(f32, f32)>,
     resizable: bool,
-    close_request: Option<String>,
-    focus_event: Option<String>,
-    blur_event: Option<String>,
+    close_request: bool,
+    focus: bool,
+    blur: bool,
 }
 
 #[cfg(feature = "real-gpui")]
@@ -905,20 +891,12 @@ fn open_gpui_window(
         min_size,
         resizable,
         close_request,
-        focus_event,
-        blur_event,
+        focus,
+        blur,
     } = config;
     let bounds = Bounds::centered(None, size(px(width), px(height)), cx);
     let window_min_size = min_size.map(|(width, height)| size(px(width), px(height)));
-    let view = cx.new(|_cx| {
-        ElixirRoot::new(
-            window_state,
-            runtime.clone(),
-            window_id,
-            focus_event,
-            blur_event,
-        )
-    });
+    let view = cx.new(|_cx| ElixirRoot::new(window_state, runtime.clone(), window_id, focus, blur));
     let view_for_root = view.clone();
 
     let handle = cx
@@ -931,17 +909,10 @@ fn open_gpui_window(
             },
             |native_window, cx| {
                 native_window.set_window_title(&title);
-                if close_request.is_some() {
-                    let event = close_request.clone().expect("checked close request");
+                if close_request {
                     let runtime = runtime.clone();
                     native_window.on_window_should_close(cx, move |_window, _cx| {
-                        let _ = push_event(
-                            &runtime,
-                            NativeEvent::WindowCloseRequest {
-                                window_id,
-                                event: event.clone(),
-                            },
-                        );
+                        let _ = push_event(&runtime, NativeEvent::WindowCloseRequest { window_id });
                         false
                     });
                 }

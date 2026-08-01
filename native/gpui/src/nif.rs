@@ -107,9 +107,9 @@ pub(crate) fn open_window_impl<'a>(
     let (width, height) = window_size(window)?;
     let min_size = window_optional_size(window, atoms::min_size())?;
     let resizable = window_bool(window, atoms::resizable(), true)?;
-    let close_request = window_optional_string(window, atoms::close_request())?;
-    let focus = window_optional_string(window, atoms::focus())?;
-    let blur = window_optional_string(window, atoms::blur())?;
+    let close_request = window_lifecycle(window, "close_request")?;
+    let focus = window_lifecycle(window, "focus")?;
+    let blur = window_lifecycle(window, "blur")?;
     let tree = window_tree(window)?;
     let commands = decode_window_commands(window)?;
     let shared_window = Arc::new(WindowState::new(tree, commands));
@@ -461,23 +461,17 @@ pub(crate) fn inject_event_impl<'a>(
 
     match event_type.as_str() {
         "window_close_request" => {
-            let event_name = event.map_get(atoms::event())?.decode::<String>()?;
             push_event(
                 &runtime.state,
-                NativeEvent::WindowCloseRequest {
-                    window_id,
-                    event: event_name,
-                },
+                NativeEvent::WindowCloseRequest { window_id },
             )?;
         }
         "window_focus" | "window_blur" => {
-            let event_name = event.map_get(atoms::event())?.decode::<String>()?;
             push_event(
                 &runtime.state,
                 NativeEvent::WindowFocus {
                     focused: event_type == "window_focus",
                     window_id,
-                    event: event_name,
                 },
             )?;
         }

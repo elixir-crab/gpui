@@ -247,19 +247,13 @@ pub(crate) fn window_bool<'a>(
     }
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn window_optional_string<'a>(
-    window: Term<'a>,
-    attr: Atom,
-) -> NifResult<Option<String>> {
-    match window.map_get(attr) {
+pub(crate) fn window_lifecycle<'a>(window: Term<'a>, event: &str) -> NifResult<bool> {
+    match window.map_get(atoms::lifecycle()) {
         Ok(value) => {
-            if atom_eq(value, "nil") {
-                Ok(None)
-            } else {
-                Ok(Some(value.decode::<String>()?))
-            }
+            let events = value.decode::<Vec<Term<'a>>>()?;
+            Ok(events.iter().any(|value| atom_eq(*value, event)))
         }
-        Err(_missing) => Ok(None),
+        Err(_missing) => Ok(false),
     }
 }
 #[cfg(feature = "real-gpui")]

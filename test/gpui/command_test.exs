@@ -9,6 +9,10 @@ defmodule GPUI.CommandTest do
     use GPUI.View
 
     @impl GPUI.View
+    def handle_window_event(:close_request, _event, assigns), do: {:close, assigns}
+    def handle_window_event(_event, _payload, assigns), do: {:noreply, assigns}
+
+    @impl GPUI.View
     def render(_assigns), do: %GPUI.Element{type: :div}
   end
 
@@ -23,9 +27,6 @@ defmodule GPUI.CommandTest do
            size(480, 320)
            min_size(320, 240)
            resizable(false)
-           on_close_request("close-requested")
-           on_focus("window-focused")
-           on_blur("window-blurred")
            shortcut("refresh", "primary-r")
            shortcut("focus_filter", "primary-shift-f")
            root(View)
@@ -45,21 +46,34 @@ defmodule GPUI.CommandTest do
 
     assert window.min_size == {320, 240}
     refute window.resizable
-    assert window.close_request == "close-requested"
-    assert window.focus == "window-focused"
-    assert window.blur == "window-blurred"
+
+    payload = Session.window_payload(window)
+    assert payload.lifecycle == [:close_request, :focus, :blur]
 
     assert %{
              min_size: [320, 240],
              resizable: false,
-             close_request: "close-requested",
-             focus: "window-focused",
-             blur: "window-blurred",
              commands: [
                {"refresh", "primary-r"},
                {"focus_filter", "primary-shift-f"}
              ]
            } = Session.window_payload(window)
+  end
+
+  test "routes fixed lifecycle atoms through the optional view callback" do
+    {:ok, session} = Session.start_link(app: App)
+
+    {focus, snapshot} =
+      Session.dispatch_event(session, %{type: :window_focus, window_id: 1})
+
+    assert focus.type == :window_focus
+    assert [%{id: 1}] = snapshot.windows
+
+    {close, snapshot} =
+      Session.dispatch_event(session, %{type: :window_close_request, window_id: 1})
+
+    assert close.type == :window_close_request
+    assert snapshot.windows == []
   end
 
   test "rejects malformed window lifecycle contracts" do
@@ -70,10 +84,6 @@ defmodule GPUI.CommandTest do
     assert_raise ArgumentError, ~r/resizable must be a boolean/, fn ->
       window = struct!(WindowSpec, title: "Invalid", resizable: :yes)
       WindowSpec.validate!(window)
-    end
-
-    assert_raise ArgumentError, ~r/close_request event must be a non-empty string/, fn ->
-      WindowSpec.validate!(%WindowSpec{title: "Invalid", close_request: ""})
     end
   end
 
