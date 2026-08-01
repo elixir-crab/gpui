@@ -496,11 +496,23 @@ multiple view updates, install the raster once and render
 copying the full pixel payload through each later snapshot and work across local
 and remote displays.
 
-## Anchored layers
+## Ordinary positioning versus anchored layers
 
-Use the neutral `<layer>` primitive when content must paint after its ancestors
-and remain fitted to the native window. A layer accepts exactly one child and
-does not own open state, dismissal, focus, or menu behavior.
+The default positioning model remains HTML-like composition with
+Tailwind-compatible classes. Keep content in the ordinary element tree whenever
+normal layout and paint order are sufficient:
+
+```elixir
+<div class="relative w-full h-full">
+  <div class="absolute top-2 right-2">...</div>
+</div>
+```
+
+Use the neutral `<layer>` primitive only as a native top-layer/portal escape
+hatch when content must paint after its ancestors or remain fitted to the native
+window. A layer accepts exactly one child and does not own open state,
+dismissal, focus, or menu behavior. It is not a replacement for `relative`,
+`absolute`, or inset utilities.
 
 ```elixir
 <layer
@@ -518,13 +530,21 @@ does not own open state, dismissal, focus, or menu behavior.
 </layer>
 ```
 
+All static presentation inside the layer—dimensions, spacing, colors, borders,
+and typography—still belongs in classes. Runtime-derived native geometry stays
+in explicit attributes such as `position_x` and `position_y`.
+
 `position_mode="window"` interprets `position_x` and `position_y` as native
 window-relative pixels. `position_mode="local"` interprets them relative to the
 layer's normal tree location; omitted coordinates use that location directly.
 Anchors identify which corner or edge-center of the child meets the position.
 The fit strategy either switches anchors when possible, snaps to the window, or
 snaps with a uniform margin. Priority is bounded to `0..1024`; it maps to GPUI's
-deferred paint order rather than pretending to be CSS `z-index`.
+deferred paint order rather than pretending to be CSS `z-index`. Consequently,
+`z-*`, `fixed`, and similar CSS utilities remain unsupported instead of being
+mapped to different GPUI behavior. Enum values retain the project's established
+underscore convention (`bottom_left`, `snap_with_margin`), while element
+composition and static styling remain HTML/Tailwind-like.
 
 ## Styling
 

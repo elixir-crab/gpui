@@ -81,6 +81,36 @@ defmodule GPUI.TemplateTest do
     end
   end
 
+  test "keeps ordinary positioning Tailwind-like and layer geometry explicit" do
+    ordinary =
+      ~GPUI"""
+      <div class="relative w-full h-full">
+        <div class="absolute top-2 right-2" />
+      </div>
+      """
+      |> GPUI.Element.to_payload()
+
+    assert ordinary.attrs.style == [position: :relative, width: :full, height: :full]
+    assert [%{attrs: %{style: child_style}}] = ordinary.children
+    assert child_style == [position: :absolute, top: [:px, 8.0], right: [:px, 8.0]]
+
+    layer =
+      ~GPUI"""
+      <layer id="runtime-layer" position_x={120} position_y={80}>
+        <div class="w-40 rounded-lg bg-slate-800" />
+      </layer>
+      """
+      |> GPUI.Element.to_payload()
+
+    refute Map.has_key?(layer.attrs, :style)
+    assert layer.attrs.position_x == 120
+    assert layer.attrs.position_y == 80
+    assert [%{attrs: %{style: layer_child_style}}] = layer.children
+    assert layer_child_style[:width] == [:px, 160.0]
+    assert layer_child_style[:border_radius] == [:px, 8.0]
+    assert layer_child_style[:background] == [:rgb, 0x1E293B]
+  end
+
   test "merges normalized classes with dynamic styles at runtime" do
     dynamic_style = [background: {:rgb, 0xFFFFFF}]
 
