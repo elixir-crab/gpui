@@ -506,6 +506,10 @@ Supported groups include:
 - flex display, direction, wrapping, alignment, growth, shrink, the
   `flex-1`, `flex-auto`, `flex-initial`, and `flex-none` shorthands, and basis
   values such as `basis-1/2` or `basis-[240px]`;
+- relative and absolute positioning with pixel, percentage, fractional, full, or
+  `auto` insets through `inset-*`, `inset-x-*`, `inset-y-*`, `top-*`,
+  `right-*`, `bottom-*`, and `left-*`; numeric and arbitrary pixel/percentage
+  insets also accept Tailwind's leading-negative form;
 - foreground and background colors, including arbitrary six-digit RGB values
   such as `bg-[#101828]`;
 - typography, weight, line height, alignment, whitespace, ellipsis/truncation,
@@ -518,7 +522,8 @@ Supported groups include:
 - hidden overflow clipping and native cursor feedback.
 
 ```elixir
-<div class="flex flex-1 basis-1/2 min-h-0 gap-1.5 p-4 overflow-hidden bg-[#101828]">
+<div class="relative flex flex-1 basis-1/2 min-h-0 gap-1.5 p-4 overflow-hidden bg-[#101828]">
+  <text class="absolute top-2 right-2 text-[#94a3b8] text-xs">Draft</text>
   <text class="truncate text-[#f8fafc] text-[13px] leading-[18px] font-semibold">
     Settings
   </text>

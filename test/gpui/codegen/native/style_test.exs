@@ -51,6 +51,12 @@ defmodule GPUI.Codegen.Native.StyleTest do
     assert source =~ "element = element.flex_basis(value);"
     assert source =~ "element = element.truncate();"
     assert source =~ "element = element.cursor_pointer();"
+    assert source =~ "element = element.relative();"
+    assert source =~ "element = element.absolute();"
+    assert source =~ "element = element.top(value);"
+    assert source =~ "element = element.right(value);"
+    assert source =~ "element = element.bottom(value);"
+    assert source =~ "element = element.left(value);"
   end
 
   test "keeps one decoding arm for every style contract" do

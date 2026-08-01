@@ -137,6 +137,44 @@ pub(crate) fn px_length_value<'a>(term: Term<'a>) -> Option<gpui::DefiniteLength
         None => None,
     }
 }
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::manual_map)]
+pub(crate) fn position_length_value<'a>(term: Term<'a>) -> Option<gpui::Length> {
+    if atom_eq(term, "auto") {
+        Some(auto_flex_basis())
+    } else {
+        match position_definite_length_value(term) {
+            Some(value) => Some(value.into()),
+            None => None,
+        }
+    }
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::manual_range_contains)]
+pub(crate) fn position_definite_length_value<'a>(
+    term: Term<'a>,
+) -> Option<gpui::DefiniteLength> {
+    if atom_eq(term, "full") {
+        Some(full_length())
+    } else {
+        match term.decode::<(Term<'a>, Term<'a>)>() {
+            Ok((unit, fraction)) => {
+                if atom_eq(unit, "fraction") {
+                    match number_value(fraction) {
+                        Some(value) if value >= -1.0 && value <= 1.0 => {
+                            Some(fraction_length(value))
+                        }
+                        Some(_other) => None,
+                        None => None,
+                    }
+                } else {
+                    px_length_value(term)
+                }
+            }
+            Err(_reason) => px_length_value(term),
+        }
+    }
+}
 #[allow(clippy::manual_map)]
 #[cfg(feature = "real-gpui")]
 pub(crate) fn flex_basis_value<'a>(term: Term<'a>) -> Option<gpui::Length> {
@@ -703,6 +741,14 @@ pub(crate) fn decode_text_node<'a>(
 #[cfg(feature = "real-gpui")]
 pub(crate) struct StyleAttrs {
     pub(crate) display: Option<String>,
+    pub(crate) position: Option<String>,
+    pub(crate) inset: Option<gpui::Length>,
+    pub(crate) inset_x: Option<gpui::Length>,
+    pub(crate) inset_y: Option<gpui::Length>,
+    pub(crate) top: Option<gpui::Length>,
+    pub(crate) right: Option<gpui::Length>,
+    pub(crate) bottom: Option<gpui::Length>,
+    pub(crate) left: Option<gpui::Length>,
     pub(crate) flex: Option<String>,
     pub(crate) flex_basis: Option<gpui::Length>,
     pub(crate) flex_direction: Option<String>,
@@ -779,6 +825,54 @@ pub(crate) fn apply_generated_style_attr<'a>(
             let value = atom_string(term);
             let valid = value.is_some();
             attrs.display = value;
+            valid
+        }
+        value if value == atoms::position() => {
+            let value = atom_string(term);
+            let valid = value.is_some();
+            attrs.position = value;
+            valid
+        }
+        value if value == atoms::inset() => {
+            let value = position_length_value(term);
+            let valid = value.is_some();
+            attrs.inset = value;
+            valid
+        }
+        value if value == atoms::inset_x() => {
+            let value = position_length_value(term);
+            let valid = value.is_some();
+            attrs.inset_x = value;
+            valid
+        }
+        value if value == atoms::inset_y() => {
+            let value = position_length_value(term);
+            let valid = value.is_some();
+            attrs.inset_y = value;
+            valid
+        }
+        value if value == atoms::top() => {
+            let value = position_length_value(term);
+            let valid = value.is_some();
+            attrs.top = value;
+            valid
+        }
+        value if value == atoms::right() => {
+            let value = position_length_value(term);
+            let valid = value.is_some();
+            attrs.right = value;
+            valid
+        }
+        value if value == atoms::bottom() => {
+            let value = position_length_value(term);
+            let valid = value.is_some();
+            attrs.bottom = value;
+            valid
+        }
+        value if value == atoms::left() => {
+            let value = position_length_value(term);
+            let valid = value.is_some();
+            attrs.left = value;
             valid
         }
         value if value == atoms::flex() => {
@@ -1068,6 +1162,62 @@ pub(crate) fn apply_generated_render_styles(
         }
         Some("none") => {
             element = element.hidden();
+        }
+        _ => {}
+    };
+    match style.position.as_deref() {
+        Some("relative") => {
+            element = element.relative();
+        }
+        Some("absolute") => {
+            element = element.absolute();
+        }
+        _ => {}
+    };
+    match style.inset {
+        Some(value) => {
+            element = element.top(value);
+            element = element.right(value);
+            element = element.bottom(value);
+            element = element.left(value);
+        }
+        _ => {}
+    };
+    match style.inset_x {
+        Some(value) => {
+            element = element.left(value);
+            element = element.right(value);
+        }
+        _ => {}
+    };
+    match style.inset_y {
+        Some(value) => {
+            element = element.top(value);
+            element = element.bottom(value);
+        }
+        _ => {}
+    };
+    match style.top {
+        Some(value) => {
+            element = element.top(value);
+        }
+        _ => {}
+    };
+    match style.right {
+        Some(value) => {
+            element = element.right(value);
+        }
+        _ => {}
+    };
+    match style.bottom {
+        Some(value) => {
+            element = element.bottom(value);
+        }
+        _ => {}
+    };
+    match style.left {
+        Some(value) => {
+            element = element.left(value);
         }
         _ => {}
     };

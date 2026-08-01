@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Added GPUI-native relative and absolute positioning with typed inset utilities, including axis, percentage, fractional, arbitrary-pixel, and auto values.
 - Added bounded non-editable block projections anchored before or after logical text lines without changing document coordinates.
 - Added bounded non-editable inline text projections anchored to explicit UTF-16 positions without completion policy or Rope mutation.
 - Added explicit solid, dashed, and wavy underline variants to neutral text decorations.

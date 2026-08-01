@@ -44,6 +44,34 @@ defmodule GPUI.TailwindTest do
              )
   end
 
+  test "normalizes positioned layout and explicit insets" do
+    assert %{
+             style: [
+               position: :relative,
+               inset_x: {:fraction, 0.5},
+               top: {:px, 8.0},
+               right: :auto,
+               bottom: {:px, 12.0},
+               left: {:px, 18.0},
+               margin_top: {:px, 4.0}
+             ],
+             unknown: []
+           } =
+             GPUI.Tailwind.normalize(
+               "relative inset-x-1/2 top-2 right-auto bottom-3 left-[18px] mt-1"
+             )
+
+    assert %{style: style, unknown: []} =
+             GPUI.Tailwind.normalize("absolute inset-0 -top-2 left-[-6px]")
+
+    assert style == [
+             position: :absolute,
+             inset: {:px, 0},
+             top: {:px, -8.0},
+             left: {:px, -6.0}
+           ]
+  end
+
   test "normalizes full and fractional dimensions as relative native lengths" do
     assert %{
              style: [

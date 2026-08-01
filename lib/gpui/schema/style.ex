@@ -10,6 +10,7 @@ defmodule GPUI.Schema.Style do
           | :number
           | :px
           | :length
+          | :position_length
           | :flex_basis
           | :radius
           | {:atom_eq, atom()}
@@ -18,7 +19,8 @@ defmodule GPUI.Schema.Style do
           :flex_if_true
           | {:enum_methods, [{String.t(), atom()}]}
           | {:enum_values, atom(), [{String.t(), [atom()]}]}
-          | {:option_method, atom(), :rgb | :px | :length | :flex_basis | :f32}
+          | {:option_method, atom(), :rgb | :px | :length | :position_length | :flex_basis | :f32}
+          | {:option_methods, [atom()], :position_length}
 
   @type t :: %__MODULE__{
           name: atom(),

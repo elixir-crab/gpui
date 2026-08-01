@@ -64,6 +64,8 @@ defmodule GPUI.Tailwind do
     |> Map.update!(:unknown, &Enum.reverse/1)
   end
 
+  defp normalize_class("relative", acc), do: put_style(acc, :position, :relative)
+  defp normalize_class("absolute", acc), do: put_style(acc, :position, :absolute)
   defp normalize_class("flex-1", acc), do: put_style(acc, :flex, :one)
   defp normalize_class("flex-auto", acc), do: put_style(acc, :flex, :auto)
   defp normalize_class("flex-initial", acc), do: put_style(acc, :flex, :initial)
@@ -132,6 +134,32 @@ defmodule GPUI.Tailwind do
     end
   end
 
+  defp normalize_class("inset-auto", acc), do: put_style(acc, :inset, :auto)
+  defp normalize_class("inset-x-auto", acc), do: put_style(acc, :inset_x, :auto)
+  defp normalize_class("inset-y-auto", acc), do: put_style(acc, :inset_y, :auto)
+  defp normalize_class("top-auto", acc), do: put_style(acc, :top, :auto)
+  defp normalize_class("right-auto", acc), do: put_style(acc, :right, :auto)
+  defp normalize_class("bottom-auto", acc), do: put_style(acc, :bottom, :auto)
+  defp normalize_class("left-auto", acc), do: put_style(acc, :left, :auto)
+
+  defp normalize_class("-inset-x-" <> value, acc),
+    do: position_length(acc, :inset_x, "-" <> value)
+
+  defp normalize_class("-inset-y-" <> value, acc),
+    do: position_length(acc, :inset_y, "-" <> value)
+
+  defp normalize_class("-inset-" <> value, acc), do: position_length(acc, :inset, "-" <> value)
+  defp normalize_class("-top-" <> value, acc), do: position_length(acc, :top, "-" <> value)
+  defp normalize_class("-right-" <> value, acc), do: position_length(acc, :right, "-" <> value)
+  defp normalize_class("-bottom-" <> value, acc), do: position_length(acc, :bottom, "-" <> value)
+  defp normalize_class("-left-" <> value, acc), do: position_length(acc, :left, "-" <> value)
+  defp normalize_class("inset-x-" <> value, acc), do: position_length(acc, :inset_x, value)
+  defp normalize_class("inset-y-" <> value, acc), do: position_length(acc, :inset_y, value)
+  defp normalize_class("inset-" <> value, acc), do: position_length(acc, :inset, value)
+  defp normalize_class("top-" <> value, acc), do: position_length(acc, :top, value)
+  defp normalize_class("right-" <> value, acc), do: position_length(acc, :right, value)
+  defp normalize_class("bottom-" <> value, acc), do: position_length(acc, :bottom, value)
+  defp normalize_class("left-" <> value, acc), do: position_length(acc, :left, value)
   defp normalize_class("gap-" <> value, acc), do: spacing(acc, :gap, value)
   defp normalize_class("p-" <> value, acc), do: spacing(acc, :padding, value)
   defp normalize_class("px-" <> value, acc), do: spacing(acc, :padding_x, value)
@@ -232,6 +260,27 @@ defmodule GPUI.Tailwind do
     end
   end
 
+  defp position_length(acc, key, "-" <> value) do
+    case parse_position_length(value) do
+      {:ok, {:px, px}} -> put_style(acc, key, {:px, -px})
+      {:ok, {:fraction, fraction}} -> put_style(acc, key, {:fraction, -fraction})
+      _other -> unknown(acc, class_name(key, "-#{value}"))
+    end
+  end
+
+  defp position_length(acc, key, value) do
+    case parse_position_length(value) do
+      {:ok, length} -> put_style(acc, key, length)
+      :error -> unknown(acc, class_name(key, value))
+    end
+  end
+
+  defp parse_position_length("full"), do: {:ok, :full}
+
+  defp parse_position_length("[" <> _rest = value), do: parse_arbitrary_length(value)
+
+  defp parse_position_length(value), do: parse_length(value)
+
   defp length_value(acc, key, value) do
     case parse_length(value) do
       {:ok, length} -> put_style(acc, key, length)
@@ -242,6 +291,13 @@ defmodule GPUI.Tailwind do
   defp class_name(key, value) do
     prefix =
       %{
+        inset: "inset",
+        inset_x: "inset-x",
+        inset_y: "inset-y",
+        top: "top",
+        right: "right",
+        bottom: "bottom",
+        left: "left",
         gap: "gap",
         padding: "p",
         padding_x: "px",
@@ -272,18 +328,20 @@ defmodule GPUI.Tailwind do
 
   defp parse_length("full"), do: {:ok, :full}
 
-  defp parse_length("[" <> _rest = value) do
-    case parse_arbitrary(value) do
-      {:ok, {:px, number}} -> {:ok, {:px, number}}
-      {:ok, {:percent, percentage}} -> {:ok, {:fraction, percentage / 100}}
-      :error -> :error
-    end
-  end
+  defp parse_length("[" <> _rest = value), do: parse_arbitrary_length(value)
 
   defp parse_length(value) do
     case parse_fraction(value) do
       {:ok, fraction} -> {:ok, {:fraction, fraction}}
       :error -> parse_spacing_length(value)
+    end
+  end
+
+  defp parse_arbitrary_length(value) do
+    case parse_arbitrary(value) do
+      {:ok, {:px, number}} -> {:ok, {:px, number}}
+      {:ok, {:percent, percentage}} -> {:ok, {:fraction, percentage / 100}}
+      :error -> :error
     end
   end
 

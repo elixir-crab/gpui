@@ -519,6 +519,54 @@ defmodule GPUI.Schema do
         {:enum_methods, [{"flex", :flex}, {"block", :block}, {"grid", :grid}, {"none", :hidden}]}
     },
     %Style{
+      name: :position,
+      field: :position,
+      type: :atom_string,
+      render: {:enum_methods, [{"relative", :relative}, {"absolute", :absolute}]}
+    },
+    %Style{
+      name: :inset,
+      field: :inset,
+      type: :position_length,
+      render: {:option_methods, [:top, :right, :bottom, :left], :position_length}
+    },
+    %Style{
+      name: :inset_x,
+      field: :inset_x,
+      type: :position_length,
+      render: {:option_methods, [:left, :right], :position_length}
+    },
+    %Style{
+      name: :inset_y,
+      field: :inset_y,
+      type: :position_length,
+      render: {:option_methods, [:top, :bottom], :position_length}
+    },
+    %Style{
+      name: :top,
+      field: :top,
+      type: :position_length,
+      render: {:option_method, :top, :position_length}
+    },
+    %Style{
+      name: :right,
+      field: :right,
+      type: :position_length,
+      render: {:option_method, :right, :position_length}
+    },
+    %Style{
+      name: :bottom,
+      field: :bottom,
+      type: :position_length,
+      render: {:option_method, :bottom, :position_length}
+    },
+    %Style{
+      name: :left,
+      field: :left,
+      type: :position_length,
+      render: {:option_method, :left, :position_length}
+    },
+    %Style{
       name: :flex,
       field: :flex,
       type: :atom_string,

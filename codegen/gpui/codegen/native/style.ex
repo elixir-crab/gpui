@@ -67,6 +67,9 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
   defp style_field_type(:length),
     do: quote(do: R.option(R.path({:gpui, :DefiniteLength})))
 
+  defp style_field_type(:position_length),
+    do: quote(do: R.option(R.path({:gpui, :Length})))
+
   defp style_field_type(:flex_basis),
     do: quote(do: R.option(R.path({:gpui, :Length})))
 
@@ -100,6 +103,7 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
   defp style_decode_call(:number), do: quote(do: number_value(term))
   defp style_decode_call(:px), do: quote(do: px_value(term))
   defp style_decode_call(:length), do: quote(do: length_value(term))
+  defp style_decode_call(:position_length), do: quote(do: position_length_value(term))
   defp style_decode_call(:flex_basis), do: quote(do: flex_basis_value(term))
   defp style_decode_call(:radius), do: quote(do: radius_value(term))
 
@@ -137,15 +141,24 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
   end
 
   defp render_statement(%{field: field, render: {:option_method, method, unit}})
-       when unit in [:rgb, :px, :length, :flex_basis, :f32] do
+       when unit in [:rgb, :px, :length, :position_length, :flex_basis, :f32] do
     rendered_value =
       case unit do
-        unit when unit in [:f32, :length, :flex_basis] -> Macro.var(:value, nil)
+        unit when unit in [:f32, :length, :position_length, :flex_basis] -> Macro.var(:value, nil)
         unit -> {{:., [], [{:__aliases__, [], [:Gpui]}, unit]}, [], [Macro.var(:value, nil)]}
       end
 
     render_option_value_case(field, fn ->
       quote(do: assign!(element, element.unquote(method)(unquote(rendered_value))))
+    end)
+  end
+
+  defp render_statement(%{field: field, render: {:option_methods, methods, unit}})
+       when unit == :position_length do
+    render_option_value_case(field, fn ->
+      methods
+      |> Enum.map(fn method -> quote(do: assign!(element, element.unquote(method)(value))) end)
+      |> then(&{:__block__, [], &1})
     end)
   end
 

@@ -116,6 +116,44 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
+  @allow RustQ.Clippy.lint(:manual_map)
+  @spec position_length_value(term()) :: R.option(R.path({:gpui, :Length}))
+  defrust position_length_value(term) do
+    if atom_eq(term, "auto") do
+      some(auto_flex_basis())
+    else
+      case position_definite_length_value(term) do
+        {:some, value} -> some(value.into())
+        :none -> nil
+      end
+    end
+  end
+
+  @allow RustQ.Clippy.lint(:manual_range_contains)
+  @spec position_definite_length_value(term()) ::
+          R.option(R.path({:gpui, :DefiniteLength}))
+  defrust position_definite_length_value(term) do
+    if atom_eq(term, "full") do
+      some(full_length())
+    else
+      case decode_as(term, {term(), term()}) do
+        {:ok, {unit, fraction}} ->
+          if atom_eq(unit, "fraction") do
+            case number_value(fraction) do
+              {:some, value} when value >= -1.0 and value <= 1.0 -> some(fraction_length(value))
+              {:some, _other} -> nil
+              :none -> nil
+            end
+          else
+            px_length_value(term)
+          end
+
+        {:error, _reason} ->
+          px_length_value(term)
+      end
+    end
+  end
+
   @spec flex_basis_value(term()) :: R.option(R.path({:gpui, :Length}))
   defrust flex_basis_value(term) do
     if atom_eq(term, "auto") do
