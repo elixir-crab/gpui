@@ -388,12 +388,23 @@ pub(crate) struct TextSurfaceNode {
     pub(crate) scroll_to: Option<TextPosition>,
     pub(crate) decorations: Vec<TextDecorationNode>,
     pub(crate) inline_projections: Vec<TextInlineProjectionNode>,
+    pub(crate) block_projections: Vec<TextBlockProjectionNode>,
     pub(crate) transaction: Option<String>,
     pub(crate) selection_change: Option<String>,
     pub(crate) viewport_change: Option<String>,
     pub(crate) geometry_change: Option<String>,
     pub(crate) range_geometry_change: Option<String>,
     pub(crate) hit_test: Option<String>,
+}
+#[derive(Clone, Debug, NifMap)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct TextBlockProjectionNode {
+    pub(crate) line: u64,
+    pub(crate) text: String,
+    pub(crate) placement: String,
+    pub(crate) height: u64,
+    pub(crate) color: u32,
+    pub(crate) background: Option<u32>,
 }
 #[derive(Clone, Debug, NifMap)]
 #[cfg(feature = "real-gpui")]
@@ -574,6 +585,17 @@ pub(crate) fn text_inline_projections_attr<'a>(
     }
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn text_block_projections_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+) -> NifResult<Vec<TextBlockProjectionNode>> {
+    match component_attr(term, attr) {
+        Ok(Some(value)) => value.decode::<Vec<TextBlockProjectionNode>>(),
+        Ok(None) => Ok(vec![]),
+        Err(reason) => Err(reason),
+    }
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn decode_text_surface_node<'a>(
     term: Term<'a>,
     _tag: GeneratedElementTag,
@@ -609,6 +631,10 @@ pub(crate) fn decode_text_surface_node<'a>(
             inline_projections: text_inline_projections_attr(
                 term,
                 atoms::inline_projections(),
+            )?,
+            block_projections: text_block_projections_attr(
+                term,
+                atoms::block_projections(),
             )?,
             transaction: string_attr(term, atoms::phx_transaction()),
             selection_change: string_attr(term, atoms::phx_selection_change()),

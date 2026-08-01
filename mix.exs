@@ -133,7 +133,8 @@ defmodule GPUI.MixProject do
           GPUI.Text.RangeGeometry,
           GPUI.Text.Rectangle,
           GPUI.Text.Decoration,
-          GPUI.Text.InlineProjection
+          GPUI.Text.InlineProjection,
+          GPUI.Text.BlockProjection
         ],
         Displays: [GPUI.Display, GPUI.Display.Native],
         Elements: [

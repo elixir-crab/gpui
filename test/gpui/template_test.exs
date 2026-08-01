@@ -638,6 +638,16 @@ defmodule GPUI.TemplateTest do
                    color: 0x94A3B8
                  }
                ],
+               block_projections: [
+                 %{
+                   line: 0,
+                   text: "note",
+                   placement: "after",
+                   height: 24,
+                   color: 0xCBD5E1,
+                   background: 0x1E293B
+                 }
+               ],
                scroll_request: 3,
                scroll_to: %{line: 0, utf16_offset: 2},
                id: "document",
@@ -659,6 +669,9 @@ defmodule GPUI.TemplateTest do
                geometry_ranges={[range]}
                inline_projections={[
                  GPUI.Text.InlineProjection.new(GPUI.Text.Position.new(0, 2), " ghost")
+               ]}
+               block_projections={[
+                 GPUI.Text.BlockProjection.new(0, "note", background: 0x1E293B)
                ]}
                scroll_request={3}
                scroll_to={GPUI.Text.Position.new(0, 2)}
@@ -706,6 +719,15 @@ defmodule GPUI.TemplateTest do
 
       ~GPUI"""
       <text_surface id="too-projected" buffer={buffer} inline_projections={projections} />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/at most 64 bounded GPUI.Text.BlockProjection values/, fn ->
+      projections = List.duplicate(GPUI.Text.BlockProjection.new(0, "x"), 65)
+
+      ~GPUI"""
+      <text_surface id="too-blocked" buffer={buffer} block_projections={projections} />
       """
       |> GPUI.Element.to_payload()
     end

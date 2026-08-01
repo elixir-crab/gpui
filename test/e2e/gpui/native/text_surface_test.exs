@@ -22,6 +22,7 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
           geometry_ranges={assigns.geometry_ranges}
           decorations={assigns.decorations}
           inline_projections={assigns.inline_projections}
+          block_projections={assigns.block_projections}
           scroll_request={assigns.scroll_request}
           scroll_to={assigns.scroll_to}
           phx-transaction="text-transaction"
@@ -95,6 +96,9 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
              ],
              inline_projections: [
                GPUI.Text.InlineProjection.new(Position.new(0, 3), " ghost")
+             ],
+             block_projections: [
+               GPUI.Text.BlockProjection.new(0, "note", background: 0x1E293B)
              ],
              scroll_request: 0,
              scroll_to: Position.new(0, 0),

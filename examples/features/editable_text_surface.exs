@@ -24,6 +24,7 @@ defmodule Features.EditableTextSurface.View do
           tab_size={2}
           decorations={assigns.decorations}
           inline_projections={assigns.inline_projections}
+          block_projections={assigns.block_projections}
           geometry_ranges={assigns.geometry_ranges}
           scroll_request={assigns.scroll_request}
           scroll_to={assigns.scroll_to}
@@ -193,10 +194,19 @@ defmodule Features.EditableTextSurface.App do
         color: 0x94A3B8
       )
 
+    block =
+      GPUI.Text.BlockProjection.new(2, "Visual block — not part of the document",
+        placement: :after,
+        height: 26,
+        color: 0xCBD5E1,
+        background: 0x1E293B
+      )
+
     assigns = %{
       buffer: buffer,
       decorations: [decoration],
       inline_projections: [projection],
+      block_projections: [block],
       geometry_ranges: [requested_range],
       scroll_request: 0,
       scroll_to: GPUI.Text.Position.new(0, 0),

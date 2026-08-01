@@ -496,7 +496,8 @@ defmodule GPUI.Schema do
         scroll_request: {:default, :non_negative_integer, 0},
         scroll_to: :text_position,
         decorations: :text_decorations,
-        inline_projections: :text_inline_projections
+        inline_projections: :text_inline_projections,
+        block_projections: :text_block_projections
       ]
     },
     %Component{
@@ -966,6 +967,14 @@ defmodule GPUI.Schema do
 
   defp validate_attr!(_tag, _name, :text_position, %{__struct__: GPUI.Text.Position}), do: :ok
 
+  defp validate_attr!(tag, name, :text_block_projections, value) when is_list(value) do
+    valid? = Enum.count_until(value, 65) <= 64 and Enum.all?(value, &valid_block_projection?/1)
+
+    if valid?,
+      do: :ok,
+      else: invalid_attr!(tag, name, "at most 64 bounded GPUI.Text.BlockProjection values", value)
+  end
+
   defp validate_attr!(tag, name, :text_inline_projections, value) when is_list(value) do
     valid? =
       Enum.count_until(value, 129) <= 128 and
@@ -1025,6 +1034,27 @@ defmodule GPUI.Schema do
   defp validate_attr!(tag, name, type, value),
     do: invalid_attr!(tag, name, expected_attr_type(type), value)
 
+  defp valid_block_projection?(%{
+         __struct__: GPUI.Text.BlockProjection,
+         line: line,
+         text: text,
+         placement: placement,
+         height: height,
+         color: color,
+         background: background
+       }) do
+    valid_line_and_text?(line, text) and placement in [:before, :after] and
+      is_integer(height) and height in 1..512 and valid_rgb?(color) and
+      (is_nil(background) or valid_rgb?(background))
+  end
+
+  defp valid_block_projection?(_other), do: false
+
+  defp valid_line_and_text?(line, text),
+    do: is_integer(line) and line >= 0 and is_binary(text) and byte_size(text) <= 16_384
+
+  defp valid_rgb?(color), do: is_integer(color) and color in 0..0xFFFFFF
+
   defp expected_attr_type(:string), do: "a string"
   defp expected_attr_type(:required_string), do: "a non-empty string"
   defp expected_attr_type(:number), do: "a number"
@@ -1045,6 +1075,9 @@ defmodule GPUI.Schema do
 
   defp expected_attr_type(:text_inline_projections),
     do: "at most 128 bounded GPUI.Text.InlineProjection values"
+
+  defp expected_attr_type(:text_block_projections),
+    do: "at most 64 bounded GPUI.Text.BlockProjection values"
 
   defp invalid_attr!(tag, name, expected, value) do
     raise ArgumentError,

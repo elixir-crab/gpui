@@ -378,6 +378,13 @@ pub(crate) fn render(
         &node.inline_projections,
         context.cx,
     );
+    let block_labels = block_labels(
+        &surface.state,
+        &surface.text,
+        &node.block_projections,
+        context.cx,
+    );
+
     let decorations = gpui::canvas(
         |_bounds, _window, _cx| {},
         move |_bounds, _prepaint, window, cx| {
@@ -390,29 +397,24 @@ pub(crate) fn render(
                 }
             }
             let text_style = window.text_style();
-            for (position, text, color) in &projection_labels {
-                let run = gpui::TextRun {
-                    len: text.len(),
-                    font: text_style.font(),
-                    color: gpui::rgb(*color).into(),
-                    background_color: None,
-                    underline: None,
-                    strikethrough: None,
-                };
-                let line = window.text_system().shape_line(
-                    text.clone().into(),
-                    text_style.font_size.to_pixels(window.rem_size()),
-                    &[run],
-                    None,
-                );
-                let _ = line.paint(
-                    *position,
-                    window.line_height(),
-                    gpui::TextAlign::Left,
-                    None,
+            for (bounds, text, color, background) in &block_labels {
+                if let Some(background) = background {
+                    window.paint_quad(gpui::fill(*bounds, gpui::rgb(*background)));
+                }
+                paint_projection_text(
                     window,
                     cx,
+                    gpui::point(
+                        bounds.origin.x + gpui::px(6.),
+                        bounds.origin.y + gpui::px(3.),
+                    ),
+                    text,
+                    *color,
+                    &text_style,
                 );
+            }
+            for (position, text, color) in &projection_labels {
+                paint_projection_text(window, cx, *position, text, *color, &text_style);
             }
         },
     )
@@ -446,6 +448,86 @@ pub(crate) fn render(
         .child(apply_component_styles(input, node.style))
         .child(decorations)
         .into_any_element()
+}
+
+#[cfg(feature = "components")]
+fn paint_projection_text(
+    window: &mut gpui::Window,
+    cx: &mut gpui::App,
+    position: gpui::Point<gpui::Pixels>,
+    text: &str,
+    color: u32,
+    text_style: &gpui::TextStyle,
+) {
+    let run = gpui::TextRun {
+        len: text.len(),
+        font: text_style.font(),
+        color: gpui::rgb(color).into(),
+        background_color: None,
+        underline: None,
+        strikethrough: None,
+    };
+    let line = window.text_system().shape_line(
+        text.to_string().into(),
+        text_style.font_size.to_pixels(window.rem_size()),
+        &[run],
+        None,
+    );
+    let _ = line.paint(
+        position,
+        window.line_height(),
+        gpui::TextAlign::Left,
+        None,
+        window,
+        cx,
+    );
+}
+
+#[cfg(feature = "components")]
+fn block_labels(
+    state: &gpui::Entity<gpui_component::input::InputState>,
+    text: &str,
+    projections: &[crate::TextBlockProjectionNode],
+    cx: &gpui::App,
+) -> Vec<(gpui::Bounds<gpui::Pixels>, String, u32, Option<u32>)> {
+    let state = state.read(cx);
+    projections
+        .iter()
+        .take(64)
+        .filter_map(|projection| {
+            let line = usize::try_from(projection.line).ok()?;
+            let position = if projection.placement == "before" {
+                crate::TextPosition {
+                    line: projection.line,
+                    utf16_offset: 0,
+                }
+            } else {
+                let next_line = line.checked_add(1)?;
+                crate::TextPosition {
+                    line: next_line as u64,
+                    utf16_offset: 0,
+                }
+            };
+            let offset = position_to_byte_offset(text, &position).ok()?;
+            let anchor = state.range_to_bounds(&(offset..offset))?;
+            let height = gpui::px(projection.height as f32);
+            let y = if projection.placement == "before" {
+                anchor.origin.y - height
+            } else {
+                anchor.origin.y
+            };
+            let bounds = gpui::Bounds::new(
+                gpui::point(anchor.origin.x, y),
+                gpui::size(gpui::px(360.), height),
+            );
+            Some((
+                bounds,
+                projection.text.clone(),
+                projection.color,
+                projection.background,
+            ))
+        })
+        .collect()
 }
 
 #[cfg(feature = "components")]
@@ -751,6 +833,7 @@ fn acknowledge_geometry_contract(node: &TextSurfaceNode) {
         &node.hit_test,
         &node.decorations,
         &node.inline_projections,
+        &node.block_projections,
     );
 }
 

@@ -123,6 +123,13 @@ defmodule GPUI.Element do
   defp attr_value_to_payload(%GPUI.Text.InlineProjection{} = projection),
     do: map_struct_values(projection)
 
+  defp attr_value_to_payload(%GPUI.Text.BlockProjection{} = projection) do
+    projection
+    |> Map.from_struct()
+    |> Map.update!(:placement, &Atom.to_string/1)
+    |> Map.new(fn {key, value} -> {key, attr_value_to_payload(value)} end)
+  end
+
   defp attr_value_to_payload(%GPUI.Text.Decoration{} = decoration) do
     decoration
     |> Map.from_struct()

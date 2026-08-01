@@ -148,6 +148,13 @@ projection anchors non-editable display text and an RGB color to an explicit
 UTF-16 position. Projection text never enters the Rope, changes selection
 coordinates, participates in history, or implies completion behavior.
 
+The block projection contract accepts up to 64 bounded
+`GPUI.Text.BlockProjection` values containing at most 16384 bytes. Blocks are
+anchored before or after a logical line and carry explicit height, foreground,
+and optional background colors. They are overlay annotations: they do not add
+rows to native text layout or alter document coordinates. Consumers can use
+them for notes and previews while retaining application policy.
+
 The demonstration's gutter is now entirely consumer-owned: Elixir derives the
 visible line-number elements, row heights, and fractional vertical offset from
 `GPUI.Text.Viewport`. The renderer still exposes no gutter or editor shell.
