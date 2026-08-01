@@ -129,6 +129,15 @@ pub(crate) enum NativeEvent {
         event: String,
         value: ElementBoundsGeometry,
     },
+    WindowCloseRequest {
+        window_id: u64,
+        event: String,
+    },
+    WindowFocus {
+        focused: bool,
+        window_id: u64,
+        event: String,
+    },
     WindowClosed {
         window_id: u64,
     },
@@ -325,6 +334,36 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
                 (atoms::window_id(), window_id.encode(env)),
                 (atoms::event(), event.encode(env)),
                 (atoms::value(), value.encode(env)),
+            ],
+        ),
+        NativeEvent::WindowCloseRequest { window_id, event } => encode_event_map(
+            env,
+            vec![
+                (
+                    atoms::type_atom(),
+                    atoms::window_close_request().to_term(env),
+                ),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
+            ],
+        ),
+        NativeEvent::WindowFocus {
+            focused,
+            window_id,
+            event,
+        } => encode_event_map(
+            env,
+            vec![
+                (
+                    atoms::type_atom(),
+                    if focused {
+                        atoms::window_focus().to_term(env)
+                    } else {
+                        atoms::window_blur().to_term(env)
+                    },
+                ),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
             ],
         ),
         NativeEvent::WindowClosed { window_id } => encode_event_map(

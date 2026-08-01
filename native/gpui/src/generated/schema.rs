@@ -215,6 +215,54 @@ pub(crate) fn window_size<'a>(window: Term<'a>) -> NifResult<(f32, f32)> {
     }
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn window_optional_size<'a>(
+    window: Term<'a>,
+    attr: Atom,
+) -> NifResult<Option<(f32, f32)>> {
+    match window.map_get(attr) {
+        Ok(term) => {
+            if atom_eq(term, "nil") {
+                Ok(None)
+            } else {
+                match term.decode::<Vec<u32>>()?.as_slice() {
+                    [width, height] if *width > 0 && *height > 0 => {
+                        Ok(Some((*width as f32, *height as f32)))
+                    }
+                    _other => Err(rustler::Error::BadArg),
+                }
+            }
+        }
+        Err(_missing) => Ok(None),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn window_bool<'a>(
+    window: Term<'a>,
+    attr: Atom,
+    default: bool,
+) -> NifResult<bool> {
+    match window.map_get(attr) {
+        Ok(value) => value.decode::<bool>(),
+        Err(_missing) => Ok(default),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn window_optional_string<'a>(
+    window: Term<'a>,
+    attr: Atom,
+) -> NifResult<Option<String>> {
+    match window.map_get(attr) {
+        Ok(value) => {
+            if atom_eq(value, "nil") {
+                Ok(None)
+            } else {
+                Ok(Some(value.decode::<String>()?))
+            }
+        }
+        Err(_missing) => Ok(None),
+    }
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn window_commands<'a>(window: Term<'a>) -> NifResult<Vec<(String, String)>> {
     match window.map_get(atoms::commands()) {
         Ok(commands) => commands.decode::<Vec<(String, String)>>(),

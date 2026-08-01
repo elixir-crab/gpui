@@ -581,6 +581,35 @@ rerender or resize. The event is asynchronous; it does not expose GPUI layout
 IDs or provide a synchronous measurement NIF. Use the resulting geometry as
 runtime `<layer>` coordinates while keeping static presentation in classes.
 
+## Window lifecycle
+
+Window declarations can constrain native resizing and subscribe the root view to
+platform lifecycle requests:
+
+```elixir
+window "Workspace" do
+  size 1100, 720
+  min_size 760, 480
+  resizable true
+  on_close_request "window-close-requested"
+  on_focus "window-focused"
+  on_blur "window-blurred"
+  root WorkspaceView
+end
+```
+
+`min_size` and `resizable` are declarative creation options interpreted by the
+native display. A configured close-request handler intercepts the platform close
+button, emits `:window_close_request`, and keeps the window open so Elixir can
+save, confirm, or remove it through application state. The existing
+`:window_closed` event remains the final notification after a window actually
+closes.
+
+Window `:window_focus` and `:window_blur` events report native activation changes
+and are separate from element-level focus. All lifecycle event names are
+optional non-empty strings; no handler means the platform's ordinary close or
+activation behavior remains unchanged.
+
 ## Focus
 
 Focusable primitives use a monotonic request token instead of an

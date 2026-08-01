@@ -65,10 +65,18 @@ defmodule GPUI.Session do
       id: window.id,
       title: window.title,
       size: Tuple.to_list(window.size || {800, 600}),
+      min_size: encode_optional_size(window.min_size),
+      resizable: window.resizable,
+      close_request: window.close_request,
+      focus: window.focus,
+      blur: window.blur,
       commands: Enum.map(window.commands, &GPUI.Command.to_payload/1),
       root: encode_root(window.root)
     }
   end
+
+  defp encode_optional_size(nil), do: nil
+  defp encode_optional_size(size), do: Tuple.to_list(size)
 
   @impl GenServer
   def init({:deferred, opts}) do
@@ -220,6 +228,9 @@ defmodule GPUI.Session do
          state
        )
        when type in [
+              :window_close_request,
+              :window_focus,
+              :window_blur,
               :click,
               :command,
               :change,

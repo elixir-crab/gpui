@@ -156,6 +156,9 @@ pub(crate) struct ElixirRoot {
     #[cfg(feature = "components")]
     pub(crate) components: crate::element::component_registry::ComponentRegistry,
     command_subscription: Option<gpui::Subscription>,
+    activation_subscription: Option<gpui::Subscription>,
+    focus_event: Option<String>,
+    blur_event: Option<String>,
     observe_commands: bool,
     #[cfg(feature = "components")]
     render_dialog_layer: bool,
@@ -167,7 +170,13 @@ pub(crate) struct ElixirRoot {
 
 #[cfg(feature = "real-gpui")]
 impl ElixirRoot {
-    pub(crate) fn new(window_state: SharedWindow, runtime: SharedRuntime, window_id: u64) -> Self {
+    pub(crate) fn new(
+        window_state: SharedWindow,
+        runtime: SharedRuntime,
+        window_id: u64,
+        focus_event: Option<String>,
+        blur_event: Option<String>,
+    ) -> Self {
         Self {
             window_state,
             runtime,
@@ -176,6 +185,9 @@ impl ElixirRoot {
             #[cfg(feature = "components")]
             components: crate::element::component_registry::ComponentRegistry::default(),
             command_subscription: None,
+            activation_subscription: None,
+            focus_event,
+            blur_event,
             observe_commands: true,
             #[cfg(feature = "components")]
             render_dialog_layer: true,
@@ -194,12 +206,50 @@ impl ElixirRoot {
         focus: gpui::FocusHandle,
         key_handler: DialogKeyHandler,
     ) -> Self {
-        let mut root = Self::new(window_state, runtime, window_id);
+        let mut root = Self::new(window_state, runtime, window_id, None, None);
         root.render_dialog_layer = false;
         root.observe_commands = false;
         root.dialog_focus = Some(focus);
         root.dialog_key_handler = Some(key_handler);
         root
+    }
+
+    fn observe_window_activation(
+        &mut self,
+        window: &mut gpui::Window,
+        cx: &mut gpui::Context<Self>,
+    ) {
+        if self.activation_subscription.is_some()
+            || (self.focus_event.is_none() && self.blur_event.is_none())
+        {
+            return;
+        }
+
+        let runtime = self.runtime.clone();
+        let window_id = self.window_id;
+        let focus_event = self.focus_event.clone();
+        let blur_event = self.blur_event.clone();
+        self.activation_subscription = Some(cx.observe_window_activation(
+            window,
+            move |_root, window, _cx| {
+                let focused = window.is_window_active();
+                let event = if focused {
+                    focus_event.clone()
+                } else {
+                    blur_event.clone()
+                };
+                if let Some(event) = event {
+                    let _ = push_event(
+                        &runtime,
+                        NativeEvent::WindowFocus {
+                            focused,
+                            window_id,
+                            event,
+                        },
+                    );
+                }
+            },
+        ));
     }
 
     fn editable_input_focused(&self, window: &gpui::Window, cx: &gpui::App) -> bool {
@@ -262,6 +312,7 @@ impl gpui::Render for ElixirRoot {
         cx: &mut gpui::Context<Self>,
     ) -> impl gpui::IntoElement {
         self.observe_commands(_window, cx);
+        self.observe_window_activation(_window, cx);
 
         let tree = self
             .window_state
@@ -427,6 +478,11 @@ pub(crate) enum WindowCommand {
         window_id: u64,
         width: f32,
         height: f32,
+        min_size: Option<(f32, f32)>,
+        resizable: bool,
+        close_request: Option<String>,
+        focus: Option<String>,
+        blur: Option<String>,
         window_state: SharedWindow,
         runtime: SharedRuntime,
         reply: WindowCommandReply,
@@ -539,6 +595,11 @@ fn handle_window_command(
             window_id,
             width,
             height,
+            min_size,
+            resizable,
+            close_request,
+            focus,
+            blur,
             window_state,
             runtime,
             reply,
@@ -549,10 +610,17 @@ fn handle_window_command(
             }
 
             let result = open_gpui_window(
-                title,
-                window_id,
-                width,
-                height,
+                WindowOpenConfig {
+                    title,
+                    window_id,
+                    width,
+                    height,
+                    min_size,
+                    resizable,
+                    close_request,
+                    focus_event: focus,
+                    blur_event: blur,
+                },
                 window_state.clone(),
                 runtime.clone(),
                 cx,
@@ -802,11 +870,21 @@ fn close_managed_window(window: ManagedWindow, cx: &mut gpui::App) -> Result<(),
 }
 
 #[cfg(feature = "real-gpui")]
-fn open_gpui_window(
+struct WindowOpenConfig {
     title: String,
     window_id: u64,
     width: f32,
     height: f32,
+    min_size: Option<(f32, f32)>,
+    resizable: bool,
+    close_request: Option<String>,
+    focus_event: Option<String>,
+    blur_event: Option<String>,
+}
+
+#[cfg(feature = "real-gpui")]
+fn open_gpui_window(
+    config: WindowOpenConfig,
     window_state: SharedWindow,
     runtime: SharedRuntime,
     cx: &mut gpui::App,
@@ -819,18 +897,54 @@ fn open_gpui_window(
 > {
     use gpui::{px, size, AppContext, Bounds, WindowBounds, WindowOptions};
 
+    let WindowOpenConfig {
+        title,
+        window_id,
+        width,
+        height,
+        min_size,
+        resizable,
+        close_request,
+        focus_event,
+        blur_event,
+    } = config;
     let bounds = Bounds::centered(None, size(px(width), px(height)), cx);
-    let view = cx.new(|_cx| ElixirRoot::new(window_state, runtime, window_id));
+    let window_min_size = min_size.map(|(width, height)| size(px(width), px(height)));
+    let view = cx.new(|_cx| {
+        ElixirRoot::new(
+            window_state,
+            runtime.clone(),
+            window_id,
+            focus_event,
+            blur_event,
+        )
+    });
     let view_for_root = view.clone();
 
     let handle = cx
         .open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
+                is_resizable: resizable,
+                window_min_size,
                 ..Default::default()
             },
             |native_window, cx| {
                 native_window.set_window_title(&title);
+                if close_request.is_some() {
+                    let event = close_request.clone().expect("checked close request");
+                    let runtime = runtime.clone();
+                    native_window.on_window_should_close(cx, move |_window, _cx| {
+                        let _ = push_event(
+                            &runtime,
+                            NativeEvent::WindowCloseRequest {
+                                window_id,
+                                event: event.clone(),
+                            },
+                        );
+                        false
+                    });
+                }
                 native_window_root(view_for_root.clone(), native_window, cx)
             },
         )

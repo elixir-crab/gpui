@@ -59,6 +59,15 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
       {:noreply, %{assigns | bounds: assigns.bounds + 1}}
     end
 
+    def handle_event("window-close-requested", %{type: :window_close_request}, assigns),
+      do: {:noreply, %{assigns | close_requests: assigns.close_requests + 1}}
+
+    def handle_event("window-focused", %{type: :window_focus}, assigns),
+      do: {:noreply, %{assigns | window_focuses: assigns.window_focuses + 1}}
+
+    def handle_event("window-blurred", %{type: :window_blur}, assigns),
+      do: {:noreply, %{assigns | window_blurs: assigns.window_blurs + 1}}
+
     def handle_event("surface-focused", %{value: %{id: "primary-surface"}}, assigns),
       do: {:noreply, %{assigns | focuses: assigns.focuses + 1}}
 
@@ -102,6 +111,10 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
        [
          window title do
            size(640, 420)
+           min_size(480, 320)
+           on_close_request("window-close-requested")
+           on_focus("window-focused")
+           on_blur("window-blurred")
 
            root(SharedSurfaceView,
              buffer: buffer,
@@ -131,6 +144,9 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
              bounds: 0,
              focuses: 0,
              blurs: 0,
+             close_requests: 0,
+             window_focuses: 0,
+             window_blurs: 0,
              primary_focus: 1,
              mirror_focus: 0
            )

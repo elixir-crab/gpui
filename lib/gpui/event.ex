@@ -24,6 +24,9 @@ defmodule GPUI.Event do
           | :blur
           | :keydown
           | :keyup
+          | :window_close_request
+          | :window_focus
+          | :window_blur
           | :window_closed
           | atom()
   @type t :: %__MODULE__{

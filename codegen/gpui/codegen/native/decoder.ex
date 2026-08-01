@@ -202,6 +202,51 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
+  @spec window_optional_size(term(), atom()) ::
+          R.nif_result(R.option({R.f32(), R.f32()}))
+  defrust window_optional_size(window, attr) do
+    case window.map_get(attr) do
+      {:ok, term} ->
+        if atom_eq(term, "nil") do
+          {:ok, nil}
+        else
+          case decode_as!(term, R.vec(R.u32())) do
+            [width, height] when deref(width) > 0 and deref(height) > 0 ->
+              {:ok, some({cast(deref(width), R.f32()), cast(deref(height), R.f32())})}
+
+            _other ->
+              {:error, badarg()}
+          end
+        end
+
+      {:error, _missing} ->
+        {:ok, nil}
+    end
+  end
+
+  @spec window_bool(term(), atom(), boolean()) :: R.nif_result(boolean())
+  defrust window_bool(window, attr, default) do
+    case window.map_get(attr) do
+      {:ok, value} -> decode_as(value, boolean())
+      {:error, _missing} -> {:ok, default}
+    end
+  end
+
+  @spec window_optional_string(term(), atom()) :: R.nif_result(R.option(String.t()))
+  defrust window_optional_string(window, attr) do
+    case window.map_get(attr) do
+      {:ok, value} ->
+        if atom_eq(value, "nil") do
+          {:ok, nil}
+        else
+          {:ok, some(decode_as!(value, String.t()))}
+        end
+
+      {:error, _missing} ->
+        {:ok, nil}
+    end
+  end
+
   @spec window_commands(term()) :: R.nif_result(R.vec({String.t(), String.t()}))
   defrust window_commands(window) do
     case window.map_get(Atoms.commands()) do

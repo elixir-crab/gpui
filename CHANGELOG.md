@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Added declarative native window minimum size, resizability, intercepted close-request events, and window activation focus/blur events.
 - Added stable-ID monotonic focus requests and native focus/blur events for buttons, low-level inputs, controlled inputs, and text surfaces.
 - Added opt-in, stable-ID, deduplicated native element-bounds events for composing ordinary HTML/Tailwind-like layout with window-fitted layers.
 - Added a neutral bounded `<layer>` primitive backed by GPUI anchored positioning and deferred paint priority, documented as a native top-layer escape hatch while ordinary positioning and static presentation remain HTML/Tailwind-like.
