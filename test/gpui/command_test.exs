@@ -16,6 +16,113 @@ defmodule GPUI.CommandTest do
     def render(_assigns), do: %GPUI.Element{type: :div}
   end
 
+  defmodule PlainView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(_assigns), do: %GPUI.Element{type: :div}
+  end
+
+  defmodule PlainApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(_args) do
+      {:ok,
+       [
+         window "Plain" do
+           root(PlainView)
+         end
+       ]}
+    end
+  end
+
+  defmodule CloseConfirmationView do
+    use GPUI.View
+
+    alias GPUI.UI
+    alias GPUI.UI.Overlay
+
+    @impl GPUI.View
+    def render(assigns) do
+      ~GPUI"""
+      <div>
+        <text>Workspace</text>
+        <Overlay.dialog
+          id="close-confirmation"
+          open={assigns.close_dialog_open}
+          title="Close workspace?"
+          phx-change="close_dialog_changed"
+        >
+          <:content>
+            <div class="flex flex-col gap-3">
+              <text>Unsaved changes will be discarded.</text>
+              <div class="flex gap-2">
+                <UI.button id="cancel-close" label="Cancel" phx-click="cancel_close" />
+                <UI.button id="confirm-close" label="Close" phx-click="confirm_close" />
+              </div>
+            </div>
+          </:content>
+        </Overlay.dialog>
+      </div>
+      """
+    end
+
+    @impl GPUI.View
+    def handle_window_event(:close_request, _event, assigns),
+      do: {:noreply, %{assigns | close_dialog_open: true}}
+
+    def handle_window_event(_event, _payload, assigns), do: {:noreply, assigns}
+
+    @impl GPUI.View
+    def handle_event("close_dialog_changed", %{value: false}, assigns),
+      do: {:noreply, %{assigns | close_dialog_open: false}}
+
+    def handle_event("cancel_close", _event, assigns),
+      do: {:noreply, %{assigns | close_dialog_open: false}}
+
+    def handle_event("confirm_close", _event, assigns), do: {:close, assigns}
+  end
+
+  defmodule CloseConfirmationApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(_args) do
+      {:ok,
+       [
+         window "Close confirmation" do
+           root(CloseConfirmationView, close_dialog_open: false)
+         end
+       ]}
+    end
+  end
+
+  defmodule InvalidLifecycleView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(_assigns), do: %GPUI.Element{type: :div}
+
+    @impl GPUI.View
+    def handle_window_event(:focus, _event, assigns), do: {:close, assigns}
+    def handle_window_event(_event, _payload, assigns), do: {:noreply, assigns}
+  end
+
+  defmodule InvalidLifecycleApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(_args) do
+      {:ok,
+       [
+         window "Invalid lifecycle" do
+           root(InvalidLifecycleView)
+         end
+       ]}
+    end
+  end
+
   defmodule App do
     use GPUI.Application
 
@@ -60,6 +167,13 @@ defmodule GPUI.CommandTest do
            } = Session.window_payload(window)
   end
 
+  test "views without a lifecycle callback retain ordinary platform lifecycle" do
+    assert {:ok, [window]} = PlainApp.mount(%{})
+    window = %{WindowSpec.validate!(window) | id: 1}
+
+    assert Session.window_payload(window).lifecycle == []
+  end
+
   test "routes fixed lifecycle atoms through the optional view callback" do
     {:ok, session} = Session.start_link(app: App)
 
@@ -67,13 +181,66 @@ defmodule GPUI.CommandTest do
       Session.dispatch_event(session, %{type: :window_focus, window_id: 1})
 
     assert focus.type == :window_focus
+    refute Map.has_key?(focus, :event)
     assert [%{id: 1}] = snapshot.windows
 
     {close, snapshot} =
       Session.dispatch_event(session, %{type: :window_close_request, window_id: 1})
 
     assert close.type == :window_close_request
+    refute Map.has_key?(close, :event)
     assert snapshot.windows == []
+
+    {closed, snapshot} =
+      Session.dispatch_event(session, %{type: :window_closed, window_id: 1})
+
+    assert closed.type == :window_closed
+    assert snapshot.windows == []
+  end
+
+  test "a declarative confirmation can cancel or approve window closure" do
+    {:ok, session} = Session.start_link(app: CloseConfirmationApp)
+
+    {_event, snapshot} =
+      Session.dispatch_event(session, %{type: :window_close_request, window_id: 1})
+
+    assert [window] = snapshot.windows
+    assert window.root.assigns.close_dialog_open
+    assert component(window.root.tree, :ui_dialog).attrs.open
+
+    {_event, snapshot} =
+      Session.dispatch_event(session, %{
+        type: :click,
+        window_id: 1,
+        event: "cancel_close"
+      })
+
+    assert [window] = snapshot.windows
+    refute window.root.assigns.close_dialog_open
+    refute component(window.root.tree, :ui_dialog).attrs.open
+
+    Session.dispatch_event(session, %{type: :window_close_request, window_id: 1})
+
+    {_event, snapshot} =
+      Session.dispatch_event(session, %{
+        type: :click,
+        window_id: 1,
+        event: "confirm_close"
+      })
+
+    assert snapshot.windows == []
+  end
+
+  test "close approval is only valid for close requests" do
+    Process.flag(:trap_exit, true)
+    {:ok, session} = Session.start_link(app: InvalidLifecycleApp)
+
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        assert catch_exit(Session.dispatch_event(session, %{type: :window_focus, window_id: 1}))
+      end)
+
+    assert log =~ "expected {:noreply, assigns}"
   end
 
   test "rejects malformed window lifecycle contracts" do
@@ -112,4 +279,12 @@ defmodule GPUI.CommandTest do
       })
     end
   end
+
+  defp component(%{type: type} = element, type), do: element
+
+  defp component(%{children: children}, type) do
+    Enum.find_value(children, &component(&1, type))
+  end
+
+  defp component(_child, _type), do: nil
 end

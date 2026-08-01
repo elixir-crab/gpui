@@ -37,6 +37,51 @@ defmodule GPUI.RuntimeTest do
     end
   end
 
+  defmodule ClosingView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(_assigns), do: %GPUI.Element{type: :div}
+
+    @impl GPUI.View
+    def handle_event("confirm-close", _event, assigns), do: {:close, assigns}
+  end
+
+  defmodule ClosingApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(_args) do
+      {:ok,
+       [
+         window "Closing" do
+           root(ClosingView)
+         end
+       ]}
+    end
+  end
+
+  defmodule RecordingDisplay do
+    @behaviour GPUI.Display
+
+    use Agent
+
+    @impl GPUI.Display
+    def start_link(_opts), do: Agent.start_link(fn -> [] end)
+
+    @impl GPUI.Display
+    def sync(display, snapshot) do
+      Agent.update(display, &[snapshot | &1])
+      :ok
+    end
+
+    @impl GPUI.Display
+    def drain_events(_display), do: {:ok, []}
+
+    @impl GPUI.Display
+    def inject_event(_display, _event), do: {:ok, :ok}
+  end
+
   defmodule RefreshView do
     use GPUI.View
 
@@ -165,6 +210,28 @@ defmodule GPUI.RuntimeTest do
         :release_frame -> :ok
       end
     end
+  end
+
+  test "close event outcomes synchronize removed windows to the display" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(
+        app: ClosingApp,
+        display: RecordingDisplay,
+        poll_interval: nil
+      )
+
+    %{display: display} = :sys.get_state(runtime)
+    assert [%{windows: [_window]}] = Agent.get(display, & &1)
+
+    {_event, snapshot} =
+      GPUI.Runtime.dispatch_event(runtime, %{
+        type: :click,
+        window_id: 1,
+        event: "confirm-close"
+      })
+
+    assert snapshot.windows == []
+    assert [%{windows: []}, %{windows: [_window]}] = Agent.get(display, & &1)
   end
 
   test "runtime startup normalizes custom display failures" do

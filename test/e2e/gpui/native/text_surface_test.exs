@@ -245,6 +245,11 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
     end)
 
     Desktop.close_window!(window_id)
+
+    Desktop.eventually(fn ->
+      assert assigns(runtime).close_requests > 0
+      assert [%{id: 1}] = GPUI.Runtime.snapshot(runtime).windows
+    end)
   end
 
   defp assigns(runtime) do
