@@ -15,6 +15,11 @@ use std::{
 };
 
 #[cfg(feature = "real-gpui")]
+type FocusBinding = (Option<String>, Option<String>);
+#[cfg(feature = "real-gpui")]
+type FocusBindingKey = (u64, String);
+
+#[cfg(feature = "real-gpui")]
 static NEXT_RUNTIME_ID: AtomicU64 = AtomicU64::new(1);
 #[cfg(feature = "real-gpui")]
 static GPUI_COMMANDS: OnceLock<mpsc::UnboundedSender<WindowCommand>> = OnceLock::new();
@@ -25,6 +30,14 @@ pub(crate) struct RuntimeState {
     pub(crate) resources: Mutex<HashMap<String, RasterData>>,
     #[cfg(feature = "real-gpui")]
     pub(crate) input_values: Mutex<HashMap<String, String>>,
+    #[cfg(feature = "real-gpui")]
+    pub(crate) focus_requests: Mutex<HashMap<(u64, String), u64>>,
+    #[cfg(feature = "real-gpui")]
+    pub(crate) focus_bindings: Mutex<HashMap<FocusBindingKey, FocusBinding>>,
+    #[cfg(feature = "real-gpui")]
+    pub(crate) focus_observers: Mutex<std::collections::HashSet<(u64, String)>>,
+    #[cfg(feature = "real-gpui")]
+    pub(crate) focus_handles: Mutex<HashMap<(u64, String), crate::gpui::FocusHandle>>,
     #[cfg(feature = "real-gpui")]
     pub(crate) element_bounds: Mutex<HashMap<(u64, String), crate::event::ElementBoundsGeometry>>,
 }
@@ -39,6 +52,14 @@ impl RuntimeState {
             resources: Mutex::new(HashMap::new()),
             #[cfg(feature = "real-gpui")]
             input_values: Mutex::new(HashMap::new()),
+            #[cfg(feature = "real-gpui")]
+            focus_requests: Mutex::new(HashMap::new()),
+            #[cfg(feature = "real-gpui")]
+            focus_bindings: Mutex::new(HashMap::new()),
+            #[cfg(feature = "real-gpui")]
+            focus_observers: Mutex::new(std::collections::HashSet::new()),
+            #[cfg(feature = "real-gpui")]
+            focus_handles: Mutex::new(HashMap::new()),
             #[cfg(feature = "real-gpui")]
             element_bounds: Mutex::new(HashMap::new()),
         }

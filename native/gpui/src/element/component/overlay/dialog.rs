@@ -322,6 +322,9 @@ fn dialog_content_tree(content: DialogContentComponentNode) -> crate::ElementNod
         children: content.children,
         click: None,
         bounds_change: None,
+        focus_request: 0,
+        focus: None,
+        blur: None,
     })
 }
 

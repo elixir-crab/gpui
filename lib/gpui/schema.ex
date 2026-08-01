@@ -19,8 +19,13 @@ defmodule GPUI.Schema do
     %Component{
       tag: :button,
       kind: :container,
-      events: [click: :"phx-click", bounds: :"phx-bounds-change"],
-      attrs: [id: :string]
+      events: [
+        click: :"phx-click",
+        bounds: :"phx-bounds-change",
+        focus: :"phx-focus",
+        blur: :"phx-blur"
+      ],
+      attrs: [id: :string, focus_request: {:default, :non_negative_integer, 0}]
     },
     %Component{
       tag: :layer,
@@ -204,7 +209,12 @@ defmodule GPUI.Schema do
       tag: :ui_input,
       kind: :input_component,
       stateful: true,
-      events: [change: :"phx-change", submit: :"phx-submit"],
+      events: [
+        change: :"phx-change",
+        submit: :"phx-submit",
+        focus: :"phx-focus",
+        blur: :"phx-blur"
+      ],
       required_events: [:"phx-change"],
       attrs: [
         id: :string,
@@ -533,7 +543,9 @@ defmodule GPUI.Schema do
         viewport: :"phx-viewport-change",
         geometry: :"phx-geometry-change",
         range_geometry: :"phx-range-geometry-change",
-        hit_test: :"phx-hit-test"
+        hit_test: :"phx-hit-test",
+        focus: :"phx-focus",
+        blur: :"phx-blur"
       ],
       attrs: [
         id: :required_string,
@@ -555,8 +567,19 @@ defmodule GPUI.Schema do
     %Component{
       tag: :input,
       kind: :input,
-      events: [change: :"phx-change", keydown: :"phx-keydown", keyup: :"phx-keyup"],
-      attrs: [value: :string, placeholder: :string]
+      events: [
+        change: :"phx-change",
+        keydown: :"phx-keydown",
+        keyup: :"phx-keyup",
+        focus: :"phx-focus",
+        blur: :"phx-blur"
+      ],
+      attrs: [
+        id: :string,
+        value: :string,
+        placeholder: :string,
+        focus_request: {:default, :non_negative_integer, 0}
+      ]
     },
     %Component{tag: :img, kind: :image, attrs: [raster: :resource, label: :string]},
     %Component{tag: :text, kind: :text}
@@ -1212,7 +1235,7 @@ defmodule GPUI.Schema do
   def identified_tags do
     for %Component{tag: tag, attrs: attrs} <- @components,
         Keyword.has_key?(attrs, :id),
-        tag not in [:div, :button, :span, :scroll, :list, :item],
+        tag not in [:div, :button, :span, :scroll, :list, :item, :input],
         do: tag
   end
 

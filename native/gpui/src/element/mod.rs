@@ -41,6 +41,9 @@ impl ElementNode {
             children: Vec::new(),
             click: None,
             bounds_change: None,
+            focus_request: 0,
+            focus: None,
+            blur: None,
         })
     }
 
@@ -111,6 +114,144 @@ pub(crate) fn render_anchored_layer_primitive(
     deferred(element)
         .with_priority(layer.priority as usize)
         .into_any_element()
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn install_focus_observers(
+    focus_handle: gpui::FocusHandle,
+    id: String,
+    runtime: SharedRuntime,
+    window_id: u64,
+    window: &mut gpui::Window,
+    cx: &mut gpui::App,
+) {
+    let runtime_for_focus = runtime.clone();
+    let id_for_focus = id.clone();
+    window
+        .on_focus_in(&focus_handle, cx, move |_window, _cx| {
+            let event = runtime_for_focus
+                .focus_bindings
+                .lock()
+                .ok()
+                .and_then(|bindings| bindings.get(&(window_id, id_for_focus.clone())).cloned())
+                .and_then(|(event, _blur)| event);
+            if let Some(event) = event {
+                let _ = push_event(
+                    &runtime_for_focus,
+                    NativeEvent::Focus {
+                        kind: InputKind::Focus,
+                        window_id,
+                        event,
+                        id: id_for_focus.clone(),
+                    },
+                );
+            }
+        })
+        .detach();
+    let runtime_for_blur = runtime.clone();
+    let id_for_blur = id;
+    window
+        .on_focus_out(&focus_handle, cx, move |_event, _window, _cx| {
+            let event = runtime_for_blur
+                .focus_bindings
+                .lock()
+                .ok()
+                .and_then(|bindings| bindings.get(&(window_id, id_for_blur.clone())).cloned())
+                .and_then(|(_focus, event)| event);
+            if let Some(event) = event {
+                let _ = push_event(
+                    &runtime_for_blur,
+                    NativeEvent::Focus {
+                        kind: InputKind::Blur,
+                        window_id,
+                        event,
+                        id: id_for_blur.clone(),
+                    },
+                );
+            }
+        })
+        .detach();
+}
+
+#[cfg(feature = "real-gpui")]
+fn request_native_focus(
+    focus_handle: &gpui::FocusHandle,
+    id: String,
+    focus_request: u64,
+    runtime: SharedRuntime,
+    window_id: u64,
+    context: &mut ElementRenderContext<'_, '_>,
+) {
+    let request = runtime
+        .focus_requests
+        .lock()
+        .map(|mut requests| {
+            let previous = requests.insert((window_id, id), focus_request).unwrap_or(0);
+            focus_request > 0 && focus_request != previous
+        })
+        .unwrap_or(false);
+    if request {
+        let requested_focus = focus_handle.clone();
+        context.window.defer(context.cx, move |window, cx| {
+            requested_focus.focus(window, cx)
+        });
+    }
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn apply_focus_contract(
+    mut element: gpui::Div,
+    id: String,
+    focus_request: u64,
+    focus_event: Option<String>,
+    blur_event: Option<String>,
+    tab_stop: bool,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::Div {
+    use gpui::InteractiveElement;
+
+    let focus_handle = context
+        .runtime
+        .focus_handles
+        .lock()
+        .ok()
+        .map(|mut handles| {
+            handles
+                .entry((context.window_id, id.clone()))
+                .or_insert_with(|| context.cx.focus_handle())
+                .clone()
+        })
+        .unwrap_or_else(|| context.cx.focus_handle());
+    let runtime = context.runtime.clone();
+    let window_id = context.window_id;
+    if let Ok(mut bindings) = runtime.focus_bindings.lock() {
+        bindings.insert((window_id, id.clone()), (focus_event, blur_event));
+    }
+    let install = runtime
+        .focus_observers
+        .lock()
+        .map(|mut observers| observers.insert((window_id, id.clone())))
+        .unwrap_or(false);
+    if install {
+        install_focus_observers(
+            focus_handle.clone(),
+            id.clone(),
+            runtime.clone(),
+            window_id,
+            context.window,
+            context.cx,
+        );
+    }
+    request_native_focus(
+        &focus_handle,
+        id,
+        focus_request,
+        runtime,
+        window_id,
+        context,
+    );
+    element = element.track_focus(&focus_handle.tab_stop(tab_stop));
+    element
 }
 
 #[cfg(feature = "real-gpui")]
@@ -241,11 +382,15 @@ pub(crate) fn render_input_primitive(
 
     let InputNode {
         style,
+        id: stable_id,
         value,
         placeholder,
+        focus_request,
         change,
         keydown,
         keyup,
+        focus,
+        blur,
     } = input_node;
     let runtime = context.runtime.clone();
     let window_id = context.window_id;
@@ -253,6 +398,16 @@ pub(crate) fn render_input_primitive(
         "gpui-elixir-input-{window_id}-{}-{element_id}",
         context.id_namespace
     );
+    let focus_enabled = focus_request > 0 || focus.is_some() || blur.is_some();
+    let public_id = stable_id.unwrap_or_else(|| input_id.clone());
+    if focus_enabled {
+        if let Ok(mut bindings) = runtime.focus_bindings.lock() {
+            bindings.insert(
+                (window_id, public_id.clone()),
+                (focus.clone(), blur.clone()),
+            );
+        }
+    }
     context.active_input_ids.insert(input_id.clone());
     let input = if let Some(input) = context.input_entities.get(&input_id).cloned() {
         context.cx.update_entity(&input, |input, _cx| {
@@ -277,6 +432,37 @@ pub(crate) fn render_input_primitive(
         input
     };
 
+    let focus_handle = input.read(context.cx).native_focus_handle();
+    let install = if focus_enabled {
+        runtime
+            .focus_observers
+            .lock()
+            .map(|mut observers| observers.insert((window_id, public_id.clone())))
+            .unwrap_or(false)
+    } else {
+        false
+    };
+    if install {
+        install_focus_observers(
+            focus_handle.clone(),
+            public_id.clone(),
+            runtime.clone(),
+            window_id,
+            context.window,
+            context.cx,
+        );
+    }
+    if focus_enabled {
+        request_native_focus(
+            &focus_handle,
+            public_id,
+            focus_request,
+            runtime.clone(),
+            window_id,
+            context,
+        );
+    }
+
     let element = apply_generated_render_styles(div(), style).child(input);
     apply_input_events(element, input_id, keydown, keyup, runtime, window_id)
 }
@@ -296,6 +482,9 @@ pub(crate) fn render_container_primitive(
         children,
         click,
         bounds_change,
+        focus_request,
+        focus,
+        blur,
     } = node;
     let runtime = context.runtime.clone();
     let window_id = context.window_id;
@@ -305,7 +494,9 @@ pub(crate) fn render_container_primitive(
     if let Some(event) = bounds_change {
         use gpui::Styled;
 
-        let id = stable_id.expect("bounds-observed containers require stable IDs");
+        let id = stable_id
+            .clone()
+            .expect("bounds-observed containers require stable IDs");
         let runtime_for_bounds = runtime.clone();
         let observer = gpui::canvas(
             move |bounds, _window, _cx| {
@@ -352,6 +543,13 @@ pub(crate) fn render_container_primitive(
 
     for child in children {
         element = element.child(child.render(context));
+    }
+
+    if focus_request > 0 || focus.is_some() || blur.is_some() {
+        let id = stable_id
+            .clone()
+            .expect("focus-enabled containers require stable IDs");
+        element = apply_focus_contract(element, id, focus_request, focus, blur, true, context);
     }
 
     if tag == GeneratedElementTag::Scroll {

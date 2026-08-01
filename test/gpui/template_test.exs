@@ -130,6 +130,42 @@ defmodule GPUI.TemplateTest do
     end
   end
 
+  test "serializes monotonic focus contracts on focusable primitives" do
+    button =
+      ~GPUI"""
+      <button
+        id="trigger"
+        focus_request={2}
+        phx-focus="trigger-focused"
+        phx-blur="trigger-blurred"
+      >
+        <text>Trigger</text>
+      </button>
+      """
+      |> GPUI.Element.to_payload()
+
+    assert button.attrs.id == "trigger"
+    assert button.attrs.focus_request == 2
+    assert button.attrs[:"phx-focus"] == "trigger-focused"
+    assert button.attrs[:"phx-blur"] == "trigger-blurred"
+
+    input =
+      ~GPUI"""
+      <input id="search" value="" focus_request={1} phx-focus="search-focused" />
+      """
+      |> GPUI.Element.to_payload()
+
+    assert input.attrs.id == "search"
+    assert input.attrs.focus_request == 1
+
+    assert_raise ArgumentError, ~r/focus behavior requires a non-empty string id/, fn ->
+      ~GPUI"""
+      <button phx-focus="missing-id"><text>Missing</text></button>
+      """
+      |> GPUI.Element.to_payload()
+    end
+  end
+
   test "merges normalized classes with dynamic styles at runtime" do
     dynamic_style = [background: {:rgb, 0xFFFFFF}]
 

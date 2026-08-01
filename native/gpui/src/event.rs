@@ -117,6 +117,13 @@ pub(crate) enum NativeEvent {
         revision: u64,
     },
     #[cfg(feature = "real-gpui")]
+    Focus {
+        kind: InputKind,
+        window_id: u64,
+        event: String,
+        id: String,
+    },
+    #[cfg(feature = "real-gpui")]
     Bounds {
         window_id: u64,
         event: String,
@@ -286,6 +293,24 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
                 (atoms::event(), event.encode(env)),
                 (atoms::value(), value.encode(env)),
                 (atoms::revision(), revision.encode(env)),
+            ],
+        ),
+        #[cfg(feature = "real-gpui")]
+        NativeEvent::Focus {
+            kind,
+            window_id,
+            event,
+            id,
+        } => encode_event_map(
+            env,
+            vec![
+                (atoms::type_atom(), kind.atom().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
+                (
+                    atoms::value(),
+                    encode_event_map(env, vec![(atoms::id(), id.encode(env))])?,
+                ),
             ],
         ),
         #[cfg(feature = "real-gpui")]

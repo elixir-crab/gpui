@@ -119,6 +119,7 @@ pub(crate) fn render_input_component(
         )));
         let submit_event: SharedEvent = Arc::new(Mutex::new(node.submit.clone()));
         let runtime = context.runtime.clone();
+        let runtime_for_subscription = runtime.clone();
         let window_id = context.window_id;
         let event_binding = binding.clone();
         let event_submit = submit_event.clone();
@@ -138,7 +139,7 @@ pub(crate) fn render_input_component(
 
                         if let Some(event) = event {
                             let result = push_event(
-                                &runtime,
+                                &runtime_for_subscription,
                                 NativeEvent::Input {
                                     kind: InputKind::Change,
                                     window_id,
@@ -157,7 +158,7 @@ pub(crate) fn render_input_component(
                         let event = event_submit.lock().ok().and_then(|event| event.clone());
                         if let Some(event) = event {
                             let _ = push_event(
-                                &runtime,
+                                &runtime_for_subscription,
                                 NativeEvent::Input {
                                     kind: InputKind::Submit,
                                     window_id,
@@ -172,6 +173,29 @@ pub(crate) fn render_input_component(
             },
         );
 
+        let input_id = node.id.clone();
+        let focus_event = node.focus.clone();
+        let blur_event = node.blur.clone();
+        let runtime_for_focus = runtime.clone();
+        let focus_handle = state.focus_handle(context.cx);
+        if let Ok(mut bindings) = runtime_for_focus.focus_bindings.lock() {
+            bindings.insert((window_id, input_id.clone()), (focus_event, blur_event));
+        }
+        let install_focus = runtime_for_focus
+            .focus_observers
+            .lock()
+            .map(|mut observers| observers.insert((window_id, input_id.clone())))
+            .unwrap_or(false);
+        if install_focus {
+            crate::element::install_focus_observers(
+                focus_handle,
+                input_id,
+                runtime_for_focus,
+                window_id,
+                context.window,
+                context.cx,
+            );
+        }
         context.components.insert_input(
             &node.id,
             ComponentInput {
@@ -201,6 +225,12 @@ pub(crate) fn render_input_component(
         .unwrap_or(true);
     if let Ok(mut submit_event) = input.submit_event.lock() {
         *submit_event = node.submit.clone();
+    }
+    if let Ok(mut bindings) = context.runtime.focus_bindings.lock() {
+        bindings.insert(
+            (context.window_id, node.id.clone()),
+            (node.focus.clone(), node.blur.clone()),
+        );
     }
     let request_focus = input.focus_request != node.focus_request;
     input.focus_request = node.focus_request;
@@ -687,11 +717,15 @@ pub(crate) fn render_input_component(
         element_id,
         InputNode {
             style: node.style,
+            id: Some(node.id),
             value: node.value,
             placeholder: node.placeholder,
+            focus_request: node.focus_request,
             change: node.change,
             keydown: None,
             keyup: None,
+            focus: node.focus,
+            blur: node.blur,
         },
         context,
     )

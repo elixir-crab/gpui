@@ -22,7 +22,10 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:id) => R.option(String.t()),
           required(:children) => R.vec(R.path(:ElementNode)),
           required(:click) => R.option(String.t()),
-          required(:bounds_change) => R.option(String.t())
+          required(:bounds_change) => R.option(String.t()),
+          required(:focus_request) => R.u64(),
+          required(:focus) => R.option(String.t()),
+          required(:blur) => R.option(String.t())
         }
 
   @type anchored_layer_node :: %{
@@ -93,16 +96,22 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:viewport_change) => R.option(String.t()),
           required(:geometry_change) => R.option(String.t()),
           required(:range_geometry_change) => R.option(String.t()),
-          required(:hit_test) => R.option(String.t())
+          required(:hit_test) => R.option(String.t()),
+          required(:focus) => R.option(String.t()),
+          required(:blur) => R.option(String.t())
         }
 
   @type input_node :: %{
           required(:style) => R.path(:StyleAttrs),
+          required(:id) => R.option(String.t()),
           required(:value) => String.t(),
           required(:placeholder) => R.option(String.t()),
+          required(:focus_request) => R.u64(),
           required(:change) => R.option(String.t()),
           required(:keydown) => R.option(String.t()),
-          required(:keyup) => R.option(String.t())
+          required(:keyup) => R.option(String.t()),
+          required(:focus) => R.option(String.t()),
+          required(:blur) => R.option(String.t())
         }
 
   @spec decode_element_node(term()) :: R.nif_result(R.path(:ElementNode))
@@ -186,7 +195,11 @@ defmodule GPUI.Codegen.Native.Elements do
          id: non_empty_string_attr(term, Atoms.id()),
          children: unwrap!(decode_children(term)),
          click: string_attr(term, Atoms.phx_click()),
-         bounds_change: string_attr(term, Atoms.phx_bounds_change())
+         bounds_change: string_attr(term, Atoms.phx_bounds_change()),
+         focus_request:
+           unwrap!(component_non_negative_integer_attr(term, Atoms.focus_request())).unwrap_or(0),
+         focus: string_attr(term, Atoms.phx_focus()),
+         blur: string_attr(term, Atoms.phx_blur())
        )
      )}
   end
@@ -355,7 +368,9 @@ defmodule GPUI.Codegen.Native.Elements do
          viewport_change: string_attr(term, Atoms.phx_viewport_change()),
          geometry_change: string_attr(term, Atoms.phx_geometry_change()),
          range_geometry_change: string_attr(term, Atoms.phx_range_geometry_change()),
-         hit_test: string_attr(term, Atoms.phx_hit_test())
+         hit_test: string_attr(term, Atoms.phx_hit_test()),
+         focus: string_attr(term, Atoms.phx_focus()),
+         blur: string_attr(term, Atoms.phx_blur())
        )
      )}
   end
@@ -369,11 +384,16 @@ defmodule GPUI.Codegen.Native.Elements do
        :input,
        struct_literal(InputNode,
          style: unwrap!(decode_style(term)),
+         id: non_empty_string_attr(term, Atoms.id()),
          value: string_attr(term, Atoms.value()).unwrap_or_default(),
          placeholder: string_attr(term, Atoms.placeholder()),
+         focus_request:
+           unwrap!(component_non_negative_integer_attr(term, Atoms.focus_request())).unwrap_or(0),
          change: string_attr(term, Atoms.phx_change()),
          keydown: string_attr(term, Atoms.phx_keydown()),
-         keyup: string_attr(term, Atoms.phx_keyup())
+         keyup: string_attr(term, Atoms.phx_keyup()),
+         focus: string_attr(term, Atoms.phx_focus()),
+         blur: string_attr(term, Atoms.phx_blur())
        )
      )}
   end

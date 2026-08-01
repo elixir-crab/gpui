@@ -95,6 +95,10 @@ impl NativeTextInput {
         }
     }
 
+    pub(crate) fn native_focus_handle(&self) -> FocusHandle {
+        self.focus_handle.clone()
+    }
+
     pub(crate) fn update_props(
         &mut self,
         value: String,

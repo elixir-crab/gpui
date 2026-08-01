@@ -581,6 +581,37 @@ rerender or resize. The event is asynchronous; it does not expose GPUI layout
 IDs or provide a synchronous measurement NIF. Use the resulting geometry as
 runtime `<layer>` coordinates while keeping static presentation in classes.
 
+## Focus
+
+Focusable primitives use a monotonic request token instead of an
+application-controlled focus boolean:
+
+```elixir
+<button
+  id="search-trigger"
+  focus_request={assigns.trigger_focus_request}
+  phx-focus="trigger-focused"
+  phx-blur="trigger-blurred"
+>
+  ...
+</button>
+```
+
+Increment `focus_request` to request native focus once. Rerendering with the
+same token does not steal focus again. Native pointer and keyboard focus remain
+native state and emit `phx-focus`/`phx-blur` only when focus actually changes.
+The event value contains the stable element ID:
+
+```elixir
+%{type: :focus, value: %{id: "search-trigger"}}
+%{type: :blur, value: %{id: "search-trigger"}}
+```
+
+The first generic contract supports `<button>`, low-level `<input>`,
+`<UI.input>`, and `<text_surface>`. Focus behavior requires a non-empty stable
+`id`; arbitrary focusable containers and controlled `focused={true}` state are
+intentionally unsupported.
+
 ## Styling
 
 Templates normalize a constrained Tailwind-compatible vocabulary into typed

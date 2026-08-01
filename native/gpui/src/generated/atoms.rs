@@ -4,10 +4,10 @@ mod atoms {
     rustler::atoms! {
         __type__ = "__type__", align = "align", align_items = "align_items", anchor =
         "anchor", appearance = "appearance", attrs = "attrs", background = "background",
-        block_projections = "block_projections", border_color = "border_color",
-        border_radius = "border_radius", border_width = "border_width", bordered =
-        "bordered", bottom = "bottom", bounds = "bounds", branch = "branch", buffer =
-        "buffer", cancelled = "cancelled", cell_change = "cell_change", change =
+        block_projections = "block_projections", blur = "blur", border_color =
+        "border_color", border_radius = "border_radius", border_width = "border_width",
+        bordered = "bordered", bottom = "bottom", bounds = "bounds", branch = "branch",
+        buffer = "buffer", cancelled = "cancelled", cell_change = "cell_change", change =
         "change", checked = "checked", children = "children", cleanable = "cleanable",
         click = "click", closable = "closable", close_button = "close_button", color =
         "color", command = "command", commands = "commands", compact = "compact", cursor
@@ -15,41 +15,42 @@ mod atoms {
         "delay", disabled = "disabled", display = "display", error = "error", event =
         "event", expanded = "expanded", first = "first", fit = "fit", flex = "flex",
         flex_basis = "flex_basis", flex_direction = "flex_direction", flex_grow =
-        "flex_grow", flex_shrink = "flex_shrink", flex_wrap = "flex_wrap", focus_request
-        = "focus_request", font_size = "font_size", font_weight = "font_weight", format =
-        "format", gap = "gap", geometry = "geometry", geometry_ranges =
-        "geometry_ranges", hard_tabs = "hard_tabs", header_height = "header_height",
-        height = "height", hit_test = "hit_test", hoverable = "hoverable", id = "id",
-        indeterminate = "indeterminate", inline_projections = "inline_projections", inset
-        = "inset", inset_x = "inset_x", inset_y = "inset_y", invalid_position =
-        "invalid_position", invalid_range = "invalid_range", invalid_selection =
-        "invalid_selection", item_height = "item_height", justify_content =
-        "justify_content", keyboard = "keyboard", keydown = "keydown", keyup = "keyup",
-        kind = "kind", label = "label", last = "last", left = "left", level = "level",
-        light = "light", line_height = "line_height", loading = "loading", margin =
-        "margin", margin_bottom = "margin_bottom", margin_left = "margin_left",
-        margin_right = "margin_right", margin_top = "margin_top", margin_x = "margin_x",
-        margin_y = "margin_y", masked = "masked", max = "max", max_bytes = "max_bytes",
-        max_columns = "max_columns", max_height = "max_height", max_width = "max_width",
-        menu = "menu", min = "min", min_height = "min_height", min_width = "min_width",
-        missing_resource = "missing_resource", mode = "mode", multiple = "multiple", name
-        = "name", nil = "nil", nothing_to_redo = "nothing_to_redo", nothing_to_undo =
-        "nothing_to_undo", number = "number", offset = "offset", offset_x = "offset_x",
-        offset_y = "offset_y", ok = "ok", opacity = "opacity", open = "open",
-        operation_id = "operation_id", options = "options", orientation = "orientation",
-        outline = "outline", overflow = "overflow", overlapping_edits =
+        "flex_grow", flex_shrink = "flex_shrink", flex_wrap = "flex_wrap", focus =
+        "focus", focus_request = "focus_request", font_size = "font_size", font_weight =
+        "font_weight", format = "format", gap = "gap", geometry = "geometry",
+        geometry_ranges = "geometry_ranges", hard_tabs = "hard_tabs", header_height =
+        "header_height", height = "height", hit_test = "hit_test", hoverable =
+        "hoverable", id = "id", indeterminate = "indeterminate", inline_projections =
+        "inline_projections", inset = "inset", inset_x = "inset_x", inset_y = "inset_y",
+        invalid_position = "invalid_position", invalid_range = "invalid_range",
+        invalid_selection = "invalid_selection", item_height = "item_height",
+        justify_content = "justify_content", keyboard = "keyboard", keydown = "keydown",
+        keyup = "keyup", kind = "kind", label = "label", last = "last", left = "left",
+        level = "level", light = "light", line_height = "line_height", loading =
+        "loading", margin = "margin", margin_bottom = "margin_bottom", margin_left =
+        "margin_left", margin_right = "margin_right", margin_top = "margin_top", margin_x
+        = "margin_x", margin_y = "margin_y", masked = "masked", max = "max", max_bytes =
+        "max_bytes", max_columns = "max_columns", max_height = "max_height", max_width =
+        "max_width", menu = "menu", min = "min", min_height = "min_height", min_width =
+        "min_width", missing_resource = "missing_resource", mode = "mode", multiple =
+        "multiple", name = "name", nil = "nil", nothing_to_redo = "nothing_to_redo",
+        nothing_to_undo = "nothing_to_undo", number = "number", offset = "offset",
+        offset_x = "offset_x", offset_y = "offset_y", ok = "ok", opacity = "opacity",
+        open = "open", operation_id = "operation_id", options = "options", orientation =
+        "orientation", outline = "outline", overflow = "overflow", overlapping_edits =
         "overlapping_edits", overlay = "overlay", overscan = "overscan", padding =
         "padding", padding_bottom = "padding_bottom", padding_left = "padding_left",
         padding_right = "padding_right", padding_top = "padding_top", padding_x =
-        "padding_x", padding_y = "padding_y", parent_id = "parent_id", phx_bounds_change
-        = "phx-bounds-change", phx_cell_change = "phx-cell-change", phx_change =
-        "phx-change", phx_click = "phx-click", phx_copy = "phx-copy", phx_geometry_change
-        = "phx-geometry-change", phx_hit_test = "phx-hit-test", phx_keydown =
-        "phx-keydown", phx_keyup = "phx-keyup", phx_range = "phx-range",
-        phx_range_geometry_change = "phx-range-geometry-change", phx_release =
-        "phx-release", phx_search = "phx-search", phx_select = "phx-select",
-        phx_selection_change = "phx-selection-change", phx_sort = "phx-sort", phx_submit
-        = "phx-submit", phx_toggle = "phx-toggle", phx_transaction = "phx-transaction",
+        "padding_x", padding_y = "padding_y", parent_id = "parent_id", phx_blur =
+        "phx-blur", phx_bounds_change = "phx-bounds-change", phx_cell_change =
+        "phx-cell-change", phx_change = "phx-change", phx_click = "phx-click", phx_copy =
+        "phx-copy", phx_focus = "phx-focus", phx_geometry_change = "phx-geometry-change",
+        phx_hit_test = "phx-hit-test", phx_keydown = "phx-keydown", phx_keyup =
+        "phx-keyup", phx_range = "phx-range", phx_range_geometry_change =
+        "phx-range-geometry-change", phx_release = "phx-release", phx_search =
+        "phx-search", phx_select = "phx-select", phx_selection_change =
+        "phx-selection-change", phx_sort = "phx-sort", phx_submit = "phx-submit",
+        phx_toggle = "phx-toggle", phx_transaction = "phx-transaction",
         phx_viewport_change = "phx-viewport-change", placeholder = "placeholder",
         position = "position", position_mode = "position_mode", position_x =
         "position_x", position_y = "position_y", priority = "priority", prompt =

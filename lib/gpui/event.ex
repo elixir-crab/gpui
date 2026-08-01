@@ -20,6 +20,8 @@ defmodule GPUI.Event do
           | :geometry
           | :range_geometry
           | :bounds
+          | :focus
+          | :blur
           | :keydown
           | :keyup
           | :window_closed

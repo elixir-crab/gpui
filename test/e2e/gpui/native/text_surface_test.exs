@@ -35,6 +35,8 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
           phx-geometry-change="geometry-changed"
           phx-range-geometry-change="range-geometry-changed"
           phx-hit-test="hit-tested"
+          phx-focus="surface-focused"
+          phx-blur="surface-blurred"
         />
         <text_surface
           id="mirror-surface"
@@ -56,6 +58,12 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
       true = bounds.width > 0 and bounds.height > 0
       {:noreply, %{assigns | bounds: assigns.bounds + 1}}
     end
+
+    def handle_event("surface-focused", %{value: %{id: "primary-surface"}}, assigns),
+      do: {:noreply, %{assigns | focuses: assigns.focuses + 1}}
+
+    def handle_event("surface-blurred", %{value: %{id: "primary-surface"}}, assigns),
+      do: {:noreply, %{assigns | blurs: assigns.blurs + 1}}
 
     def handle_event("text-transaction", %{revision: revision}, assigns),
       do: {:noreply, %{assigns | revision: revision, transactions: assigns.transactions + 1}}
@@ -121,6 +129,8 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
              range_geometries: 0,
              hit_tests: 0,
              bounds: 0,
+             focuses: 0,
+             blurs: 0,
              primary_focus: 1,
              mirror_focus: 0
            )
@@ -154,6 +164,7 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
       assert geometries > 0
       assert ranges == 1
       assert bounds > 0
+      assert assigns(runtime).focuses > 0
     end)
 
     Desktop.click!(window_id, 120, 70)

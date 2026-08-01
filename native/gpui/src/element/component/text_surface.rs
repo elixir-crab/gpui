@@ -100,6 +100,8 @@ pub(crate) struct ComponentTextSurface {
     pub(crate) geometry_event: Option<String>,
     pub(crate) range_geometry_event: Option<String>,
     pub(crate) hit_test_event: Option<String>,
+    pub(crate) focus_event: Option<String>,
+    pub(crate) blur_event: Option<String>,
     pub(crate) scroll_request: u64,
     pub(crate) last_viewport: Option<ViewportKey>,
     pub(crate) last_caret: Option<(u64, u64, i32, i32, i32, i32)>,
@@ -108,6 +110,20 @@ pub(crate) struct ComponentTextSurface {
     pub(crate) text: String,
     pub(crate) selected_range: std::ops::Range<usize>,
     pub(crate) _subscription: gpui::Subscription,
+}
+
+#[cfg(feature = "components")]
+impl ComponentTextSurface {
+    pub(crate) fn state_focus_handle(&self, cx: &gpui::App) -> gpui::FocusHandle {
+        use gpui::Focusable;
+
+        self.state.focus_handle(cx)
+    }
+
+    pub(crate) fn update_focus_events(&mut self, focus: Option<String>, blur: Option<String>) {
+        self.focus_event = focus;
+        self.blur_event = blur;
+    }
 }
 
 #[cfg(feature = "components")]
@@ -225,6 +241,8 @@ pub(crate) fn render(
                 geometry_event: node.geometry_change.clone(),
                 range_geometry_event: node.range_geometry_change.clone(),
                 hit_test_event: node.hit_test.clone(),
+                focus_event: node.focus.clone(),
+                blur_event: node.blur.clone(),
                 scroll_request: 0,
                 last_viewport: None,
                 last_caret: None,
@@ -251,6 +269,31 @@ pub(crate) fn render(
     surface.geometry_event = node.geometry_change.clone();
     surface.range_geometry_event = node.range_geometry_change.clone();
     surface.hit_test_event = node.hit_test.clone();
+    surface.update_focus_events(node.focus.clone(), node.blur.clone());
+
+    let focus_handle = surface.state_focus_handle(context.cx);
+    if node.focus.is_some() || node.blur.is_some() {
+        let key = (context.window_id, surface_id.clone());
+        if let Ok(mut bindings) = context.runtime.focus_bindings.lock() {
+            bindings.insert(key.clone(), (node.focus.clone(), node.blur.clone()));
+        }
+        let install = context
+            .runtime
+            .focus_observers
+            .lock()
+            .map(|mut observers| observers.insert(key))
+            .unwrap_or(false);
+        if install {
+            crate::element::install_focus_observers(
+                focus_handle.clone(),
+                surface_id.clone(),
+                context.runtime.clone(),
+                context.window_id,
+                context.window,
+                context.cx,
+            );
+        }
+    }
 
     let native_text = surface.state.read(context.cx).value().to_string();
     if let Ok(revision) = node.buffer.revision() {
@@ -834,6 +877,8 @@ fn acknowledge_geometry_contract(node: &TextSurfaceNode) {
         &node.decorations,
         &node.inline_projections,
         &node.block_projections,
+        &node.focus,
+        &node.blur,
     );
 }
 

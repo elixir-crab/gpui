@@ -65,13 +65,16 @@ defmodule GPUI.Element do
   end
 
   defp validated_primitive_attrs(%__MODULE__{type: type, attrs: attrs})
-       when type in [:div, :button, :span, :scroll, :list, :item] do
+       when type in [:div, :button, :span, :scroll, :list, :item, :input] do
     attrs_map = Map.new(attrs)
+    observed? = Map.has_key?(attrs_map, :"phx-bounds-change")
 
-    if Map.has_key?(attrs_map, :"phx-bounds-change") do
-      unless is_binary(Map.get(attrs_map, :id)) and Map.get(attrs_map, :id) != "" do
-        raise ArgumentError, "#{type} with phx-bounds-change requires a non-empty string id"
-      end
+    focused? =
+      Map.get(attrs_map, :focus_request, 0) > 0 or
+        Map.has_key?(attrs_map, :"phx-focus") or Map.has_key?(attrs_map, :"phx-blur")
+
+    if observed? or focused? do
+      validate_feature_id!(type, attrs_map, observed?)
 
       attrs_map
       |> GPUI.Schema.validate_component_assigns!(type)
@@ -82,6 +85,13 @@ defmodule GPUI.Element do
   end
 
   defp validated_primitive_attrs(%__MODULE__{attrs: attrs}), do: attrs
+
+  defp validate_feature_id!(type, attrs, observed?) do
+    unless is_binary(Map.get(attrs, :id)) and Map.get(attrs, :id) != "" do
+      feature = if observed?, do: "phx-bounds-change", else: "focus behavior"
+      raise ArgumentError, "#{type} with #{feature} requires a non-empty string id"
+    end
+  end
 
   defp normalize_class_attr(attrs) do
     case Keyword.fetch(attrs, :class) do

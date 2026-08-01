@@ -398,6 +398,9 @@ pub(crate) struct ContainerNode {
     pub(crate) children: Vec<ElementNode>,
     pub(crate) click: Option<String>,
     pub(crate) bounds_change: Option<String>,
+    pub(crate) focus_request: u64,
+    pub(crate) focus: Option<String>,
+    pub(crate) blur: Option<String>,
 }
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
@@ -410,11 +413,15 @@ pub(crate) struct ImageNode {
 #[cfg(feature = "real-gpui")]
 pub(crate) struct InputNode {
     pub(crate) style: StyleAttrs,
+    pub(crate) id: Option<String>,
     pub(crate) value: String,
     pub(crate) placeholder: Option<String>,
+    pub(crate) focus_request: u64,
     pub(crate) change: Option<String>,
     pub(crate) keydown: Option<String>,
     pub(crate) keyup: Option<String>,
+    pub(crate) focus: Option<String>,
+    pub(crate) blur: Option<String>,
 }
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
@@ -451,6 +458,8 @@ pub(crate) struct TextSurfaceNode {
     pub(crate) geometry_change: Option<String>,
     pub(crate) range_geometry_change: Option<String>,
     pub(crate) hit_test: Option<String>,
+    pub(crate) focus: Option<String>,
+    pub(crate) blur: Option<String>,
 }
 #[derive(Clone, Debug, NifMap)]
 #[cfg(feature = "real-gpui")]
@@ -552,6 +561,13 @@ pub(crate) fn decode_container_node<'a>(
             children: decode_children(term)?,
             click: string_attr(term, atoms::phx_click()),
             bounds_change: string_attr(term, atoms::phx_bounds_change()),
+            focus_request: component_non_negative_integer_attr(
+                    term,
+                    atoms::focus_request(),
+                )?
+                .unwrap_or(0),
+            focus: string_attr(term, atoms::phx_focus()),
+            blur: string_attr(term, atoms::phx_blur()),
         }),
     )
 }
@@ -724,6 +740,8 @@ pub(crate) fn decode_text_surface_node<'a>(
             geometry_change: string_attr(term, atoms::phx_geometry_change()),
             range_geometry_change: string_attr(term, atoms::phx_range_geometry_change()),
             hit_test: string_attr(term, atoms::phx_hit_test()),
+            focus: string_attr(term, atoms::phx_focus()),
+            blur: string_attr(term, atoms::phx_blur()),
         }),
     )
 }
@@ -735,11 +753,19 @@ pub(crate) fn decode_input_node<'a>(
     Ok(
         ElementNode::Input(InputNode {
             style: decode_style(term)?,
+            id: non_empty_string_attr(term, atoms::id()),
             value: string_attr(term, atoms::value()).unwrap_or_default(),
             placeholder: string_attr(term, atoms::placeholder()),
+            focus_request: component_non_negative_integer_attr(
+                    term,
+                    atoms::focus_request(),
+                )?
+                .unwrap_or(0),
             change: string_attr(term, atoms::phx_change()),
             keydown: string_attr(term, atoms::phx_keydown()),
             keyup: string_attr(term, atoms::phx_keyup()),
+            focus: string_attr(term, atoms::phx_focus()),
+            blur: string_attr(term, atoms::phx_blur()),
         }),
     )
 }
@@ -2240,6 +2266,8 @@ pub(crate) struct InputComponentNode {
     pub(crate) loading: bool,
     pub(crate) change: Option<String>,
     pub(crate) submit: Option<String>,
+    pub(crate) focus: Option<String>,
+    pub(crate) blur: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
 #[allow(clippy::redundant_field_names)]
@@ -2262,6 +2290,8 @@ pub(crate) fn decode_generated_input_component<'a>(
         loading: component_bool_attr(term, atoms::loading())?.unwrap_or(false),
         change: component_string_attr(term, atoms::phx_change())?,
         submit: component_string_attr(term, atoms::phx_submit())?,
+        focus: component_string_attr(term, atoms::phx_focus())?,
+        blur: component_string_attr(term, atoms::phx_blur())?,
     })
 }
 #[derive(Clone, Debug)]
