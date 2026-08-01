@@ -234,6 +234,7 @@ defmodule GPUI.Session do
               :geometry,
               :range_geometry,
               :hit_test,
+              :bounds,
               :keydown,
               :keyup
             ] do

@@ -19,7 +19,7 @@ defmodule GPUI.Event do
           | :viewport
           | :geometry
           | :range_geometry
-          | :hit_test
+          | :bounds
           | :keydown
           | :keyup
           | :window_closed

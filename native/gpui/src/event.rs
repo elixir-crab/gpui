@@ -47,6 +47,17 @@ use crate::element::component::display::FileDialogResult;
 
 include!("generated/events.rs");
 
+#[cfg(feature = "real-gpui")]
+#[derive(Clone, Debug, PartialEq, rustler::NifMap)]
+pub(crate) struct ElementBoundsGeometry {
+    pub(crate) id: String,
+    pub(crate) x: f64,
+    pub(crate) y: f64,
+    pub(crate) width: f64,
+    pub(crate) height: f64,
+    pub(crate) coordinate_space: String,
+}
+
 #[derive(Clone, Debug)]
 pub(crate) enum NativeEvent {
     Click {
@@ -104,6 +115,12 @@ pub(crate) enum NativeEvent {
         event: String,
         value: crate::TextPosition,
         revision: u64,
+    },
+    #[cfg(feature = "real-gpui")]
+    Bounds {
+        window_id: u64,
+        event: String,
+        value: ElementBoundsGeometry,
     },
     WindowClosed {
         window_id: u64,
@@ -269,6 +286,20 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
                 (atoms::event(), event.encode(env)),
                 (atoms::value(), value.encode(env)),
                 (atoms::revision(), revision.encode(env)),
+            ],
+        ),
+        #[cfg(feature = "real-gpui")]
+        NativeEvent::Bounds {
+            window_id,
+            event,
+            value,
+        } => encode_event_map(
+            env,
+            vec![
+                (atoms::type_atom(), atoms::bounds().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
+                (atoms::value(), value.encode(env)),
             ],
         ),
         NativeEvent::WindowClosed { window_id } => encode_event_map(

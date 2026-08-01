@@ -394,8 +394,10 @@ pub(crate) struct AnchoredLayerNode {
 pub(crate) struct ContainerNode {
     pub(crate) tag: GeneratedElementTag,
     pub(crate) style: StyleAttrs,
+    pub(crate) id: Option<String>,
     pub(crate) children: Vec<ElementNode>,
     pub(crate) click: Option<String>,
+    pub(crate) bounds_change: Option<String>,
 }
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
@@ -546,8 +548,10 @@ pub(crate) fn decode_container_node<'a>(
         ElementNode::Div(ContainerNode {
             tag: element_tag,
             style: decode_style(term)?,
+            id: non_empty_string_attr(term, atoms::id()),
             children: decode_children(term)?,
             click: string_attr(term, atoms::phx_click()),
+            bounds_change: string_attr(term, atoms::phx_bounds_change()),
         }),
     )
 }

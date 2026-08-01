@@ -10,8 +10,18 @@ defmodule GPUI.Schema do
 
   @components [
     %Component{tag: :viewport, kind: :viewport, children: true},
-    %Component{tag: :div, kind: :container, events: [click: :"phx-click"]},
-    %Component{tag: :button, kind: :container, events: [click: :"phx-click"]},
+    %Component{
+      tag: :div,
+      kind: :container,
+      events: [click: :"phx-click", bounds: :"phx-bounds-change"],
+      attrs: [id: :string]
+    },
+    %Component{
+      tag: :button,
+      kind: :container,
+      events: [click: :"phx-click", bounds: :"phx-bounds-change"],
+      attrs: [id: :string]
+    },
     %Component{
       tag: :layer,
       kind: :anchored_layer,
@@ -488,10 +498,30 @@ defmodule GPUI.Schema do
         reverse: :boolean
       ]
     },
-    %Component{tag: :span, kind: :container, events: [click: :"phx-click"]},
-    %Component{tag: :scroll, kind: :container, events: [click: :"phx-click"]},
-    %Component{tag: :list, kind: :container, events: [click: :"phx-click"]},
-    %Component{tag: :item, kind: :container, events: [click: :"phx-click"]},
+    %Component{
+      tag: :span,
+      kind: :container,
+      events: [click: :"phx-click", bounds: :"phx-bounds-change"],
+      attrs: [id: :string]
+    },
+    %Component{
+      tag: :scroll,
+      kind: :container,
+      events: [click: :"phx-click", bounds: :"phx-bounds-change"],
+      attrs: [id: :string]
+    },
+    %Component{
+      tag: :list,
+      kind: :container,
+      events: [click: :"phx-click", bounds: :"phx-bounds-change"],
+      attrs: [id: :string]
+    },
+    %Component{
+      tag: :item,
+      kind: :container,
+      events: [click: :"phx-click", bounds: :"phx-bounds-change"],
+      attrs: [id: :string]
+    },
     %Component{tag: :icon, kind: :text},
     %Component{
       tag: :text_surface,
@@ -1182,6 +1212,7 @@ defmodule GPUI.Schema do
   def identified_tags do
     for %Component{tag: tag, attrs: attrs} <- @components,
         Keyword.has_key?(attrs, :id),
+        tag not in [:div, :button, :span, :scroll, :list, :item],
         do: tag
   end
 

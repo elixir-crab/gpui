@@ -546,6 +546,41 @@ mapped to different GPUI behavior. Enum values retain the project's established
 underscore convention (`bottom_left`, `snap_with_margin`), while element
 composition and static styling remain HTML/Tailwind-like.
 
+## Element bounds
+
+Ordinary containers can opt into asynchronous native bounds events when a
+consumer needs to anchor a layer to actual layout rather than guessed
+coordinates:
+
+```elixir
+<div id="completion-anchor" phx-bounds-change="anchor-bounds-changed">
+  ...
+</div>
+```
+
+The event includes the stable element ID and window-relative native-pixel
+geometry:
+
+```elixir
+%{
+  type: :bounds,
+  value: %{
+    id: "completion-anchor",
+    x: 240.0,
+    y: 118.0,
+    width: 96.0,
+    height: 28.0,
+    coordinate_space: "window_native_pixels"
+  }
+}
+```
+
+Observation is opt-in and requires a non-empty `id`. Native events are emitted
+only after layout, deduplicated while geometry is unchanged, and updated after
+rerender or resize. The event is asynchronous; it does not expose GPUI layout
+IDs or provide a synchronous measurement NIF. Use the resulting geometry as
+runtime `<layer>` coordinates while keeping static presentation in classes.
+
 ## Styling
 
 Templates normalize a constrained Tailwind-compatible vocabulary into typed

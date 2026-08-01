@@ -111,6 +111,25 @@ defmodule GPUI.TemplateTest do
     assert layer_child_style[:background] == [:rgb, 0x1E293B]
   end
 
+  test "serializes opt-in bounds observation on identified containers" do
+    payload =
+      ~GPUI"""
+      <div id="anchor" phx-bounds-change="anchor-bounds" class="w-24 h-8" />
+      """
+      |> GPUI.Element.to_payload()
+
+    assert payload.attrs.id == "anchor"
+    assert payload.attrs[:"phx-bounds-change"] == "anchor-bounds"
+    assert payload.attrs.style == [width: [:px, 96.0], height: [:px, 32.0]]
+
+    assert_raise ArgumentError, ~r/requires a non-empty string id/, fn ->
+      ~GPUI"""
+      <div phx-bounds-change="missing-id" />
+      """
+      |> GPUI.Element.to_payload()
+    end
+  end
+
   test "merges normalized classes with dynamic styles at runtime" do
     dynamic_style = [background: {:rgb, 0xFFFFFF}]
 

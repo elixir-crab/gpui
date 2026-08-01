@@ -19,8 +19,10 @@ defmodule GPUI.Codegen.Native.Elements do
   @type container_node :: %{
           required(:tag) => R.path(:GeneratedElementTag),
           required(:style) => R.path(:StyleAttrs),
+          required(:id) => R.option(String.t()),
           required(:children) => R.vec(R.path(:ElementNode)),
-          required(:click) => R.option(String.t())
+          required(:click) => R.option(String.t()),
+          required(:bounds_change) => R.option(String.t())
         }
 
   @type anchored_layer_node :: %{
@@ -181,8 +183,10 @@ defmodule GPUI.Codegen.Native.Elements do
        struct_literal(ContainerNode,
          tag: element_tag,
          style: unwrap!(decode_style(term)),
+         id: non_empty_string_attr(term, Atoms.id()),
          children: unwrap!(decode_children(term)),
-         click: string_attr(term, Atoms.phx_click())
+         click: string_attr(term, Atoms.phx_click()),
+         bounds_change: string_attr(term, Atoms.phx_bounds_change())
        )
      )}
   end

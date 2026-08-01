@@ -64,6 +64,23 @@ defmodule GPUI.Element do
     |> Map.to_list()
   end
 
+  defp validated_primitive_attrs(%__MODULE__{type: type, attrs: attrs})
+       when type in [:div, :button, :span, :scroll, :list, :item] do
+    attrs_map = Map.new(attrs)
+
+    if Map.has_key?(attrs_map, :"phx-bounds-change") do
+      unless is_binary(Map.get(attrs_map, :id)) and Map.get(attrs_map, :id) != "" do
+        raise ArgumentError, "#{type} with phx-bounds-change requires a non-empty string id"
+      end
+
+      attrs_map
+      |> GPUI.Schema.validate_component_assigns!(type)
+      |> Map.to_list()
+    else
+      attrs
+    end
+  end
+
   defp validated_primitive_attrs(%__MODULE__{attrs: attrs}), do: attrs
 
   defp normalize_class_attr(attrs) do

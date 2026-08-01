@@ -13,7 +13,11 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="flex flex-col w-[640px] h-[420px] p-4 gap-3 bg-slate-900">
+      <div
+        id="root-bounds"
+        phx-bounds-change="bounds-changed"
+        class="flex flex-col w-[640px] h-[420px] p-4 gap-3 bg-slate-900"
+      >
         <text_surface
           id="primary-surface"
           class="w-full h-[150px] p-2 bg-slate-800 text-white"
@@ -46,6 +50,13 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
     end
 
     @impl GPUI.View
+    def handle_event("bounds-changed", %{value: bounds}, assigns) do
+      true = bounds.id == "root-bounds"
+      true = bounds.coordinate_space == "window_native_pixels"
+      true = bounds.width > 0 and bounds.height > 0
+      {:noreply, %{assigns | bounds: assigns.bounds + 1}}
+    end
+
     def handle_event("text-transaction", %{revision: revision}, assigns),
       do: {:noreply, %{assigns | revision: revision, transactions: assigns.transactions + 1}}
 
@@ -109,6 +120,7 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
              geometries: 0,
              range_geometries: 0,
              hit_tests: 0,
+             bounds: 0,
              primary_focus: 1,
              mirror_focus: 0
            )
@@ -130,12 +142,18 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
     window_id = Desktop.window_id!(title)
 
     Desktop.eventually(fn ->
-      assert %{viewports: viewports, geometries: geometries, range_geometries: ranges} =
+      assert %{
+               viewports: viewports,
+               geometries: geometries,
+               range_geometries: ranges,
+               bounds: bounds
+             } =
                assigns(runtime)
 
       assert viewports > 0
       assert geometries > 0
       assert ranges == 1
+      assert bounds > 0
     end)
 
     Desktop.click!(window_id, 120, 70)

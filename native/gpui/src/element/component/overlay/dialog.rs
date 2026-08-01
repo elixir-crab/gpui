@@ -318,8 +318,10 @@ fn dialog_content_tree(content: DialogContentComponentNode) -> crate::ElementNod
     crate::ElementNode::Div(crate::ContainerNode {
         tag: crate::GeneratedElementTag::Div,
         style: content.style,
+        id: None,
         children: content.children,
         click: None,
+        bounds_change: None,
     })
 }
 

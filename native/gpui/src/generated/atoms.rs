@@ -6,17 +6,17 @@ mod atoms {
         "anchor", appearance = "appearance", attrs = "attrs", background = "background",
         block_projections = "block_projections", border_color = "border_color",
         border_radius = "border_radius", border_width = "border_width", bordered =
-        "bordered", bottom = "bottom", branch = "branch", buffer = "buffer", cancelled =
-        "cancelled", cell_change = "cell_change", change = "change", checked = "checked",
-        children = "children", cleanable = "cleanable", click = "click", closable =
-        "closable", close_button = "close_button", color = "color", command = "command",
-        commands = "commands", compact = "compact", cursor = "cursor", dark = "dark",
-        data = "data", decorations = "decorations", delay = "delay", disabled =
-        "disabled", display = "display", error = "error", event = "event", expanded =
-        "expanded", first = "first", fit = "fit", flex = "flex", flex_basis =
-        "flex_basis", flex_direction = "flex_direction", flex_grow = "flex_grow",
-        flex_shrink = "flex_shrink", flex_wrap = "flex_wrap", focus_request =
-        "focus_request", font_size = "font_size", font_weight = "font_weight", format =
+        "bordered", bottom = "bottom", bounds = "bounds", branch = "branch", buffer =
+        "buffer", cancelled = "cancelled", cell_change = "cell_change", change =
+        "change", checked = "checked", children = "children", cleanable = "cleanable",
+        click = "click", closable = "closable", close_button = "close_button", color =
+        "color", command = "command", commands = "commands", compact = "compact", cursor
+        = "cursor", dark = "dark", data = "data", decorations = "decorations", delay =
+        "delay", disabled = "disabled", display = "display", error = "error", event =
+        "event", expanded = "expanded", first = "first", fit = "fit", flex = "flex",
+        flex_basis = "flex_basis", flex_direction = "flex_direction", flex_grow =
+        "flex_grow", flex_shrink = "flex_shrink", flex_wrap = "flex_wrap", focus_request
+        = "focus_request", font_size = "font_size", font_weight = "font_weight", format =
         "format", gap = "gap", geometry = "geometry", geometry_ranges =
         "geometry_ranges", hard_tabs = "hard_tabs", header_height = "header_height",
         height = "height", hit_test = "hit_test", hoverable = "hoverable", id = "id",
@@ -41,12 +41,13 @@ mod atoms {
         "overlapping_edits", overlay = "overlay", overscan = "overscan", padding =
         "padding", padding_bottom = "padding_bottom", padding_left = "padding_left",
         padding_right = "padding_right", padding_top = "padding_top", padding_x =
-        "padding_x", padding_y = "padding_y", parent_id = "parent_id", phx_cell_change =
-        "phx-cell-change", phx_change = "phx-change", phx_click = "phx-click", phx_copy =
-        "phx-copy", phx_geometry_change = "phx-geometry-change", phx_hit_test =
-        "phx-hit-test", phx_keydown = "phx-keydown", phx_keyup = "phx-keyup", phx_range =
-        "phx-range", phx_range_geometry_change = "phx-range-geometry-change", phx_release
-        = "phx-release", phx_search = "phx-search", phx_select = "phx-select",
+        "padding_x", padding_y = "padding_y", parent_id = "parent_id", phx_bounds_change
+        = "phx-bounds-change", phx_cell_change = "phx-cell-change", phx_change =
+        "phx-change", phx_click = "phx-click", phx_copy = "phx-copy", phx_geometry_change
+        = "phx-geometry-change", phx_hit_test = "phx-hit-test", phx_keydown =
+        "phx-keydown", phx_keyup = "phx-keyup", phx_range = "phx-range",
+        phx_range_geometry_change = "phx-range-geometry-change", phx_release =
+        "phx-release", phx_search = "phx-search", phx_select = "phx-select",
         phx_selection_change = "phx-selection-change", phx_sort = "phx-sort", phx_submit
         = "phx-submit", phx_toggle = "phx-toggle", phx_transaction = "phx-transaction",
         phx_viewport_change = "phx-viewport-change", placeholder = "placeholder",

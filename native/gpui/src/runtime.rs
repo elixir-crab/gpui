@@ -25,6 +25,8 @@ pub(crate) struct RuntimeState {
     pub(crate) resources: Mutex<HashMap<String, RasterData>>,
     #[cfg(feature = "real-gpui")]
     pub(crate) input_values: Mutex<HashMap<String, String>>,
+    #[cfg(feature = "real-gpui")]
+    pub(crate) element_bounds: Mutex<HashMap<(u64, String), crate::event::ElementBoundsGeometry>>,
 }
 
 pub(crate) type SharedRuntime = Arc<RuntimeState>;
@@ -37,6 +39,8 @@ impl RuntimeState {
             resources: Mutex::new(HashMap::new()),
             #[cfg(feature = "real-gpui")]
             input_values: Mutex::new(HashMap::new()),
+            #[cfg(feature = "real-gpui")]
+            element_bounds: Mutex::new(HashMap::new()),
         }
     }
 }

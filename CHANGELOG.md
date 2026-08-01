@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Added opt-in, stable-ID, deduplicated native element-bounds events for composing ordinary HTML/Tailwind-like layout with window-fitted layers.
 - Added a neutral bounded `<layer>` primitive backed by GPUI anchored positioning and deferred paint priority, documented as a native top-layer escape hatch while ordinary positioning and static presentation remain HTML/Tailwind-like.
 - Added GPUI-native relative and absolute positioning with typed inset utilities, including axis, percentage, fractional, arbitrary-pixel, and auto values.
 - Added bounded non-editable block projections anchored before or after logical text lines without changing document coordinates.

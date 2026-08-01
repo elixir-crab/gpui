@@ -37,8 +37,10 @@ impl ElementNode {
         Self::Div(ContainerNode {
             tag: GeneratedElementTag::Div,
             style: StyleAttrs::default(),
+            id: None,
             children: Vec::new(),
             click: None,
+            bounds_change: None,
         })
     }
 
@@ -61,14 +63,7 @@ impl ElementNode {
             Self::TextSurface(surface) => {
                 render_text_surface_primitive(element_id, surface, context)
             }
-            Self::Div(node) => render_container_primitive(
-                element_id,
-                node.tag,
-                node.style,
-                node.children,
-                node.click,
-                context,
-            ),
+            Self::Div(node) => render_container_primitive(element_id, node, context),
             component => render_generated_component_node(component, element_id, context),
         }
     }
@@ -289,18 +284,71 @@ pub(crate) fn render_input_primitive(
 #[cfg(feature = "real-gpui")]
 pub(crate) fn render_container_primitive(
     element_id: usize,
-    tag: GeneratedElementTag,
-    style: StyleAttrs,
-    children: Vec<ElementNode>,
-    click: Option<String>,
+    node: ContainerNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     use gpui::{div, InteractiveElement, IntoElement, ParentElement, StatefulInteractiveElement};
 
+    let ContainerNode {
+        tag,
+        style,
+        id: stable_id,
+        children,
+        click,
+        bounds_change,
+    } = node;
     let runtime = context.runtime.clone();
     let window_id = context.window_id;
     let mut element = apply_generated_render_styles(div(), style);
     element = apply_container_semantics(element, tag);
+
+    if let Some(event) = bounds_change {
+        use gpui::Styled;
+
+        let id = stable_id.expect("bounds-observed containers require stable IDs");
+        let runtime_for_bounds = runtime.clone();
+        let observer = gpui::canvas(
+            move |bounds, _window, _cx| {
+                let value = crate::event::ElementBoundsGeometry {
+                    id: id.clone(),
+                    x: f32::from(bounds.origin.x) as f64,
+                    y: f32::from(bounds.origin.y) as f64,
+                    width: f32::from(bounds.size.width) as f64,
+                    height: f32::from(bounds.size.height) as f64,
+                    coordinate_space: "window_native_pixels".to_string(),
+                };
+                let changed = runtime_for_bounds
+                    .element_bounds
+                    .lock()
+                    .map(|mut known| {
+                        let key = (window_id, id.clone());
+                        if known.get(&key) == Some(&value)
+                            || (known.len() >= 256 && !known.contains_key(&key))
+                        {
+                            false
+                        } else {
+                            known.insert(key, value.clone());
+                            true
+                        }
+                    })
+                    .unwrap_or(false);
+                if changed {
+                    let _ = push_event(
+                        &runtime_for_bounds,
+                        NativeEvent::Bounds {
+                            window_id,
+                            event: event.clone(),
+                            value,
+                        },
+                    );
+                }
+            },
+            |_bounds, _prepaint, _window, _cx| {},
+        )
+        .absolute()
+        .inset_0();
+        element = element.child(observer);
+    }
 
     for child in children {
         element = element.child(child.render(context));

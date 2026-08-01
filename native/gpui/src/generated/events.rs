@@ -23,6 +23,7 @@ impl EventValue {
 #[derive(Clone, Copy, Debug)]
 #[allow(dead_code)]
 pub(crate) enum InputKind {
+    Bounds,
     Change,
     Select,
     Submit,
@@ -44,6 +45,7 @@ pub(crate) enum InputKind {
 impl InputKind {
     fn atom(&self) -> Atom {
         match self {
+            Self::Bounds => atoms::bounds(),
             Self::Change => atoms::change(),
             Self::Select => atoms::select(),
             Self::Submit => atoms::submit(),
