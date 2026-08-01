@@ -109,6 +109,7 @@ pub(crate) struct ComponentTextSurface {
     pub(crate) focus_request: u64,
     pub(crate) text: String,
     pub(crate) selected_range: std::ops::Range<usize>,
+    pub(crate) style_runs: gpui_component::input::TextDecorationCollection,
     pub(crate) _subscription: gpui::Subscription,
 }
 
@@ -175,6 +176,9 @@ pub(crate) fn render(
             .unwrap_or(0..0);
         state.update(context.cx, |state, cx| {
             state.set_selected_range(selected_range.clone(), cx)
+        });
+        let style_runs = state.update(context.cx, |state, cx| {
+            state.create_decorations_collection(Vec::new(), cx)
         });
         let subscription = context.cx.subscribe_in(
             &state,
@@ -250,6 +254,7 @@ pub(crate) fn render(
                 focus_request: 0,
                 text: snapshot.text,
                 selected_range,
+                style_runs,
                 _subscription: subscription,
             },
         );
@@ -270,6 +275,10 @@ pub(crate) fn render(
     surface.range_geometry_event = node.range_geometry_change.clone();
     surface.hit_test_event = node.hit_test.clone();
     surface.update_focus_events(node.focus.clone(), node.blur.clone());
+    surface.style_runs.set(
+        shaping_decorations(&surface.text, &node.style_runs),
+        context.cx,
+    );
 
     let focus_handle = surface.state_focus_handle(context.cx);
     if node.focus.is_some() || node.blur.is_some() {
@@ -491,6 +500,49 @@ pub(crate) fn render(
         .child(apply_component_styles(input, node.style))
         .child(decorations)
         .into_any_element()
+}
+
+#[cfg(feature = "components")]
+fn shaping_decorations(
+    text: &str,
+    runs: &[crate::TextStyleRunNode],
+) -> Vec<gpui_component::input::TextDecoration> {
+    runs.iter()
+        .take(512)
+        .filter_map(|run| {
+            let range = crate::text_buffer::range_to_byte_range(text, &run.range).ok()?;
+            if range.is_empty() {
+                return None;
+            }
+            let font_weight = run.font_weight.as_deref().and_then(|weight| match weight {
+                "thin" => Some(gpui::FontWeight::THIN),
+                "extra_light" => Some(gpui::FontWeight::EXTRA_LIGHT),
+                "light" => Some(gpui::FontWeight::LIGHT),
+                "normal" => Some(gpui::FontWeight::NORMAL),
+                "medium" => Some(gpui::FontWeight::MEDIUM),
+                "semibold" => Some(gpui::FontWeight::SEMIBOLD),
+                "bold" => Some(gpui::FontWeight::BOLD),
+                "extra_bold" => Some(gpui::FontWeight::EXTRA_BOLD),
+                "black" => Some(gpui::FontWeight::BLACK),
+                _ => None,
+            });
+            let font_style = run.font_style.as_deref().and_then(|style| match style {
+                "normal" => Some(gpui::FontStyle::Normal),
+                "italic" => Some(gpui::FontStyle::Italic),
+                "oblique" => Some(gpui::FontStyle::Oblique),
+                _ => None,
+            });
+            Some(gpui_component::input::TextDecoration::new(
+                range,
+                gpui::HighlightStyle {
+                    color: run.color.map(|color| gpui::rgb(color).into()),
+                    font_weight,
+                    font_style,
+                    ..Default::default()
+                },
+            ))
+        })
+        .collect()
 }
 
 #[cfg(feature = "components")]
@@ -841,8 +893,64 @@ fn split_range_bounds(
 
 #[cfg(all(test, feature = "components"))]
 mod tests {
-    use super::split_range_bounds;
-    use crate::gpui::{bounds, point, px, size};
+    use super::{shaping_decorations, split_range_bounds};
+    use crate::gpui::{bounds, point, px, size, FontStyle, FontWeight};
+    use crate::{TextPosition, TextRange, TextStyleRunNode};
+
+    fn position(line: u64, utf16_offset: u64) -> TextPosition {
+        TextPosition { line, utf16_offset }
+    }
+
+    #[test]
+    fn style_runs_convert_utf16_ranges_into_native_shaping_decorations() {
+        let text = "a💝b\ncombining é";
+        let runs = vec![TextStyleRunNode {
+            range: TextRange {
+                start: position(0, 1),
+                end: position(0, 3),
+            },
+            color: Some(0xF97316),
+            font_weight: Some("semibold".to_string()),
+            font_style: Some("italic".to_string()),
+        }];
+
+        let decorations = shaping_decorations(text, &runs);
+        assert_eq!(decorations.len(), 1);
+        assert_eq!(decorations[0].range, 1..5);
+        assert_eq!(decorations[0].style.font_weight, Some(FontWeight::SEMIBOLD));
+        assert_eq!(decorations[0].style.font_style, Some(FontStyle::Italic));
+        assert_eq!(
+            decorations[0].style.color,
+            Some(crate::gpui::rgb(0xF97316).into())
+        );
+    }
+
+    #[test]
+    fn style_runs_reject_surrogate_splits_and_empty_ranges() {
+        let text = "a💝b";
+        let runs = vec![
+            TextStyleRunNode {
+                range: TextRange {
+                    start: position(0, 2),
+                    end: position(0, 3),
+                },
+                color: Some(0xFFFFFF),
+                font_weight: None,
+                font_style: None,
+            },
+            TextStyleRunNode {
+                range: TextRange {
+                    start: position(0, 0),
+                    end: position(0, 0),
+                },
+                color: Some(0xFFFFFF),
+                font_weight: None,
+                font_style: None,
+            },
+        ];
+
+        assert!(shaping_decorations(text, &runs).is_empty());
+    }
 
     #[test]
     fn wrapped_range_bounds_are_bounded_per_visual_row() {
@@ -875,6 +983,7 @@ fn acknowledge_geometry_contract(node: &TextSurfaceNode) {
         &node.scroll_to,
         &node.hit_test,
         &node.decorations,
+        &node.style_runs,
         &node.inline_projections,
         &node.block_projections,
         &node.focus,

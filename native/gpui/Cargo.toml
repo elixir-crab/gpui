@@ -20,9 +20,9 @@ rustler = "0.38.0"
 # gpui-component uses the unqualified Zed source. Keep these source IDs identical
 # and pin the shared revision through Cargo.lock so all GPUI types are unified.
 zed_gpui = { git = "https://github.com/zed-industries/zed", package = "gpui", optional = true }
-gpui_platform = { git = "https://github.com/zed-industries/zed", package = "gpui_platform", optional = true }
-gpui-component = { git = "https://github.com/longbridge/gpui-component", rev = "3c270ed2", optional = true }
-gpui-component-assets = { git = "https://github.com/longbridge/gpui-component", rev = "3c270ed2", optional = true }
+gpui_platform = { git = "https://github.com/zed-industries/zed", package = "gpui_platform", optional = true, features = ["runtime_shaders"] }
+gpui-component = { git = "https://github.com/longbridge/gpui-component", rev = "5c5eb1db04dc1146bdec903a8ac74407bd6c2098", optional = true }
+gpui-component-assets = { git = "https://github.com/longbridge/gpui-component", rev = "5c5eb1db04dc1146bdec903a8ac74407bd6c2098", optional = true }
 image = { version = "0.25.10", default-features = false, features = ["bmp", "gif", "ico", "jpeg", "png", "tiff", "webp"] }
 futures = { version = "0.3", optional = true }
 ropey = { version = "=2.0.0-beta.1", features = ["metric_lines_lf", "metric_utf16"] }

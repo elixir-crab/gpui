@@ -23,6 +23,7 @@ defmodule Features.EditableTextSurface.View do
           focus_request={assigns.focus_request}
           tab_size={2}
           decorations={assigns.decorations}
+          style_runs={assigns.style_runs}
           inline_projections={assigns.inline_projections}
           block_projections={assigns.block_projections}
           geometry_ranges={assigns.geometry_ranges}
@@ -189,6 +190,12 @@ defmodule Features.EditableTextSurface.App do
         underline_style: :wavy
       )
 
+    style_range =
+      GPUI.Text.Range.new(GPUI.Text.Position.new(2, 0), GPUI.Text.Position.new(2, 12))
+
+    style_run =
+      GPUI.Text.StyleRun.new(style_range, color: 0xF97316, font_weight: :semibold)
+
     projection =
       GPUI.Text.InlineProjection.new(GPUI.Text.Position.new(0, 23), "  ← visual only",
         color: 0x94A3B8
@@ -205,6 +212,7 @@ defmodule Features.EditableTextSurface.App do
     assigns = %{
       buffer: buffer,
       decorations: [decoration],
+      style_runs: [style_run],
       inline_projections: [projection],
       block_projections: [block],
       geometry_ranges: [requested_range],

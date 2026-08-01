@@ -68,11 +68,11 @@ mod atoms {
         "show_whitespaces", size = "size", sizes = "sizes", soft_wrap = "soft_wrap", sort
         = "sort", sort_column = "sort_column", sort_direction = "sort_direction",
         sortable = "sortable", stale_revision = "stale_revision", status = "status", step
-        = "step", stride = "stride", style = "style", submit = "submit", tab_size =
-        "tab_size", tab_width = "tab_width", text = "text", text_align = "text_align",
-        text_buffer_lock_failed = "text_buffer_lock_failed", text_overflow =
-        "text_overflow", title = "title", toggle = "toggle", top = "top", total_count =
-        "total_count", transaction = "transaction", transaction_conflict =
+        = "step", stride = "stride", style = "style", style_runs = "style_runs", submit =
+        "submit", tab_size = "tab_size", tab_width = "tab_width", text = "text",
+        text_align = "text_align", text_buffer_lock_failed = "text_buffer_lock_failed",
+        text_overflow = "text_overflow", title = "title", toggle = "toggle", top = "top",
+        total_count = "total_count", transaction = "transaction", transaction_conflict =
         "transaction_conflict", tree = "tree", truncate = "truncate", type_atom = "type",
         value = "value", variant = "variant", viewport = "viewport", white_space =
         "white_space", width = "width", window_blur = "window_blur", window_close_request

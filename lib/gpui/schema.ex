@@ -576,6 +576,7 @@ defmodule GPUI.Schema do
         scroll_request: {:default, :non_negative_integer, 0},
         scroll_to: :text_position,
         decorations: :text_decorations,
+        style_runs: :text_style_runs,
         inline_projections: :text_inline_projections,
         block_projections: :text_block_projections
       ]
@@ -1152,6 +1153,14 @@ defmodule GPUI.Schema do
         invalid_attr!(tag, name, "at most 128 bounded GPUI.Text.InlineProjection values", value)
   end
 
+  defp validate_attr!(tag, name, :text_style_runs, value) when is_list(value) do
+    valid? = Enum.count_until(value, 513) <= 512 and Enum.all?(value, &valid_style_run?/1)
+
+    if valid?,
+      do: :ok,
+      else: invalid_attr!(tag, name, "at most 512 bounded GPUI.Text.StyleRun values", value)
+  end
+
   defp validate_attr!(tag, name, :text_decorations, value) when is_list(value) do
     valid? =
       Enum.count_until(value, 257) <= 256 and
@@ -1187,6 +1196,32 @@ defmodule GPUI.Schema do
 
   defp validate_attr!(tag, name, type, value),
     do: invalid_attr!(tag, name, expected_attr_type(type), value)
+
+  defp valid_style_run?(%{
+         __struct__: GPUI.Text.StyleRun,
+         range: %{__struct__: GPUI.Text.Range},
+         color: color,
+         font_weight: weight,
+         font_style: style
+       }) do
+    (is_nil(color) or valid_rgb?(color)) and
+      weight in [
+        nil,
+        :thin,
+        :extra_light,
+        :light,
+        :normal,
+        :medium,
+        :semibold,
+        :bold,
+        :extra_bold,
+        :black
+      ] and
+      style in [nil, :normal, :italic, :oblique] and
+      not (is_nil(color) and is_nil(weight) and is_nil(style))
+  end
+
+  defp valid_style_run?(_other), do: false
 
   defp valid_block_projection?(%{
          __struct__: GPUI.Text.BlockProjection,
@@ -1228,6 +1263,7 @@ defmodule GPUI.Schema do
   defp expected_attr_type(:text_ranges), do: "at most 64 GPUI.Text.Range values"
   defp expected_attr_type(:text_position), do: "a GPUI.Text.Position"
   defp expected_attr_type(:text_decorations), do: "at most 256 GPUI.Text.Decoration values"
+  defp expected_attr_type(:text_style_runs), do: "at most 512 bounded GPUI.Text.StyleRun values"
 
   defp expected_attr_type(:text_inline_projections),
     do: "at most 128 bounded GPUI.Text.InlineProjection values"

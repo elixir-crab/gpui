@@ -521,6 +521,7 @@ pub(crate) struct TextSurfaceNode {
     pub(crate) scroll_request: u64,
     pub(crate) scroll_to: Option<TextPosition>,
     pub(crate) decorations: Vec<TextDecorationNode>,
+    pub(crate) style_runs: Vec<TextStyleRunNode>,
     pub(crate) inline_projections: Vec<TextInlineProjectionNode>,
     pub(crate) block_projections: Vec<TextBlockProjectionNode>,
     pub(crate) transaction: Option<String>,
@@ -556,6 +557,14 @@ pub(crate) struct TextInlineProjectionNode {
     pub(crate) position: TextPosition,
     pub(crate) text: String,
     pub(crate) color: u32,
+}
+#[derive(Clone, Debug, NifMap)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct TextStyleRunNode {
+    pub(crate) range: TextRange,
+    pub(crate) color: Option<u32>,
+    pub(crate) font_weight: Option<String>,
+    pub(crate) font_style: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_element_node<'a>(term: Term<'a>) -> NifResult<ElementNode> {
@@ -743,6 +752,17 @@ pub(crate) fn text_decorations_attr<'a>(
     }
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn text_style_runs_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+) -> NifResult<Vec<TextStyleRunNode>> {
+    match component_attr(term, attr) {
+        Ok(Some(value)) => value.decode::<Vec<TextStyleRunNode>>(),
+        Ok(None) => Ok(vec![]),
+        Err(reason) => Err(reason),
+    }
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn text_inline_projections_attr<'a>(
     term: Term<'a>,
     attr: Atom,
@@ -797,6 +817,7 @@ pub(crate) fn decode_text_surface_node<'a>(
                 .unwrap_or(0),
             scroll_to: text_position_attr(term, atoms::scroll_to())?,
             decorations: text_decorations_attr(term, atoms::decorations())?,
+            style_runs: text_style_runs_attr(term, atoms::style_runs())?,
             inline_projections: text_inline_projections_attr(
                 term,
                 atoms::inline_projections(),

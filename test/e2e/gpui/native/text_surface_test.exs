@@ -25,6 +25,7 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
           focus_request={assigns.primary_focus}
           geometry_ranges={assigns.geometry_ranges}
           decorations={assigns.decorations}
+          style_runs={assigns.style_runs}
           inline_projections={assigns.inline_projections}
           block_projections={assigns.block_projections}
           scroll_request={assigns.scroll_request}
@@ -122,6 +123,12 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
                  background: 0x263D66,
                  underline: 0x60A5FA,
                  underline_style: :wavy
+               )
+             ],
+             style_runs: [
+               GPUI.Text.StyleRun.new(Range.new(Position.new(0, 0), Position.new(0, 5)),
+                 color: 0xF97316,
+                 font_weight: :semibold
                )
              ],
              inline_projections: [

@@ -60,6 +60,13 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:underline_style) => String.t()
         }
 
+  @type text_style_run_node :: %{
+          required(:range) => R.path(:TextRange),
+          required(:color) => R.option(R.u32()),
+          required(:font_weight) => R.option(String.t()),
+          required(:font_style) => R.option(String.t())
+        }
+
   @type text_inline_projection_node :: %{
           required(:position) => R.path(:TextPosition),
           required(:text) => String.t(),
@@ -89,6 +96,7 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:scroll_request) => R.u64(),
           required(:scroll_to) => R.option(R.path(:TextPosition)),
           required(:decorations) => R.vec(R.path(:TextDecorationNode)),
+          required(:style_runs) => R.vec(R.path(:TextStyleRunNode)),
           required(:inline_projections) => R.vec(R.path(:TextInlineProjectionNode)),
           required(:block_projections) => R.vec(R.path(:TextBlockProjectionNode)),
           required(:transaction) => R.option(String.t()),
@@ -313,6 +321,16 @@ defmodule GPUI.Codegen.Native.Elements do
     end
   end
 
+  @spec text_style_runs_attr(term(), atom()) ::
+          R.nif_result(R.vec(R.path(:TextStyleRunNode)))
+  defrustp text_style_runs_attr(term, attr) do
+    case component_attr(term, attr) do
+      {:ok, {:some, value}} -> decode_as(value, R.vec(R.path(:TextStyleRunNode)))
+      {:ok, nil} -> {:ok, []}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   @spec text_inline_projections_attr(term(), atom()) ::
           R.nif_result(R.vec(R.path(:TextInlineProjectionNode)))
   defrustp text_inline_projections_attr(term, attr) do
@@ -360,6 +378,7 @@ defmodule GPUI.Codegen.Native.Elements do
            unwrap!(component_non_negative_integer_attr(term, Atoms.scroll_request())).unwrap_or(0),
          scroll_to: unwrap!(text_position_attr(term, Atoms.scroll_to())),
          decorations: unwrap!(text_decorations_attr(term, Atoms.decorations())),
+         style_runs: unwrap!(text_style_runs_attr(term, Atoms.style_runs())),
          inline_projections:
            unwrap!(text_inline_projections_attr(term, Atoms.inline_projections())),
          block_projections: unwrap!(text_block_projections_attr(term, Atoms.block_projections())),
@@ -465,7 +484,7 @@ defmodule GPUI.Codegen.Native.Elements do
         ) ++
         MetaAST.struct_type_items(
           __MODULE__,
-          [:text_decoration_node, :text_inline_projection_node, :text_block_projection_node],
+          [:text_decoration_node, :text_style_run_node, :text_inline_projection_node, :text_block_projection_node],
           derive: [:Clone, :Debug, :NifMap],
           attrs: [A.attr(:cfg, feature: "real-gpui")],
           vis: :crate,

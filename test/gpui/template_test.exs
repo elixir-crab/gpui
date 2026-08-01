@@ -804,6 +804,17 @@ defmodule GPUI.TemplateTest do
                    underline_style: "dashed"
                  }
                ],
+               style_runs: [
+                 %{
+                   range: %{
+                     start: %{line: 0, utf16_offset: 0},
+                     end: %{line: 0, utf16_offset: 2}
+                   },
+                   color: 0xF97316,
+                   font_weight: "semibold",
+                   font_style: "italic"
+                 }
+               ],
                geometry_ranges: [
                  %{
                    start: %{line: 0, utf16_offset: 0},
@@ -846,6 +857,13 @@ defmodule GPUI.TemplateTest do
                  )
                ]}
                geometry_ranges={[range]}
+               style_runs={[
+                 GPUI.Text.StyleRun.new(range,
+                   color: 0xF97316,
+                   font_weight: :semibold,
+                   font_style: :italic
+                 )
+               ]}
                inline_projections={[
                  GPUI.Text.InlineProjection.new(GPUI.Text.Position.new(0, 2), " ghost")
                ]}
@@ -888,6 +906,15 @@ defmodule GPUI.TemplateTest do
 
       ~GPUI"""
       <text_surface id="too-decorated" buffer={buffer} decorations={decorations} />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/at most 512 bounded GPUI.Text.StyleRun values/, fn ->
+      runs = List.duplicate(GPUI.Text.StyleRun.new(range, color: 0xF97316), 513)
+
+      ~GPUI"""
+      <text_surface id="too-styled" buffer={buffer} style_runs={runs} />
       """
       |> GPUI.Element.to_payload()
     end

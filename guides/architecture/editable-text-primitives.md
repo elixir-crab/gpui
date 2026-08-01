@@ -139,8 +139,17 @@ traffic.
 The first decoration contract accepts up to 256 `GPUI.Text.Decoration` values.
 Each decoration attaches an optional RGB background and/or solid, dashed, or
 wavy RGB underline to a logical UTF-16 range. Native painting uses current
-consumer retains diagnostic severity, language, message, command, and service
-policy. Decorations do not alter text, selections, revisions, or history.
+layout geometry while the consumer retains diagnostic severity, language,
+message, command, and service policy. Decorations do not alter text, selections,
+revisions, or history.
+
+A separate shaping contract accepts up to 512 `GPUI.Text.StyleRun` values.
+Each run carries optional RGB foreground color, font weight, and font style for
+a logical UTF-16 range. Runs are converted to native byte ranges and composed
+into GPUI Component's text-decoration collections before line shaping, so font
+fallback, ligatures, wrapping, bidi layout, and glyph metrics use the styled
+runs directly. They are not painted as duplicate glyph overlays. Consumer code
+retains syntax, language, token, and diagnostic policy.
 
 The first projection contract accepts up to 128 bounded
 `GPUI.Text.InlineProjection` values, each containing at most 4096 bytes. A
