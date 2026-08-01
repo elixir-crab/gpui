@@ -5,6 +5,7 @@ pub enum GeneratedComponentKind {
     Viewport,
     Container,
     AnchoredLayer,
+    SplitComponent,
     ButtonComponent,
     ProgressComponent,
     FilePickerComponent,
@@ -364,6 +365,34 @@ pub(crate) fn component_positive_integer_attr<'a>(
         Ok(Some(value)) if value > 0 => Ok(Some(value)),
         Ok(None) => Ok(None),
         _invalid => Err(rustler::Error::BadArg),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn component_optional_number_pair_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+) -> NifResult<Option<Vec<f64>>> {
+    match component_attr(term, attr) {
+        Ok(Some(value)) => {
+            let values = value.decode::<Vec<f64>>()?;
+            if values.len() == 2 && values.iter().all(|value| value.is_finite()) {
+                Ok(Some(values))
+            } else {
+                Err(rustler::Error::BadArg)
+            }
+        }
+        Ok(None) => Ok(None),
+        Err(reason) => Err(reason),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn component_number_pair_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+) -> NifResult<Vec<f64>> {
+    match component_optional_number_pair_attr(term, attr) {
+        Ok(Some(values)) => Ok(values),
+        _missing_or_invalid => Err(rustler::Error::BadArg),
     }
 }
 #[cfg(feature = "real-gpui")]
@@ -1859,6 +1888,51 @@ pub(crate) fn append_radio_option(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct SplitComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) orientation: Option<String>,
+    pub(crate) sizes: Vec<f64>,
+    pub(crate) min_sizes: Vec<f64>,
+    pub(crate) max_sizes: Vec<f64>,
+    pub(crate) resize_request: u64,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) change: Option<String>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_split_component<'a>(
+    term: Term<'a>,
+) -> NifResult<SplitComponentNode> {
+    Ok(SplitComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        orientation: match component_enum_attr(
+            term,
+            atoms::orientation(),
+            &vec!["horizontal", "vertical"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("horizontal".to_string()),
+        },
+        sizes: component_number_pair_attr(term, atoms::sizes())?,
+        min_sizes: component_optional_number_pair_attr(term, atoms::min_sizes())?
+            .unwrap_or_else(|| vec![100.0, 100.0]),
+        max_sizes: component_optional_number_pair_attr(term, atoms::max_sizes())?
+            .unwrap_or_else(|| vec![100000.0, 100000.0]),
+        resize_request: component_non_negative_integer_attr(
+                term,
+                atoms::resize_request(),
+            )?
+            .unwrap_or(0),
+        children: decode_children(term)?,
+        change: component_string_attr(term, atoms::phx_change())?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct ButtonComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -3051,6 +3125,7 @@ pub(crate) enum ElementNode {
     AnchoredLayer(AnchoredLayerNode),
     TextSurface(TextSurfaceNode),
     Input(InputNode),
+    SplitComponent(SplitComponentNode),
     ButtonComponent(ButtonComponentNode),
     ProgressComponent(ProgressComponentNode),
     FilePickerComponent(FilePickerComponentNode),
@@ -3094,6 +3169,7 @@ pub enum GeneratedElementTag {
     Div,
     Button,
     Layer,
+    UiSplit,
     UiButton,
     UiProgress,
     UiFilePicker,
@@ -3145,6 +3221,7 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "div" => GeneratedElementTag::Div,
         "button" => GeneratedElementTag::Button,
         "layer" => GeneratedElementTag::Layer,
+        "ui_split" => GeneratedElementTag::UiSplit,
         "ui_button" => GeneratedElementTag::UiButton,
         "ui_progress" => GeneratedElementTag::UiProgress,
         "ui_file_picker" => GeneratedElementTag::UiFilePicker,
@@ -3197,6 +3274,7 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::Div => GeneratedComponentKind::Container,
         GeneratedElementTag::Button => GeneratedComponentKind::Container,
         GeneratedElementTag::Layer => GeneratedComponentKind::AnchoredLayer,
+        GeneratedElementTag::UiSplit => GeneratedComponentKind::SplitComponent,
         GeneratedElementTag::UiButton => GeneratedComponentKind::ButtonComponent,
         GeneratedElementTag::UiProgress => GeneratedComponentKind::ProgressComponent,
         GeneratedElementTag::UiFilePicker => GeneratedComponentKind::FilePickerComponent,
@@ -3277,6 +3355,10 @@ pub(crate) fn decode_generated_element_node<'a>(
         GeneratedComponentKind::Viewport => decode_viewport_node(term, tag),
         GeneratedComponentKind::Container => decode_container_node(term, tag),
         GeneratedComponentKind::AnchoredLayer => decode_anchored_layer_node(term, tag),
+        GeneratedComponentKind::SplitComponent => {
+            decode_generated_split_component(term)
+                .map(|node| ElementNode::SplitComponent(node))
+        }
         GeneratedComponentKind::ButtonComponent => {
             decode_generated_button_component(term)
                 .map(|node| ElementNode::ButtonComponent(node))
@@ -3427,6 +3509,9 @@ pub(crate) fn render_generated_component_node(
     context: &mut element::ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     match node {
+        ElementNode::SplitComponent(node) => {
+            element::component::split::render(node, context)
+        }
         ElementNode::ButtonComponent(node) => {
             element::component::controls::render_button_component(node, context)
         }

@@ -12,7 +12,7 @@ defmodule GPUI.Codegen.Native.EventsTest do
 
     enums = Map.new(Syn.enums(parsed), &{&1.name, &1.variants})
 
-    assert enums["EventValue"] == ["String", "Strings", "Boolean", "Number", "Nil"]
+    assert enums["EventValue"] == ["String", "Strings", "Numbers", "Boolean", "Number", "Nil"]
     assert enums["InputKind"] == Enum.map(input_kinds(), &rust_variant/1)
     assert RustQ.valid?(source, "generated_events.rs")
   end

@@ -30,6 +30,7 @@ defmodule GPUI.Codegen.Native.EventDefinitions do
           case self do
             enum_variant(Self, :string, value) -> value.encode(env)
             enum_variant(Self, :strings, value) -> value.encode(env)
+            enum_variant(Self, :numbers, value) -> value.encode(env)
             enum_variant(Self, :boolean, value) -> value.encode(env)
             enum_variant(Self, :number, value) -> value.encode(env)
             enum_variant(Self, nil) -> Atoms.nil().encode(env)
@@ -83,6 +84,7 @@ defmodule GPUI.Codegen.Native.Events do
           R.enum(
             string: [String.t()],
             strings: [R.vec(String.t())],
+            numbers: [R.vec(R.f64())],
             boolean: [boolean()],
             number: [R.f64()],
             nil: []
@@ -103,31 +105,37 @@ defmodule GPUI.Codegen.Native.Events do
             some(enum_variant(EventValue, :strings, value))
 
           {:error, _reason} ->
-            case decode_as(term, boolean()) do
+            case decode_as(term, R.vec(R.f64())) do
               {:ok, value} ->
-                some(enum_variant(EventValue, :boolean, value))
+                some(enum_variant(EventValue, :numbers, value))
 
               {:error, _reason} ->
-                case decode_as(term, R.f64()) do
+                case decode_as(term, boolean()) do
                   {:ok, value} ->
-                    some(enum_variant(EventValue, :number, value))
+                    some(enum_variant(EventValue, :boolean, value))
 
                   {:error, _reason} ->
-                    case decode_as(term, R.i64()) do
+                    case decode_as(term, R.f64()) do
                       {:ok, value} ->
-                        some(enum_variant(EventValue, :number, cast(value, R.f64())))
+                        some(enum_variant(EventValue, :number, value))
 
                       {:error, _reason} ->
-                        case term.atom_to_string() do
+                        case decode_as(term, R.i64()) do
                           {:ok, value} ->
-                            if value == "nil" do
-                              some(enum_variant(EventValue, nil))
-                            else
-                              nil
-                            end
+                            some(enum_variant(EventValue, :number, cast(value, R.f64())))
 
                           {:error, _reason} ->
-                            nil
+                            case term.atom_to_string() do
+                              {:ok, value} ->
+                                if value == "nil" do
+                                  some(enum_variant(EventValue, nil))
+                                else
+                                  nil
+                                end
+
+                              {:error, _reason} ->
+                                nil
+                            end
                         end
                     end
                 end

@@ -466,6 +466,54 @@ defmodule GPUI.TemplateTest do
     assert %GPUI.Element{type: :ui_button} = trigger
   end
 
+  test "split compiles a bounded controlled two-pane contract" do
+    assert %GPUI.Element{
+             type: :ui_split,
+             attrs: split_attrs,
+             children: [%GPUI.Element{type: :div}, %GPUI.Element{type: :div}]
+           } =
+             ~GPUI"""
+             <UI.split
+               id="workspace-split"
+               orientation="horizontal"
+               sizes={[240, 560]}
+               min_sizes={[160, 320]}
+               resize_request={2}
+               phx-change="split_changed"
+             >
+               <div>Navigation</div>
+               <div>Content</div>
+             </UI.split>
+             """
+
+    assert split_attrs[:sizes] == [240, 560]
+    assert split_attrs[:min_sizes] == [160, 320]
+    assert split_attrs[:max_sizes] == [100_000.0, 100_000.0]
+    assert split_attrs[:resize_request] == 2
+    assert split_attrs[:"phx-change"] == "split_changed"
+  end
+
+  test "split validates its bounded two-pane contract" do
+    assert_raise ArgumentError, ~r/sizes must contain exactly two/, fn ->
+      UI.split(%{
+        id: "split",
+        sizes: [200],
+        phx_change: "resize",
+        children: [%GPUI.Element{type: :div}, %GPUI.Element{type: :div}]
+      })
+    end
+
+    assert_raise ArgumentError, ~r/sizes must be within/, fn ->
+      UI.split(%{
+        id: "split",
+        sizes: [100, 400],
+        min_sizes: [180, 200],
+        phx_change: "resize",
+        children: [%GPUI.Element{type: :div}, %GPUI.Element{type: :div}]
+      })
+    end
+  end
+
   test "tooltip requires textual content" do
     trigger = %GPUI.Component.Slot{children: ["Open"]}
     content = %GPUI.Component.Slot{children: [%GPUI.Element{type: :div}]}

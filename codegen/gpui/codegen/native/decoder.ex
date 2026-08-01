@@ -353,6 +353,35 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
+  @spec component_optional_number_pair_attr(term(), atom()) ::
+          R.nif_result(R.option(R.vec(R.f64())))
+  defrust component_optional_number_pair_attr(term, attr) do
+    case component_attr(term, attr) do
+      {:ok, {:some, value}} ->
+        values = decode_as!(value, R.vec(R.f64()))
+
+        if values.len() == 2 and values.iter().all(fn value -> value.is_finite() end) do
+          {:ok, some(values)}
+        else
+          {:error, badarg()}
+        end
+
+      {:ok, nil} ->
+        {:ok, nil}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @spec component_number_pair_attr(term(), atom()) :: R.nif_result(R.vec(R.f64()))
+  defrust component_number_pair_attr(term, attr) do
+    case component_optional_number_pair_attr(term, attr) do
+      {:ok, {:some, values}} -> {:ok, values}
+      _missing_or_invalid -> {:error, badarg()}
+    end
+  end
+
   @spec component_string_list_attr(term(), atom()) :: R.nif_result(R.vec(String.t()))
   defrust component_string_list_attr(term, attr) do
     case component_attr(term, attr) do

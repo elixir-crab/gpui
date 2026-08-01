@@ -31,8 +31,15 @@ defmodule Examples.ElixirWorkbench.View do
         </div>
       </div>
 
-      <div class="flex min-h-0 h-[820px]">
-        <div class="flex min-h-0 flex-col w-[260px] bg-[#0D1727]">
+      <UI.split
+        id="workbench-primary-split"
+        class="h-[820px]"
+        sizes={assigns.split_sizes}
+        min_sizes={[220, 720]}
+        resize_request={assigns.split_resize_request}
+        phx-change="workspace_resized"
+      >
+        <div class="flex min-h-0 flex-col bg-[#0D1727]">
           <div class="flex flex-col gap-2 p-2">
             <UI.input id="file-filter" label="Filter files" value={assigns.query} placeholder="Filter project" cleanable={true} phx-change="filter_changed" />
             <UI.select id="status-filter" label="File status" value={assigns.status} options={[{"All files", "all"}, {"Changed", "modified"}, {"Untracked", "untracked"}, {"Clean", "clean"}]} phx-change="status_changed" />
@@ -45,7 +52,8 @@ defmodule Examples.ElixirWorkbench.View do
           </div>
         </div>
 
-        <div class="flex grow min-h-0 flex-col">
+        <div class="flex grow min-h-0">
+          <div class="flex grow min-h-0 flex-col">
           <div class="flex items-center justify-between px-4 py-2 bg-[#172236]">
             <div class="flex min-w-0 items-center gap-3"><text class="truncate text-white">{preview_title(assigns.preview)}</text><text style={[color: status_color(assigns.preview.status)]}>{status_label(assigns.preview.status)}</text></div>
             <UI.copy_button id="copy-path" label="Copy path" text={assigns.preview.path} phx-click="path_copied" />
@@ -76,8 +84,9 @@ defmodule Examples.ElixirWorkbench.View do
             <div class="flex items-center justify-between"><text class="text-[#94A3B8]">Tests</text><text class="text-[#38BDF8]">166 passing</text></div>
           </div>
           {selected_log(assigns)}
-        </scroll>
-      </div>
+          </scroll>
+        </div>
+      </UI.split>
 
       <Overlay.dialog id="workbench-command" open={assigns.command_open} title="Run project command" width={480} phx-change="command_changed">
         <:content><div class="flex flex-col gap-3 p-2"><UI.input id="command-query" label="Command" value="mix test" phx-change="noop" /><div class="flex flex-col gap-2"><UI.button id="run-tests" label="mix test" variant="primary" phx-click="run-tests" /><UI.button id="run-format" label="mix format --check-formatted" phx-click="run-format" /><UI.button id="run-ci" label="mix ci" phx-click="run-ci" /></div></div></:content>
@@ -87,6 +96,9 @@ defmodule Examples.ElixirWorkbench.View do
   end
 
   @impl GPUI.View
+  def handle_event("workspace_resized", %{value: sizes}, assigns),
+    do: {:noreply, %{assigns | split_sizes: sizes}}
+
   def handle_event("filter_changed", %{value: value}, assigns),
     do: {:noreply, %{assigns | query: value}}
 
@@ -323,7 +335,9 @@ defmodule Examples.ElixirWorkbench.App do
            log_selected: nil,
            command_open: false,
            last_command: nil,
-           path_copied: false
+           path_copied: false,
+           split_sizes: [260, 1180],
+           split_resize_request: 0
          )
        end
      ]}

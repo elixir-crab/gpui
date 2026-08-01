@@ -6,6 +6,7 @@ defmodule GPUI.SchemaTest do
              :div,
              :button,
              :layer,
+             :ui_split,
              :ui_button,
              :ui_progress,
              :ui_file_picker,
@@ -88,6 +89,7 @@ defmodule GPUI.SchemaTest do
     assert GPUI.Schema.component!(:text_surface).required_events == []
 
     assert Enum.map(GPUI.Schema.stateful_components(), & &1.kind) == [
+             :split_component,
              :popover_component,
              :dialog_component,
              :dropdown_menu_component,

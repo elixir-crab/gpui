@@ -104,6 +104,7 @@ defmodule GPUI.Schema.ComponentDocs do
   defp type_doc(:positive_integer), do: "`pos_integer()`"
   defp type_doc(:boolean), do: "`boolean()`"
   defp type_doc(:string_list), do: "list of `String.t()`"
+  defp type_doc(:number_pair), do: "two-element list of `number()`"
   defp type_doc(:select_options), do: "list of `t:GPUI.UI.select_option/0`"
   defp type_doc(:radio_options), do: "list of `t:GPUI.UI.radio_option/0`"
   defp type_doc(:resource), do: "resource map"
@@ -134,6 +135,7 @@ defmodule GPUI.Schema.ComponentDocs do
   defp type_ast(:positive_integer), do: quote(do: pos_integer())
   defp type_ast(:boolean), do: quote(do: boolean())
   defp type_ast(:string_list), do: quote(do: [String.t()])
+  defp type_ast(:number_pair), do: quote(do: [number()])
 
   defp type_ast(:select_options), do: quote(do: [GPUI.UI.select_option()])
   defp type_ast(:radio_options), do: quote(do: [GPUI.UI.radio_option()])

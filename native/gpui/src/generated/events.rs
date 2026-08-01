@@ -5,6 +5,7 @@
 pub(crate) enum EventValue {
     String(String),
     Strings(Vec<String>),
+    Numbers(Vec<f64>),
     Boolean(bool),
     Number(f64),
     Nil,
@@ -14,6 +15,7 @@ impl EventValue {
         match self {
             Self::String(value) => value.encode(env),
             Self::Strings(value) => value.encode(env),
+            Self::Numbers(value) => value.encode(env),
             Self::Boolean(value) => value.encode(env),
             Self::Number(value) => value.encode(env),
             Self::Nil => atoms::nil().encode(env),
@@ -77,20 +79,25 @@ pub(crate) fn decode_event_value<'a>(term: Term<'a>) -> Option<EventValue> {
             match term.decode::<Vec<String>>() {
                 Ok(value) => Some(EventValue::Strings(value)),
                 Err(_reason) => {
-                    match term.decode::<bool>() {
-                        Ok(value) => Some(EventValue::Boolean(value)),
+                    match term.decode::<Vec<f64>>() {
+                        Ok(value) => Some(EventValue::Numbers(value)),
                         Err(_reason) => {
-                            match term.decode::<f64>() {
-                                Ok(value) => Some(EventValue::Number(value)),
+                            match term.decode::<bool>() {
+                                Ok(value) => Some(EventValue::Boolean(value)),
                                 Err(_reason) => {
-                                    match term.decode::<i64>() {
-                                        Ok(value) => Some(EventValue::Number(value as f64)),
+                                    match term.decode::<f64>() {
+                                        Ok(value) => Some(EventValue::Number(value)),
                                         Err(_reason) => {
-                                            match term.atom_to_string() {
-                                                Ok(value) => {
-                                                    if value == "nil" { Some(EventValue::Nil) } else { None }
+                                            match term.decode::<i64>() {
+                                                Ok(value) => Some(EventValue::Number(value as f64)),
+                                                Err(_reason) => {
+                                                    match term.atom_to_string() {
+                                                        Ok(value) => {
+                                                            if value == "nil" { Some(EventValue::Nil) } else { None }
+                                                        }
+                                                        Err(_reason) => None,
+                                                    }
                                                 }
-                                                Err(_reason) => None,
                                             }
                                         }
                                     }

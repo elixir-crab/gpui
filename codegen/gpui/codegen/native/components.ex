@@ -82,6 +82,11 @@ defmodule GPUI.Codegen.Native.ComponentDefinitionMacros do
   defp component_field_type(_name, :boolean), do: quote(do: boolean())
   defp component_field_type(_name, {:default, :boolean, _value}), do: quote(do: boolean())
   defp component_field_type(_name, :string_list), do: quote(do: R.vec(String.t()))
+  defp component_field_type(_name, :number_pair), do: quote(do: R.vec(R.f64()))
+
+  defp component_field_type(_name, {:default, :number_pair, _default}),
+    do: quote(do: R.vec(R.f64()))
+
   defp component_field_type(_name, {:enum, _values}), do: quote(do: R.option(String.t()))
 
   defp component_field_type(_name, :select_options),
@@ -145,6 +150,17 @@ defmodule GPUI.Codegen.Native.ComponentDefinitionMacros do
 
   defp component_decoder_expr(name, :string_list),
     do: quote(do: unwrap!(component_string_list_attr(term, unquote(atom_call(name)))))
+
+  defp component_decoder_expr(name, :number_pair),
+    do: quote(do: unwrap!(component_number_pair_attr(term, unquote(atom_call(name)))))
+
+  defp component_decoder_expr(name, {:default, :number_pair, default}),
+    do:
+      quote(
+        do:
+          unwrap!(component_optional_number_pair_attr(term, unquote(atom_call(name))))
+          |> unwrap_or_else(fn -> unquote(default) end)
+      )
 
   defp component_decoder_expr(name, {:enum, values}) do
     quote do

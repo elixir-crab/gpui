@@ -155,7 +155,7 @@ they provide stable native accessibility names. Switches support Enter and
 Space. Radio groups use roving tab stops and Left/Up/Right/Down navigation,
 wrapping around disabled options.
 
-## Tabs, accordions, and sliders
+## Tabs, accordions, sliders, and splits
 
 ```elixir
 <UI.tabs
@@ -187,6 +187,17 @@ wrapping around disabled options.
   phx-change="volume_changed"
   phx-release="volume_released"
 />
+<UI.split
+  id="workspace-split"
+  orientation="horizontal"
+  sizes={assigns.split_sizes}
+  min_sizes={[180, 320]}
+  resize_request={assigns.split_resize_request}
+  phx-change="workspace_resized"
+>
+  <div>Navigation</div>
+  <div>Content</div>
+</UI.split>
 ```
 
 Tab changes carry one string value. Accordion changes carry an ordered list of
@@ -194,6 +205,15 @@ expanded item IDs. A slider label names the accessibility group around the
 native slider, which exposes its controlled value, range, step, and orientation.
 Slider changes are continuous and `phx-release` fires once
 pointer interaction ends. Linear and logarithmic slider scales are supported.
+
+A split has exactly two children and a horizontal or vertical native resize
+axis. `sizes`, `min_sizes`, and `max_sizes` are bounded two-element pixel lists.
+The display owns pointer drag mechanics and emits the resulting two sizes
+through `phx-change`; applications persist those values in assigns. Controlled
+sizes are not reapplied during ordinary rerenders, which avoids resetting an
+active drag. Increment the monotonic `resize_request` token to programmatically
+apply `sizes`. This primitive carries no sidebar, editor, dock, or persistence
+policy.
 
 ## Progress and display-side actions
 

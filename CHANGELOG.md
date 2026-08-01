@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Added a neutral controlled two-pane native resizable split with bounded sizes, monotonic resize requests, and consumer-owned persistence.
 - Added idiomatic optional `handle_window_event/3` callbacks with `{:close, assigns}` approval, plus declarative native window minimum size and resizability.
 - Added stable-ID monotonic focus requests and native focus/blur events for buttons, low-level inputs, controlled inputs, and text surfaces.
 - Added opt-in, stable-ID, deduplicated native element-bounds events for composing ordinary HTML/Tailwind-like layout with window-fitted layers.

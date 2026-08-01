@@ -7,6 +7,7 @@ pub(crate) mod form;
 pub(crate) mod overlay;
 pub(crate) mod radio;
 pub(crate) mod slider;
+pub(crate) mod split;
 pub(crate) mod switch;
 pub(crate) mod tabs;
 pub(crate) mod text_surface;

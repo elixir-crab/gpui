@@ -55,7 +55,8 @@ defmodule GPUI.UI do
     code_viewer_options: :ui_code_viewer,
     code_line_options: :ui_code_line,
     tabs_options: :ui_tabs,
-    slider_options: :ui_slider
+    slider_options: :ui_slider,
+    split_options: :ui_split
   )
 
   @type file_picker_value ::
@@ -582,6 +583,22 @@ defmodule GPUI.UI do
   end
 
   @doc """
+  Builds a persistent controlled two-pane native resizable split.
+
+  `sizes`, `min_sizes`, and `max_sizes` are two-element pixel lists. The native
+  display owns transient drag mechanics and emits the resulting sizes through
+  `phx-change`; the authoritative sizes remain in Elixir assigns.
+
+  #{Schema.component_options_doc(:ui_split)}
+  """
+  @spec split(split_options()) :: Element.t()
+  def split(assigns) when is_map(assigns) do
+    assigns = Schema.apply_defaults(assigns, :ui_split)
+    validate_split!(assigns)
+    component(:ui_split, assigns)
+  end
+
+  @doc """
   Builds a persistent controlled GPUI Component slider.
 
   A non-empty `label` names the slider's native accessibility group.
@@ -600,6 +617,46 @@ defmodule GPUI.UI do
     validate_non_empty_label!(:ui_slider, Map.get(assigns, :label))
     component(:ui_slider, assigns)
   end
+
+  defp validate_split!(assigns) do
+    validate_split_children!(Map.get(assigns, :children, []))
+    validate_split_request!(assigns.resize_request)
+
+    Enum.each(
+      [:sizes, :min_sizes, :max_sizes],
+      &validate_split_pair!(&1, Map.fetch!(assigns, &1))
+    )
+
+    validate_split_ranges!(assigns.sizes, assigns.min_sizes, assigns.max_sizes)
+  end
+
+  defp validate_split_children!([_first, _second]), do: :ok
+
+  defp validate_split_children!(_children),
+    do: raise(ArgumentError, "ui_split requires exactly two children")
+
+  defp validate_split_request!(request) when is_integer(request) and request >= 0, do: :ok
+
+  defp validate_split_request!(_request),
+    do: raise(ArgumentError, "ui_split resize_request must be a non-negative integer")
+
+  defp validate_split_pair!(_name, [first, second])
+       when is_number(first) and first >= 0 and first <= 100_000 and is_number(second) and
+              second >= 0 and second <= 100_000,
+       do: :ok
+
+  defp validate_split_pair!(name, _values) do
+    raise ArgumentError,
+          "ui_split #{name} must contain exactly two pixel values between 0 and 100000"
+  end
+
+  defp validate_split_ranges!([first, second], [first_min, second_min], [first_max, second_max])
+       when first_min <= first and first <= first_max and second_min <= second and
+              second <= second_max,
+       do: :ok
+
+  defp validate_split_ranges!(_sizes, _mins, _maxes),
+    do: raise(ArgumentError, "ui_split sizes must be within their min_sizes and max_sizes")
 
   defp normalize_slider_numbers!(assigns) do
     Enum.reduce([:value, :min, :max, :step], assigns, fn name, normalized ->

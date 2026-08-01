@@ -50,6 +50,22 @@ defmodule GPUI.Schema do
       ]
     },
     %Component{
+      tag: :ui_split,
+      kind: :split_component,
+      stateful: true,
+      events: [change: :"phx-change"],
+      required_events: [:"phx-change"],
+      children: true,
+      attrs: [
+        id: :string,
+        orientation: {:default, {:enum, ~w(horizontal vertical)}, "horizontal"},
+        sizes: :number_pair,
+        min_sizes: {:default, :number_pair, [100.0, 100.0]},
+        max_sizes: {:default, :number_pair, [100_000.0, 100_000.0]},
+        resize_request: {:default, :non_negative_integer, 0}
+      ]
+    },
+    %Component{
       tag: :ui_button,
       kind: :button_component,
       events: [click: :"phx-click"],
@@ -1079,6 +1095,13 @@ defmodule GPUI.Schema do
     do: :ok
 
   defp validate_attr!(_tag, _name, :boolean, value) when is_boolean(value), do: :ok
+
+  defp validate_attr!(_tag, _name, :number_pair, [first, second])
+       when is_number(first) and is_number(second),
+       do: :ok
+
+  defp validate_attr!(tag, name, :number_pair, value),
+    do: invalid_attr!(tag, name, "a list of exactly two numbers", value)
 
   defp validate_attr!(tag, name, :string_list, value) when is_list(value) do
     if Enum.all?(value, &is_binary/1),
