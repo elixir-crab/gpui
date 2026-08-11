@@ -76,6 +76,7 @@ native prerequisites, supervision, controlled components, and event handling.
 - [Getting started](guides/introduction/getting-started.md)
 - [Sessions, runtimes, and displays](guides/architecture/sessions-and-displays.md)
 - [Editable text primitives](guides/architecture/editable-text-primitives.md)
+- [Native text projection extension boundaries](guides/architecture/native-text-projection-boundaries.md)
 - [Components and styling](guides/ui/components-and-styling.md)
 - [Commands and keyboard shortcuts](guides/ui/commands-and-shortcuts.md)
 - [Overlays and menus](guides/ui/overlays-and-menus.md)

@@ -184,6 +184,11 @@ Independent projection inputs will eventually cover:
 - caret and range bounds;
 - point-to-position hit testing.
 
+True layout-affecting inline and block insertions remain deferred. The pinned
+native input has no projection collection that participates consistently in
+wrapping, scroll extent, geometry, hit testing, and document/display mapping;
+see [Native text projection extension boundaries](native-text-projection-boundaries.md).
+
 Consumers can use those inputs to build code editors, prose editors, notebooks,
 diff tools, terminal prompts, or domain-specific annotated text surfaces without
 adopting library-owned IDE policy.
