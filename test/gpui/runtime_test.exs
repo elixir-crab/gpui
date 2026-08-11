@@ -37,6 +37,13 @@ defmodule GPUI.RuntimeTest do
     end
   end
 
+  defmodule SecondaryView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(assigns), do: %GPUI.Element{type: :text, children: [assigns.label]}
+  end
+
   defmodule ClosingView do
     use GPUI.View
 
@@ -210,6 +217,41 @@ defmodule GPUI.RuntimeTest do
         :release_frame -> :ok
       end
     end
+  end
+
+  test "runtime reconciles dynamically added and removed keyed windows" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(
+        app: DemoApp,
+        display: RecordingDisplay,
+        poll_interval: nil
+      )
+
+    secondary = %GPUI.WindowSpec{
+      key: "details",
+      title: "Details",
+      root: {SecondaryView, %{label: "Secondary"}}
+    }
+
+    assert {:ok, 2, %{windows: [primary, added]}} = GPUI.Runtime.open_window(runtime, secondary)
+    assert primary.id == 1
+    assert added.id == 2
+    assert added.key == "details"
+    assert added.root.assigns.label == "Secondary"
+
+    assert {:error, :duplicate_window_key} = GPUI.Runtime.open_window(runtime, secondary)
+
+    assert {:ok, %{windows: [remaining]}} = GPUI.Runtime.close_window(runtime, "details")
+    assert remaining.id == 1
+
+    assert {:ok, 3, %{windows: [_primary, reopened]}} =
+             GPUI.Runtime.open_window(runtime, %{secondary | title: "Reopened"})
+
+    assert reopened.id == 3
+    assert reopened.key == "details"
+    assert {:ok, %{windows: [^reopened]}} = GPUI.Runtime.close_window(runtime, 1)
+    assert {:ok, %{windows: []}} = GPUI.Runtime.close_window(runtime, "details")
+    assert {:error, :window_not_found} = GPUI.Runtime.close_window(runtime, "missing")
   end
 
   test "close event outcomes synchronize removed windows to the display" do

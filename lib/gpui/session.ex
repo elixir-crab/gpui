@@ -15,7 +15,8 @@ defmodule GPUI.Session do
 
   @type state :: %{
           windows: [WindowSpec.t()],
-          resources: %{optional(String.t()) => map()}
+          resources: %{optional(String.t()) => map()},
+          next_window_id: pos_integer()
         }
 
   @spec start_link(keyword()) :: GenServer.on_start()
@@ -31,6 +32,16 @@ defmodule GPUI.Session do
 
   @spec windows(GenServer.server()) :: [WindowSpec.t()]
   def windows(session), do: GenServer.call(session, :windows)
+
+  @doc "Adds a keyed declarative window without remounting the application."
+  @spec open_window(GenServer.server(), WindowSpec.t()) ::
+          {:ok, pos_integer(), snapshot()} | {:error, :duplicate_window_key | term()}
+  def open_window(session, window), do: GenServer.call(session, {:open_window, window})
+
+  @doc "Removes one declarative window by stable key or native session ID."
+  @spec close_window(GenServer.server(), WindowSpec.key() | pos_integer()) ::
+          {:ok, snapshot()} | {:error, :window_not_found}
+  def close_window(session, window), do: GenServer.call(session, {:close_window, window})
 
   @spec snapshot(GenServer.server()) :: snapshot()
   def snapshot(session), do: GenServer.call(session, :snapshot)
@@ -63,6 +74,7 @@ defmodule GPUI.Session do
   def window_payload(%WindowSpec{} = window) do
     %{
       id: window.id,
+      key: window.key,
       title: window.title,
       size: Tuple.to_list(window.size || {800, 600}),
       min_size: encode_optional_size(window.min_size),
@@ -107,6 +119,24 @@ defmodule GPUI.Session do
   def handle_call(:windows, _from, state), do: {:reply, state.windows, state}
 
   def handle_call(:snapshot, _from, state), do: {:reply, snapshot_from_state(state), state}
+
+  def handle_call({:open_window, %WindowSpec{} = window}, _from, state) do
+    case add_window(state, window) do
+      {:ok, state, id} -> {:reply, {:ok, id, snapshot_from_state(state)}, state}
+      {:error, reason} -> {:reply, {:error, reason}, state}
+    end
+  end
+
+  def handle_call({:close_window, identifier}, _from, state) do
+    case pop_window(state.windows, identifier) do
+      {nil, _windows} ->
+        {:reply, {:error, :window_not_found}, state}
+
+      {_window, windows} ->
+        state = %{state | windows: windows}
+        {:reply, {:ok, snapshot_from_state(state)}, state}
+    end
+  end
 
   def handle_call(:refresh, _from, state) do
     reply =
@@ -174,14 +204,27 @@ defmodule GPUI.Session do
   defp mount(app, args) do
     case app.mount(args) do
       {:ok, windows} when is_list(windows) ->
-        {:ok, new_state(assign_window_ids(windows))}
+        case initial_state(windows) do
+          {:ok, state} -> {:ok, state}
+          {:error, reason} -> {:stop, reason}
+        end
 
       invalid ->
         {:stop, {:invalid_mount_return, invalid}}
     end
   end
 
-  defp new_state(windows), do: %{windows: windows, resources: %{}}
+  defp initial_state(windows) do
+    windows = assign_window_ids(windows)
+
+    case duplicate_key(windows) do
+      nil -> {:ok, new_state(windows)}
+      key -> {:error, {:duplicate_window_key, key}}
+    end
+  end
+
+  defp new_state(windows),
+    do: %{windows: windows, resources: %{}, next_window_id: length(windows) + 1}
 
   defp assign_window_ids(windows) do
     windows
@@ -189,6 +232,34 @@ defmodule GPUI.Session do
     |> Enum.map(fn {%WindowSpec{} = window, id} ->
       window |> WindowSpec.validate!() |> Map.put(:id, id)
     end)
+  end
+
+  defp add_window(state, %WindowSpec{} = window) do
+    window = WindowSpec.validate!(window)
+
+    if is_binary(window.key) and Enum.any?(state.windows, &(&1.key == window.key)) do
+      {:error, :duplicate_window_key}
+    else
+      id = state.next_window_id
+      window = %{window | id: id}
+      {:ok, %{state | windows: state.windows ++ [window], next_window_id: id + 1}, id}
+    end
+  end
+
+  defp duplicate_key(windows) do
+    windows
+    |> Enum.reject(&is_nil(&1.key))
+    |> Enum.frequencies_by(& &1.key)
+    |> Enum.find_value(fn {key, count} -> if count > 1, do: key end)
+  end
+
+  defp pop_window(windows, identifier) do
+    {matched, remaining} =
+      Enum.split_with(windows, fn window ->
+        if is_integer(identifier), do: window.id == identifier, else: window.key == identifier
+      end)
+
+    {List.first(matched), remaining}
   end
 
   defp snapshot_from_state(state) do

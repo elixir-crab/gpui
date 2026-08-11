@@ -7,8 +7,10 @@ defmodule GPUI.WindowSpec do
   """
 
   @type root :: {module(), map() | keyword()}
+  @type key :: String.t()
   @type t :: %__MODULE__{
           id: pos_integer() | nil,
+          key: key() | nil,
           title: String.t(),
           size: {pos_integer(), pos_integer()} | nil,
           min_size: {pos_integer(), pos_integer()} | nil,
@@ -18,12 +20,13 @@ defmodule GPUI.WindowSpec do
         }
 
   @enforce_keys [:title]
-  defstruct [:id, :title, :size, :min_size, :root, resizable: true, commands: []]
+  defstruct [:id, :key, :title, :size, :min_size, :root, resizable: true, commands: []]
 
   @spec validate!(t()) :: t()
   def validate!(
         %__MODULE__{
           title: title,
+          key: key,
           size: size,
           min_size: min_size,
           resizable: resizable,
@@ -31,7 +34,8 @@ defmodule GPUI.WindowSpec do
           commands: commands
         } = window
       ) do
-    unless is_binary(title), do: raise(ArgumentError, "window title must be a string")
+    validate_title!(title)
+    validate_key!(key)
 
     unless valid_size?(size) do
       raise ArgumentError, "window size must contain positive integer width and height"
@@ -59,6 +63,13 @@ defmodule GPUI.WindowSpec do
 
     window
   end
+
+  defp validate_title!(title) when is_binary(title), do: :ok
+  defp validate_title!(_title), do: raise(ArgumentError, "window title must be a string")
+
+  defp validate_key!(nil), do: :ok
+  defp validate_key!(key) when is_binary(key) and key != "", do: :ok
+  defp validate_key!(_key), do: raise(ArgumentError, "window key must be a non-empty string")
 
   defp valid_size?(nil), do: true
   defp valid_size?({width, height}), do: positive_integer?(width) and positive_integer?(height)

@@ -20,6 +20,7 @@ defmodule GPUI.Application do
       import GPUI.Application,
         only: [
           window: 2,
+          window: 3,
           size: 2,
           min_size: 2,
           resizable: 1,
@@ -37,12 +38,21 @@ defmodule GPUI.Application do
     end
   end
 
+  @doc "Builds a keyed window specification from a DSL block."
+  defmacro window(key, title, do: block) do
+    window_ast(key, title, block)
+  end
+
   @doc "Builds a window specification from a DSL block."
   defmacro window(title, do: block) do
+    window_ast(nil, title, block)
+  end
+
+  defp window_ast(key, title, block) do
     entries = block_entries(block)
 
     quote do
-      Enum.reduce(unquote(entries), %GPUI.WindowSpec{title: unquote(title)}, fn
+      Enum.reduce(unquote(entries), %GPUI.WindowSpec{key: unquote(key), title: unquote(title)}, fn
         {:size, width, height}, spec ->
           %{spec | size: {width, height}}
 

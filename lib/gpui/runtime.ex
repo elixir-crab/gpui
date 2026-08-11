@@ -57,6 +57,18 @@ defmodule GPUI.Runtime do
   @spec drain_events(GenServer.server()) :: [map()] | {:error, term()}
   def drain_events(runtime), do: GenServer.call(runtime, :drain_events, @call_timeout)
 
+  @doc "Adds a keyed declarative window and synchronizes it to the display."
+  @spec open_window(GenServer.server(), GPUI.WindowSpec.t()) ::
+          {:ok, pos_integer(), GPUI.Snapshot.t()} | {:error, term()}
+  def open_window(runtime, window),
+    do: GenServer.call(runtime, {:open_window, window}, @call_timeout)
+
+  @doc "Closes a declarative window by key or session ID and synchronizes the display."
+  @spec close_window(GenServer.server(), GPUI.WindowSpec.key() | pos_integer()) ::
+          {:ok, GPUI.Snapshot.t()} | {:error, term()}
+  def close_window(runtime, window),
+    do: GenServer.call(runtime, {:close_window, window}, @call_timeout)
+
   @doc "Stores a session resource and synchronizes the resulting snapshot."
   @spec put_resource(GenServer.server(), String.Chars.t(), map()) :: :ok | {:error, term()}
   def put_resource(runtime, id, resource),
@@ -153,6 +165,29 @@ defmodule GPUI.Runtime do
   def handle_call(:unsubscribe, {pid, _tag}, state) do
     subscribers = GPUI.UpdateSubscribers.unsubscribe(state.subscribers, pid)
     {:reply, :ok, %{state | subscribers: subscribers}}
+  end
+
+  def handle_call({:open_window, window}, _from, state) do
+    case GPUI.Session.open_window(state.session, window) do
+      {:ok, id, snapshot} ->
+        case sync_display(state, snapshot) do
+          :ok ->
+            state = GPUI.UpdateSubscribers.publish_update(state, self(), [], snapshot)
+            {:reply, {:ok, id, snapshot}, state}
+
+          {:error, reason} ->
+            {:reply, {:error, reason}, state}
+        end
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
+  end
+
+  def handle_call({:close_window, window}, _from, state) do
+    state.session
+    |> GPUI.Session.close_window(window)
+    |> synchronized_snapshot_reply(state)
   end
 
   def handle_call({:put_resource, id, resource}, _from, state) do

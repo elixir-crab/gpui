@@ -32,7 +32,7 @@ defmodule GPUI.InspectTest do
     }
 
     assert inspect(window) ==
-             "#GPUI.WindowSpec<id=1 title=\"Counter\" size={320, 240} root=GPUI.InspectTest>"
+             "#GPUI.WindowSpec<id=1 key=nil title=\"Counter\" size={320, 240} root=GPUI.InspectTest>"
   end
 
   test "inspects transport wrappers without dumping sockets" do

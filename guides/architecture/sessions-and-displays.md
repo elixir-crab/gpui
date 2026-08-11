@@ -16,6 +16,44 @@ prevents native window ownership from leaking into application processes.
 A session does not own a native event loop or platform window. Its boundary is
 serializable Elixir data.
 
+## Dynamic window topology
+
+Initial windows may declare a stable application-owned key independently of the
+session's monotonic native window ID:
+
+```elixir
+window "main", "Workspace" do
+  size 1100, 720
+  root WorkspaceView
+end
+```
+
+A running local session can add and remove windows without remounting the
+application:
+
+```elixir
+details = %GPUI.WindowSpec{
+  key: "repository-details",
+  title: "Repository details",
+  root: {RepositoryDetailsView, %{repository: repository}}
+}
+
+{:ok, window_id, snapshot} = GPUI.Runtime.open_window(runtime, details)
+{:ok, snapshot} = GPUI.Runtime.close_window(runtime, "repository-details")
+```
+
+Keys are optional for backward-compatible initial windows, but dynamically
+managed windows should use non-empty unique strings. IDs are never reused in a
+session, including after a keyed window closes and reopens. Closing by key or ID
+removes only that window; other root assigns and native windows remain intact.
+Snapshot synchronization performs the actual platform close. Source refresh
+rerenders the current topology and preserves every window's existing assigns.
+
+These mutation calls are local runtime/session capabilities. Remote topology
+mutation is intentionally not added to the transport protocol yet; remote
+clients continue to consume authoritative snapshots produced by their hosted
+session.
+
 ## Display
 
 A `GPUI.Display` receives snapshots and returns normalized events. The package

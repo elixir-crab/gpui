@@ -37,6 +37,23 @@ defmodule GPUI.CommandTest do
     end
   end
 
+  defmodule DuplicateKeyApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(_args) do
+      {:ok,
+       [
+         window "duplicate", "First" do
+           root(PlainView)
+         end,
+         window "duplicate", "Second" do
+           root(PlainView)
+         end
+       ]}
+    end
+  end
+
   defmodule CloseConfirmationView do
     use GPUI.View
 
@@ -172,6 +189,15 @@ defmodule GPUI.CommandTest do
     window = %{WindowSpec.validate!(window) | id: 1}
 
     assert Session.window_payload(window).lifecycle == []
+  end
+
+  test "keyed window DSL rejects duplicate initial topology" do
+    previous = Process.flag(:trap_exit, true)
+
+    assert {:error, {:duplicate_window_key, "duplicate"}} =
+             Session.start_link(app: DuplicateKeyApp)
+
+    Process.flag(:trap_exit, previous)
   end
 
   test "routes fixed lifecycle atoms through the optional view callback" do

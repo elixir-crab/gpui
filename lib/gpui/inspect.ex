@@ -44,6 +44,8 @@ defimpl Inspect, for: GPUI.WindowSpec do
       "#GPUI.WindowSpec<",
       "id=",
       inspect_optional(window.id, opts),
+      " key=",
+      inspect_optional(window.key, opts),
       " title=",
       to_doc(window.title, opts),
       " size=",
