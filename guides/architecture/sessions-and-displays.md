@@ -52,7 +52,11 @@ Source refresh rerenders the current topology and preserves every window's
 existing assigns, key, and session ID. It does not remount the application or
 resurrect windows that have already closed. Dynamic ID allocation also remains
 monotonic across reload, while newly compiled render and callback code applies
-to every retained root module.
+to every retained root module. Refresh renders the complete snapshot before
+publishing it, so a failure in any window produces no display or subscriber
+update. Development watchers can optionally report bounded `:gpui_reload`
+results; syntax-invalid files leave the loaded module and live session usable
+for the next valid edit.
 
 These mutation calls are local runtime/session capabilities. Remote topology
 mutation is intentionally not added as an imperative transport operation.

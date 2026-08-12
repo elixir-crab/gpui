@@ -7,6 +7,12 @@ defmodule GPUI.Dev do
   assigns remain authoritative, so ordinary `render/1`, `handle_event/3`, and
   `handle_info/2` edits take effect without reopening the native window.
 
+  A watcher may receive a `:notify` PID. After every attempted file reload it
+  receives `{:gpui_reload, watcher, path, {:ok, modules}}` or
+  `{:gpui_reload, watcher, path, {:error, reason}}`. Files are parsed before
+  compilation so syntax failures cannot unload or partially redefine the live
+  root module.
+
   This facility is intended for trusted local development source. It does not
   reload native code, remount applications, or migrate changed state shapes.
   """
@@ -46,7 +52,8 @@ defmodule GPUI.Dev do
         watcher: watcher,
         changed: MapSet.new(),
         timer: nil,
-        debounce: Keyword.get(opts, :debounce, @default_debounce)
+        debounce: Keyword.get(opts, :debounce, @default_debounce),
+        notify: Keyword.get(opts, :notify)
       }
 
       Logger.info(
@@ -82,7 +89,8 @@ defmodule GPUI.Dev do
     state = %{state | timer: nil, changed: MapSet.new()}
 
     for path <- Enum.sort(changed) do
-      reload_file(path, state.runtime)
+      result = reload_file(path, state.runtime)
+      notify_reload(state.notify, self(), path, result)
     end
 
     {:noreply, state}
@@ -148,26 +156,43 @@ defmodule GPUI.Dev do
     Code.put_compiler_option(:ignore_module_conflict, true)
 
     try do
-      modules = path |> Code.compile_file() |> Enum.map(&elem(&1, 0))
+      modules =
+        path
+        |> File.read!()
+        |> Code.string_to_quoted!(file: path)
+        |> then(fn _quoted -> Code.compile_file(path) end)
+        |> Enum.map(&elem(&1, 0))
 
       case GPUI.Runtime.refresh(runtime) do
         {:ok, _snapshot} ->
           Logger.info("GPUI reloaded #{relative_path} (#{inspect(modules)})")
+          {:ok, modules}
 
         {:error, reason} ->
           Logger.error(
             "GPUI compiled #{relative_path}, but refresh failed: #{format_reason(reason)}"
           )
+
+          {:error, {:refresh_failed, reason}}
       end
     catch
       :error, reason when is_exception(reason) ->
         log_reload_failure(relative_path, :error, reason, __STACKTRACE__)
+        {:error, {:compile_failed, :error, reason}}
 
       kind, reason ->
         log_reload_failure(relative_path, kind, reason, __STACKTRACE__)
+        {:error, {:compile_failed, kind, reason}}
     after
       Code.put_compiler_option(:ignore_module_conflict, previous)
     end
+  end
+
+  defp notify_reload(nil, _watcher, _path, _result), do: :ok
+
+  defp notify_reload(pid, watcher, path, result) when is_pid(pid) do
+    send(pid, {:gpui_reload, watcher, path, result})
+    :ok
   end
 
   defp log_reload_failure(path, kind, reason, stacktrace) do
