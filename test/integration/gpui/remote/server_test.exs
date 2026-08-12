@@ -256,6 +256,54 @@ defmodule GPUI.Remote.ServerTest do
     refute_receive {:gpui, ^client, %GPUI.Runtime.Update{}}
   end
 
+  test "remote client reconciles view-driven multi-window snapshots" do
+    {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.Server.port(server)
+
+    {:ok, client} =
+      GPUI.Remote.Client.start_link(
+        host: "127.0.0.1",
+        port: port,
+        display: GPUI.Test.Display,
+        display_opts: [owner: self()]
+      )
+
+    assert {:ok, %{windows: [%{id: 1}]}} = GPUI.Remote.Client.mount(client)
+    assert_receive {:gpui_snapshot, %{windows: [%{id: 1}]}}
+    assert :ok = GPUI.Remote.Client.subscribe(client)
+
+    open_event = %{type: :click, window_id: 1, event: "open_details"}
+
+    assert {:ok, %{windows: [_, %{id: 2, key: "details"}]} = opened} =
+             GPUI.Remote.Client.event(client, open_event)
+
+    assert_receive {:gpui_snapshot, ^opened}
+
+    assert_receive {:gpui, ^client,
+                    %GPUI.Runtime.Update{
+                      revision: 2,
+                      events: [^open_event],
+                      snapshot: ^opened
+                    }}
+
+    close_event = %{type: :click, window_id: 1, event: "close_details"}
+
+    assert {:ok, %{windows: [%{id: 1}]} = closed} =
+             GPUI.Remote.Client.event(client, close_event)
+
+    assert_receive {:gpui_snapshot, ^closed}
+
+    assert_receive {:gpui, ^client,
+                    %GPUI.Runtime.Update{
+                      revision: 3,
+                      events: [^close_event],
+                      snapshot: ^closed
+                    }}
+
+    assert {:ok, %{windows: [_, %{id: 3, key: "details"}]}} =
+             GPUI.Remote.Client.event(client, open_event)
+  end
+
   defmodule BlockingView do
     use GPUI.View
 

@@ -49,7 +49,10 @@ reused in a session, including after a keyed window closes and reopens. Closing
 by key or ID removes only that window; other root assigns and native windows
 remain intact. Snapshot synchronization performs the actual platform close.
 Source refresh rerenders the current topology and preserves every window's
-existing assigns.
+existing assigns, key, and session ID. It does not remount the application or
+resurrect windows that have already closed. Dynamic ID allocation also remains
+monotonic across reload, while newly compiled render and callback code applies
+to every retained root module.
 
 These mutation calls are local runtime/session capabilities. Remote topology
 mutation is intentionally not added as an imperative transport operation.
