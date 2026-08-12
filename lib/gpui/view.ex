@@ -11,12 +11,18 @@ defmodule GPUI.View do
 
   @type window_event :: :close_request | :focus | :blur
 
+  @type callback_result ::
+          {:noreply, map()}
+          | {:reply, term(), map()}
+          | {:close, map()}
+          | {:open_window, GPUI.WindowSpec.t(), map()}
+          | {:close_window, GPUI.WindowSpec.key() | pos_integer(), map()}
+
   @callback render(map()) :: Element.t()
-  @callback handle_event(String.t(), map(), map()) ::
-              {:noreply, map()} | {:reply, term(), map()} | {:close, map()}
+  @callback handle_event(String.t(), map(), map()) :: callback_result()
   @callback handle_window_event(window_event(), map(), map()) ::
               {:noreply, map()} | {:close, map()}
-  @callback handle_info(term(), map()) :: {:noreply, map()}
+  @callback handle_info(term(), map()) :: callback_result()
 
   @optional_callbacks handle_info: 2, handle_window_event: 3
 

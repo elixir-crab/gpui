@@ -185,15 +185,17 @@ defmodule GPUI.Session do
             do: module.handle_info(message, assigns),
             else: {:noreply, assigns}
 
-        case result do
-          {:noreply, new_assigns} when is_map(new_assigns) ->
-            {_message, state} = update_window(message, state, window, module, new_assigns)
+        case apply_view_result(result, message, state, window, module) do
+          {:ok, state} ->
             {:reply, {:ok, snapshot_from_state(state)}, state}
 
-          invalid ->
+          {:error, reason} ->
+            {:reply, {:error, reason}, state}
+
+          :invalid ->
             raise ArgumentError,
-                  "#{inspect(module)}.handle_info/2 returned #{inspect(invalid)}; " <>
-                    "expected {:noreply, assigns}"
+                  "#{inspect(module)}.handle_info/2 returned #{inspect(result)}; " <>
+                    "expected a supported GPUI.View callback result"
         end
 
       nil ->
@@ -351,20 +353,19 @@ defmodule GPUI.Session do
       %WindowSpec{root: {module, assigns}} = window ->
         assigns = Map.new(assigns)
 
-        case module.handle_event(event, native_event, assigns) do
-          {:noreply, new_assigns} when is_map(new_assigns) ->
-            update_window(native_event, state, window, module, new_assigns)
+        result = module.handle_event(event, native_event, assigns)
 
-          {:reply, _reply, new_assigns} when is_map(new_assigns) ->
-            update_window(native_event, state, window, module, new_assigns)
+        case apply_view_result(result, native_event, state, window, module) do
+          {:ok, state} ->
+            {native_event, state}
 
-          {:close, new_assigns} when is_map(new_assigns) ->
-            close_window(native_event, state, window, module, new_assigns)
+          {:error, reason} ->
+            {Map.put(native_event, :error, reason), state}
 
-          invalid ->
+          :invalid ->
             raise ArgumentError,
-                  "#{inspect(module)}.handle_event/3 returned #{inspect(invalid)}; " <>
-                    "expected {:noreply, assigns}, {:reply, reply, assigns}, or {:close, assigns}"
+                  "#{inspect(module)}.handle_event/3 returned #{inspect(result)}; " <>
+                    "expected a supported GPUI.View callback result"
         end
 
       nil ->
@@ -399,6 +400,57 @@ defmodule GPUI.Session do
             "#{inspect(lifecycle)}; expected {:noreply, assigns}" <>
             if(lifecycle == :close_request, do: " or {:close, assigns}", else: "")
   end
+
+  defp apply_view_result({:noreply, assigns}, event, state, window, module)
+       when is_map(assigns) do
+    {_event, state} = update_window(event, state, window, module, assigns)
+    {:ok, state}
+  end
+
+  defp apply_view_result({:reply, _reply, assigns}, event, state, window, module)
+       when is_map(assigns) do
+    {_event, state} = update_window(event, state, window, module, assigns)
+    {:ok, state}
+  end
+
+  defp apply_view_result({:close, assigns}, event, state, window, module)
+       when is_map(assigns) do
+    {_event, state} = close_window(event, state, window, module, assigns)
+    {:ok, state}
+  end
+
+  defp apply_view_result(
+         {:open_window, %WindowSpec{} = opened, assigns},
+         event,
+         state,
+         window,
+         module
+       )
+       when is_map(assigns) do
+    case add_window(state, opened) do
+      {:ok, state, _id} ->
+        {_event, state} = update_window(event, state, window, module, assigns)
+        {:ok, state}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp apply_view_result({:close_window, identifier, assigns}, event, state, window, module)
+       when is_map(assigns) and (is_integer(identifier) or is_binary(identifier)) do
+    case pop_window(state.windows, identifier) do
+      {nil, _windows} ->
+        {:error, :window_not_found}
+
+      {_closed, windows} ->
+        state = %{state | windows: windows}
+        {_event, state} = update_window(event, state, window, module, assigns)
+        {:ok, state}
+    end
+  end
+
+  defp apply_view_result(_result, _event, _state, _window, _module), do: :invalid
 
   defp close_window(event, state, window, module, assigns) do
     _updated = %{window | root: {module, assigns}}

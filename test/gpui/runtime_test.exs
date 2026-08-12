@@ -44,6 +44,52 @@ defmodule GPUI.RuntimeTest do
     def render(assigns), do: %GPUI.Element{type: :text, children: [assigns.label]}
   end
 
+  defmodule OutcomeView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(assigns), do: %GPUI.Element{type: :text, children: [assigns.label]}
+
+    @impl GPUI.View
+    def handle_event("open-details", _event, assigns) do
+      details = %GPUI.WindowSpec{
+        key: "details",
+        title: "Details",
+        root: {SecondaryView, %{label: "Opened by view"}}
+      }
+
+      {:open_window, details, %{assigns | label: "Details opened"}}
+    end
+
+    def handle_event("close-details", _event, assigns),
+      do: {:close_window, "details", %{assigns | label: "Details closed"}}
+
+    @impl GPUI.View
+    def handle_info(:open_details, assigns) do
+      details = %GPUI.WindowSpec{
+        key: "details",
+        title: "Details",
+        root: {SecondaryView, %{label: "Opened by message"}}
+      }
+
+      {:open_window, details, assigns}
+    end
+  end
+
+  defmodule OutcomeApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(_args) do
+      {:ok,
+       [
+         window "main", "Outcomes" do
+           root(OutcomeView, label: "Main")
+         end
+       ]}
+    end
+  end
+
   defmodule ClosingView do
     use GPUI.View
 
@@ -217,6 +263,43 @@ defmodule GPUI.RuntimeTest do
         :release_frame -> :ok
       end
     end
+  end
+
+  test "typed view outcomes mutate window topology atomically" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(app: OutcomeApp, display: RecordingDisplay, poll_interval: nil)
+
+    {handled, snapshot} =
+      GPUI.Runtime.dispatch_event(runtime, %{
+        type: :click,
+        window_id: 1,
+        event: "open-details"
+      })
+
+    refute Map.has_key?(handled, :error)
+    assert [%{root: %{assigns: %{label: "Details opened"}}}, %{key: "details"}] = snapshot.windows
+
+    {handled, unchanged} =
+      GPUI.Runtime.dispatch_event(runtime, %{
+        type: :click,
+        window_id: 1,
+        event: "open-details"
+      })
+
+    assert handled.error == :duplicate_window_key
+    assert unchanged == snapshot
+
+    {_handled, snapshot} =
+      GPUI.Runtime.dispatch_event(runtime, %{
+        type: :click,
+        window_id: 1,
+        event: "close-details"
+      })
+
+    assert [%{root: %{assigns: %{label: "Details closed"}}}] = snapshot.windows
+
+    assert {:ok, %{windows: [_, %{id: 3, key: "details"}]}} =
+             GPUI.Runtime.send_view(runtime, 1, :open_details)
   end
 
   test "runtime reconciles dynamically added and removed keyed windows" do

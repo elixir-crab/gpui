@@ -10,6 +10,7 @@
 - Added GPUI-native relative and absolute positioning with typed inset utilities, including axis, percentage, fractional, arbitrary-pixel, and auto values.
 - Added bounded non-editable block projections anchored before or after logical text lines without changing document coordinates.
 - Added bounded non-editable inline text projections anchored to explicit UTF-16 positions without completion policy or Rope mutation.
+- Added Phoenix/OTP-style typed view outcomes for opening and closing keyed windows from `handle_event/3` and `handle_info/2`.
 - Added local dynamic multi-window topology with stable application keys, monotonic session IDs, and declarative display reconciliation.
 - Added neutral bounded text style runs whose foreground color, weight, and style participate directly in native shaping.
 - Added explicit solid, dashed, and wavy underline variants to neutral text decorations.

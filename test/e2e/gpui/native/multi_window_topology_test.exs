@@ -16,6 +16,21 @@ defmodule GPUI.Native.MultiWindowTopologyE2ETest do
       </div>
       """
     end
+
+    @impl GPUI.View
+    def handle_event("open-details", _event, assigns) do
+      details = %GPUI.WindowSpec{
+        key: "details",
+        title: assigns.details_title,
+        size: {420, 280},
+        root: {View, %{label: "Details", status: "ready", details_title: assigns.details_title}}
+      }
+
+      {:open_window, details, %{assigns | status: "opened"}}
+    end
+
+    def handle_event("close-details", _event, assigns),
+      do: {:close_window, "details", %{assigns | status: "closed"}}
   end
 
   defmodule App do
@@ -27,7 +42,12 @@ defmodule GPUI.Native.MultiWindowTopologyE2ETest do
        [
          window "main", title do
            size(480, 320)
-           root(View, label: "Main")
+
+           root(View,
+             label: "Main",
+             status: "ready",
+             details_title: "GPUI Details #{System.unique_integer([:positive])}"
+           )
          end
        ]}
     end
@@ -43,27 +63,36 @@ defmodule GPUI.Native.MultiWindowTopologyE2ETest do
     main_native = Desktop.window_id!(main_title)
     Desktop.await_frame!(runtime, 1, main_native)
 
-    details = %GPUI.WindowSpec{
-      key: "details",
-      title: details_title,
-      size: {420, 280},
-      root: {View, %{label: "Details"}}
-    }
+    %{windows: [%{root: %{assigns: %{details_title: details_title}}}]} =
+      GPUI.Runtime.snapshot(runtime)
 
-    assert {:ok, 2, %{windows: [_, %{key: "details"}]}} =
-             GPUI.Runtime.open_window(runtime, details)
+    {_event, %{windows: [_, %{id: 2, key: "details"}]}} =
+      GPUI.Runtime.dispatch_event(runtime, %{
+        type: :click,
+        window_id: 1,
+        event: "open-details"
+      })
 
     details_native = Desktop.window_id!(details_title)
     Desktop.await_frame!(runtime, 2, details_native)
 
-    assert {:ok, %{windows: [%{key: "main"}]}} = GPUI.Runtime.close_window(runtime, "details")
+    {_event, %{windows: [%{key: "main"}]}} =
+      GPUI.Runtime.dispatch_event(runtime, %{
+        type: :click,
+        window_id: 1,
+        event: "close-details"
+      })
 
     Desktop.eventually(fn ->
       assert {:error, :window_not_found} = GPUI.Runtime.frame_token(runtime, 2)
     end)
 
-    assert {:ok, 3, %{windows: [_, %{id: 3, key: "details"}]}} =
-             GPUI.Runtime.open_window(runtime, details)
+    {_event, %{windows: [_, %{id: 3, key: "details"}]}} =
+      GPUI.Runtime.dispatch_event(runtime, %{
+        type: :click,
+        window_id: 1,
+        event: "open-details"
+      })
 
     reopened_native = Desktop.window_id!(details_title)
     Desktop.await_frame!(runtime, 3, reopened_native)

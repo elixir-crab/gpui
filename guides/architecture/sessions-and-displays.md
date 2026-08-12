@@ -99,7 +99,32 @@ work is native input:
 ```
 
 The selected view receives the message in `handle_info/2`. The runtime then
-synchronizes and publishes the resulting snapshot.
+synchronizes and publishes the resulting snapshot. `handle_event/3` and
+`handle_info/2` can also return typed window outcomes without receiving a
+runtime PID or a generic effect bus:
+
+```elixir
+def handle_event("open-details", _event, assigns) do
+  details = %GPUI.WindowSpec{
+    key: "repository-details",
+    title: "Repository details",
+    root: {RepositoryDetailsView, %{repository: assigns.repository}}
+  }
+
+  {:open_window, details, assigns}
+end
+
+def handle_event("close-details", _event, assigns) do
+  {:close_window, "repository-details", assigns}
+end
+```
+
+Supported view results are `{:noreply, assigns}`, `{:reply, reply, assigns}`,
+`{:close, assigns}`, `{:open_window, spec, assigns}`, and
+`{:close_window, key_or_id, assigns}`. A topology outcome and its originating
+assigns update form one session transition and one synchronized snapshot.
+Duplicate keys and missing close targets leave the authoritative topology and
+originating assigns unchanged and are returned as normalized event errors.
 
 Runtime updates are available through ordinary OTP messages:
 
