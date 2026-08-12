@@ -11,6 +11,8 @@ defmodule GPUI.Session do
   alias GPUI.Snapshot
   alias GPUI.WindowSpec
 
+  @max_windows 32
+
   @type snapshot :: Snapshot.t()
 
   @type state :: %{
@@ -217,11 +219,15 @@ defmodule GPUI.Session do
   end
 
   defp initial_state(windows) do
-    windows = assign_window_ids(windows)
+    if length(windows) > @max_windows do
+      {:error, {:too_many_windows, @max_windows}}
+    else
+      windows = assign_window_ids(windows)
 
-    case duplicate_key(windows) do
-      nil -> {:ok, new_state(windows)}
-      key -> {:error, {:duplicate_window_key, key}}
+      case duplicate_key(windows) do
+        nil -> {:ok, new_state(windows)}
+        key -> {:error, {:duplicate_window_key, key}}
+      end
     end
   end
 
@@ -235,6 +241,9 @@ defmodule GPUI.Session do
       window |> WindowSpec.validate!() |> Map.put(:id, id)
     end)
   end
+
+  defp add_window(%{windows: windows} = _state, _window) when length(windows) >= @max_windows,
+    do: {:error, :window_limit_reached}
 
   defp add_window(state, %WindowSpec{} = window) do
     window = WindowSpec.validate!(window)

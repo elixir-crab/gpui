@@ -6,6 +6,9 @@ defmodule GPUI.WindowSpec do
   addition to its title, size, and root view.
   """
 
+  @max_key_bytes 128
+  @max_title_bytes 512
+
   @type root :: {module(), map() | keyword()}
   @type key :: String.t()
   @type t :: %__MODULE__{
@@ -64,11 +67,23 @@ defmodule GPUI.WindowSpec do
     window
   end
 
-  defp validate_title!(title) when is_binary(title), do: :ok
+  defp validate_title!(title) when is_binary(title) and byte_size(title) <= @max_title_bytes,
+    do: :ok
+
+  defp validate_title!(title) when is_binary(title),
+    do: raise(ArgumentError, "window title must be at most #{@max_title_bytes} bytes")
+
   defp validate_title!(_title), do: raise(ArgumentError, "window title must be a string")
 
   defp validate_key!(nil), do: :ok
-  defp validate_key!(key) when is_binary(key) and key != "", do: :ok
+
+  defp validate_key!(key)
+       when is_binary(key) and key != "" and byte_size(key) <= @max_key_bytes,
+       do: :ok
+
+  defp validate_key!(key) when is_binary(key),
+    do: raise(ArgumentError, "window key must contain 1 through #{@max_key_bytes} bytes")
+
   defp validate_key!(_key), do: raise(ArgumentError, "window key must be a non-empty string")
 
   defp valid_size?(nil), do: true

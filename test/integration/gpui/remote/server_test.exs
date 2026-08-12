@@ -28,6 +28,19 @@ defmodule GPUI.Remote.ServerTest do
     def handle_event("tree_toggled", %{value: value}, assigns),
       do: {:noreply, %{assigns | tree_branch: value}}
 
+    def handle_event("open_details", _event, assigns) do
+      details = %GPUI.WindowSpec{
+        key: "details",
+        title: "Remote Details",
+        root: {FormView, Map.put(assigns, :name, "details")}
+      }
+
+      {:open_window, details, %{assigns | name: "main-opened"}}
+    end
+
+    def handle_event("close_details", _event, assigns),
+      do: {:close_window, "details", %{assigns | name: "main-closed"}}
+
     def handle_event("increment", _event, assigns),
       do: {:noreply, %{assigns | count: assigns.count + 1}}
 
@@ -68,6 +81,57 @@ defmodule GPUI.Remote.ServerTest do
                event: "rename",
                value: "new"
              })
+  end
+
+  test "remote event outcomes synchronize and resume keyed multi-window topology" do
+    {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    {:ok, client} = start_client(port)
+
+    assert {:ok, _reply} = SafeRPC.call(client, :mount, %{session_id: "topology"})
+
+    assert {:ok,
+            %{snapshot: %{windows: [%{id: 1, root: %{assigns: %{name: "main-opened"}}}, details]}}} =
+             SafeRPC.call(client, :event, %{
+               session_id: "topology",
+               type: :click,
+               window_id: 1,
+               event: "open_details"
+             })
+
+    assert details.id == 2
+    assert details.key == "details"
+    assert details.root.assigns.name == "details"
+
+    GenServer.stop(client)
+    {:ok, resumed_client} = start_client(port)
+
+    assert {:ok, %{resumed: true, snapshot: %{windows: [main, resumed_details]}}} =
+             SafeRPC.call(resumed_client, :resume_session, %{session_id: "topology"})
+
+    assert main.id == 1
+    assert main.root.assigns.name == "main-opened"
+    assert resumed_details.id == 2
+    assert resumed_details.key == "details"
+
+    assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{name: "main-closed"}}}]}}} =
+             SafeRPC.call(resumed_client, :event, %{
+               session_id: "topology",
+               type: :click,
+               window_id: 1,
+               event: "close_details"
+             })
+
+    assert {:ok, %{snapshot: %{windows: [_, reopened]}}} =
+             SafeRPC.call(resumed_client, :event, %{
+               session_id: "topology",
+               type: :click,
+               window_id: 1,
+               event: "open_details"
+             })
+
+    assert reopened.id == 3
+    assert reopened.key == "details"
   end
 
   test "deduplicates retried mounts without replacing the live session" do

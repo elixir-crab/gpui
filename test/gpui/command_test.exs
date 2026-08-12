@@ -54,6 +54,24 @@ defmodule GPUI.CommandTest do
     end
   end
 
+  defmodule TooManyWindowsApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(_args) do
+      windows =
+        Enum.map(1..33, fn index ->
+          %GPUI.WindowSpec{
+            key: "window-#{index}",
+            title: "Window #{index}",
+            root: {PlainView, %{}}
+          }
+        end)
+
+      {:ok, windows}
+    end
+  end
+
   defmodule CloseConfirmationView do
     use GPUI.View
 
@@ -200,6 +218,14 @@ defmodule GPUI.CommandTest do
     Process.flag(:trap_exit, previous)
   end
 
+  test "bounds the number of windows in one session" do
+    previous = Process.flag(:trap_exit, true)
+
+    assert {:error, {:too_many_windows, 32}} = Session.start_link(app: TooManyWindowsApp)
+
+    Process.flag(:trap_exit, previous)
+  end
+
   test "routes fixed lifecycle atoms through the optional view callback" do
     {:ok, session} = Session.start_link(app: App)
 
@@ -277,6 +303,14 @@ defmodule GPUI.CommandTest do
     assert_raise ArgumentError, ~r/resizable must be a boolean/, fn ->
       window = struct!(WindowSpec, title: "Invalid", resizable: :yes)
       WindowSpec.validate!(window)
+    end
+
+    assert_raise ArgumentError, ~r/window key must contain 1 through 128 bytes/, fn ->
+      WindowSpec.validate!(%WindowSpec{key: String.duplicate("k", 129), title: "Invalid"})
+    end
+
+    assert_raise ArgumentError, ~r/window title must be at most 512 bytes/, fn ->
+      WindowSpec.validate!(%WindowSpec{title: String.duplicate("t", 513)})
     end
   end
 

@@ -28,6 +28,7 @@ defmodule GPUI.Remote.ProtocolTest do
              Protocol.negotiate(%{version: 2, capabilities: [:display_v1]})
 
     assert :app_server in capabilities
+    assert :window_topology_v1 in capabilities
 
     assert {:error, {:incompatible_version, %{expected: 2, got: 1}}} =
              Protocol.negotiate(%{version: 1, capabilities: [:display_v1]})

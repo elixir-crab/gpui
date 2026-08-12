@@ -43,16 +43,21 @@ details = %GPUI.WindowSpec{
 ```
 
 Keys are optional for backward-compatible initial windows, but dynamically
-managed windows should use non-empty unique strings. IDs are never reused in a
-session, including after a keyed window closes and reopens. Closing by key or ID
-removes only that window; other root assigns and native windows remain intact.
-Snapshot synchronization performs the actual platform close. Source refresh
-rerenders the current topology and preserves every window's existing assigns.
+managed windows should use non-empty unique strings of at most 128 bytes. Titles
+are limited to 512 bytes and a session can own at most 32 windows. IDs are never
+reused in a session, including after a keyed window closes and reopens. Closing
+by key or ID removes only that window; other root assigns and native windows
+remain intact. Snapshot synchronization performs the actual platform close.
+Source refresh rerenders the current topology and preserves every window's
+existing assigns.
 
 These mutation calls are local runtime/session capabilities. Remote topology
-mutation is intentionally not added to the transport protocol yet; remote
-clients continue to consume authoritative snapshots produced by their hosted
-session.
+mutation is intentionally not added as an imperative transport operation.
+View-driven topology works remotely through ordinary `:event` requests: the
+hosted session applies the typed outcome and returns one authoritative
+multi-window snapshot. Protocol negotiation advertises `:window_topology_v1`,
+and session resume restores existing keys, IDs, assigns, and monotonic ID
+allocation.
 
 ## Display
 

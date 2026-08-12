@@ -324,13 +324,29 @@ defmodule GPUI.RuntimeTest do
 
     assert {:error, :duplicate_window_key} = GPUI.Runtime.open_window(runtime, secondary)
 
+    Enum.each(1..30, fn index ->
+      assert {:ok, _, _} =
+               GPUI.Runtime.open_window(runtime, %{
+                 secondary
+                 | key: "extra-#{index}",
+                   title: "Extra #{index}"
+               })
+    end)
+
+    assert {:error, :window_limit_reached} =
+             GPUI.Runtime.open_window(runtime, %{secondary | key: "overflow"})
+
+    Enum.each(1..30, fn index ->
+      assert {:ok, _} = GPUI.Runtime.close_window(runtime, "extra-#{index}")
+    end)
+
     assert {:ok, %{windows: [remaining]}} = GPUI.Runtime.close_window(runtime, "details")
     assert remaining.id == 1
 
-    assert {:ok, 3, %{windows: [_primary, reopened]}} =
+    assert {:ok, 33, %{windows: [_primary, reopened]}} =
              GPUI.Runtime.open_window(runtime, %{secondary | title: "Reopened"})
 
-    assert reopened.id == 3
+    assert reopened.id == 33
     assert reopened.key == "details"
     assert {:ok, %{windows: [^reopened]}} = GPUI.Runtime.close_window(runtime, 1)
     assert {:ok, %{windows: []}} = GPUI.Runtime.close_window(runtime, "details")
