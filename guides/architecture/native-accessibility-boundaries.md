@@ -110,6 +110,23 @@ Future selected, expanded, checked, value, and orientation attributes must add
 their role/state rules there rather than duplicating policy in serialization or
 native rendering.
 
+The state vocabulary now also includes:
+
+```text
+accessibility_value
+accessibility_selected
+accessibility_expanded
+accessibility_checked
+accessibility_orientation
+```
+
+Checked values are `true`, `false`, or `:mixed`; orientation is `horizontal` or
+`vertical`. Checked is restricted to checkbox/radio/switch, selected to list
+items/tabs/tree items, expanded to buttons/tree items, orientation to
+sliders/splitters/tab lists/trees, and string values to progress/sliders/text
+boxes. State changes retain the same element ID and travel through ordinary
+local or remote snapshots before mapping to AccessKit.
+
 ## Validation rules
 
 A future schema must reject misleading combinations instead of silently

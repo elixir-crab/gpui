@@ -16,6 +16,13 @@ defmodule GPUI.Remote.ServerTest do
         accessibility_label="Remote profile form"
         accessibility_description="Edits the remotely hosted profile"
       >
+        <div
+          id="remote-notifications"
+          accessibility_role="switch"
+          accessibility_label="Notifications"
+          accessibility_checked={assigns.notifications}
+          phx-click="toggle_notifications"
+        />
         <input value={assigns.name} phx-change="rename" />
       </div>
       """
@@ -32,6 +39,9 @@ defmodule GPUI.Remote.ServerTest do
 
     def handle_event("tree_toggled", %{value: value}, assigns),
       do: {:noreply, %{assigns | tree_branch: value}}
+
+    def handle_event("toggle_notifications", _event, assigns),
+      do: {:noreply, %{assigns | notifications: not assigns.notifications}}
 
     def handle_event("open_details", _event, assigns) do
       details = %GPUI.WindowSpec{
@@ -62,7 +72,15 @@ defmodule GPUI.Remote.ServerTest do
       {:ok,
        [
          window("Remote Form",
-           do: root(FormView, name: name, file: nil, range: nil, tree_branch: nil, count: 0)
+           do:
+             root(FormView,
+               name: name,
+               file: nil,
+               range: nil,
+               tree_branch: nil,
+               count: 0,
+               notifications: false
+             )
          )
        ]}
     end
@@ -80,6 +98,19 @@ defmodule GPUI.Remote.ServerTest do
     assert form.attrs.accessibility_role == "group"
     assert form.attrs.accessibility_label == "Remote profile form"
     assert form.attrs.accessibility_description == "Edits the remotely hosted profile"
+    assert [%{attrs: %{accessibility_checked: "false"}}, %{type: :input}] = form.children
+
+    assert {:ok, %{snapshot: %{windows: [%{root: %{tree: toggled_tree}}]}}} =
+             SafeRPC.call(client, :event, %{
+               session_id: "form",
+               type: :click,
+               window_id: 1,
+               event: "toggle_notifications"
+             })
+
+    assert %{children: [%{children: [%{attrs: toggled_attrs}, _input]}]} = toggled_tree
+    assert toggled_attrs.id == "remote-notifications"
+    assert toggled_attrs.accessibility_checked == "true"
 
     assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{name: "new"}}}]}}} =
              SafeRPC.call(client, :event, %{

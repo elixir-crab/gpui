@@ -7,10 +7,11 @@ defmodule GPUI.Accessibility do
   or transport boundary.
   """
 
-  @roles ~w(button dialog group heading image label link list list_item progress radio slider splitter tab tab_list tab_panel text textbox tree tree_item)
+  @roles ~w(button checkbox dialog group heading image label link list list_item progress radio slider splitter switch tab tab_list tab_panel text textbox tree tree_item)
   @generic_tags [:div, :span, :scroll, :list, :item]
 
   @type role :: String.t()
+  @type checked :: boolean() | :mixed
 
   @doc false
   @spec roles() :: [String.t()]
@@ -25,9 +26,19 @@ defmodule GPUI.Accessibility do
   @doc false
   @spec metadata?(map()) :: boolean()
   def metadata?(attrs) when is_map(attrs) do
-    Map.has_key?(attrs, :accessibility_role) or
-      Map.has_key?(attrs, :accessibility_label) or
-      Map.has_key?(attrs, :accessibility_description)
+    Enum.any?(
+      [
+        :accessibility_role,
+        :accessibility_label,
+        :accessibility_description,
+        :accessibility_value,
+        :accessibility_selected,
+        :accessibility_expanded,
+        :accessibility_checked,
+        :accessibility_orientation
+      ],
+      &Map.has_key?(attrs, &1)
+    )
   end
 
   @doc false
@@ -36,6 +47,7 @@ defmodule GPUI.Accessibility do
     if metadata?(attrs) do
       validate_identity!(tag, attrs)
       validate_role!(tag, attrs)
+      validate_state_roles!(tag, attrs)
     end
 
     attrs
@@ -60,6 +72,31 @@ defmodule GPUI.Accessibility do
     if (named? or described?) and not role? do
       raise ArgumentError,
             "#{tag} accessibility label or description requires :accessibility_role"
+    end
+  end
+
+  defp validate_state_roles!(tag, attrs) do
+    role = Map.get(attrs, :accessibility_role)
+
+    validate_state_role!(tag, attrs, :accessibility_checked, role, ~w(checkbox radio switch))
+    validate_state_role!(tag, attrs, :accessibility_selected, role, ~w(list_item tab tree_item))
+    validate_state_role!(tag, attrs, :accessibility_expanded, role, ~w(button tree_item))
+
+    validate_state_role!(
+      tag,
+      attrs,
+      :accessibility_orientation,
+      role,
+      ~w(slider splitter tab_list tree)
+    )
+
+    validate_state_role!(tag, attrs, :accessibility_value, role, ~w(progress slider textbox))
+  end
+
+  defp validate_state_role!(_tag, attrs, attribute, role, allowed) do
+    if Map.has_key?(attrs, attribute) and role not in allowed do
+      raise ArgumentError,
+            "#{attribute} is not supported for accessibility role #{inspect(role)}"
     end
   end
 end

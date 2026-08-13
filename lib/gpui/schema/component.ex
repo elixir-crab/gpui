@@ -19,6 +19,8 @@ defmodule GPUI.Schema.Component do
           :string
           | :accessibility_label
           | :accessibility_description
+          | :accessibility_value
+          | :accessibility_checked
           | :required_string
           | :number
           | :non_negative_number

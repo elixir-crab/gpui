@@ -12,9 +12,14 @@ defmodule GPUI.Schema do
     id: :string,
     accessibility_role:
       {:enum,
-       ~w(button dialog group heading image label link list list_item progress radio slider splitter tab tab_list tab_panel text textbox tree tree_item)},
+       ~w(button checkbox dialog group heading image label link list list_item progress radio slider splitter switch tab tab_list tab_panel text textbox tree tree_item)},
     accessibility_label: :accessibility_label,
-    accessibility_description: :accessibility_description
+    accessibility_description: :accessibility_description,
+    accessibility_value: :accessibility_value,
+    accessibility_selected: :boolean,
+    accessibility_expanded: :boolean,
+    accessibility_checked: :accessibility_checked,
+    accessibility_orientation: {:enum, ~w(horizontal vertical)}
   ]
 
   @components [
@@ -1089,6 +1094,15 @@ defmodule GPUI.Schema do
        when is_binary(value) and value != "" and byte_size(value) <= 2048,
        do: :ok
 
+  defp validate_attr!(_tag, _name, :accessibility_value, value)
+       when is_binary(value) and value != "" and byte_size(value) <= 512,
+       do: :ok
+
+  defp validate_attr!(_tag, _name, :accessibility_checked, :mixed), do: :ok
+
+  defp validate_attr!(_tag, _name, :accessibility_checked, value) when is_boolean(value),
+    do: :ok
+
   defp validate_attr!(_tag, _name, :required_string, value)
        when is_binary(value) and value != "",
        do: :ok
@@ -1268,6 +1282,11 @@ defmodule GPUI.Schema do
 
   defp expected_attr_type(:accessibility_description),
     do: "a non-empty string of at most 2048 bytes"
+
+  defp expected_attr_type(:accessibility_value),
+    do: "a non-empty string of at most 512 bytes"
+
+  defp expected_attr_type(:accessibility_checked), do: "true, false, or :mixed"
 
   defp expected_attr_type(:required_string), do: "a non-empty string"
   defp expected_attr_type(:number), do: "a number"

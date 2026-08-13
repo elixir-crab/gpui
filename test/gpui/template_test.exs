@@ -179,6 +179,97 @@ defmodule GPUI.TemplateTest do
     end
   end
 
+  test "validates and serializes role-constrained accessibility states" do
+    payload =
+      ~GPUI"""
+      <div
+        id="notifications"
+        accessibility_role="switch"
+        accessibility_label="Notifications"
+        accessibility_checked={:mixed}
+        phx-click="toggle"
+      />
+      """
+      |> GPUI.Element.to_payload()
+
+    assert payload.attrs.accessibility_checked == "mixed"
+
+    tree_item =
+      ~GPUI"""
+      <item
+        id="project-1"
+        accessibility_role="tree_item"
+        accessibility_label="Project"
+        accessibility_selected={true}
+        accessibility_expanded={false}
+      />
+      """
+      |> GPUI.Element.to_payload()
+
+    assert tree_item.attrs.accessibility_selected
+    refute tree_item.attrs.accessibility_expanded
+
+    splitter =
+      ~GPUI"""
+      <div
+        id="divider"
+        accessibility_role="splitter"
+        accessibility_label="Resize sidebar"
+        accessibility_orientation="vertical"
+      />
+      """
+      |> GPUI.Element.to_payload()
+
+    assert splitter.attrs.accessibility_orientation == "vertical"
+
+    slider =
+      ~GPUI"""
+      <div
+        id="volume"
+        accessibility_role="slider"
+        accessibility_label="Volume"
+        accessibility_value="75 percent"
+      />
+      """
+      |> GPUI.Element.to_payload()
+
+    assert slider.attrs.accessibility_value == "75 percent"
+
+    assert_raise ArgumentError, ~r/accessibility_checked.*role "button"/, fn ->
+      ~GPUI"""
+      <div id="bad-check" accessibility_role="button" accessibility_checked={true} />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/accessibility_selected.*role "switch"/, fn ->
+      ~GPUI"""
+      <div id="bad-selected" accessibility_role="switch" accessibility_selected={true} />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/true, false, or :mixed/, fn ->
+      %GPUI.Element{
+        type: :div,
+        attrs: [id: "bad-state", accessibility_role: "switch", accessibility_checked: :yes]
+      }
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/at most 512 bytes/, fn ->
+      %GPUI.Element{
+        type: :div,
+        attrs: [
+          id: "long-value",
+          accessibility_role: "slider",
+          accessibility_value: String.duplicate("v", 513)
+        ]
+      }
+      |> GPUI.Element.to_payload()
+    end
+  end
+
   test "serializes opt-in bounds observation on identified containers" do
     payload =
       ~GPUI"""

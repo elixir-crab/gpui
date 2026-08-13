@@ -23,6 +23,11 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:accessibility_role) => R.option(String.t()),
           required(:accessibility_label) => R.option(String.t()),
           required(:accessibility_description) => R.option(String.t()),
+          required(:accessibility_value) => R.option(String.t()),
+          required(:accessibility_selected) => R.option(boolean()),
+          required(:accessibility_expanded) => R.option(boolean()),
+          required(:accessibility_checked) => R.option(String.t()),
+          required(:accessibility_orientation) => R.option(String.t()),
           required(:children) => R.vec(R.path(:ElementNode)),
           required(:click) => R.option(String.t()),
           required(:bounds_change) => R.option(String.t()),
@@ -193,6 +198,7 @@ defmodule GPUI.Codegen.Native.Elements do
      )}
   end
 
+  @allow RustQ.Clippy.lint(:useless_vec)
   @spec decode_container_node(term(), R.path(:GeneratedElementTag)) ::
           R.nif_result(R.path(:ElementNode))
   defrust decode_container_node(term, element_tag) do
@@ -236,6 +242,27 @@ defmodule GPUI.Codegen.Native.Elements do
          accessibility_label: non_empty_string_attr(term, Atoms.accessibility_label()),
          accessibility_description:
            non_empty_string_attr(term, Atoms.accessibility_description()),
+         accessibility_value: non_empty_string_attr(term, Atoms.accessibility_value()),
+         accessibility_selected:
+           unwrap!(component_bool_attr(term, Atoms.accessibility_selected())),
+         accessibility_expanded:
+           unwrap!(component_bool_attr(term, Atoms.accessibility_expanded())),
+         accessibility_checked:
+           unwrap!(
+             component_enum_attr(
+               term,
+               Atoms.accessibility_checked(),
+               ref(["false", "true", "mixed"])
+             )
+           ),
+         accessibility_orientation:
+           unwrap!(
+             component_enum_attr(
+               term,
+               Atoms.accessibility_orientation(),
+               ref(["horizontal", "vertical"])
+             )
+           ),
          children: unwrap!(decode_children(term)),
          click: string_attr(term, Atoms.phx_click()),
          bounds_change: string_attr(term, Atoms.phx_bounds_change()),

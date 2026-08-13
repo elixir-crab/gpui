@@ -151,9 +151,19 @@ defmodule GPUI.Element do
 
   defp attrs_to_payload(attrs) do
     attrs
-    |> Enum.map(fn {key, value} -> {key, attr_value_to_payload(value)} end)
+    |> Enum.map(fn
+      {:accessibility_checked, value} ->
+        {:accessibility_checked, accessibility_checked_to_payload(value)}
+
+      {key, value} ->
+        {key, attr_value_to_payload(value)}
+    end)
     |> Map.new()
   end
+
+  defp accessibility_checked_to_payload(true), do: "true"
+  defp accessibility_checked_to_payload(false), do: "false"
+  defp accessibility_checked_to_payload(:mixed), do: "mixed"
 
   defp attr_value_to_payload(%GPUI.Raster{} = raster), do: GPUI.Raster.to_payload(raster)
   defp attr_value_to_payload(%GPUI.ResourceRef{} = ref), do: GPUI.ResourceRef.to_payload(ref)

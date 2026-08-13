@@ -469,6 +469,11 @@ pub(crate) struct ContainerNode {
     pub(crate) accessibility_role: Option<String>,
     pub(crate) accessibility_label: Option<String>,
     pub(crate) accessibility_description: Option<String>,
+    pub(crate) accessibility_value: Option<String>,
+    pub(crate) accessibility_selected: Option<bool>,
+    pub(crate) accessibility_expanded: Option<bool>,
+    pub(crate) accessibility_checked: Option<String>,
+    pub(crate) accessibility_orientation: Option<String>,
     pub(crate) children: Vec<ElementNode>,
     pub(crate) click: Option<String>,
     pub(crate) bounds_change: Option<String>,
@@ -632,6 +637,7 @@ pub(crate) fn decode_viewport_node<'a>(
     )
 }
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::useless_vec)]
 pub(crate) fn decode_container_node<'a>(
     term: Term<'a>,
     element_tag: GeneratedElementTag,
@@ -659,6 +665,28 @@ pub(crate) fn decode_container_node<'a>(
                 term,
                 atoms::accessibility_description(),
             ),
+            accessibility_value: non_empty_string_attr(
+                term,
+                atoms::accessibility_value(),
+            ),
+            accessibility_selected: component_bool_attr(
+                term,
+                atoms::accessibility_selected(),
+            )?,
+            accessibility_expanded: component_bool_attr(
+                term,
+                atoms::accessibility_expanded(),
+            )?,
+            accessibility_checked: component_enum_attr(
+                term,
+                atoms::accessibility_checked(),
+                &vec!["false", "true", "mixed"],
+            )?,
+            accessibility_orientation: component_enum_attr(
+                term,
+                atoms::accessibility_orientation(),
+                &vec!["horizontal", "vertical"],
+            )?,
             children: decode_children(term)?,
             click: string_attr(term, atoms::phx_click()),
             bounds_change: string_attr(term, atoms::phx_bounds_change()),
