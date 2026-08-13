@@ -140,6 +140,15 @@ there is no accessibility-specific Elixir callback or state mutation. A role
 without `phx-click` remains semantic and does not register an accessible Click
 action.
 
+Role specifications classify interaction as structural, simple activation,
+composite, or value-oriented. RustQ generates the native exhaustive
+`is_activatable` match. Generic button, checkbox, link, radio, and switch roles
+require `phx-click`; native rendering makes those controls Tab stops with a
+visible keyboard focus border. GPUI's pinned click interactivity then handles
+Enter/Space on focused controls, including key-up-only activation and
+focus-generation cancellation, through the same pointer click callback.
+Structural, composite, and value roles do not automatically become Tab stops.
+
 ## Validation rules
 
 A future schema must reject misleading combinations instead of silently

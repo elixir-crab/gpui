@@ -29,6 +29,7 @@ defmodule GPUI.Codegen.Native.SchemaTest do
     assert source =~ "fn gpui_role(&self) -> gpui::Role"
     assert source =~ "fn toggled(&self) -> gpui::Toggled"
     assert source =~ "fn gpui_orientation(&self) -> gpui::Orientation"
+    assert source =~ "fn is_activatable(&self) -> bool"
     refute source =~ "accessibility_role: Option<String>"
     refute source =~ ".then("
   end

@@ -1942,6 +1942,35 @@ impl AccessibilityOrientation {
         }
     }
 }
+#[allow(dead_code)]
+impl AccessibilityRole {
+    fn is_activatable(&self) -> bool {
+        match self {
+            AccessibilityRole::Button => true,
+            AccessibilityRole::Checkbox => true,
+            AccessibilityRole::Dialog => false,
+            AccessibilityRole::Group => false,
+            AccessibilityRole::Heading => false,
+            AccessibilityRole::Image => false,
+            AccessibilityRole::Label => false,
+            AccessibilityRole::Link => true,
+            AccessibilityRole::List => false,
+            AccessibilityRole::ListItem => false,
+            AccessibilityRole::Progress => false,
+            AccessibilityRole::Radio => true,
+            AccessibilityRole::Slider => false,
+            AccessibilityRole::Splitter => false,
+            AccessibilityRole::Switch => true,
+            AccessibilityRole::Tab => false,
+            AccessibilityRole::TabList => false,
+            AccessibilityRole::TabPanel => false,
+            AccessibilityRole::Text => false,
+            AccessibilityRole::Textbox => false,
+            AccessibilityRole::Tree => false,
+            AccessibilityRole::TreeItem => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg(feature = "real-gpui")]
 pub(crate) struct RadioOptionNode {

@@ -237,14 +237,24 @@ defmodule GPUI.TemplateTest do
 
     assert_raise ArgumentError, ~r/accessibility_checked.*role "button"/, fn ->
       ~GPUI"""
-      <div id="bad-check" accessibility_role="button" accessibility_checked={true} />
+      <div
+        id="bad-check"
+        accessibility_role="button"
+        accessibility_checked={true}
+        phx-click="bad"
+      />
       """
       |> GPUI.Element.to_payload()
     end
 
     assert_raise ArgumentError, ~r/accessibility_selected.*role "switch"/, fn ->
       ~GPUI"""
-      <div id="bad-selected" accessibility_role="switch" accessibility_selected={true} />
+      <div
+        id="bad-selected"
+        accessibility_role="switch"
+        accessibility_selected={true}
+        phx-click="bad"
+      />
       """
       |> GPUI.Element.to_payload()
     end
@@ -252,7 +262,12 @@ defmodule GPUI.TemplateTest do
     assert_raise ArgumentError, ~r/true, false, or :mixed/, fn ->
       %GPUI.Element{
         type: :div,
-        attrs: [id: "bad-state", accessibility_role: "switch", accessibility_checked: :yes]
+        attrs: [
+          id: "bad-state",
+          accessibility_role: "switch",
+          accessibility_checked: :yes,
+          "phx-click": "bad"
+        ]
       }
       |> GPUI.Element.to_payload()
     end
@@ -268,6 +283,24 @@ defmodule GPUI.TemplateTest do
       }
       |> GPUI.Element.to_payload()
     end
+  end
+
+  test "interactive accessibility roles require an event while structural roles remain semantic" do
+    assert_raise ArgumentError, ~r/role "switch" requires phx-click/, fn ->
+      ~GPUI"""
+      <div id="inert-switch" accessibility_role="switch" accessibility_label="Inert" />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    structural =
+      ~GPUI"""
+      <div id="region" accessibility_role="group" accessibility_label="Information" />
+      """
+      |> GPUI.Element.to_payload()
+
+    assert structural.attrs.accessibility_role == "group"
+    refute Map.has_key?(structural.attrs, :"phx-click")
   end
 
   test "serializes opt-in bounds observation on identified containers" do

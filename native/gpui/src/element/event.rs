@@ -15,7 +15,19 @@ pub(crate) fn apply_click_event(
         let element_id = format!("gpui-elixir-click-{window_id}-{element_id}");
 
         let element = element.id(element_id);
+        let activatable = accessibility
+            .role
+            .as_ref()
+            .is_some_and(AccessibilityRole::is_activatable);
         let element = super::apply_accessibility_semantics(element, accessibility);
+        let element = if activatable {
+            element
+                .key_context("GPUIAccessibleControl")
+                .tab_index(0)
+                .focus_visible(|style| style.border_2().border_color(gpui::rgb(0x60a5fa)))
+        } else {
+            element
+        };
         let pointer_runtime = runtime.clone();
         let pointer_event = event.clone();
 
@@ -108,8 +120,31 @@ pub(crate) fn apply_input_events(
 #[cfg(all(test, feature = "real-gpui"))]
 mod tests {
     use super::emit_click_event;
-    use crate::{event::NativeEvent, runtime::RuntimeState};
+    use crate::{event::NativeEvent, runtime::RuntimeState, AccessibilityRole};
     use std::sync::Arc;
+
+    #[test]
+    fn generated_role_policy_only_tab_stops_simple_activation_controls() {
+        for role in [
+            AccessibilityRole::Button,
+            AccessibilityRole::Checkbox,
+            AccessibilityRole::Link,
+            AccessibilityRole::Radio,
+            AccessibilityRole::Switch,
+        ] {
+            assert!(role.is_activatable());
+        }
+
+        for role in [
+            AccessibilityRole::Group,
+            AccessibilityRole::List,
+            AccessibilityRole::TabList,
+            AccessibilityRole::Tree,
+            AccessibilityRole::Slider,
+        ] {
+            assert!(!role.is_activatable());
+        }
+    }
 
     #[test]
     fn pointer_and_accessible_activation_share_the_same_native_event_path() {

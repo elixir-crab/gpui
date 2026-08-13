@@ -8,28 +8,28 @@ defmodule GPUI.Accessibility do
   """
 
   @role_specs [
-    button: :Button,
-    checkbox: :CheckBox,
-    dialog: :Dialog,
-    group: :Group,
-    heading: :Heading,
-    image: :Image,
-    label: :Label,
-    link: :Link,
-    list: :List,
-    list_item: :ListItem,
-    progress: :ProgressIndicator,
-    radio: :RadioButton,
-    slider: :Slider,
-    splitter: :Splitter,
-    switch: :Switch,
-    tab: :Tab,
-    tab_list: :TabList,
-    tab_panel: :TabPanel,
-    text: :TextRun,
-    textbox: :TextInput,
-    tree: :Tree,
-    tree_item: :TreeItem
+    button: %{gpui: :Button, interaction: :activate},
+    checkbox: %{gpui: :CheckBox, interaction: :activate},
+    dialog: %{gpui: :Dialog, interaction: :structural},
+    group: %{gpui: :Group, interaction: :structural},
+    heading: %{gpui: :Heading, interaction: :structural},
+    image: %{gpui: :Image, interaction: :structural},
+    label: %{gpui: :Label, interaction: :structural},
+    link: %{gpui: :Link, interaction: :activate},
+    list: %{gpui: :List, interaction: :structural},
+    list_item: %{gpui: :ListItem, interaction: :structural},
+    progress: %{gpui: :ProgressIndicator, interaction: :value},
+    radio: %{gpui: :RadioButton, interaction: :activate},
+    slider: %{gpui: :Slider, interaction: :value},
+    splitter: %{gpui: :Splitter, interaction: :value},
+    switch: %{gpui: :Switch, interaction: :activate},
+    tab: %{gpui: :Tab, interaction: :composite},
+    tab_list: %{gpui: :TabList, interaction: :composite},
+    tab_panel: %{gpui: :TabPanel, interaction: :structural},
+    text: %{gpui: :TextRun, interaction: :structural},
+    textbox: %{gpui: :TextInput, interaction: :value},
+    tree: %{gpui: :Tree, interaction: :composite},
+    tree_item: %{gpui: :TreeItem, interaction: :composite}
   ]
   @roles Enum.map(@role_specs, &Atom.to_string(elem(&1, 0)))
   @generic_tags [:div, :span, :scroll, :list, :item]
@@ -56,6 +56,8 @@ defmodule GPUI.Accessibility do
 
   @type role :: String.t()
   @type checked :: boolean() | :mixed
+  @type role_spec :: {atom(), %{gpui: atom(), interaction: interaction()}}
+  @type interaction :: :structural | :activate | :composite | :value
   @type state_rule :: {atom(), [String.t()]}
 
   @doc false
@@ -63,7 +65,7 @@ defmodule GPUI.Accessibility do
   def roles, do: @roles
 
   @doc false
-  @spec role_specs() :: [{atom(), atom()}]
+  @spec role_specs() :: [role_spec()]
   def role_specs, do: @role_specs
 
   @doc false
@@ -98,6 +100,7 @@ defmodule GPUI.Accessibility do
     if metadata?(attrs) do
       validate_identity!(tag, attrs)
       validate_role!(tag, attrs)
+      validate_interaction!(tag, attrs)
       validate_state_roles!(tag, attrs)
     end
 
@@ -124,6 +127,22 @@ defmodule GPUI.Accessibility do
       raise ArgumentError,
             "#{tag} accessibility label or description requires :accessibility_role"
     end
+  end
+
+  defp validate_interaction!(tag, attrs) do
+    role = Map.get(attrs, :accessibility_role)
+    interaction = role_interaction(role)
+
+    if interaction == :activate and not Map.has_key?(attrs, :"phx-click") do
+      raise ArgumentError,
+            "#{tag} accessibility role #{inspect(role)} requires phx-click"
+    end
+  end
+
+  defp role_interaction(role) do
+    Enum.find_value(@role_specs, fn {name, %{interaction: interaction}} ->
+      if Atom.to_string(name) == role, do: interaction
+    end)
   end
 
   defp validate_state_roles!(_tag, attrs) do

@@ -3,7 +3,8 @@ defmodule GPUI.Codegen.Native.AccessibilityDefinitions do
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defmacro define_contracts do
-    role_variants = Enum.map(GPUI.Accessibility.role_specs(), fn {name, _gpui} -> {name, []} end)
+    role_variants =
+      Enum.map(GPUI.Accessibility.role_specs(), fn {name, _spec} -> {name, []} end)
     role_decode =
       decode_clauses(GPUI.Accessibility.role_specs(), :AccessibilityRole) ++
         [{:->, [], [[Macro.var(:_unknown, nil)], quote(do: {:error, badarg()})]}]
@@ -102,7 +103,7 @@ defmodule GPUI.Codegen.Native.AccessibilityDefinitions do
   defp decode_clauses(specs, enum) do
     enum = {:__aliases__, [], [enum]}
 
-    Enum.map(specs, fn {name, _gpui} ->
+    Enum.map(specs, fn {name, _spec} ->
       {:->, [], [[Atom.to_string(name)], quote(do: {:ok, some(enum_variant(unquote(enum), unquote(name)))})]}
     end)
   end
@@ -158,13 +159,13 @@ defmodule GPUI.Codegen.Native.Accessibility do
         %{function | vis: :crate, attrs: [A.attr(:cfg, feature: "real-gpui") | function.attrs]}
       end)
 
-    generated_impls = generated_conversion_impls()
+    generated_impls = generated_conversion_impls() ++ [generated_interaction_impl()]
     enums ++ semantics ++ functions ++ generated_impls
   end
 
   defp generated_conversion_impls do
     role_arms =
-      Enum.map(GPUI.Accessibility.role_specs(), fn {name, gpui_role} ->
+      Enum.map(GPUI.Accessibility.role_specs(), fn {name, %{gpui: gpui_role}} ->
         conversion_arm(:AccessibilityRole, name, [:gpui, :Role, gpui_role])
       end)
 
@@ -184,6 +185,32 @@ defmodule GPUI.Codegen.Native.Accessibility do
         conversion_arm(:AccessibilityOrientation, :vertical, [:gpui, :Orientation, :Vertical])
       ])
     ]
+  end
+
+  defp generated_interaction_impl do
+    arms =
+      Enum.map(GPUI.Accessibility.role_specs(), fn {name, %{interaction: interaction}} ->
+        %AST.Arm{
+          pattern:
+            RustQ.Rust.AST.PatternBuilder.path([
+              :AccessibilityRole,
+              rust_variant(name)
+            ]),
+          body: [A.return_stmt(interaction == :activate)]
+        }
+      end)
+
+    function = %AST.Function{
+      name: :is_activatable,
+      args: [A.receiver()],
+      returns: A.type_path(:bool),
+      body: [A.return_stmt(A.match_expr(A.var(:self), arms))]
+    }
+
+    A.impl(A.type_path(:AccessibilityRole),
+      items: [function],
+      attrs: [A.attr(:allow, [:dead_code])]
+    )
   end
 
   defp conversion_impl(target, function_name, return_type, arms) do
