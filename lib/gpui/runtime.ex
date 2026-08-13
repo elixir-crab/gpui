@@ -59,13 +59,13 @@ defmodule GPUI.Runtime do
 
   @doc "Adds a keyed declarative window and synchronizes it to the display."
   @spec open_window(GenServer.server(), GPUI.WindowSpec.t()) ::
-          {:ok, pos_integer(), GPUI.Snapshot.t()} | {:error, term()}
+          {:ok, pos_integer(), GPUI.Snapshot.t()} | {:error, GPUI.Session.topology_error()}
   def open_window(runtime, window),
     do: GenServer.call(runtime, {:open_window, window}, @call_timeout)
 
   @doc "Closes a declarative window by key or session ID and synchronizes the display."
   @spec close_window(GenServer.server(), GPUI.WindowSpec.key() | pos_integer()) ::
-          {:ok, GPUI.Snapshot.t()} | {:error, term()}
+          {:ok, GPUI.Snapshot.t()} | {:error, GPUI.Session.topology_error()}
   def close_window(runtime, window),
     do: GenServer.call(runtime, {:close_window, window}, @call_timeout)
 

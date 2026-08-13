@@ -5,6 +5,7 @@ pub(crate) fn apply_click_event(
     element: gpui::Div,
     element_id: String,
     event: Option<String>,
+    accessibility: super::AccessibilitySemantics,
     runtime: SharedRuntime,
     window_id: u64,
 ) -> gpui::AnyElement {
@@ -13,8 +14,10 @@ pub(crate) fn apply_click_event(
     if let Some(event) = event {
         let element_id = format!("gpui-elixir-click-{window_id}-{element_id}");
 
+        let element = element.id(element_id);
+        let element = super::apply_accessibility_semantics(element, accessibility);
+
         element
-            .id(element_id)
             .on_click(move |_event, _window, _cx| {
                 let _ = push_event(
                     &runtime,
@@ -24,6 +27,9 @@ pub(crate) fn apply_click_event(
                     },
                 );
             })
+            .into_any_element()
+    } else if accessibility.role.is_some() {
+        super::apply_accessibility_semantics(element.id(element_id), accessibility)
             .into_any_element()
     } else {
         element.into_any_element()

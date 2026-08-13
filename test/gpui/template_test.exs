@@ -111,6 +111,74 @@ defmodule GPUI.TemplateTest do
     assert layer_child_style[:background] == [:rgb, 0x1E293B]
   end
 
+  test "serializes bounded neutral accessibility metadata" do
+    role = "button"
+    label = "Retry connection"
+
+    payload =
+      ~GPUI"""
+      <div
+        id="retry"
+        accessibility_role={role}
+        accessibility_label={label}
+        accessibility_description="Attempts to reconnect to the remote host"
+        phx-click="retry"
+      />
+      """
+      |> GPUI.Element.to_payload()
+
+    assert payload.attrs.accessibility_role == "button"
+    assert payload.attrs.accessibility_label == "Retry connection"
+
+    assert payload.attrs.accessibility_description ==
+             "Attempts to reconnect to the remote host"
+
+    assert_raise ArgumentError, ~r/one of.*button/, fn ->
+      ~GPUI"""
+      <div id="bad-role" accessibility_role="made_up" />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/accessibility metadata requires a non-empty string id/, fn ->
+      ~GPUI"""
+      <div accessibility_role="button" accessibility_label="Retry" />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/requires :accessibility_role/, fn ->
+      ~GPUI"""
+      <div id="unnamed-role" accessibility_label="Retry" />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/at most 512 bytes/, fn ->
+      %GPUI.Element{
+        type: :div,
+        attrs: [
+          id: "long-label",
+          accessibility_role: "button",
+          accessibility_label: String.duplicate("a", 513)
+        ]
+      }
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/at most 2048 bytes/, fn ->
+      %GPUI.Element{
+        type: :div,
+        attrs: [
+          id: "long-description",
+          accessibility_role: "button",
+          accessibility_description: String.duplicate("a", 2049)
+        ]
+      }
+      |> GPUI.Element.to_payload()
+    end
+  end
+
   test "serializes opt-in bounds observation on identified containers" do
     payload =
       ~GPUI"""

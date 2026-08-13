@@ -14,6 +14,11 @@ defmodule GPUI.Session do
   @max_windows 32
 
   @type snapshot :: Snapshot.t()
+  @type topology_error ::
+          :duplicate_window_key
+          | :window_not_found
+          | :window_limit_reached
+          | {:too_many_windows, pos_integer()}
 
   @type state :: %{
           windows: [WindowSpec.t()],
@@ -37,12 +42,12 @@ defmodule GPUI.Session do
 
   @doc "Adds a keyed declarative window without remounting the application."
   @spec open_window(GenServer.server(), WindowSpec.t()) ::
-          {:ok, pos_integer(), snapshot()} | {:error, :duplicate_window_key | term()}
+          {:ok, pos_integer(), snapshot()} | {:error, topology_error()}
   def open_window(session, window), do: GenServer.call(session, {:open_window, window})
 
   @doc "Removes one declarative window by stable key or native session ID."
   @spec close_window(GenServer.server(), WindowSpec.key() | pos_integer()) ::
-          {:ok, snapshot()} | {:error, :window_not_found}
+          {:ok, snapshot()} | {:error, topology_error()}
   def close_window(session, window), do: GenServer.call(session, {:close_window, window})
 
   @spec snapshot(GenServer.server()) :: snapshot()

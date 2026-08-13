@@ -2,7 +2,9 @@
 
 mod atoms {
     rustler::atoms! {
-        __type__ = "__type__", align = "align", align_items = "align_items", anchor =
+        __type__ = "__type__", accessibility_description = "accessibility_description",
+        accessibility_label = "accessibility_label", accessibility_role =
+        "accessibility_role", align = "align", align_items = "align_items", anchor =
         "anchor", appearance = "appearance", attrs = "attrs", background = "background",
         block_projections = "block_projections", blur = "blur", border_color =
         "border_color", border_radius = "border_radius", border_width = "border_width",

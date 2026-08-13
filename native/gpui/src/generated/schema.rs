@@ -466,6 +466,9 @@ pub(crate) struct ContainerNode {
     pub(crate) tag: GeneratedElementTag,
     pub(crate) style: StyleAttrs,
     pub(crate) id: Option<String>,
+    pub(crate) accessibility_role: Option<String>,
+    pub(crate) accessibility_label: Option<String>,
+    pub(crate) accessibility_description: Option<String>,
     pub(crate) children: Vec<ElementNode>,
     pub(crate) click: Option<String>,
     pub(crate) bounds_change: Option<String>,
@@ -638,6 +641,24 @@ pub(crate) fn decode_container_node<'a>(
             tag: element_tag,
             style: decode_style(term)?,
             id: non_empty_string_attr(term, atoms::id()),
+            accessibility_role: component_enum_attr(
+                term,
+                atoms::accessibility_role(),
+                &vec![
+                    "button", "dialog", "group", "heading", "image", "label", "link",
+                    "list", "list_item", "progress", "radio", "slider", "splitter",
+                    "tab", "tab_list", "tab_panel", "text", "textbox", "tree",
+                    "tree_item"
+                ],
+            )?,
+            accessibility_label: non_empty_string_attr(
+                term,
+                atoms::accessibility_label(),
+            ),
+            accessibility_description: non_empty_string_attr(
+                term,
+                atoms::accessibility_description(),
+            ),
             children: decode_children(term)?,
             click: string_attr(term, atoms::phx_click()),
             bounds_change: string_attr(term, atoms::phx_bounds_change()),

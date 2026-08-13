@@ -8,13 +8,21 @@ defmodule GPUI.Schema do
 
   Code.ensure_compiled!(ComponentDocs)
 
+  @accessibility_roles ~w(button dialog group heading image label link list list_item progress radio slider splitter tab tab_list tab_panel text textbox tree tree_item)
+  @accessibility_attrs [
+    id: :string,
+    accessibility_role: {:enum, @accessibility_roles},
+    accessibility_label: :accessibility_label,
+    accessibility_description: :accessibility_description
+  ]
+
   @components [
     %Component{tag: :viewport, kind: :viewport, children: true},
     %Component{
       tag: :div,
       kind: :container,
       events: [click: :"phx-click", bounds: :"phx-bounds-change"],
-      attrs: [id: :string]
+      attrs: @accessibility_attrs
     },
     %Component{
       tag: :button,
@@ -528,25 +536,25 @@ defmodule GPUI.Schema do
       tag: :span,
       kind: :container,
       events: [click: :"phx-click", bounds: :"phx-bounds-change"],
-      attrs: [id: :string]
+      attrs: @accessibility_attrs
     },
     %Component{
       tag: :scroll,
       kind: :container,
       events: [click: :"phx-click", bounds: :"phx-bounds-change"],
-      attrs: [id: :string]
+      attrs: @accessibility_attrs
     },
     %Component{
       tag: :list,
       kind: :container,
       events: [click: :"phx-click", bounds: :"phx-bounds-change"],
-      attrs: [id: :string]
+      attrs: @accessibility_attrs
     },
     %Component{
       tag: :item,
       kind: :container,
       events: [click: :"phx-click", bounds: :"phx-bounds-change"],
-      attrs: [id: :string]
+      attrs: @accessibility_attrs
     },
     %Component{tag: :icon, kind: :text},
     %Component{
@@ -1072,6 +1080,14 @@ defmodule GPUI.Schema do
 
   defp validate_attr!(_tag, _name, :string, value) when is_binary(value), do: :ok
 
+  defp validate_attr!(_tag, _name, :accessibility_label, value)
+       when is_binary(value) and value != "" and byte_size(value) <= 512,
+       do: :ok
+
+  defp validate_attr!(_tag, _name, :accessibility_description, value)
+       when is_binary(value) and value != "" and byte_size(value) <= 2048,
+       do: :ok
+
   defp validate_attr!(_tag, _name, :required_string, value)
        when is_binary(value) and value != "",
        do: :ok
@@ -1245,6 +1261,13 @@ defmodule GPUI.Schema do
   defp valid_rgb?(color), do: is_integer(color) and color in 0..0xFFFFFF
 
   defp expected_attr_type(:string), do: "a string"
+
+  defp expected_attr_type(:accessibility_label),
+    do: "a non-empty string of at most 512 bytes"
+
+  defp expected_attr_type(:accessibility_description),
+    do: "a non-empty string of at most 2048 bytes"
+
   defp expected_attr_type(:required_string), do: "a non-empty string"
   defp expected_attr_type(:number), do: "a number"
   defp expected_attr_type(:non_negative_number), do: "a non-negative number"

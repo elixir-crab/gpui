@@ -10,7 +10,12 @@ defmodule GPUI.Remote.ServerTest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div>
+      <div
+        id="remote-form"
+        accessibility_role="group"
+        accessibility_label="Remote profile form"
+        accessibility_description="Edits the remotely hosted profile"
+      >
         <input value={assigns.name} phx-change="rename" />
       </div>
       """
@@ -71,7 +76,10 @@ defmodule GPUI.Remote.ServerTest do
     assert {:ok, %{session_id: "form", snapshot: %{windows: [%{root: %{tree: tree}}]}}} =
              SafeRPC.call(client, :mount, %{session_id: "form", args: %{name: "old"}})
 
-    assert %{type: :viewport, attrs: %{}, children: [%{type: :div}]} = tree
+    assert %{type: :viewport, attrs: %{}, children: [%{type: :div} = form]} = tree
+    assert form.attrs.accessibility_role == "group"
+    assert form.attrs.accessibility_label == "Remote profile form"
+    assert form.attrs.accessibility_description == "Edits the remotely hosted profile"
 
     assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{name: "new"}}}]}}} =
              SafeRPC.call(client, :event, %{

@@ -17,6 +17,8 @@ defmodule GPUI.Schema.Component do
 
   @type scalar_type ::
           :string
+          | :accessibility_label
+          | :accessibility_description
           | :required_string
           | :number
           | :non_negative_number

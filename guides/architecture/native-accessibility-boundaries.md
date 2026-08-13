@@ -85,6 +85,25 @@ Accessibility metadata belongs in the element snapshot. Therefore test and
 remote displays can inspect and transport the same facts even though only a
 native display publishes an operating-system accessibility tree.
 
+The first neutral schema slice is available on generic container primitives:
+
+```elixir
+<div
+  id="retry"
+  accessibility_role="button"
+  accessibility_label="Retry connection"
+  accessibility_description="Attempts to reconnect to the remote host"
+  phx-click="retry"
+/>
+```
+
+Explicit metadata requires a non-empty stable `id`, and labels or descriptions
+require an explicit role. Roles use a closed vocabulary and labels/descriptions
+are bounded to 512/2048 bytes. Semantic native components retain their
+component-owned roles; this generic contract does not override them. These
+facts remain in the renderer-independent snapshot, survive remote transport,
+and map to GPUI's AccessKit role, label, and description builders.
+
 ## Validation rules
 
 A future schema must reject misleading combinations instead of silently

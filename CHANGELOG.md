@@ -10,6 +10,7 @@
 - Added GPUI-native relative and absolute positioning with typed inset utilities, including axis, percentage, fractional, arbitrary-pixel, and auto values.
 - Added bounded non-editable block projections anchored before or after logical text lines without changing document coordinates.
 - Added bounded non-editable inline text projections anchored to explicit UTF-16 positions without completion policy or Rope mutation.
+- Added bounded renderer-independent accessibility roles, labels, and descriptions for identified generic elements, including native AccessKit mapping and remote snapshot coverage.
 - Documented the pinned GPUI/AccessKit native accessibility boundary, existing component mappings, truthful schema direction, and unsupported claims.
 - Made development reload failures observable and recoverable, with pre-compilation syntax validation and atomic multi-window refresh publishing.
 - Preserved dynamic multi-window topology, keys, IDs, per-window assigns, and monotonic allocation across source reload; added end-to-end remote client display reconciliation coverage.

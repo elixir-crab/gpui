@@ -61,6 +61,16 @@ defmodule GPUI.RuntimeTest do
       {:open_window, details, %{assigns | label: "Details opened"}}
     end
 
+    def handle_event("overflow", _event, assigns) do
+      overflow = %GPUI.WindowSpec{
+        key: "overflow",
+        title: "Overflow",
+        root: {SecondaryView, %{label: "Overflow"}}
+      }
+
+      {:open_window, overflow, %{assigns | label: "must not apply"}}
+    end
+
     def handle_event("close-details", _event, assigns),
       do: {:close_window, "details", %{assigns | label: "Details closed"}}
 
@@ -300,6 +310,32 @@ defmodule GPUI.RuntimeTest do
 
     assert {:ok, %{windows: [_, %{id: 3, key: "details"}]}} =
              GPUI.Runtime.send_view(runtime, 1, :open_details)
+  end
+
+  test "failed callback overflow preserves originating assigns" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(app: OutcomeApp, display: RecordingDisplay, poll_interval: nil)
+
+    Enum.each(1..31, fn index ->
+      assert {:ok, _, _} =
+               GPUI.Runtime.open_window(runtime, %GPUI.WindowSpec{
+                 key: "full-#{index}",
+                 title: "Full #{index}",
+                 root: {SecondaryView, %{label: "Full"}}
+               })
+    end)
+
+    {handled, snapshot} =
+      GPUI.Runtime.dispatch_event(runtime, %{
+        type: :click,
+        window_id: 1,
+        event: "overflow"
+      })
+
+    assert handled.error == :window_limit_reached
+    assert Enum.count_until(snapshot.windows, 33) == 32
+    assert hd(snapshot.windows).root.assigns.label == "Main"
+    refute Enum.any?(snapshot.windows, &(&1.key == "overflow"))
   end
 
   test "runtime reconciles dynamically added and removed keyed windows" do

@@ -38,6 +38,9 @@ impl ElementNode {
             tag: GeneratedElementTag::Div,
             style: StyleAttrs::default(),
             id: None,
+            accessibility_role: None,
+            accessibility_label: None,
+            accessibility_description: None,
             children: Vec::new(),
             click: None,
             bounds_change: None,
@@ -346,6 +349,61 @@ pub(crate) fn render_missing_resource_placeholder() -> gpui::AnyElement {
 }
 
 #[cfg(feature = "real-gpui")]
+pub(crate) fn accessibility_role(role: &str) -> Option<gpui::Role> {
+    use gpui::Role;
+
+    match role {
+        "button" => Some(Role::Button),
+        "dialog" => Some(Role::Dialog),
+        "group" => Some(Role::Group),
+        "heading" => Some(Role::Heading),
+        "image" => Some(Role::Image),
+        "label" => Some(Role::Label),
+        "link" => Some(Role::Link),
+        "list" => Some(Role::List),
+        "list_item" => Some(Role::ListItem),
+        "progress" => Some(Role::ProgressIndicator),
+        "radio" => Some(Role::RadioButton),
+        "slider" => Some(Role::Slider),
+        "splitter" => Some(Role::Splitter),
+        "tab" => Some(Role::Tab),
+        "tab_list" => Some(Role::TabList),
+        "tab_panel" => Some(Role::TabPanel),
+        "text" => Some(Role::TextRun),
+        "textbox" => Some(Role::TextInput),
+        "tree" => Some(Role::Tree),
+        "tree_item" => Some(Role::TreeItem),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) struct AccessibilitySemantics {
+    pub(crate) role: Option<String>,
+    pub(crate) label: Option<String>,
+    pub(crate) description: Option<String>,
+}
+
+#[cfg(feature = "real-gpui")]
+pub(crate) fn apply_accessibility_semantics(
+    mut element: gpui::Stateful<gpui::Div>,
+    accessibility: AccessibilitySemantics,
+) -> gpui::Stateful<gpui::Div> {
+    use gpui::StatefulInteractiveElement;
+
+    if let Some(role) = accessibility.role.as_deref().and_then(accessibility_role) {
+        element = element.role(role);
+    }
+    if let Some(label) = accessibility.label {
+        element = element.aria_label(label);
+    }
+    if let Some(description) = accessibility.description {
+        element = element.aria_description(description);
+    }
+    element
+}
+
+#[cfg(feature = "real-gpui")]
 pub(crate) fn apply_container_semantics(element: gpui::Div, tag: GeneratedElementTag) -> gpui::Div {
     use gpui::Styled;
 
@@ -479,6 +537,9 @@ pub(crate) fn render_container_primitive(
         tag,
         style,
         id: stable_id,
+        accessibility_role,
+        accessibility_label,
+        accessibility_description,
         children,
         click,
         bounds_change,
@@ -553,11 +614,21 @@ pub(crate) fn render_container_primitive(
     }
 
     if tag == GeneratedElementTag::Scroll {
-        let scroll_id = format!(
-            "gpui-elixir-scroll-{window_id}-{}-{element_id}",
-            context.id_namespace
-        );
+        let scroll_id = stable_id.clone().unwrap_or_else(|| {
+            format!(
+                "gpui-elixir-scroll-{window_id}-{}-{element_id}",
+                context.id_namespace
+            )
+        });
         let element = element.id(scroll_id).overflow_y_scroll();
+        let element = apply_accessibility_semantics(
+            element,
+            AccessibilitySemantics {
+                role: accessibility_role,
+                label: accessibility_label,
+                description: accessibility_description,
+            },
+        );
 
         if let Some(event) = click {
             let runtime_for_click = runtime.clone();
@@ -576,7 +647,19 @@ pub(crate) fn render_container_primitive(
             element.into_any_element()
         }
     } else {
-        let element_id = format!("{}-{element_id}", context.id_namespace);
-        apply_click_event(element, element_id, click, runtime, window_id)
+        let element_id =
+            stable_id.unwrap_or_else(|| format!("{}-{element_id}", context.id_namespace));
+        apply_click_event(
+            element,
+            element_id,
+            click,
+            AccessibilitySemantics {
+                role: accessibility_role,
+                label: accessibility_label,
+                description: accessibility_description,
+            },
+            runtime,
+            window_id,
+        )
     }
 }
