@@ -103,6 +103,7 @@ consumer checksum validation and no-Rust installation.
 - package contents, including native source fallback;
 - documentation generation;
 - Hex and RustSec dependency audits;
+- a clean renderer-independent consumer compiles and runs `GPUI.Test` with native compilation explicitly disabled;
 - that the MIT native artifact has no GPL-3 Rust dependencies;
 - production source compilation from the built package.
 

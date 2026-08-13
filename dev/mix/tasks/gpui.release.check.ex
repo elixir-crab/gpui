@@ -31,9 +31,78 @@ defmodule Mix.Tasks.Gpui.Release.Check do
         [{"MIX_ENV", "prod"}, {"GPUI_BUILD_FROM_SOURCE", "1"} | fontconfig_env()],
         package
       )
+
+      validate_renderer_independent_consumer!(workdir, package)
     after
       File.rm_rf!(workdir)
     end
+  end
+
+  defp validate_renderer_independent_consumer!(workdir, package) do
+    consumer = Path.join(workdir, "consumer")
+
+    write_consumer!(consumer, "mix.exs", """
+    defmodule GPUIReleaseConsumer.MixProject do
+      use Mix.Project
+
+      def project do
+        [
+          app: :gpui_release_consumer,
+          version: "0.1.0",
+          elixir: "~> 1.20",
+          deps: [{:gpui, path: #{inspect(package)}}]
+        ]
+      end
+
+      def application, do: [extra_applications: [:logger]]
+    end
+    """)
+
+    write_consumer!(consumer, "config/config.exs", """
+    import Config
+    config :gpui, build_native: config_env() != :test
+    """)
+
+    write_consumer!(consumer, "lib/release_consumer.ex", """
+    defmodule GPUIReleaseConsumer.View do
+      use GPUI.View
+
+      @impl GPUI.View
+      def render(assigns) do
+        ~GPUI\"\"\"
+        <div><text>Hello {assigns.name}</text></div>
+        \"\"\"
+      end
+    end
+    """)
+
+    write_consumer!(consumer, "test/test_helper.exs", "ExUnit.start()\n")
+
+    write_consumer!(consumer, "test/release_consumer_test.exs", """
+    defmodule GPUIReleaseConsumerTest do
+      use ExUnit.Case, async: true
+      use GPUI.Test
+
+      test "renders without compiling or loading the native NIF" do
+        tree = render(GPUIReleaseConsumer.View, name: "Ada")
+
+        assert %GPUI.Element{type: :text, children: ["Hello ", "Ada"]} =
+                 find!(tree, type: :text)
+
+        refute GPUI.Native.compiled?()
+      end
+    end
+    """)
+
+    env = [{"MIX_ENV", "test"}, {"GPUI_SKIP_NATIVE", "1"}]
+    run!("mix", ["deps.get"], env, consumer)
+    run!("mix", ["test"], env, consumer)
+  end
+
+  defp write_consumer!(root, path, contents) do
+    destination = Path.join(root, path)
+    File.mkdir_p!(Path.dirname(destination))
+    File.write!(destination, contents)
   end
 
   defp reject_gpl3_rust_dependencies! do
