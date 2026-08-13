@@ -93,6 +93,7 @@ defmodule GPUI.MixProject do
         "CHANGELOG.md",
         "guides/introduction/getting-started.md",
         "guides/architecture/sessions-and-displays.md",
+        "guides/architecture/compatibility-and-stability.md",
         "guides/architecture/editable-text-primitives.md",
         "guides/architecture/native-accessibility-boundaries.md",
         "guides/architecture/native-text-projection-boundaries.md",

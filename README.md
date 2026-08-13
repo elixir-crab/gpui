@@ -75,6 +75,7 @@ native prerequisites, supervision, controlled components, and event handling.
 
 - [Getting started](guides/introduction/getting-started.md)
 - [Sessions, runtimes, and displays](guides/architecture/sessions-and-displays.md)
+- [Compatibility and stability](guides/architecture/compatibility-and-stability.md)
 - [Editable text primitives](guides/architecture/editable-text-primitives.md)
 - [Native accessibility boundaries](guides/architecture/native-accessibility-boundaries.md)
 - [Native text projection extension boundaries](guides/architecture/native-text-projection-boundaries.md)
