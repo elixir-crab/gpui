@@ -149,6 +149,13 @@ Enter/Space on focused controls, including key-up-only activation and
 focus-generation cancellation, through the same pointer click callback.
 Structural, composite, and value roles do not automatically become Tab stops.
 
+`accessibility_disabled` is a controlled boolean for button, checkbox, link,
+radio, slider, splitter, switch, and textbox roles. RustQ generates a concrete
+`disabled: bool` field defaulting to false. Disabled nodes retain stable IDs and
+controlled value/check state, report AccessKit disabled state, and install no
+pointer, keyboard, Tab-stop, or explicit AccessKit Click activation. Re-enabling
+the same node restores its normal generated interaction policy.
+
 ## Validation rules
 
 A future schema must reject misleading combinations instead of silently

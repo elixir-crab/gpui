@@ -21,6 +21,7 @@ defmodule GPUI.Remote.ServerTest do
           accessibility_role="switch"
           accessibility_label="Notifications"
           accessibility_checked={assigns.notifications}
+          accessibility_disabled={assigns.notifications_disabled}
           phx-click="toggle_notifications"
         />
         <input value={assigns.name} phx-change="rename" />
@@ -42,6 +43,9 @@ defmodule GPUI.Remote.ServerTest do
 
     def handle_event("toggle_notifications", _event, assigns),
       do: {:noreply, %{assigns | notifications: not assigns.notifications}}
+
+    def handle_event("disable_notifications", _event, assigns),
+      do: {:noreply, %{assigns | notifications_disabled: true}}
 
     def handle_event("open_details", _event, assigns) do
       details = %GPUI.WindowSpec{
@@ -79,7 +83,8 @@ defmodule GPUI.Remote.ServerTest do
                range: nil,
                tree_branch: nil,
                count: 0,
-               notifications: false
+               notifications: false,
+               notifications_disabled: false
              )
          )
        ]}
@@ -111,6 +116,20 @@ defmodule GPUI.Remote.ServerTest do
     assert %{children: [%{children: [%{attrs: toggled_attrs}, _input]}]} = toggled_tree
     assert toggled_attrs.id == "remote-notifications"
     assert toggled_attrs.accessibility_checked == "true"
+    refute toggled_attrs.accessibility_disabled
+
+    assert {:ok, %{snapshot: %{windows: [%{root: %{tree: disabled_tree}}]}}} =
+             SafeRPC.call(client, :event, %{
+               session_id: "form",
+               type: :click,
+               window_id: 1,
+               event: "disable_notifications"
+             })
+
+    assert %{children: [%{children: [%{attrs: disabled_attrs}, _input]}]} = disabled_tree
+    assert disabled_attrs.id == "remote-notifications"
+    assert disabled_attrs.accessibility_checked == "true"
+    assert disabled_attrs.accessibility_disabled
 
     assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: %{name: "new"}}}]}}} =
              SafeRPC.call(client, :event, %{

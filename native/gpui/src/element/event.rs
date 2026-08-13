@@ -15,10 +15,12 @@ pub(crate) fn apply_click_event(
         let element_id = format!("gpui-elixir-click-{window_id}-{element_id}");
 
         let element = element.id(element_id);
-        let activatable = accessibility
-            .role
-            .as_ref()
-            .is_some_and(AccessibilityRole::is_activatable);
+        let enabled = !accessibility.disabled;
+        let activatable = enabled
+            && accessibility
+                .role
+                .as_ref()
+                .is_some_and(AccessibilityRole::is_activatable);
         let element = super::apply_accessibility_semantics(element, accessibility);
         let element = if activatable {
             element
@@ -31,14 +33,19 @@ pub(crate) fn apply_click_event(
         let pointer_runtime = runtime.clone();
         let pointer_event = event.clone();
 
-        element
-            .on_click(move |_event, _window, _cx| {
-                emit_click_event(&pointer_runtime, window_id, &pointer_event);
-            })
-            .on_a11y_action(AccessibleAction::Click, move |_data, _window, _cx| {
-                emit_click_event(&runtime, window_id, &event);
-            })
-            .into_any_element()
+        let element = if enabled {
+            element
+                .on_click(move |_event, _window, _cx| {
+                    emit_click_event(&pointer_runtime, window_id, &pointer_event);
+                })
+                .on_a11y_action(AccessibleAction::Click, move |_data, _window, _cx| {
+                    emit_click_event(&runtime, window_id, &event);
+                })
+        } else {
+            element
+        };
+
+        element.into_any_element()
     } else if accessibility.role.is_some() {
         super::apply_accessibility_semantics(element.id(element_id), accessibility)
             .into_any_element()

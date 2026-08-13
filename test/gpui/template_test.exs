@@ -303,6 +303,44 @@ defmodule GPUI.TemplateTest do
     refute Map.has_key?(structural.attrs, :"phx-click")
   end
 
+  test "serializes disabled accessibility state only for supported roles" do
+    disabled =
+      ~GPUI"""
+      <div
+        id="notifications-disabled"
+        accessibility_role="switch"
+        accessibility_label="Notifications"
+        accessibility_checked={true}
+        accessibility_disabled={true}
+        phx-click="toggle"
+      />
+      """
+      |> GPUI.Element.to_payload()
+
+    assert disabled.attrs.accessibility_disabled
+    assert disabled.attrs.accessibility_checked == "true"
+
+    assert_raise ArgumentError, ~r/accessibility_disabled.*role "group"/, fn ->
+      ~GPUI"""
+      <div id="disabled-group" accessibility_role="group" accessibility_disabled={true} />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/accessibility_disabled.*boolean/, fn ->
+      %GPUI.Element{
+        type: :div,
+        attrs: [
+          id: "invalid-disabled",
+          accessibility_role: "switch",
+          accessibility_disabled: :yes,
+          "phx-click": "toggle"
+        ]
+      }
+      |> GPUI.Element.to_payload()
+    end
+  end
+
   test "serializes opt-in bounds observation on identified containers" do
     payload =
       ~GPUI"""

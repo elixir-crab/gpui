@@ -43,7 +43,8 @@ defmodule GPUI.Accessibility do
     accessibility_selected: :boolean,
     accessibility_expanded: :boolean,
     accessibility_checked: :accessibility_checked,
-    accessibility_orientation: {:enum, ~w(horizontal vertical)}
+    accessibility_orientation: {:enum, ~w(horizontal vertical)},
+    accessibility_disabled: :boolean
   ]
 
   @state_roles [
@@ -51,7 +52,8 @@ defmodule GPUI.Accessibility do
     accessibility_selected: ~w(list_item tab tree_item),
     accessibility_expanded: ~w(button tree_item),
     accessibility_orientation: ~w(slider splitter tab_list tree),
-    accessibility_value: ~w(progress slider textbox)
+    accessibility_value: ~w(progress slider textbox),
+    accessibility_disabled: ~w(button checkbox link radio slider splitter switch textbox)
   ]
 
   @type role :: String.t()
@@ -88,7 +90,8 @@ defmodule GPUI.Accessibility do
         :accessibility_selected,
         :accessibility_expanded,
         :accessibility_checked,
-        :accessibility_orientation
+        :accessibility_orientation,
+        :accessibility_disabled
       ],
       &Map.has_key?(attrs, &1)
     )
@@ -133,7 +136,8 @@ defmodule GPUI.Accessibility do
     role = Map.get(attrs, :accessibility_role)
     interaction = role_interaction(role)
 
-    if interaction == :activate and not Map.has_key?(attrs, :"phx-click") do
+    if interaction == :activate and not Map.has_key?(attrs, :"phx-click") and
+         not Map.get(attrs, :accessibility_disabled, false) do
       raise ArgumentError,
             "#{tag} accessibility role #{inspect(role)} requires phx-click"
     end

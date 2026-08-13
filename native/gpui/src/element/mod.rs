@@ -377,6 +377,11 @@ pub(crate) fn apply_accessibility_semantics(
     if let Some(orientation) = accessibility.orientation {
         element = element.aria_orientation(orientation.gpui_orientation());
     }
+    if accessibility.disabled {
+        element = element.a11y_synthetic_children(|builder| {
+            builder.parent_node().set_disabled();
+        });
+    }
     element
 }
 

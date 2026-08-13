@@ -25,6 +25,7 @@ defmodule GPUI.Codegen.Native.SchemaTest do
 
     assert_unique_named_items(parsed)
     assert source =~ "accessibility: AccessibilitySemantics"
+    assert source =~ "pub(crate) disabled: bool"
     assert source =~ "impl AccessibilityRole"
     assert source =~ "fn gpui_role(&self) -> gpui::Role"
     assert source =~ "fn toggled(&self) -> gpui::Toggled"

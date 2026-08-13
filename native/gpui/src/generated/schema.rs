@@ -1809,6 +1809,7 @@ pub(crate) struct AccessibilitySemantics {
     pub(crate) expanded: Option<bool>,
     pub(crate) checked: Option<AccessibilityChecked>,
     pub(crate) orientation: Option<AccessibilityOrientation>,
+    pub(crate) disabled: bool,
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_accessibility_role<'a>(
@@ -1892,6 +1893,8 @@ pub(crate) fn decode_accessibility<'a>(
         expanded: component_bool_attr(term, atoms::accessibility_expanded())?,
         checked: decode_accessibility_checked(term)?,
         orientation: decode_accessibility_orientation(term)?,
+        disabled: component_bool_attr(term, atoms::accessibility_disabled())?
+            .unwrap_or(false),
     })
 }
 #[cfg(feature = "real-gpui")]

@@ -24,7 +24,8 @@ defmodule GPUI.Codegen.Native.AccessibilityDefinitions do
               required(:selected) => R.option(boolean()),
               required(:expanded) => R.option(boolean()),
               required(:checked) => R.option(accessibility_checked()),
-              required(:orientation) => R.option(accessibility_orientation())
+              required(:orientation) => R.option(accessibility_orientation()),
+              required(:disabled) => boolean()
             }
 
       @spec decode_accessibility_role(term()) :: R.nif_result(R.option(accessibility_role()))
@@ -94,7 +95,9 @@ defmodule GPUI.Codegen.Native.AccessibilityDefinitions do
            selected: unwrap!(component_bool_attr(term, Atoms.accessibility_selected())),
            expanded: unwrap!(component_bool_attr(term, Atoms.accessibility_expanded())),
            checked: unwrap!(decode_accessibility_checked(term)),
-           orientation: unwrap!(decode_accessibility_orientation(term))
+           orientation: unwrap!(decode_accessibility_orientation(term)),
+           disabled:
+             unwrap!(component_bool_attr(term, Atoms.accessibility_disabled())).unwrap_or(false)
          )}
       end
     end
