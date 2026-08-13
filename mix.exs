@@ -75,7 +75,7 @@ defmodule GPUI.MixProject do
 
   defp package_files do
     files =
-      ~w(lib codegen examples guides config/config.exs native/gpui/Cargo.toml native/gpui/Cargo.lock native/gpui/compat native/gpui/src mix.exs rustq.exs README.md CHANGELOG.md LICENSE)
+      ~w(lib codegen examples guides config/config.exs native/gpui/Cargo.toml native/gpui/Cargo.lock native/gpui/compat native/gpui/src mix.exs rustq.exs rust-toolchain.toml README.md CHANGELOG.md LICENSE)
 
     if File.exists?("checksum-Elixir.GPUI.Native.exs") do
       ["checksum-Elixir.GPUI.Native.exs" | files]
@@ -94,6 +94,8 @@ defmodule GPUI.MixProject do
         "guides/introduction/getting-started.md",
         "guides/architecture/sessions-and-displays.md",
         "guides/architecture/editable-text-primitives.md",
+        "guides/architecture/native-accessibility-boundaries.md",
+        "guides/architecture/native-text-projection-boundaries.md",
         "guides/ui/components-and-styling.md",
         "guides/ui/commands-and-shortcuts.md",
         "guides/ui/overlays-and-menus.md",
