@@ -104,6 +104,12 @@ component-owned roles; this generic contract does not override them. These
 facts remain in the renderer-independent snapshot, survive remote transport,
 and map to GPUI's AccessKit role, label, and description builders.
 
+The closed vocabulary, metadata detection, stable identity requirement, and
+cross-field name/description rules are centralized in `GPUI.Accessibility`.
+Future selected, expanded, checked, value, and orientation attributes must add
+their role/state rules there rather than duplicating policy in serialization or
+native rendering.
+
 ## Validation rules
 
 A future schema must reject misleading combinations instead of silently

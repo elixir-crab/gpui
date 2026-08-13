@@ -73,17 +73,14 @@ defmodule GPUI.Element do
       Map.get(attrs_map, :focus_request, 0) > 0 or
         Map.has_key?(attrs_map, :"phx-focus") or Map.has_key?(attrs_map, :"phx-blur")
 
-    accessible? =
-      Map.has_key?(attrs_map, :accessibility_role) or
-        Map.has_key?(attrs_map, :accessibility_label) or
-        Map.has_key?(attrs_map, :accessibility_description)
+    accessible? = GPUI.Accessibility.metadata?(attrs_map)
 
     if observed? or focused? or accessible? do
-      validate_feature_id!(type, attrs_map, observed?, accessible?)
+      if observed? or focused?, do: validate_feature_id!(type, attrs_map, observed?)
 
       attrs_map
       |> GPUI.Schema.validate_component_assigns!(type)
-      |> validate_accessibility_identity!(type)
+      |> then(&GPUI.Accessibility.validate_generic!(type, &1))
       |> Map.to_list()
     else
       attrs
@@ -92,28 +89,11 @@ defmodule GPUI.Element do
 
   defp validated_primitive_attrs(%__MODULE__{attrs: attrs}), do: attrs
 
-  defp validate_feature_id!(type, attrs, observed?, accessible?) do
+  defp validate_feature_id!(type, attrs, observed?) do
     unless is_binary(Map.get(attrs, :id)) and Map.get(attrs, :id) != "" do
-      feature =
-        cond do
-          observed? -> "phx-bounds-change"
-          accessible? -> "accessibility metadata"
-          true -> "focus behavior"
-        end
-
+      feature = if observed?, do: "phx-bounds-change", else: "focus behavior"
       raise ArgumentError, "#{type} with #{feature} requires a non-empty string id"
     end
-  end
-
-  defp validate_accessibility_identity!(attrs, type) do
-    if (Map.has_key?(attrs, :accessibility_label) or
-          Map.has_key?(attrs, :accessibility_description)) and
-         not Map.has_key?(attrs, :accessibility_role) do
-      raise ArgumentError,
-            "#{type} accessibility label or description requires :accessibility_role"
-    end
-
-    attrs
   end
 
   defp normalize_class_attr(attrs) do

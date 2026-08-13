@@ -8,10 +8,11 @@ defmodule GPUI.Schema do
 
   Code.ensure_compiled!(ComponentDocs)
 
-  @accessibility_roles ~w(button dialog group heading image label link list list_item progress radio slider splitter tab tab_list tab_panel text textbox tree tree_item)
   @accessibility_attrs [
     id: :string,
-    accessibility_role: {:enum, @accessibility_roles},
+    accessibility_role:
+      {:enum,
+       ~w(button dialog group heading image label link list list_item progress radio slider splitter tab tab_list tab_panel text textbox tree tree_item)},
     accessibility_label: :accessibility_label,
     accessibility_description: :accessibility_description
   ]
