@@ -133,6 +133,13 @@ decoders, and GPUI conversion matches. Handwritten Rust only applies those
 generated typed values to GPUI's accessibility builders; it does not repeat the
 transport vocabulary.
 
+Generic elements with `phx-click` register both GPUI pointer activation and an
+explicit AccessKit `Click` action listener. Both callbacks call the same native
+event helper and therefore produce the ordinary `NativeEvent::Click` route;
+there is no accessibility-specific Elixir callback or state mutation. A role
+without `phx-click` remains semantic and does not register an accessible Click
+action.
+
 ## Validation rules
 
 A future schema must reject misleading combinations instead of silently

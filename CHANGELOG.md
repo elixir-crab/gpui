@@ -10,6 +10,7 @@
 - Added GPUI-native relative and absolute positioning with typed inset utilities, including axis, percentage, fractional, arbitrary-pixel, and auto values.
 - Added bounded non-editable block projections anchored before or after logical text lines without changing document coordinates.
 - Added bounded non-editable inline text projections anchored to explicit UTF-16 positions without completion policy or Rope mutation.
+- Routed generic accessible Click actions through the same normalized native event helper as pointer activation, with no accessibility-specific Elixir event path.
 - Generated native accessibility enums, the grouped semantics struct, decoders, and GPUI conversion matches from the authoritative Elixir accessibility specification.
 - Added role-constrained neutral accessibility values, selected/expanded/checked states, and orientation with native AccessKit and remote state-transition coverage.
 - Centralized generic accessibility vocabulary, identity, and name/description validation in `GPUI.Accessibility` ahead of role-constrained state attributes.

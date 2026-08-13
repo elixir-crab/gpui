@@ -45,7 +45,7 @@ pub(crate) struct RuntimeState {
 pub(crate) type SharedRuntime = Arc<RuntimeState>;
 
 impl RuntimeState {
-    fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             events: Mutex::new(Vec::new()),
             #[cfg(feature = "real-gpui")]
