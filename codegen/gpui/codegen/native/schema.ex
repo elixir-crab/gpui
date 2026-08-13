@@ -1,6 +1,7 @@
 defmodule GPUI.Codegen.Native.Schema do
   @moduledoc false
 
+  alias GPUI.Codegen.Native.Accessibility
   alias GPUI.Codegen.Native.ComponentContracts
   alias GPUI.Codegen.Native.ComponentDefinitions
   alias GPUI.Codegen.Native.Decoder
@@ -19,6 +20,7 @@ defmodule GPUI.Codegen.Native.Schema do
       Decoder.asts(),
       Elements.items(),
       Style.items(GPUI.Schema.style_specs()),
+      Accessibility.items(),
       ComponentContracts.items(),
       ComponentDefinitions.items(),
       SchemaTypes.element_node_item(),

@@ -20,14 +20,7 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:tag) => R.path(:GeneratedElementTag),
           required(:style) => R.path(:StyleAttrs),
           required(:id) => R.option(String.t()),
-          required(:accessibility_role) => R.option(String.t()),
-          required(:accessibility_label) => R.option(String.t()),
-          required(:accessibility_description) => R.option(String.t()),
-          required(:accessibility_value) => R.option(String.t()),
-          required(:accessibility_selected) => R.option(boolean()),
-          required(:accessibility_expanded) => R.option(boolean()),
-          required(:accessibility_checked) => R.option(String.t()),
-          required(:accessibility_orientation) => R.option(String.t()),
+          required(:accessibility) => R.path(:AccessibilitySemantics),
           required(:children) => R.vec(R.path(:ElementNode)),
           required(:click) => R.option(String.t()),
           required(:bounds_change) => R.option(String.t()),
@@ -210,59 +203,7 @@ defmodule GPUI.Codegen.Native.Elements do
          tag: element_tag,
          style: unwrap!(decode_style(term)),
          id: non_empty_string_attr(term, Atoms.id()),
-         accessibility_role:
-           unwrap!(
-             component_enum_attr(
-               term,
-               Atoms.accessibility_role(),
-               ref([
-                 "button",
-                 "dialog",
-                 "group",
-                 "heading",
-                 "image",
-                 "label",
-                 "link",
-                 "list",
-                 "list_item",
-                 "progress",
-                 "radio",
-                 "slider",
-                 "splitter",
-                 "tab",
-                 "tab_list",
-                 "tab_panel",
-                 "text",
-                 "textbox",
-                 "tree",
-                 "tree_item"
-               ])
-             )
-           ),
-         accessibility_label: non_empty_string_attr(term, Atoms.accessibility_label()),
-         accessibility_description:
-           non_empty_string_attr(term, Atoms.accessibility_description()),
-         accessibility_value: non_empty_string_attr(term, Atoms.accessibility_value()),
-         accessibility_selected:
-           unwrap!(component_bool_attr(term, Atoms.accessibility_selected())),
-         accessibility_expanded:
-           unwrap!(component_bool_attr(term, Atoms.accessibility_expanded())),
-         accessibility_checked:
-           unwrap!(
-             component_enum_attr(
-               term,
-               Atoms.accessibility_checked(),
-               ref(["false", "true", "mixed"])
-             )
-           ),
-         accessibility_orientation:
-           unwrap!(
-             component_enum_attr(
-               term,
-               Atoms.accessibility_orientation(),
-               ref(["horizontal", "vertical"])
-             )
-           ),
+         accessibility: unwrap!(decode_accessibility(term)),
          children: unwrap!(decode_children(term)),
          click: string_attr(term, Atoms.phx_click()),
          bounds_change: string_attr(term, Atoms.phx_bounds_change()),

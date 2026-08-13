@@ -7,21 +7,72 @@ defmodule GPUI.Accessibility do
   or transport boundary.
   """
 
-  @roles ~w(button checkbox dialog group heading image label link list list_item progress radio slider splitter switch tab tab_list tab_panel text textbox tree tree_item)
+  @role_specs [
+    button: :Button,
+    checkbox: :CheckBox,
+    dialog: :Dialog,
+    group: :Group,
+    heading: :Heading,
+    image: :Image,
+    label: :Label,
+    link: :Link,
+    list: :List,
+    list_item: :ListItem,
+    progress: :ProgressIndicator,
+    radio: :RadioButton,
+    slider: :Slider,
+    splitter: :Splitter,
+    switch: :Switch,
+    tab: :Tab,
+    tab_list: :TabList,
+    tab_panel: :TabPanel,
+    text: :TextRun,
+    textbox: :TextInput,
+    tree: :Tree,
+    tree_item: :TreeItem
+  ]
+  @roles Enum.map(@role_specs, &Atom.to_string(elem(&1, 0)))
   @generic_tags [:div, :span, :scroll, :list, :item]
+
+  @attrs [
+    id: :string,
+    accessibility_role: {:enum, @roles},
+    accessibility_label: :accessibility_label,
+    accessibility_description: :accessibility_description,
+    accessibility_value: :accessibility_value,
+    accessibility_selected: :boolean,
+    accessibility_expanded: :boolean,
+    accessibility_checked: :accessibility_checked,
+    accessibility_orientation: {:enum, ~w(horizontal vertical)}
+  ]
+
+  @state_roles [
+    accessibility_checked: ~w(checkbox radio switch),
+    accessibility_selected: ~w(list_item tab tree_item),
+    accessibility_expanded: ~w(button tree_item),
+    accessibility_orientation: ~w(slider splitter tab_list tree),
+    accessibility_value: ~w(progress slider textbox)
+  ]
 
   @type role :: String.t()
   @type checked :: boolean() | :mixed
+  @type state_rule :: {atom(), [String.t()]}
 
   @doc false
   @spec roles() :: [String.t()]
   def roles, do: @roles
 
   @doc false
+  @spec role_specs() :: [{atom(), atom()}]
+  def role_specs, do: @role_specs
+
+  @doc false
+  @spec state_roles() :: [state_rule()]
+  def state_roles, do: @state_roles
+
+  @doc false
   @spec attrs() :: keyword(GPUI.Schema.Component.attr_type())
-  def attrs do
-    GPUI.Schema.component!(:div).attrs
-  end
+  def attrs, do: @attrs
 
   @doc false
   @spec metadata?(map()) :: boolean()
@@ -75,25 +126,15 @@ defmodule GPUI.Accessibility do
     end
   end
 
-  defp validate_state_roles!(tag, attrs) do
+  defp validate_state_roles!(_tag, attrs) do
     role = Map.get(attrs, :accessibility_role)
 
-    validate_state_role!(tag, attrs, :accessibility_checked, role, ~w(checkbox radio switch))
-    validate_state_role!(tag, attrs, :accessibility_selected, role, ~w(list_item tab tree_item))
-    validate_state_role!(tag, attrs, :accessibility_expanded, role, ~w(button tree_item))
-
-    validate_state_role!(
-      tag,
-      attrs,
-      :accessibility_orientation,
-      role,
-      ~w(slider splitter tab_list tree)
-    )
-
-    validate_state_role!(tag, attrs, :accessibility_value, role, ~w(progress slider textbox))
+    Enum.each(@state_roles, fn {attribute, allowed} ->
+      validate_state_role!(attrs, attribute, role, allowed)
+    end)
   end
 
-  defp validate_state_role!(_tag, attrs, attribute, role, allowed) do
+  defp validate_state_role!(attrs, attribute, role, allowed) do
     if Map.has_key?(attrs, attribute) and role not in allowed do
       raise ArgumentError,
             "#{attribute} is not supported for accessibility role #{inspect(role)}"

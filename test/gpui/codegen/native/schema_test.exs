@@ -16,10 +16,20 @@ defmodule GPUI.Codegen.Native.SchemaTest do
     assert Enum.any?(Syn.enums(parsed), &(&1.name == "GeneratedComponentKind"))
     assert Enum.any?(Syn.enums(parsed), &(&1.name == "GeneratedElementTag"))
     assert Enum.any?(Syn.enums(parsed), &(&1.name == "ElementNode"))
+    assert Enum.any?(Syn.enums(parsed), &(&1.name == "AccessibilityRole"))
+    assert Enum.any?(Syn.enums(parsed), &(&1.name == "AccessibilityChecked"))
+    assert Enum.any?(Syn.enums(parsed), &(&1.name == "AccessibilityOrientation"))
+    assert Enum.any?(Syn.structs(parsed), &(&1.name == "AccessibilitySemantics"))
     assert Enum.any?(Syn.structs(parsed), &(&1.name == "StyleAttrs"))
     assert Enum.any?(Syn.functions(parsed), &(&1.name == "render_generated_component_node"))
 
     assert_unique_named_items(parsed)
+    assert source =~ "accessibility: AccessibilitySemantics"
+    assert source =~ "impl AccessibilityRole"
+    assert source =~ "fn gpui_role(&self) -> gpui::Role"
+    assert source =~ "fn toggled(&self) -> gpui::Toggled"
+    assert source =~ "fn gpui_orientation(&self) -> gpui::Orientation"
+    refute source =~ "accessibility_role: Option<String>"
     refute source =~ ".then("
   end
 

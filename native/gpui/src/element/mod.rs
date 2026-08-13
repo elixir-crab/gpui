@@ -38,14 +38,7 @@ impl ElementNode {
             tag: GeneratedElementTag::Div,
             style: StyleAttrs::default(),
             id: None,
-            accessibility_role: None,
-            accessibility_label: None,
-            accessibility_description: None,
-            accessibility_value: None,
-            accessibility_selected: None,
-            accessibility_expanded: None,
-            accessibility_checked: None,
-            accessibility_orientation: None,
+            accessibility: AccessibilitySemantics::default(),
             children: Vec::new(),
             click: None,
             bounds_change: None,
@@ -354,57 +347,14 @@ pub(crate) fn render_missing_resource_placeholder() -> gpui::AnyElement {
 }
 
 #[cfg(feature = "real-gpui")]
-pub(crate) fn accessibility_role(role: &str) -> Option<gpui::Role> {
-    use gpui::Role;
-
-    match role {
-        "button" => Some(Role::Button),
-        "checkbox" => Some(Role::CheckBox),
-        "dialog" => Some(Role::Dialog),
-        "group" => Some(Role::Group),
-        "heading" => Some(Role::Heading),
-        "image" => Some(Role::Image),
-        "label" => Some(Role::Label),
-        "link" => Some(Role::Link),
-        "list" => Some(Role::List),
-        "list_item" => Some(Role::ListItem),
-        "progress" => Some(Role::ProgressIndicator),
-        "radio" => Some(Role::RadioButton),
-        "slider" => Some(Role::Slider),
-        "splitter" => Some(Role::Splitter),
-        "switch" => Some(Role::Switch),
-        "tab" => Some(Role::Tab),
-        "tab_list" => Some(Role::TabList),
-        "tab_panel" => Some(Role::TabPanel),
-        "text" => Some(Role::TextRun),
-        "textbox" => Some(Role::TextInput),
-        "tree" => Some(Role::Tree),
-        "tree_item" => Some(Role::TreeItem),
-        _ => None,
-    }
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) struct AccessibilitySemantics {
-    pub(crate) role: Option<String>,
-    pub(crate) label: Option<String>,
-    pub(crate) description: Option<String>,
-    pub(crate) value: Option<String>,
-    pub(crate) selected: Option<bool>,
-    pub(crate) expanded: Option<bool>,
-    pub(crate) checked: Option<String>,
-    pub(crate) orientation: Option<String>,
-}
-
-#[cfg(feature = "real-gpui")]
 pub(crate) fn apply_accessibility_semantics(
     mut element: gpui::Stateful<gpui::Div>,
     accessibility: AccessibilitySemantics,
 ) -> gpui::Stateful<gpui::Div> {
     use gpui::StatefulInteractiveElement;
 
-    if let Some(role) = accessibility.role.as_deref().and_then(accessibility_role) {
-        element = element.role(role);
+    if let Some(role) = accessibility.role {
+        element = element.role(role.gpui_role());
     }
     if let Some(label) = accessibility.label {
         element = element.aria_label(label);
@@ -421,40 +371,13 @@ pub(crate) fn apply_accessibility_semantics(
     if let Some(expanded) = accessibility.expanded {
         element = element.aria_expanded(expanded);
     }
-    if let Some(checked) = accessibility
-        .checked
-        .as_deref()
-        .and_then(accessibility_toggled)
-    {
-        element = element.aria_toggled(checked);
+    if let Some(checked) = accessibility.checked {
+        element = element.aria_toggled(checked.toggled());
     }
-    if let Some(orientation) = accessibility
-        .orientation
-        .as_deref()
-        .and_then(accessibility_orientation)
-    {
-        element = element.aria_orientation(orientation);
+    if let Some(orientation) = accessibility.orientation {
+        element = element.aria_orientation(orientation.gpui_orientation());
     }
     element
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn accessibility_toggled(value: &str) -> Option<gpui::Toggled> {
-    match value {
-        "true" => Some(gpui::Toggled::True),
-        "false" => Some(gpui::Toggled::False),
-        "mixed" => Some(gpui::Toggled::Mixed),
-        _ => None,
-    }
-}
-
-#[cfg(feature = "real-gpui")]
-pub(crate) fn accessibility_orientation(value: &str) -> Option<gpui::Orientation> {
-    match value {
-        "horizontal" => Some(gpui::Orientation::Horizontal),
-        "vertical" => Some(gpui::Orientation::Vertical),
-        _ => None,
-    }
 }
 
 #[cfg(feature = "real-gpui")]
@@ -591,14 +514,7 @@ pub(crate) fn render_container_primitive(
         tag,
         style,
         id: stable_id,
-        accessibility_role,
-        accessibility_label,
-        accessibility_description,
-        accessibility_value,
-        accessibility_selected,
-        accessibility_expanded,
-        accessibility_checked,
-        accessibility_orientation,
+        accessibility,
         children,
         click,
         bounds_change,
@@ -680,19 +596,7 @@ pub(crate) fn render_container_primitive(
             )
         });
         let element = element.id(scroll_id).overflow_y_scroll();
-        let element = apply_accessibility_semantics(
-            element,
-            AccessibilitySemantics {
-                role: accessibility_role,
-                label: accessibility_label,
-                description: accessibility_description,
-                value: accessibility_value,
-                selected: accessibility_selected,
-                expanded: accessibility_expanded,
-                checked: accessibility_checked,
-                orientation: accessibility_orientation,
-            },
-        );
+        let element = apply_accessibility_semantics(element, accessibility.clone());
 
         if let Some(event) = click {
             let runtime_for_click = runtime.clone();
@@ -717,44 +621,9 @@ pub(crate) fn render_container_primitive(
             element,
             element_id,
             click,
-            AccessibilitySemantics {
-                role: accessibility_role,
-                label: accessibility_label,
-                description: accessibility_description,
-                value: accessibility_value,
-                selected: accessibility_selected,
-                expanded: accessibility_expanded,
-                checked: accessibility_checked,
-                orientation: accessibility_orientation,
-            },
+            accessibility,
             runtime,
             window_id,
         )
-    }
-}
-
-#[cfg(all(test, feature = "real-gpui"))]
-mod accessibility_tests {
-    use super::{accessibility_orientation, accessibility_role, accessibility_toggled};
-    use crate::gpui::{Orientation, Role, Toggled};
-
-    #[test]
-    fn maps_bounded_accessibility_values() {
-        assert_eq!(accessibility_role("checkbox"), Some(Role::CheckBox));
-        assert_eq!(accessibility_role("switch"), Some(Role::Switch));
-        assert_eq!(accessibility_role("unknown"), None);
-        assert_eq!(accessibility_toggled("false"), Some(Toggled::False));
-        assert_eq!(accessibility_toggled("true"), Some(Toggled::True));
-        assert_eq!(accessibility_toggled("mixed"), Some(Toggled::Mixed));
-        assert_eq!(accessibility_toggled("unknown"), None);
-        assert_eq!(
-            accessibility_orientation("horizontal"),
-            Some(Orientation::Horizontal)
-        );
-        assert_eq!(
-            accessibility_orientation("vertical"),
-            Some(Orientation::Vertical)
-        );
-        assert_eq!(accessibility_orientation("unknown"), None);
     }
 }

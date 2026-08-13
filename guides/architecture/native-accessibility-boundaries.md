@@ -127,6 +127,12 @@ sliders/splitters/tab lists/trees, and string values to progress/sliders/text
 boxes. State changes retain the same element ID and travel through ordinary
 local or remote snapshots before mapping to AccessKit.
 
+The Elixir specification is also the RustQ source for native role, checked, and
+orientation enums, the grouped `AccessibilitySemantics` struct, bounded
+decoders, and GPUI conversion matches. Handwritten Rust only applies those
+generated typed values to GPUI's accessibility builders; it does not repeat the
+transport vocabulary.
+
 ## Validation rules
 
 A future schema must reject misleading combinations instead of silently

@@ -8,19 +8,7 @@ defmodule GPUI.Schema do
 
   Code.ensure_compiled!(ComponentDocs)
 
-  @accessibility_attrs [
-    id: :string,
-    accessibility_role:
-      {:enum,
-       ~w(button checkbox dialog group heading image label link list list_item progress radio slider splitter switch tab tab_list tab_panel text textbox tree tree_item)},
-    accessibility_label: :accessibility_label,
-    accessibility_description: :accessibility_description,
-    accessibility_value: :accessibility_value,
-    accessibility_selected: :boolean,
-    accessibility_expanded: :boolean,
-    accessibility_checked: :accessibility_checked,
-    accessibility_orientation: {:enum, ~w(horizontal vertical)}
-  ]
+  @accessibility_attrs GPUI.Accessibility.attrs()
 
   @components [
     %Component{tag: :viewport, kind: :viewport, children: true},

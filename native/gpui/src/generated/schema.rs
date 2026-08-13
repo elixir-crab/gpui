@@ -466,14 +466,7 @@ pub(crate) struct ContainerNode {
     pub(crate) tag: GeneratedElementTag,
     pub(crate) style: StyleAttrs,
     pub(crate) id: Option<String>,
-    pub(crate) accessibility_role: Option<String>,
-    pub(crate) accessibility_label: Option<String>,
-    pub(crate) accessibility_description: Option<String>,
-    pub(crate) accessibility_value: Option<String>,
-    pub(crate) accessibility_selected: Option<bool>,
-    pub(crate) accessibility_expanded: Option<bool>,
-    pub(crate) accessibility_checked: Option<String>,
-    pub(crate) accessibility_orientation: Option<String>,
+    pub(crate) accessibility: AccessibilitySemantics,
     pub(crate) children: Vec<ElementNode>,
     pub(crate) click: Option<String>,
     pub(crate) bounds_change: Option<String>,
@@ -647,46 +640,7 @@ pub(crate) fn decode_container_node<'a>(
             tag: element_tag,
             style: decode_style(term)?,
             id: non_empty_string_attr(term, atoms::id()),
-            accessibility_role: component_enum_attr(
-                term,
-                atoms::accessibility_role(),
-                &vec![
-                    "button", "dialog", "group", "heading", "image", "label", "link",
-                    "list", "list_item", "progress", "radio", "slider", "splitter",
-                    "tab", "tab_list", "tab_panel", "text", "textbox", "tree",
-                    "tree_item"
-                ],
-            )?,
-            accessibility_label: non_empty_string_attr(
-                term,
-                atoms::accessibility_label(),
-            ),
-            accessibility_description: non_empty_string_attr(
-                term,
-                atoms::accessibility_description(),
-            ),
-            accessibility_value: non_empty_string_attr(
-                term,
-                atoms::accessibility_value(),
-            ),
-            accessibility_selected: component_bool_attr(
-                term,
-                atoms::accessibility_selected(),
-            )?,
-            accessibility_expanded: component_bool_attr(
-                term,
-                atoms::accessibility_expanded(),
-            )?,
-            accessibility_checked: component_enum_attr(
-                term,
-                atoms::accessibility_checked(),
-                &vec!["false", "true", "mixed"],
-            )?,
-            accessibility_orientation: component_enum_attr(
-                term,
-                atoms::accessibility_orientation(),
-                &vec!["horizontal", "vertical"],
-            )?,
+            accessibility: decode_accessibility(term)?,
             children: decode_children(term)?,
             click: string_attr(term, atoms::phx_click()),
             bounds_change: string_attr(term, atoms::phx_bounds_change()),
@@ -1803,6 +1757,189 @@ pub(crate) fn decode_style<'a>(term: Term<'a>) -> NifResult<StyleAttrs> {
             if valid { Ok(decoded) } else { Err(rustler::Error::BadArg) }
         }
         Err(_missing) => Ok(default_style()),
+    }
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[allow(dead_code)]
+pub(crate) enum AccessibilityRole {
+    Button,
+    Checkbox,
+    Dialog,
+    Group,
+    Heading,
+    Image,
+    Label,
+    Link,
+    List,
+    ListItem,
+    Progress,
+    Radio,
+    Slider,
+    Splitter,
+    Switch,
+    Tab,
+    TabList,
+    TabPanel,
+    Text,
+    Textbox,
+    Tree,
+    TreeItem,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[allow(dead_code)]
+pub(crate) enum AccessibilityChecked {
+    False,
+    True,
+    Mixed,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[allow(dead_code)]
+pub(crate) enum AccessibilityOrientation {
+    Horizontal,
+    Vertical,
+}
+#[derive(Clone, Debug, Default)]
+#[allow(dead_code)]
+pub(crate) struct AccessibilitySemantics {
+    pub(crate) role: Option<AccessibilityRole>,
+    pub(crate) label: Option<String>,
+    pub(crate) description: Option<String>,
+    pub(crate) value: Option<String>,
+    pub(crate) selected: Option<bool>,
+    pub(crate) expanded: Option<bool>,
+    pub(crate) checked: Option<AccessibilityChecked>,
+    pub(crate) orientation: Option<AccessibilityOrientation>,
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_accessibility_role<'a>(
+    term: Term<'a>,
+) -> NifResult<Option<AccessibilityRole>> {
+    match component_string_attr(term, atoms::accessibility_role()) {
+        Ok(Some(value)) => {
+            match value.as_str() {
+                "button" => Ok(Some(AccessibilityRole::Button)),
+                "checkbox" => Ok(Some(AccessibilityRole::Checkbox)),
+                "dialog" => Ok(Some(AccessibilityRole::Dialog)),
+                "group" => Ok(Some(AccessibilityRole::Group)),
+                "heading" => Ok(Some(AccessibilityRole::Heading)),
+                "image" => Ok(Some(AccessibilityRole::Image)),
+                "label" => Ok(Some(AccessibilityRole::Label)),
+                "link" => Ok(Some(AccessibilityRole::Link)),
+                "list" => Ok(Some(AccessibilityRole::List)),
+                "list_item" => Ok(Some(AccessibilityRole::ListItem)),
+                "progress" => Ok(Some(AccessibilityRole::Progress)),
+                "radio" => Ok(Some(AccessibilityRole::Radio)),
+                "slider" => Ok(Some(AccessibilityRole::Slider)),
+                "splitter" => Ok(Some(AccessibilityRole::Splitter)),
+                "switch" => Ok(Some(AccessibilityRole::Switch)),
+                "tab" => Ok(Some(AccessibilityRole::Tab)),
+                "tab_list" => Ok(Some(AccessibilityRole::TabList)),
+                "tab_panel" => Ok(Some(AccessibilityRole::TabPanel)),
+                "text" => Ok(Some(AccessibilityRole::Text)),
+                "textbox" => Ok(Some(AccessibilityRole::Textbox)),
+                "tree" => Ok(Some(AccessibilityRole::Tree)),
+                "tree_item" => Ok(Some(AccessibilityRole::TreeItem)),
+                _unknown => Err(rustler::Error::BadArg),
+            }
+        }
+        Ok(None) => Ok(None),
+        Err(reason) => Err(reason),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_accessibility_checked<'a>(
+    term: Term<'a>,
+) -> NifResult<Option<AccessibilityChecked>> {
+    match component_string_attr(term, atoms::accessibility_checked()) {
+        Ok(Some(value)) => {
+            match value.as_str() {
+                "false" => Ok(Some(AccessibilityChecked::False)),
+                "true" => Ok(Some(AccessibilityChecked::True)),
+                "mixed" => Ok(Some(AccessibilityChecked::Mixed)),
+                _unknown => Err(rustler::Error::BadArg),
+            }
+        }
+        Ok(None) => Ok(None),
+        Err(reason) => Err(reason),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_accessibility_orientation<'a>(
+    term: Term<'a>,
+) -> NifResult<Option<AccessibilityOrientation>> {
+    match component_string_attr(term, atoms::accessibility_orientation()) {
+        Ok(Some(value)) => {
+            match value.as_str() {
+                "horizontal" => Ok(Some(AccessibilityOrientation::Horizontal)),
+                "vertical" => Ok(Some(AccessibilityOrientation::Vertical)),
+                _unknown => Err(rustler::Error::BadArg),
+            }
+        }
+        Ok(None) => Ok(None),
+        Err(reason) => Err(reason),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_accessibility<'a>(
+    term: Term<'a>,
+) -> NifResult<AccessibilitySemantics> {
+    Ok(AccessibilitySemantics {
+        role: decode_accessibility_role(term)?,
+        label: non_empty_string_attr(term, atoms::accessibility_label()),
+        description: non_empty_string_attr(term, atoms::accessibility_description()),
+        value: non_empty_string_attr(term, atoms::accessibility_value()),
+        selected: component_bool_attr(term, atoms::accessibility_selected())?,
+        expanded: component_bool_attr(term, atoms::accessibility_expanded())?,
+        checked: decode_accessibility_checked(term)?,
+        orientation: decode_accessibility_orientation(term)?,
+    })
+}
+#[cfg(feature = "real-gpui")]
+impl AccessibilityRole {
+    fn gpui_role(&self) -> gpui::Role {
+        match self {
+            AccessibilityRole::Button => gpui::Role::Button,
+            AccessibilityRole::Checkbox => gpui::Role::CheckBox,
+            AccessibilityRole::Dialog => gpui::Role::Dialog,
+            AccessibilityRole::Group => gpui::Role::Group,
+            AccessibilityRole::Heading => gpui::Role::Heading,
+            AccessibilityRole::Image => gpui::Role::Image,
+            AccessibilityRole::Label => gpui::Role::Label,
+            AccessibilityRole::Link => gpui::Role::Link,
+            AccessibilityRole::List => gpui::Role::List,
+            AccessibilityRole::ListItem => gpui::Role::ListItem,
+            AccessibilityRole::Progress => gpui::Role::ProgressIndicator,
+            AccessibilityRole::Radio => gpui::Role::RadioButton,
+            AccessibilityRole::Slider => gpui::Role::Slider,
+            AccessibilityRole::Splitter => gpui::Role::Splitter,
+            AccessibilityRole::Switch => gpui::Role::Switch,
+            AccessibilityRole::Tab => gpui::Role::Tab,
+            AccessibilityRole::TabList => gpui::Role::TabList,
+            AccessibilityRole::TabPanel => gpui::Role::TabPanel,
+            AccessibilityRole::Text => gpui::Role::TextRun,
+            AccessibilityRole::Textbox => gpui::Role::TextInput,
+            AccessibilityRole::Tree => gpui::Role::Tree,
+            AccessibilityRole::TreeItem => gpui::Role::TreeItem,
+        }
+    }
+}
+#[cfg(feature = "real-gpui")]
+impl AccessibilityChecked {
+    fn toggled(&self) -> gpui::Toggled {
+        match self {
+            AccessibilityChecked::False => gpui::Toggled::False,
+            AccessibilityChecked::True => gpui::Toggled::True,
+            AccessibilityChecked::Mixed => gpui::Toggled::Mixed,
+        }
+    }
+}
+#[cfg(feature = "real-gpui")]
+impl AccessibilityOrientation {
+    fn gpui_orientation(&self) -> gpui::Orientation {
+        match self {
+            AccessibilityOrientation::Horizontal => gpui::Orientation::Horizontal,
+            AccessibilityOrientation::Vertical => gpui::Orientation::Vertical,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
