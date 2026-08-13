@@ -41,7 +41,7 @@ jobs:
           key: rust-audit
       - run: cargo install cargo-audit --locked
       - run: >-
-          cargo audit --file native/gpui/Cargo.lock
+          cargo audit --deny unsound --file native/gpui/Cargo.lock
           --ignore RUSTSEC-2026-0194
           --ignore RUSTSEC-2026-0195
 

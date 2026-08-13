@@ -106,13 +106,14 @@ consumer checksum validation and no-Rust installation.
 - that the MIT native artifact has no GPL-3 Rust dependencies;
 - production source compilation from the built package.
 
-The RustSec gate currently acknowledges `RUSTSEC-2026-0194` and
-`RUSTSEC-2026-0195` for transitive `quick-xml` versions constrained by the
-pinned GPUI platform stack. The `0.30` path is XCB/build metadata; the `0.39`
-paths are Wayland code generation and local D-Bus introspection. They do not
-parse GPUI snapshots or remote protocol payloads. New advisories still fail the
-gate, and these exceptions must be removed when the upstream platform stack
-accepts `quick-xml >= 0.41`.
+The RustSec gate fails vulnerabilities and unsoundness advisories. It currently
+acknowledges `RUSTSEC-2026-0194` and `RUSTSEC-2026-0195` for transitive
+`quick-xml` versions constrained by the pinned GPUI platform stack. The `0.30`
+path is XCB/build metadata; the `0.39` paths are Wayland code generation and
+local D-Bus introspection. They do not parse GPUI snapshots or remote protocol
+payloads. Unmaintained dependency warnings remain visible for upstream review;
+new vulnerabilities or unsoundness advisories fail the gate. These exceptions
+must be removed when the upstream platform stack accepts `quick-xml >= 0.41`.
 
 Zed's Apache-licensed `sum_tree` uses only the `ztracing::instrument` surface,
 but Zed declares its tracing facade as GPL-3. GPUI patches that facade with the

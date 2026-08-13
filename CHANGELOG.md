@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Hardened release security validation to fail Rust unsoundness advisories and updated the pinned native dependency graph past the affected `event-listener` release.
 - Added an explicit compatibility policy for public Elixir contracts, exact-match remote protocol versions, native artifacts, platform claims, snapshots, accessibility boundaries, and post-1.0 deprecations.
 - Added a neutral controlled two-pane native resizable split with bounded sizes, monotonic resize requests, and consumer-owned persistence.
 - Added idiomatic optional `handle_window_event/3` callbacks with `{:close, assigns}` approval, plus declarative native window minimum size and resizability.
