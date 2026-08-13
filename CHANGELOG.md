@@ -10,6 +10,7 @@
 - Added GPUI-native relative and absolute positioning with typed inset utilities, including axis, percentage, fractional, arbitrary-pixel, and auto values.
 - Added bounded non-editable block projections anchored before or after logical text lines without changing document coordinates.
 - Added bounded non-editable inline text projections anchored to explicit UTF-16 positions without completion policy or Rope mutation.
+- Hardened controlled dialogs with Escape policy requiring both keyboard and closable flags, native focus trapping, initial content focus, and safe trigger restoration on every close path.
 - Added controlled disabled semantics for generic accessible controls, removing pointer, keyboard, Tab, and AccessKit activation while reporting AccessKit disabled state.
 - Added generated accessibility interaction classes and native Tab/Enter/Space activation for simple generic controls, including visible keyboard focus.
 - Routed generic accessible Click actions through the same normalized native event helper as pointer activation, with no accessibility-specific Elixir event path.

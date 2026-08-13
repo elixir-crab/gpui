@@ -1,4 +1,7 @@
 #[cfg(feature = "components")]
+use std::sync::{Arc, Mutex};
+
+#[cfg(feature = "components")]
 use super::request_open;
 use super::{invalid_slots, render_slot};
 use crate::{
@@ -20,7 +23,6 @@ pub(crate) fn render_dialog(
         StatefulInteractiveElement,
     };
     use gpui_component::WindowExt;
-    use std::sync::{Arc, Mutex};
 
     let (trigger, content) = match dialog_slots(node.children) {
         Some(slots) => slots,
@@ -37,6 +39,8 @@ pub(crate) fn render_dialog(
         let effective_open = Arc::new(Mutex::new(node.open));
         let opened = Arc::new(Mutex::new(false));
         let keyboard = Arc::new(Mutex::new(node.keyboard));
+        let trigger_present = Arc::new(Mutex::new(trigger.is_some()));
+        let trigger_focus = context.cx.focus_handle();
         let content_focus = context.cx.focus_handle();
         let config = Arc::new(Mutex::new(DialogConfig {
             title: node.title.clone(),
@@ -52,11 +56,18 @@ pub(crate) fn render_dialog(
         let key_effective_open = effective_open.clone();
         let key_opened = opened.clone();
         let key_keyboard = keyboard.clone();
+        let key_config = config.clone();
+        let key_trigger_focus = trigger_focus.clone();
+        let key_trigger_present = trigger_present.clone();
         let window_id = context.window_id;
         let key_handler = Arc::new(
             move |event: &gpui::KeyDownEvent, window: &mut gpui::Window, cx: &mut gpui::App| {
                 let keyboard = key_keyboard.lock().map(|enabled| *enabled).unwrap_or(true);
-                if keyboard && event.keystroke.key == "escape" {
+                let closable = key_config
+                    .lock()
+                    .map(|config| config.closable)
+                    .unwrap_or(true);
+                if dialog_escape_enabled(keyboard, closable) && event.keystroke.key == "escape" {
                     if let Ok(mut state) = key_opened.lock() {
                         *state = false;
                     }
@@ -69,6 +80,12 @@ pub(crate) fn render_dialog(
                         true,
                     );
                     window.close_dialog(cx);
+                    restore_dialog_trigger_focus(
+                        window,
+                        cx,
+                        &key_trigger_focus,
+                        &key_trigger_present,
+                    );
                     cx.stop_propagation();
                 }
             },
@@ -91,11 +108,12 @@ pub(crate) fn render_dialog(
                 overlay: ComponentOverlayState {
                     binding,
                     effective_open,
-                    trigger_focus: context.cx.focus_handle(),
+                    trigger_focus,
                     content_focus,
                 },
                 opened,
                 keyboard,
+                trigger_present,
                 config,
                 content: content_view,
                 content_state,
@@ -112,6 +130,9 @@ pub(crate) fn render_dialog(
     }
     if let Ok(mut keyboard) = dialog.keyboard.lock() {
         *keyboard = node.keyboard;
+    }
+    if let Ok(mut trigger_present) = dialog.trigger_present.lock() {
+        *trigger_present = trigger.is_some();
     }
     if let Ok(mut config) = dialog.config.lock() {
         *config = DialogConfig {
@@ -150,6 +171,7 @@ pub(crate) fn render_dialog(
     let effective_open = dialog.overlay.effective_open.clone();
     let opened = dialog.opened.clone();
     let trigger_focus = dialog.overlay.trigger_focus.clone();
+    let trigger_present = dialog.trigger_present.clone();
     let content_focus = dialog.overlay.content_focus.clone();
     let content_view = dialog.content.clone();
     let config = dialog.config.clone();
@@ -164,6 +186,8 @@ pub(crate) fn render_dialog(
         let callback_binding = binding.clone();
         let callback_effective_open = effective_open.clone();
         let callback_opened = opened.clone();
+        let callback_trigger_focus = trigger_focus.clone();
+        let callback_trigger_present = trigger_present.clone();
         context.window.defer(context.cx, move |window, cx| {
             let content_view = content_view.clone();
             let callback_runtime = callback_runtime.clone();
@@ -195,7 +219,9 @@ pub(crate) fn render_dialog(
                         let binding = callback_binding.clone();
                         let effective_open = callback_effective_open.clone();
                         let opened = callback_opened.clone();
-                        move |_event, _window, _cx| {
+                        let trigger_focus = callback_trigger_focus.clone();
+                        let trigger_present = callback_trigger_present.clone();
+                        move |_event, window, cx| {
                             if let Ok(mut state) = opened.lock() {
                                 *state = false;
                             }
@@ -206,6 +232,12 @@ pub(crate) fn render_dialog(
                                 &effective_open,
                                 false,
                                 true,
+                            );
+                            restore_dialog_trigger_focus(
+                                window,
+                                cx,
+                                &trigger_focus,
+                                &trigger_present,
                             );
                         }
                     })
@@ -218,8 +250,11 @@ pub(crate) fn render_dialog(
         if let Ok(mut state) = opened.lock() {
             *state = false;
         }
+        let restore_focus = trigger_focus.clone();
+        let restore_present = trigger_present.clone();
         context.window.defer(context.cx, move |window, cx| {
             window.close_dialog(cx);
+            restore_dialog_trigger_focus(window, cx, &restore_focus, &restore_present);
         });
     }
 
@@ -270,6 +305,40 @@ pub(crate) fn render_dialog(
     }
 
     element.into_any_element()
+}
+
+#[cfg(feature = "components")]
+fn dialog_escape_enabled(keyboard: bool, closable: bool) -> bool {
+    keyboard && closable
+}
+
+#[cfg(feature = "components")]
+fn restore_dialog_trigger_focus(
+    window: &mut gpui::Window,
+    cx: &mut gpui::App,
+    trigger_focus: &gpui::FocusHandle,
+    trigger_present: &Arc<Mutex<bool>>,
+) {
+    if trigger_present
+        .lock()
+        .map(|present| *present)
+        .unwrap_or(false)
+    {
+        trigger_focus.focus(window, cx);
+    }
+}
+
+#[cfg(all(test, feature = "components"))]
+mod tests {
+    use super::dialog_escape_enabled;
+
+    #[test]
+    fn escape_requires_both_keyboard_and_closable_policy() {
+        assert!(dialog_escape_enabled(true, true));
+        assert!(!dialog_escape_enabled(false, true));
+        assert!(!dialog_escape_enabled(true, false));
+        assert!(!dialog_escape_enabled(false, false));
+    }
 }
 
 #[cfg(not(feature = "components"))]

@@ -228,6 +228,7 @@ pub(crate) struct ComponentDialog {
     pub(crate) overlay: ComponentOverlayState,
     pub(crate) opened: Arc<Mutex<bool>>,
     pub(crate) keyboard: Arc<Mutex<bool>>,
+    pub(crate) trigger_present: Arc<Mutex<bool>>,
     pub(crate) config: Arc<Mutex<DialogConfig>>,
     pub(crate) content: gpui::Entity<crate::ElixirRoot>,
     pub(crate) content_state: crate::SharedWindow,

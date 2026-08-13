@@ -156,6 +156,15 @@ controlled value/check state, report AccessKit disabled state, and install no
 pointer, keyboard, Tab-stop, or explicit AccessKit Click activation. Re-enabling
 the same node restores its normal generated interaction policy.
 
+Controlled dialogs use gpui-component's native `Role::Dialog`, focus trap, and
+selection scope. Opening focuses the dialog content handle once. Every close
+path—Escape, overlay/close-button callback, or an application-controlled
+false transition—restores the stable trigger focus handle when that trigger is
+still present. Triggerless dialogs skip restoration safely. Escape requests the
+ordinary controlled close event only when both `keyboard` and `closable` are
+true; Rust does not independently own `open` state. The trigger continues to
+report the title and controlled expanded state.
+
 ## Validation rules
 
 A future schema must reject misleading combinations instead of silently
