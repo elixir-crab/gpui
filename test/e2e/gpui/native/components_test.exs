@@ -285,7 +285,10 @@ defmodule GPUI.Native.ComponentsE2ETest do
 
     @impl GPUI.View
     def handle_event("section_changed", %{value: section}, assigns),
-      do: {:noreply, %{assigns | section: section, disabled: true}}
+      do: {:noreply, %{assigns | section: section, selections: assigns.selections + 1}}
+
+    def handle_event("disable_tabs", _event, assigns),
+      do: {:noreply, %{assigns | disabled: true}}
   end
 
   defmodule TabsApp do
@@ -297,7 +300,7 @@ defmodule GPUI.Native.ComponentsE2ETest do
        [
          window title do
            size(360, 80)
-           root(TabsView, section: "general", disabled: false)
+           root(TabsView, section: "general", disabled: false, selections: 0)
          end
        ]}
     end
@@ -473,14 +476,35 @@ defmodule GPUI.Native.ComponentsE2ETest do
     Desktop.click!(window_id, 130, 32)
 
     Desktop.eventually(fn ->
-      assert %{section: "advanced", disabled: true} = assigns(runtime)
+      assert %{section: "advanced", selections: 1, disabled: false} = assigns(runtime)
     end)
+
+    Desktop.key!(window_id, "Left")
+    Desktop.eventually(fn -> assert %{section: "general", selections: 2} = assigns(runtime) end)
+    Desktop.key!(window_id, "End")
+    Desktop.eventually(fn -> assert %{section: "advanced", selections: 3} = assigns(runtime) end)
+    Desktop.key!(window_id, "Right")
+    Desktop.eventually(fn -> assert %{section: "general", selections: 4} = assigns(runtime) end)
+    Desktop.key!(window_id, "space")
+    Desktop.eventually(fn -> assert %{section: "general", selections: 5} = assigns(runtime) end)
+
+    assert {:ok, _reply} =
+             GPUI.Runtime.inject_event(runtime, %{
+               type: :click,
+               window_id: 1,
+               event: "disable_tabs"
+             })
+
+    Desktop.eventually(fn -> assert %{disabled: true} = assigns(runtime) end)
+    Desktop.await_frame!(runtime, 1, window_id)
 
     Desktop.assert_no_runtime_update!(runtime, 1, window_id, fn ->
-      Desktop.click!(window_id, 80, 32)
+      Desktop.click!(window_id, 130, 32)
+      Desktop.key!(window_id, "Right")
+      Desktop.key!(window_id, "space")
     end)
 
-    assert %{section: "advanced"} = assigns(runtime)
+    assert %{section: "general", selections: 5} = assigns(runtime)
   end
 
   test "native slider emits change and release events and respects disabled state" do

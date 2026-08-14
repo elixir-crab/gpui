@@ -157,6 +157,13 @@ wrapping around disabled options.
 
 ## Tabs, accordions, sliders, and splits
 
+Tabs expose a native tab-list with labeled tab roles and controlled selected
+state. The selected tab is the single Tab stop; Left/Up and Right/Down move and
+select with wrapping, Home/End select endpoints, and Enter/Space activate the
+focused tab. Pointer selection focuses the chosen tab. Disabled tab bars expose
+disabled semantics and install no pointer, keyboard, Tab, or accessible Click
+action. Every activation path emits the same controlled `phx-change` value.
+
 ```elixir
 <UI.tabs
   id="section"

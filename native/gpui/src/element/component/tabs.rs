@@ -11,8 +11,10 @@ pub(crate) fn render(
     node: TabsComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
-    use crate::{push_event, EventValue, InputKind, NativeEvent};
-    use gpui::IntoElement;
+    use gpui::{
+        AccessibleAction, InteractiveElement, IntoElement, MouseButton, StatefulInteractiveElement,
+        Styled,
+    };
     use gpui_component::{
         tab::{Tab, TabBar},
         Sizable,
@@ -23,23 +25,92 @@ pub(crate) fn render(
             .iter()
             .position(|option| &option.value == value)
     });
-    let tabs = node
-        .options
-        .iter()
-        .map(|option| {
-            Tab::new()
-                .label(option.label.clone())
-                .disabled(node.disabled)
-        })
-        .collect::<Vec<_>>();
     let values = node
         .options
         .iter()
         .map(|option| option.value.clone())
         .collect::<Vec<_>>();
+    let focus_handles = values
+        .iter()
+        .map(|value| {
+            context
+                .window
+                .use_keyed_state(
+                    format!("{}-tab-focus-{value}", node.id),
+                    context.cx,
+                    |_, cx| cx.focus_handle(),
+                )
+                .read(context.cx)
+                .clone()
+        })
+        .collect::<Vec<_>>();
+    let tab_stop_index = selected_index.or_else(|| (!node.options.is_empty()).then_some(0));
     let runtime = context.runtime.clone();
     let window_id = context.window_id;
     let change_event = node.change.clone();
+    let disabled = node.disabled;
+    let tabs = node
+        .options
+        .iter()
+        .enumerate()
+        .map(|(index, option)| {
+            let focus = focus_handles[index].clone();
+            let mouse_focus = focus.clone();
+            let key_focus_handles = focus_handles.clone();
+            let key_values = values.clone();
+            let key_runtime = runtime.clone();
+            let key_event = change_event.clone();
+            let action_runtime = runtime.clone();
+            let action_event = change_event.clone();
+            let action_value = option.value.clone();
+            let mut tab = Tab::new()
+                .label(option.label.clone())
+                .disabled(disabled)
+                .track_focus(&focus.tab_stop(!disabled && tab_stop_index == Some(index)))
+                .tab_index(if !disabled && tab_stop_index == Some(index) {
+                    0
+                } else {
+                    -1
+                });
+            if disabled {
+                tab = tab.a11y_synthetic_children(|builder| {
+                    builder.parent_node().set_disabled();
+                });
+            } else {
+                tab = tab
+                    .focus_visible(|style| style.border_2().border_color(gpui::rgb(0x60a5fa)))
+                    .on_mouse_down(MouseButton::Left, move |_event, window, cx| {
+                        mouse_focus.focus(window, cx);
+                    })
+                    .on_key_down(move |event, window, cx| {
+                        let Some(target) = tab_key_target(
+                            event.keystroke.key.as_str(),
+                            index,
+                            key_focus_handles.len(),
+                        ) else {
+                            return;
+                        };
+                        key_focus_handles[target].focus(window, cx);
+                        emit_change(
+                            &key_runtime,
+                            window_id,
+                            key_event.as_ref(),
+                            &key_values[target],
+                        );
+                        cx.stop_propagation();
+                    })
+                    .on_a11y_action(AccessibleAction::Click, move |_data, _window, _cx| {
+                        emit_change(
+                            &action_runtime,
+                            window_id,
+                            action_event.as_ref(),
+                            &action_value,
+                        );
+                    });
+            }
+            tab
+        })
+        .collect::<Vec<_>>();
     let mut element = TabBar::new(node.id)
         .children(tabs)
         .menu(node.menu)
@@ -50,15 +121,7 @@ pub(crate) fn render(
             let Some(value) = values.get(*index) else {
                 return;
             };
-            let _ = push_event(
-                &runtime,
-                NativeEvent::Input {
-                    kind: InputKind::Change,
-                    window_id,
-                    event: event.clone(),
-                    value: Some(EventValue::String(value.clone())),
-                },
-            );
+            emit_change(&runtime, window_id, Some(event), value);
         });
     if let Some(selected_index) = selected_index {
         element = element.selected_index(selected_index);
@@ -78,6 +141,64 @@ pub(crate) fn render(
     };
 
     apply_component_styles(element, node.style).into_any_element()
+}
+
+#[cfg(feature = "components")]
+fn tab_key_target(key: &str, current: usize, len: usize) -> Option<usize> {
+    if len == 0 {
+        return None;
+    }
+
+    match key {
+        "left" | "up" => Some((current + len - 1) % len),
+        "right" | "down" => Some((current + 1) % len),
+        "home" => Some(0),
+        "end" => Some(len - 1),
+        "enter" | "space" => Some(current),
+        _other => None,
+    }
+}
+
+#[cfg(feature = "components")]
+fn emit_change(
+    runtime: &crate::SharedRuntime,
+    window_id: u64,
+    event: Option<&String>,
+    value: &str,
+) {
+    use crate::{push_event, EventValue, InputKind, NativeEvent};
+
+    let Some(event) = event else {
+        return;
+    };
+    let _ = push_event(
+        runtime,
+        NativeEvent::Input {
+            kind: InputKind::Change,
+            window_id,
+            event: event.clone(),
+            value: Some(EventValue::String(value.to_string())),
+        },
+    );
+}
+
+#[cfg(all(test, feature = "components"))]
+mod tests {
+    use super::tab_key_target;
+
+    #[test]
+    fn keyboard_navigation_wraps_and_supports_endpoints_and_activation() {
+        assert_eq!(tab_key_target("left", 0, 3), Some(2));
+        assert_eq!(tab_key_target("right", 2, 3), Some(0));
+        assert_eq!(tab_key_target("up", 1, 3), Some(0));
+        assert_eq!(tab_key_target("down", 1, 3), Some(2));
+        assert_eq!(tab_key_target("home", 2, 3), Some(0));
+        assert_eq!(tab_key_target("end", 0, 3), Some(2));
+        assert_eq!(tab_key_target("enter", 1, 3), Some(1));
+        assert_eq!(tab_key_target("space", 1, 3), Some(1));
+        assert_eq!(tab_key_target("tab", 1, 3), None);
+        assert_eq!(tab_key_target("right", 0, 0), None);
+    }
 }
 
 #[cfg(not(feature = "components"))]
