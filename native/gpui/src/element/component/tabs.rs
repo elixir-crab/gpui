@@ -12,8 +12,8 @@ pub(crate) fn render(
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     use gpui::{
-        AccessibleAction, InteractiveElement, IntoElement, MouseButton, StatefulInteractiveElement,
-        Styled,
+        AccessibleAction, InteractiveElement, IntoElement, MouseButton, ParentElement,
+        StatefulInteractiveElement, Styled,
     };
     use gpui_component::{
         tab::{Tab, TabBar},
@@ -45,6 +45,15 @@ pub(crate) fn render(
         })
         .collect::<Vec<_>>();
     let tab_stop_index = selected_index.or_else(|| (!node.options.is_empty()).then_some(0));
+    let group_focus = context
+        .window
+        .use_keyed_state(
+            format!("{}-tab-group-focus", node.id),
+            context.cx,
+            |_, cx| cx.focus_handle(),
+        )
+        .read(context.cx)
+        .clone();
     let runtime = context.runtime.clone();
     let window_id = context.window_id;
     let change_event = node.change.clone();
@@ -66,12 +75,8 @@ pub(crate) fn render(
             let mut tab = Tab::new()
                 .label(option.label.clone())
                 .disabled(disabled)
-                .track_focus(&focus.tab_stop(!disabled && tab_stop_index == Some(index)))
-                .tab_index(if !disabled && tab_stop_index == Some(index) {
-                    0
-                } else {
-                    -1
-                });
+                .track_focus(&focus)
+                .tab_index(-1);
             if disabled {
                 tab = tab.a11y_synthetic_children(|builder| {
                     builder.parent_node().set_disabled();
@@ -111,7 +116,11 @@ pub(crate) fn render(
             tab
         })
         .collect::<Vec<_>>();
-    let mut element = TabBar::new(node.id)
+    let group_key_focus_handles = focus_handles.clone();
+    let group_key_values = values.clone();
+    let group_key_runtime = runtime.clone();
+    let group_key_event = change_event.clone();
+    let mut element = TabBar::new(node.id.clone())
         .children(tabs)
         .menu(node.menu)
         .on_click(move |index, _window, _cx| {
@@ -140,7 +149,39 @@ pub(crate) fn render(
         _ => element,
     };
 
-    apply_component_styles(element, node.style).into_any_element()
+    let element = gpui::div()
+        .id(format!("{}-keyboard", node.id))
+        .track_focus(&group_focus.tab_stop(!disabled))
+        .on_key_down(move |event, window, cx| {
+            if disabled {
+                return;
+            }
+            let current = group_key_focus_handles
+                .iter()
+                .position(|handle| handle.is_focused(window))
+                .or(selected_index)
+                .or(tab_stop_index);
+            let Some(current) = current else {
+                return;
+            };
+            let Some(target) = tab_key_target(
+                event.keystroke.key.as_str(),
+                current,
+                group_key_values.len(),
+            ) else {
+                return;
+            };
+            group_key_focus_handles[target].focus(window, cx);
+            emit_change(
+                &group_key_runtime,
+                window_id,
+                group_key_event.as_ref(),
+                &group_key_values[target],
+            );
+            cx.stop_propagation();
+        })
+        .child(apply_component_styles(element, node.style));
+    element.into_any_element()
 }
 
 #[cfg(feature = "components")]

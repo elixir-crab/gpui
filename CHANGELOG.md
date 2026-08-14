@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Corrected native dialog and tabs E2E assertions to prove focus through keyboard activation, moved tab key handling to the composite focus owner, and fixed the programmatic split event spelling.
 - Added native tab-list semantics with roving focus, wrapped arrow navigation, Home/End, Enter/Space, accessible Click actions, visible keyboard focus, and disabled interaction exclusion through the controlled change path.
 - Added native dialog E2E scenarios for forward and reverse focus containment, Escape policy, controlled closure, and keyboard reopening through the restored trigger.
 - Extended release validation with a clean renderer-independent consumer that compiles and runs `GPUI.Test` without building or loading the native NIF.

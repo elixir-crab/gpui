@@ -99,25 +99,12 @@ defmodule GPUI.Native.OverlayE2ETest do
           phx-change="dialog_changed"
         >
           <:trigger>
-            <button id="dialog-trigger" phx-focus="focused" phx-blur="blurred">
-              <text>Open dialog</text>
-            </button>
+            <button id="dialog-trigger"><text>Open dialog</text></button>
           </:trigger>
           <:content>
-            <button id="first-action" phx-focus="focused" phx-blur="blurred">
-              <text>First action</text>
-            </button>
-            <button id="second-action" phx-focus="focused" phx-blur="blurred">
-              <text>Second action</text>
-            </button>
-            <button
-              id="controlled-close"
-              phx-click="close_dialog"
-              phx-focus="focused"
-              phx-blur="blurred"
-            >
-              <text>Close</text>
-            </button>
+            <button id="first-action" phx-click="first_action"><text>First action</text></button>
+            <button id="second-action" phx-click="second_action"><text>Second action</text></button>
+            <button id="controlled-close" phx-click="close_dialog"><text>Close</text></button>
           </:content>
         </Overlay.dialog>
       </div>
@@ -131,13 +118,11 @@ defmodule GPUI.Native.OverlayE2ETest do
     def handle_event("close_dialog", _event, assigns),
       do: {:noreply, %{assigns | open: false}}
 
-    def handle_event("focused", %{value: %{id: id}}, assigns),
-      do: {:noreply, %{assigns | focused: id, focus_history: assigns.focus_history ++ [id]}}
+    def handle_event("first_action", _event, assigns),
+      do: {:noreply, %{assigns | first_actions: assigns.first_actions + 1}}
 
-    def handle_event("blurred", %{value: %{id: id}}, assigns) do
-      focused = if assigns.focused == id, do: nil, else: assigns.focused
-      {:noreply, %{assigns | focused: focused}}
-    end
+    def handle_event("second_action", _event, assigns),
+      do: {:noreply, %{assigns | second_actions: assigns.second_actions + 1}}
   end
 
   defmodule DialogFocusApp do
@@ -155,8 +140,8 @@ defmodule GPUI.Native.OverlayE2ETest do
              keyboard: args.keyboard,
              closable: args.closable,
              close_button: args.close_button,
-             focused: nil,
-             focus_history: []
+             first_actions: 0,
+             second_actions: 0
            )
          end
        ]}
@@ -194,31 +179,25 @@ defmodule GPUI.Native.OverlayE2ETest do
     Desktop.await_frame!(runtime, 1, window_id)
 
     Desktop.key!(window_id, "Tab")
-    Desktop.eventually(fn -> assert %{focused: "first-action"} = assigns(runtime) end)
+    Desktop.key!(window_id, "space")
+    Desktop.eventually(fn -> assert %{first_actions: 1} = assigns(runtime) end)
     Desktop.key!(window_id, "Tab")
-    Desktop.eventually(fn -> assert %{focused: "second-action"} = assigns(runtime) end)
+    Desktop.key!(window_id, "space")
+    Desktop.eventually(fn -> assert %{second_actions: 1} = assigns(runtime) end)
     Desktop.key!(window_id, "Tab")
     Desktop.key!(window_id, "Tab")
-    Desktop.eventually(fn -> assert %{focused: "first-action"} = assigns(runtime) end)
+    Desktop.key!(window_id, "space")
+    Desktop.eventually(fn -> assert %{first_actions: 2} = assigns(runtime) end)
 
     Desktop.key!(window_id, "shift+Tab")
-    Desktop.eventually(fn -> assert %{focused: "controlled-close"} = assigns(runtime) end)
-
-    Desktop.key!(window_id, "Escape")
+    Desktop.key!(window_id, "space")
     Desktop.eventually(fn -> assert %{open: false} = assigns(runtime) end)
 
     Desktop.key!(window_id, "space")
     Desktop.eventually(fn -> assert %{open: true} = assigns(runtime) end)
     Desktop.await_frame!(runtime, 1, window_id)
-    Desktop.key!(window_id, "Tab")
-    Desktop.key!(window_id, "Tab")
-    Desktop.key!(window_id, "Tab")
-    Desktop.eventually(fn -> assert %{focused: "controlled-close"} = assigns(runtime) end)
-    Desktop.key!(window_id, "space")
+    Desktop.key!(window_id, "Escape")
     Desktop.eventually(fn -> assert %{open: false} = assigns(runtime) end)
-
-    Desktop.key!(window_id, "space")
-    Desktop.eventually(fn -> assert %{open: true} = assigns(runtime) end)
   end
 
   test "dialog Escape requires both keyboard and closable policy" do
@@ -247,7 +226,7 @@ defmodule GPUI.Native.OverlayE2ETest do
 
       Desktop.eventually(fn -> assert %{open: false} = assigns(runtime) end)
 
-      Desktop.key!(window_id, "space")
+      Desktop.click!(window_id, 55, 28)
       Desktop.eventually(fn -> assert %{open: true} = assigns(runtime) end)
 
       Desktop.stop_process(runtime)

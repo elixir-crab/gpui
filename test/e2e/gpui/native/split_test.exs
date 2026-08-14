@@ -12,12 +12,12 @@ defmodule GPUI.Native.SplitE2ETest do
     @impl GPUI.View
     def render(assigns) do
       UI.split(%{
+        :"phx-change" => "split_resized",
         id: "native-split",
         class: "w-full h-full",
         sizes: assigns.sizes,
         min_sizes: [140, 240],
         resize_request: assigns.resize_request,
-        phx_change: "split_resized",
         children: [
           %GPUI.Element{type: :div, attrs: [class: "w-full h-full"], children: ["First"]},
           %GPUI.Element{type: :div, attrs: [class: "w-full h-full"], children: ["Second"]}
