@@ -23,6 +23,7 @@ jobs:
       run-min: false
       rust-toolchain: "1.95.0"
       rust-components: ""
+      apt-packages: inotify-tools
       extra-env: |
         RUST_FONTCONFIG_DLOPEN=1
       rust-cache-workspaces: native/gpui -> target
