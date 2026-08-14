@@ -102,30 +102,30 @@ defmodule GPUI.Native.OverlayE2ETest do
             <button id="dialog-trigger"><text>Open dialog</text></button>
           </:trigger>
           <:content>
-            <button
+            <div
               id="first-action"
               accessibility_role="button"
               accessibility_label="First action"
               phx-click="first_action"
             >
               <text>First action</text>
-            </button>
-            <button
+            </div>
+            <div
               id="second-action"
               accessibility_role="button"
               accessibility_label="Second action"
               phx-click="second_action"
             >
               <text>Second action</text>
-            </button>
-            <button
+            </div>
+            <div
               id="controlled-close"
               accessibility_role="button"
               accessibility_label="Close dialog"
               phx-click="close_dialog"
             >
               <text>Close</text>
-            </button>
+            </div>
           </:content>
         </Overlay.dialog>
       </div>

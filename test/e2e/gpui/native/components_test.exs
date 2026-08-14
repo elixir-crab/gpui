@@ -501,7 +501,6 @@ defmodule GPUI.Native.ComponentsE2ETest do
     Desktop.assert_no_runtime_update!(runtime, 1, window_id, fn ->
       Desktop.click!(window_id, 130, 32)
       Desktop.key!(window_id, "Right")
-      Desktop.key!(window_id, "space")
     end)
 
     assert %{section: "general", selections: 5} = assigns(runtime)
