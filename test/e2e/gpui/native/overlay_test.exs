@@ -102,9 +102,30 @@ defmodule GPUI.Native.OverlayE2ETest do
             <button id="dialog-trigger"><text>Open dialog</text></button>
           </:trigger>
           <:content>
-            <button id="first-action" phx-click="first_action"><text>First action</text></button>
-            <button id="second-action" phx-click="second_action"><text>Second action</text></button>
-            <button id="controlled-close" phx-click="close_dialog"><text>Close</text></button>
+            <button
+              id="first-action"
+              accessibility_role="button"
+              accessibility_label="First action"
+              phx-click="first_action"
+            >
+              <text>First action</text>
+            </button>
+            <button
+              id="second-action"
+              accessibility_role="button"
+              accessibility_label="Second action"
+              phx-click="second_action"
+            >
+              <text>Second action</text>
+            </button>
+            <button
+              id="controlled-close"
+              accessibility_role="button"
+              accessibility_label="Close dialog"
+              phx-click="close_dialog"
+            >
+              <text>Close</text>
+            </button>
           </:content>
         </Overlay.dialog>
       </div>
@@ -224,7 +245,8 @@ defmodule GPUI.Native.OverlayE2ETest do
                  value: nil
                })
 
-      Desktop.eventually(fn -> assert %{open: false} = assigns(runtime) end)
+      assert %{open: false} = assigns(runtime)
+      assert :ok = GPUI.Runtime.await_frame(runtime, 1)
 
       Desktop.click!(window_id, 55, 28)
       Desktop.eventually(fn -> assert %{open: true} = assigns(runtime) end)

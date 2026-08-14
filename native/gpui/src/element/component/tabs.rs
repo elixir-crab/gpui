@@ -120,10 +120,12 @@ pub(crate) fn render(
     let group_key_values = values.clone();
     let group_key_runtime = runtime.clone();
     let group_key_event = change_event.clone();
+    let group_focus_for_tabs = group_focus.clone();
     let mut element = TabBar::new(node.id.clone())
         .children(tabs)
         .menu(node.menu)
-        .on_click(move |index, _window, _cx| {
+        .on_click(move |index, window, cx| {
+            group_focus_for_tabs.focus(window, cx);
             let Some(event) = change_event.as_ref() else {
                 return;
             };
