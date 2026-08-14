@@ -79,6 +79,90 @@ defmodule GPUI.Native.OverlayE2ETest do
       do: {:noreply, %{assigns | menu_open: false, menu_selection: value}}
   end
 
+  defmodule DialogFocusView do
+    use GPUI.View
+
+    alias GPUI.UI.Overlay
+
+    @impl GPUI.View
+    def render(assigns) do
+      ~GPUI"""
+      <div class="flex flex-col w-[420px] h-[300px] p-4 gap-4 bg-slate-900">
+        <Overlay.dialog
+          id="focus-dialog"
+          open={assigns.open}
+          title="Focus contract"
+          width={300}
+          keyboard={assigns.keyboard}
+          closable={assigns.closable}
+          close_button={assigns.close_button}
+          phx-change="dialog_changed"
+        >
+          <:trigger>
+            <button id="dialog-trigger" phx-focus="focused" phx-blur="blurred">
+              <text>Open dialog</text>
+            </button>
+          </:trigger>
+          <:content>
+            <button id="first-action" phx-focus="focused" phx-blur="blurred">
+              <text>First action</text>
+            </button>
+            <button id="second-action" phx-focus="focused" phx-blur="blurred">
+              <text>Second action</text>
+            </button>
+            <button
+              id="controlled-close"
+              phx-click="close_dialog"
+              phx-focus="focused"
+              phx-blur="blurred"
+            >
+              <text>Close</text>
+            </button>
+          </:content>
+        </Overlay.dialog>
+      </div>
+      """
+    end
+
+    @impl GPUI.View
+    def handle_event("dialog_changed", %{value: open}, assigns),
+      do: {:noreply, %{assigns | open: open}}
+
+    def handle_event("close_dialog", _event, assigns),
+      do: {:noreply, %{assigns | open: false}}
+
+    def handle_event("focused", %{value: %{id: id}}, assigns),
+      do: {:noreply, %{assigns | focused: id, focus_history: assigns.focus_history ++ [id]}}
+
+    def handle_event("blurred", %{value: %{id: id}}, assigns) do
+      focused = if assigns.focused == id, do: nil, else: assigns.focused
+      {:noreply, %{assigns | focused: focused}}
+    end
+  end
+
+  defmodule DialogFocusApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(args) do
+      {:ok,
+       [
+         window args.title do
+           size(420, 300)
+
+           root(DialogFocusView,
+             open: false,
+             keyboard: args.keyboard,
+             closable: args.closable,
+             close_button: args.close_button,
+             focused: nil,
+             focus_history: []
+           )
+         end
+       ]}
+    end
+  end
+
   defmodule OverlayApp do
     use GPUI.Application
 
@@ -98,6 +182,75 @@ defmodule GPUI.Native.OverlayE2ETest do
            )
          end
        ]}
+    end
+  end
+
+  test "dialog contains keyboard focus and restores its trigger after every close path" do
+    {runtime, window_id} =
+      start_dialog(keyboard: true, closable: true, close_button: false)
+
+    Desktop.click!(window_id, 55, 28)
+    Desktop.eventually(fn -> assert %{open: true} = assigns(runtime) end)
+    Desktop.await_frame!(runtime, 1, window_id)
+
+    Desktop.key!(window_id, "Tab")
+    Desktop.eventually(fn -> assert %{focused: "first-action"} = assigns(runtime) end)
+    Desktop.key!(window_id, "Tab")
+    Desktop.eventually(fn -> assert %{focused: "second-action"} = assigns(runtime) end)
+    Desktop.key!(window_id, "Tab")
+    Desktop.key!(window_id, "Tab")
+    Desktop.eventually(fn -> assert %{focused: "first-action"} = assigns(runtime) end)
+
+    Desktop.key!(window_id, "shift+Tab")
+    Desktop.eventually(fn -> assert %{focused: "controlled-close"} = assigns(runtime) end)
+
+    Desktop.key!(window_id, "Escape")
+    Desktop.eventually(fn -> assert %{open: false} = assigns(runtime) end)
+
+    Desktop.key!(window_id, "space")
+    Desktop.eventually(fn -> assert %{open: true} = assigns(runtime) end)
+    Desktop.await_frame!(runtime, 1, window_id)
+    Desktop.key!(window_id, "Tab")
+    Desktop.key!(window_id, "Tab")
+    Desktop.key!(window_id, "Tab")
+    Desktop.eventually(fn -> assert %{focused: "controlled-close"} = assigns(runtime) end)
+    Desktop.key!(window_id, "space")
+    Desktop.eventually(fn -> assert %{open: false} = assigns(runtime) end)
+
+    Desktop.key!(window_id, "space")
+    Desktop.eventually(fn -> assert %{open: true} = assigns(runtime) end)
+  end
+
+  test "dialog Escape requires both keyboard and closable policy" do
+    for policy <- [
+          [keyboard: false, closable: true, close_button: false],
+          [keyboard: true, closable: false, close_button: false]
+        ] do
+      {runtime, window_id} = start_dialog(policy)
+      Desktop.click!(window_id, 55, 28)
+      Desktop.eventually(fn -> assert %{open: true} = assigns(runtime) end)
+      Desktop.await_frame!(runtime, 1, window_id)
+
+      Desktop.assert_no_runtime_update!(runtime, 1, window_id, fn ->
+        Desktop.key!(window_id, "Escape")
+      end)
+
+      assert %{open: true} = assigns(runtime)
+
+      assert {:ok, _reply} =
+               GPUI.Runtime.inject_event(runtime, %{
+                 type: :click,
+                 window_id: 1,
+                 event: "close_dialog",
+                 value: nil
+               })
+
+      Desktop.eventually(fn -> assert %{open: false} = assigns(runtime) end)
+
+      Desktop.key!(window_id, "space")
+      Desktop.eventually(fn -> assert %{open: true} = assigns(runtime) end)
+
+      Desktop.stop_process(runtime)
     end
   end
 
@@ -155,6 +308,15 @@ defmodule GPUI.Native.OverlayE2ETest do
     Desktop.eventually(fn ->
       assert %{menu_open: false, menu_selection: "new"} = assigns(runtime)
     end)
+  end
+
+  defp start_dialog(policy) do
+    title = "GPUI Dialog Focus E2E #{System.unique_integer([:positive])}"
+    args = policy |> Map.new() |> Map.put(:title, title)
+    {:ok, runtime} = GPUI.Runtime.start_link(app: DialogFocusApp, args: args)
+    :ok = GPUI.Runtime.subscribe(runtime)
+    on_exit(fn -> Desktop.stop_process(runtime) end)
+    {runtime, Desktop.window_id!(title)}
   end
 
   defp assigns(runtime) do

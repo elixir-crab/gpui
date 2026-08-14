@@ -2,6 +2,7 @@
 
 ## 0.1.1
 
+- Added native dialog E2E scenarios for forward and reverse focus containment, Escape policy, controlled closure, and keyboard reopening through the restored trigger.
 - Extended release validation with a clean renderer-independent consumer that compiles and runs `GPUI.Test` without building or loading the native NIF.
 - Hardened release security validation to fail Rust unsoundness advisories and updated the pinned native dependency graph past the affected `event-listener` release.
 - Added an explicit compatibility policy for public Elixir contracts, exact-match remote protocol versions, native artifacts, platform claims, snapshots, accessibility boundaries, and post-1.0 deprecations.

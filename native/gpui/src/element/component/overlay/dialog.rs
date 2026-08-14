@@ -212,7 +212,7 @@ pub(crate) fn render_dialog(
                     .width(gpui::px(config.width))
                     .overlay(config.overlay)
                     .overlay_closable(config.closable)
-                    .keyboard(config.keyboard)
+                    .keyboard(config.keyboard && config.closable)
                     .close_button(config.close_button)
                     .on_close({
                         let runtime = callback_runtime.clone();
