@@ -267,14 +267,14 @@ fn reconcile_item_keys(state: &gpui::ListState, old: &[(String, u64)], new: &[(S
     state.splice(change.old_range, change.new_count);
 }
 
-#[cfg(feature = "components")]
+#[cfg(any(feature = "components", test))]
 #[derive(Debug, Eq, PartialEq)]
 struct ItemKeyChange {
     old_range: std::ops::Range<usize>,
     new_count: usize,
 }
 
-#[cfg(feature = "components")]
+#[cfg(any(feature = "components", test))]
 fn item_key_change(old: &[(String, u64)], new: &[(String, u64)]) -> Option<ItemKeyChange> {
     if old == new {
         return None;
@@ -432,7 +432,7 @@ pub(crate) fn render_item(
         .into_any_element()
 }
 
-#[cfg(all(test, feature = "components"))]
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -476,6 +476,123 @@ mod tests {
                 new_count: 0
             })
         );
+    }
+
+    #[cfg(feature = "components")]
+    #[gpui::test]
+    fn variable_list_measures_heights_and_remeasures_revised_items(cx: &mut gpui::TestAppContext) {
+        use gpui::{AppContext, IntoElement, Render, Styled};
+        use std::{cell::Cell, rc::Rc};
+
+        struct TestView {
+            heights: Rc<Cell<[f32; 3]>>,
+            state: gpui::ListState,
+        }
+
+        impl Render for TestView {
+            fn render(
+                &mut self,
+                _window: &mut gpui::Window,
+                _cx: &mut gpui::Context<Self>,
+            ) -> impl IntoElement {
+                let heights = self.heights.clone();
+                gpui::list(self.state.clone(), move |index, _window, _cx| {
+                    gpui::div()
+                        .h(gpui::px(heights.get()[index]))
+                        .w_full()
+                        .into_any_element()
+                })
+                .size_full()
+            }
+        }
+
+        let cx = cx.add_empty_window();
+        let heights = Rc::new(Cell::new([40.0_f32, 80.0_f32, 120.0_f32]));
+        let state = gpui::ListState::new(3, gpui::ListAlignment::Top, gpui::px(0.0));
+        let draw = |cx: &mut gpui::VisualTestContext,
+                    heights: Rc<Cell<[f32; 3]>>,
+                    state: gpui::ListState,
+                    viewport_height: f32| {
+            cx.draw(
+                gpui::point(gpui::px(0.0), gpui::px(0.0)),
+                gpui::size(gpui::px(200.0), gpui::px(viewport_height)),
+                move |_window, cx| cx.new(|_| TestView { heights, state }).into_any_element(),
+            );
+        };
+
+        draw(cx, heights.clone(), state.clone(), 300.0);
+        assert_eq!(
+            state.bounds_for_item(0).unwrap().size.height,
+            gpui::px(40.0)
+        );
+        assert_eq!(
+            state.bounds_for_item(1).unwrap().size.height,
+            gpui::px(80.0)
+        );
+        assert_eq!(
+            state.bounds_for_item(2).unwrap().size.height,
+            gpui::px(120.0)
+        );
+
+        heights.set([40.0, 160.0, 120.0]);
+        let old = keys(&[("a", 0), ("b", 0), ("c", 0)]);
+        let new = keys(&[("a", 0), ("b", 1), ("c", 0)]);
+        reconcile_item_keys(&state, &old, &new);
+        draw(cx, heights, state.clone(), 400.0);
+        assert_eq!(
+            state.bounds_for_item(0).unwrap().size.height,
+            gpui::px(40.0)
+        );
+        assert_eq!(
+            state.bounds_for_item(1).unwrap().size.height,
+            gpui::px(160.0)
+        );
+        assert_eq!(
+            state.bounds_for_item(2).unwrap().size.height,
+            gpui::px(120.0)
+        );
+    }
+
+    #[cfg(feature = "components")]
+    #[gpui::test]
+    fn bottom_alignment_and_tail_follow_track_appended_items(cx: &mut gpui::TestAppContext) {
+        use gpui::{AppContext, IntoElement, Render, Styled};
+
+        struct TestView(gpui::ListState);
+
+        impl Render for TestView {
+            fn render(
+                &mut self,
+                _window: &mut gpui::Window,
+                _cx: &mut gpui::Context<Self>,
+            ) -> impl IntoElement {
+                gpui::list(self.0.clone(), |_index, _window, _cx| {
+                    gpui::div().h(gpui::px(40.0)).w_full().into_any_element()
+                })
+                .size_full()
+            }
+        }
+
+        let cx = cx.add_empty_window();
+        let state = gpui::ListState::new(2, gpui::ListAlignment::Bottom, gpui::px(0.0));
+        state.set_follow_mode(gpui::FollowMode::Tail);
+        let draw = |cx: &mut gpui::VisualTestContext, state: gpui::ListState| {
+            cx.draw(
+                gpui::point(gpui::px(0.0), gpui::px(0.0)),
+                gpui::size(gpui::px(200.0), gpui::px(100.0)),
+                move |_window, cx| cx.new(|_| TestView(state)).into_any_element(),
+            );
+        };
+
+        draw(cx, state.clone());
+        assert_eq!(state.logical_scroll_top().item_ix, 2);
+        assert_eq!(state.scroll_px_offset_for_scrollbar().y, gpui::px(0.0));
+
+        state.splice(2..2, 1);
+        draw(cx, state.clone());
+        assert!(state.is_following_tail());
+        assert_eq!(state.logical_scroll_top().item_ix, 3);
+        assert_eq!(state.scroll_px_offset_for_scrollbar().y, gpui::px(-20.0));
     }
 }
 

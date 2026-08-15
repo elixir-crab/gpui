@@ -277,9 +277,7 @@ defmodule GPUI.MixProject do
       "test",
       "--manifest-path",
       "native/gpui/Cargo.toml",
-      "--no-default-features",
-      "--features",
-      "real-gpui",
+      "--all-features",
       "--lib"
     ])
   end
