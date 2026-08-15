@@ -12,6 +12,7 @@ defmodule GPUI.Dev.ExampleLoader do
     image_palette: "examples/image_palette/support/image_palette.exs",
     music_library: "examples/music_library/support/music_library.exs",
     resource_ref_image: "examples/features/support/resource_ref_image.exs",
+    rich_transcript: "examples/features/rich_transcript.exs",
     settings_form: "examples/getting_started/support/settings_form.exs"
   }
 

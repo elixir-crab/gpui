@@ -333,10 +333,10 @@ pub(crate) fn render(
         .rich_text_mut(&node.id)
         .expect("rich text component must exist after insertion");
     if let Ok(mut selection) = component.selection.lock() {
-        if component.text != node.text || !node.selectable {
+        if !node.selectable {
             selection.clear();
         } else {
-            clamp_selection(&mut selection, &node.text);
+            reconcile_selection(&mut selection, &component.text, &node.text);
         }
     }
     component.text.clone_from(&node.text);
@@ -383,6 +383,25 @@ fn closest_index(layout: &gpui::TextLayout, position: gpui::Point<gpui::Pixels>)
 fn clamp_selection(selection: &mut RichSelection, text: &str) {
     selection.anchor = clamp_byte_index(text, selection.anchor);
     selection.head = clamp_byte_index(text, selection.head);
+}
+
+#[cfg(feature = "components")]
+fn reconcile_selection(selection: &mut RichSelection, old_text: &str, new_text: &str) {
+    if old_text == new_text {
+        clamp_selection(selection, new_text);
+        return;
+    }
+
+    let range = selection.range();
+    let preserved = old_text
+        .get(range.clone())
+        .and_then(|selected| new_text.get(range).filter(|current| *current == selected))
+        .is_some();
+    if preserved {
+        clamp_selection(selection, new_text);
+    } else {
+        selection.clear();
+    }
 }
 
 #[cfg(feature = "components")]
@@ -556,6 +575,20 @@ pub(crate) fn render(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn preserves_selection_when_streaming_appends_after_the_selected_range() {
+        let mut selection = RichSelection {
+            anchor: 1,
+            head: 5,
+            dragging: false,
+        };
+        reconcile_selection(&mut selection, "Hello", "Hello streamed tail");
+        assert_eq!(selection.range(), 1..5);
+
+        reconcile_selection(&mut selection, "Hello streamed tail", "Hxllo streamed tail");
+        assert!(selection.range().is_empty());
+    }
 
     #[test]
     fn clamps_selection_to_utf8_boundaries_and_normalizes_backward_ranges() {

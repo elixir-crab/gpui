@@ -99,6 +99,15 @@ analysis architecture.
 
 ## Feature examples
 
+`features/rich_transcript.exs` composes variable-height virtualization with
+consumer-produced selectable rich text. It demonstrates wrapped native shaping,
+tail following, streamed height changes, prepended history, link events, and
+copyable selection without introducing chat or Markdown policy:
+
+```bash
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/features/run_rich_transcript.exs
+```
+
 `features/editable_text_surface.exs` demonstrates composing a gutter, neutral
 editable surface, focus control, and application-owned status state around one
 persistent native text buffer:
