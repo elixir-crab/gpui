@@ -555,6 +555,200 @@ mod tests {
 
     #[cfg(feature = "components")]
     #[gpui::test]
+    fn growth_above_viewport_preserves_the_visible_scroll_anchor(cx: &mut gpui::TestAppContext) {
+        use gpui::{AppContext, IntoElement, Render, Styled};
+        use std::{cell::Cell, rc::Rc};
+
+        struct TestView {
+            first_height: Rc<Cell<f32>>,
+            state: gpui::ListState,
+        }
+
+        impl Render for TestView {
+            fn render(
+                &mut self,
+                _window: &mut gpui::Window,
+                _cx: &mut gpui::Context<Self>,
+            ) -> impl IntoElement {
+                let first_height = self.first_height.clone();
+                gpui::list(self.state.clone(), move |index, _window, _cx| {
+                    let height = if index == 0 { first_height.get() } else { 40.0 };
+                    gpui::div().h(gpui::px(height)).w_full().into_any_element()
+                })
+                .size_full()
+            }
+        }
+
+        let cx = cx.add_empty_window();
+        let first_height = Rc::new(Cell::new(40.0));
+        let state = gpui::ListState::new(10, gpui::ListAlignment::Top, gpui::px(0.0));
+        let draw = |cx: &mut gpui::VisualTestContext,
+                    first_height: Rc<Cell<f32>>,
+                    state: gpui::ListState| {
+            cx.draw(
+                gpui::point(gpui::px(0.0), gpui::px(0.0)),
+                gpui::size(gpui::px(200.0), gpui::px(120.0)),
+                move |_window, cx| {
+                    cx.new(|_| TestView {
+                        first_height,
+                        state,
+                    })
+                    .into_any_element()
+                },
+            );
+        };
+
+        draw(cx, first_height.clone(), state.clone());
+        state.scroll_to(gpui::ListOffset {
+            item_ix: 4,
+            offset_in_item: gpui::px(12.0),
+        });
+        draw(cx, first_height.clone(), state.clone());
+        let anchor = state.logical_scroll_top();
+
+        first_height.set(120.0);
+        reconcile_item_keys(
+            &state,
+            &keys(&[
+                ("a", 0),
+                ("b", 0),
+                ("c", 0),
+                ("d", 0),
+                ("e", 0),
+                ("f", 0),
+                ("g", 0),
+                ("h", 0),
+                ("i", 0),
+                ("j", 0),
+            ]),
+            &keys(&[
+                ("a", 1),
+                ("b", 0),
+                ("c", 0),
+                ("d", 0),
+                ("e", 0),
+                ("f", 0),
+                ("g", 0),
+                ("h", 0),
+                ("i", 0),
+                ("j", 0),
+            ]),
+        );
+        draw(cx, first_height, state.clone());
+
+        assert_eq!(state.logical_scroll_top().item_ix, anchor.item_ix);
+        assert_eq!(
+            state.logical_scroll_top().offset_in_item,
+            anchor.offset_in_item
+        );
+    }
+
+    #[cfg(feature = "components")]
+    #[gpui::test]
+    fn prepend_and_remove_rebase_a_detached_scroll_anchor(cx: &mut gpui::TestAppContext) {
+        use gpui::{AppContext, IntoElement, Render, Styled};
+
+        struct TestView {
+            count: usize,
+            state: gpui::ListState,
+        }
+
+        impl Render for TestView {
+            fn render(
+                &mut self,
+                _window: &mut gpui::Window,
+                _cx: &mut gpui::Context<Self>,
+            ) -> impl IntoElement {
+                let count = self.count;
+                gpui::list(self.state.clone(), move |index, _window, _cx| {
+                    assert!(index < count);
+                    gpui::div().h(gpui::px(40.0)).w_full().into_any_element()
+                })
+                .size_full()
+            }
+        }
+
+        let cx = cx.add_empty_window();
+        let state = gpui::ListState::new(8, gpui::ListAlignment::Top, gpui::px(0.0));
+        let draw = |cx: &mut gpui::VisualTestContext, state: gpui::ListState, count| {
+            cx.draw(
+                gpui::point(gpui::px(0.0), gpui::px(0.0)),
+                gpui::size(gpui::px(200.0), gpui::px(120.0)),
+                move |_window, cx| cx.new(|_| TestView { count, state }).into_any_element(),
+            );
+        };
+
+        draw(cx, state.clone(), 8);
+        state.scroll_to(gpui::ListOffset {
+            item_ix: 4,
+            offset_in_item: gpui::px(10.0),
+        });
+        draw(cx, state.clone(), 8);
+
+        state.splice(0..0, 2);
+        draw(cx, state.clone(), 10);
+        assert_eq!(state.logical_scroll_top().item_ix, 6);
+        assert_eq!(state.logical_scroll_top().offset_in_item, gpui::px(10.0));
+
+        state.splice(0..2, 0);
+        draw(cx, state.clone(), 8);
+        assert_eq!(state.logical_scroll_top().item_ix, 4);
+        assert_eq!(state.logical_scroll_top().offset_in_item, gpui::px(10.0));
+    }
+
+    #[cfg(feature = "components")]
+    #[gpui::test]
+    fn empty_populated_empty_transitions_reset_without_stale_geometry(
+        cx: &mut gpui::TestAppContext,
+    ) {
+        use gpui::{AppContext, IntoElement, Render, Styled};
+
+        struct TestView {
+            count: usize,
+            state: gpui::ListState,
+        }
+
+        impl Render for TestView {
+            fn render(
+                &mut self,
+                _window: &mut gpui::Window,
+                _cx: &mut gpui::Context<Self>,
+            ) -> impl IntoElement {
+                let count = self.count;
+                gpui::list(self.state.clone(), move |index, _window, _cx| {
+                    assert!(index < count);
+                    gpui::div().h(gpui::px(48.0)).w_full().into_any_element()
+                })
+                .size_full()
+            }
+        }
+
+        let cx = cx.add_empty_window();
+        let state = gpui::ListState::new(0, gpui::ListAlignment::Bottom, gpui::px(0.0));
+        let draw = |cx: &mut gpui::VisualTestContext, state: gpui::ListState, count| {
+            cx.draw(
+                gpui::point(gpui::px(0.0), gpui::px(0.0)),
+                gpui::size(gpui::px(200.0), gpui::px(120.0)),
+                move |_window, cx| cx.new(|_| TestView { count, state }).into_any_element(),
+            );
+        };
+
+        draw(cx, state.clone(), 0);
+        assert_eq!(state.item_count(), 0);
+
+        state.splice(0..0, 3);
+        draw(cx, state.clone(), 3);
+        assert_eq!(state.item_count(), 3);
+        assert_eq!(state.max_offset_for_scrollbar().y, gpui::px(24.0));
+
+        state.splice(0..3, 0);
+        draw(cx, state.clone(), 0);
+        assert_eq!(state.item_count(), 0);
+        assert_eq!(state.max_offset_for_scrollbar().y, gpui::px(0.0));
+    }
+
+    #[cfg(feature = "components")]
+    #[gpui::test]
     fn bottom_alignment_and_tail_follow_track_appended_items(cx: &mut gpui::TestAppContext) {
         use gpui::{AppContext, IntoElement, Render, Styled};
 
