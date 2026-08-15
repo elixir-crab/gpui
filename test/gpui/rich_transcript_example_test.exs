@@ -3,7 +3,7 @@ GPUITest.Examples.load!(:rich_transcript)
 defmodule GPUI.RichTranscriptExampleTest do
   use GPUI.Test, async: true
 
-  alias GPUI.Text.{Edit, Position, Range, RichRun, Selection, Transaction}
+  alias GPUI.Text.{Edit, Position, Range, Selection, Transaction}
 
   test "composes variable collection items with neutral rich text runs" do
     runtime = start_gpui!(Features.RichTranscript.App)
@@ -31,7 +31,10 @@ defmodule GPUI.RichTranscriptExampleTest do
     assert Enum.count(rich) == 18
 
     assert Enum.all?(rich, fn %{attrs: %{runs: runs, text: text}} ->
-             text != "" and Enum.all?(runs, &match?(%RichRun{}, &1))
+             text != "" and
+               Enum.all?(runs, fn run ->
+                 is_map(run) and match?(%{range: %{start: %{}, end: %{}}}, run)
+               end)
            end)
   end
 

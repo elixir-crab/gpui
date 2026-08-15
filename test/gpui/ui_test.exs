@@ -385,6 +385,16 @@ defmodule GPUI.UITest do
     assert attrs[:runs] == [bold, link]
     assert attrs[:selectable] == true
     assert attrs[:"phx-link"] == "open_link"
+
+    assert %{
+             runs: [
+               %{font_weight: "bold", font_style: nil},
+               %{font_weight: nil, underline_style: nil}
+             ]
+           } =
+             %Element{type: :ui_rich_text, attrs: attrs, children: []}
+             |> GPUI.Element.to_payload()
+             |> Map.fetch!(:attrs)
   end
 
   test "validates rich text UTF-16 runs and link events" do

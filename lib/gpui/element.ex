@@ -181,6 +181,20 @@ defmodule GPUI.Element do
     |> Map.new(fn {key, value} -> {key, attr_value_to_payload(value)} end)
   end
 
+  defp attr_value_to_payload(%GPUI.Text.RichRun{} = run) do
+    run
+    |> Map.from_struct()
+    |> Map.new(fn
+      {key, value}
+      when key in [:font_weight, :font_style, :underline_style] and not is_nil(value) and
+             is_atom(value) ->
+        {key, Atom.to_string(value)}
+
+      {key, value} ->
+        {key, attr_value_to_payload(value)}
+    end)
+  end
+
   defp attr_value_to_payload(%GPUI.Text.StyleRun{} = run) do
     run
     |> Map.from_struct()

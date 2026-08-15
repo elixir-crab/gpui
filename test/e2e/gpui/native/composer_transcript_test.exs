@@ -81,7 +81,12 @@ defmodule GPUI.Native.ComposerTranscriptE2ETest do
       ~GPUI"""
       <UI.virtual_item id={message.id}>
         <div class="mb-2 p-3 bg-slate-900 rounded">
-          <UI.rich_text id={"rich-#{message.id}"} text={message.text} class="text-slate-200" />
+          <UI.rich_text
+            id={"rich-#{message.id}"}
+            label={"Transcript message #{message.id}"}
+            text={message.text}
+            class="text-slate-200"
+          />
         </div>
       </UI.virtual_item>
       """
