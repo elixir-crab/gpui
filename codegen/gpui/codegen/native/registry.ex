@@ -11,7 +11,7 @@ defmodule GPUI.Codegen.Native.RegistryDefinitions do
         {registry_method(component), [quote(do: R.path(unquote(registry_type(component))))]}
       end)
 
-    functions = Enum.flat_map(components, &[getter(&1), inserter(&1)])
+    functions = Enum.flat_map(components, &[getter(&1), inserter(&1)]) ++ [remover(:text_surface)]
 
     quote do
       @type component_kind :: R.enum(unquote(component_kind_variants))
@@ -61,6 +61,19 @@ defmodule GPUI.Codegen.Native.RegistryDefinitions do
         self.active.insert(key.clone())
 
         self.entries.insert(key, enum_variant(StatefulComponent, unquote(method), component)).is_none()
+      end
+    end
+  end
+
+  defp remover(method) do
+    name = String.to_atom("remove_#{method}")
+
+    quote do
+      @spec unquote(name)(R.mut_ref(R.path(:ComponentRegistry)), R.str()) :: boolean()
+      defrust unquote(name)(self, id) do
+        key = ComponentKey.new(enum_variant(ComponentKind, unquote(method)), id)
+        self.active.remove(ref(key))
+        self.entries.remove(ref(key)).is_some()
       end
     end
   end

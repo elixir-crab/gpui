@@ -518,6 +518,10 @@ pub(crate) struct TextSurfaceNode {
     pub(crate) focus_request: u64,
     pub(crate) disabled: bool,
     pub(crate) soft_wrap: bool,
+    pub(crate) auto_grow: bool,
+    pub(crate) min_lines: u64,
+    pub(crate) max_lines: u64,
+    pub(crate) submit_policy: String,
     pub(crate) show_whitespaces: bool,
     pub(crate) tab_size: u64,
     pub(crate) hard_tabs: bool,
@@ -529,6 +533,7 @@ pub(crate) struct TextSurfaceNode {
     pub(crate) inline_projections: Vec<TextInlineProjectionNode>,
     pub(crate) block_projections: Vec<TextBlockProjectionNode>,
     pub(crate) transaction: Option<String>,
+    pub(crate) submit: Option<String>,
     pub(crate) selection_change: Option<String>,
     pub(crate) viewport_change: Option<String>,
     pub(crate) geometry_change: Option<String>,
@@ -833,6 +838,13 @@ pub(crate) fn decode_text_surface_node<'a>(
                 .unwrap_or(0),
             disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
             soft_wrap: component_bool_attr(term, atoms::soft_wrap())?.unwrap_or(false),
+            auto_grow: component_bool_attr(term, atoms::auto_grow())?.unwrap_or(false),
+            min_lines: component_positive_integer_attr(term, atoms::min_lines())?
+                .unwrap_or(1),
+            max_lines: component_positive_integer_attr(term, atoms::max_lines())?
+                .unwrap_or(8),
+            submit_policy: string_attr(term, atoms::submit_policy())
+                .unwrap_or("newline".to_string()),
             show_whitespaces: component_bool_attr(term, atoms::show_whitespaces())?
                 .unwrap_or(false),
             tab_size: component_positive_integer_attr(term, atoms::tab_size())?
@@ -856,6 +868,7 @@ pub(crate) fn decode_text_surface_node<'a>(
                 atoms::block_projections(),
             )?,
             transaction: string_attr(term, atoms::phx_transaction()),
+            submit: string_attr(term, atoms::phx_submit()),
             selection_change: string_attr(term, atoms::phx_selection_change()),
             viewport_change: string_attr(term, atoms::phx_viewport_change()),
             geometry_change: string_attr(term, atoms::phx_geometry_change()),

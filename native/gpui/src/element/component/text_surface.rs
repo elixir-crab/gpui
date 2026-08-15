@@ -17,9 +17,14 @@ impl std::fmt::Debug for TextSurfaceNode {
             .field("focus_request", &self.focus_request)
             .field("disabled", &self.disabled)
             .field("soft_wrap", &self.soft_wrap)
+            .field("auto_grow", &self.auto_grow)
+            .field("min_lines", &self.min_lines)
+            .field("max_lines", &self.max_lines)
+            .field("submit_policy", &self.submit_policy)
             .field("show_whitespaces", &self.show_whitespaces)
             .field("tab_size", &self.tab_size)
             .field("hard_tabs", &self.hard_tabs)
+            .field("submit", &self.submit)
             .field("transaction", &self.transaction)
             .field("selection_change", &self.selection_change)
             .field("viewport_change", &self.viewport_change)
@@ -95,6 +100,7 @@ pub(crate) struct ComponentTextSurface {
     pub(crate) revision: u64,
     pub(crate) event_revision: std::sync::Arc<std::sync::atomic::AtomicU64>,
     pub(crate) transaction_event: std::sync::Arc<std::sync::Mutex<Option<String>>>,
+    pub(crate) submit_event: std::sync::Arc<std::sync::Mutex<Option<String>>>,
     pub(crate) selection_event: std::sync::Arc<std::sync::Mutex<Option<String>>>,
     pub(crate) viewport_event: Option<String>,
     pub(crate) geometry_event: Option<String>,
@@ -102,6 +108,10 @@ pub(crate) struct ComponentTextSurface {
     pub(crate) hit_test_event: Option<String>,
     pub(crate) focus_event: Option<String>,
     pub(crate) blur_event: Option<String>,
+    pub(crate) auto_grow: bool,
+    pub(crate) min_lines: u64,
+    pub(crate) max_lines: u64,
+    pub(crate) submit_policy: String,
     pub(crate) scroll_request: u64,
     pub(crate) last_viewport: Option<ViewportKey>,
     pub(crate) last_caret: Option<(u64, u64, i32, i32, i32, i32)>,
@@ -144,23 +154,39 @@ pub(crate) fn render(
         let surface_id = node.id.clone();
         let event_surface_id = surface_id.clone();
         let state = context.cx.new(|cx| {
-            InputState::new(context.window, cx)
-                .multi_line(true)
-                .soft_wrap(node.soft_wrap)
-                .show_whitespaces(node.show_whitespaces)
-                .tab_size(TabSize {
-                    tab_size: node.tab_size as usize,
-                    hard_tabs: node.hard_tabs,
-                })
-                .default_value(snapshot.text.clone())
+            if node.auto_grow {
+                InputState::new(context.window, cx)
+                    .auto_grow(node.min_lines as usize, node.max_lines as usize)
+                    .soft_wrap(node.soft_wrap)
+                    .submit_on_enter(node.submit_policy == "submit")
+                    .show_whitespaces(node.show_whitespaces)
+                    .tab_size(TabSize {
+                        tab_size: node.tab_size as usize,
+                        hard_tabs: node.hard_tabs,
+                    })
+                    .default_value(snapshot.text.clone())
+            } else {
+                InputState::new(context.window, cx)
+                    .multi_line(true)
+                    .soft_wrap(node.soft_wrap)
+                    .submit_on_enter(node.submit_policy == "submit")
+                    .show_whitespaces(node.show_whitespaces)
+                    .tab_size(TabSize {
+                        tab_size: node.tab_size as usize,
+                        hard_tabs: node.hard_tabs,
+                    })
+                    .default_value(snapshot.text.clone())
+            }
         });
         let transaction_event =
             std::sync::Arc::new(std::sync::Mutex::new(node.transaction.clone()));
+        let submit_event = std::sync::Arc::new(std::sync::Mutex::new(node.submit.clone()));
         let selection_event =
             std::sync::Arc::new(std::sync::Mutex::new(node.selection_change.clone()));
         let runtime = context.runtime.clone();
         let window_id = context.window_id;
         let event_transaction = transaction_event.clone();
+        let event_submit = submit_event.clone();
         let event_selection = selection_event.clone();
         let buffer = node.buffer.clone();
         let event_buffer = buffer.clone();
@@ -183,54 +209,72 @@ pub(crate) fn render(
         let subscription = context.cx.subscribe_in(
             &state,
             context.window,
-            move |_root, state, event: &InputEvent, _window, cx| {
-                if !matches!(event, InputEvent::Change) {
-                    return;
+            move |_root, state, event: &InputEvent, _window, cx| match event {
+                InputEvent::Change => {
+                    let state = state.read(cx);
+                    let text = state.value().to_string();
+                    let selection = match byte_range_to_selection(&text, state.selected_range()) {
+                        Ok(selection) => selection,
+                        Err(_error) => return,
+                    };
+                    let current_revision =
+                        subscription_revision.load(std::sync::atomic::Ordering::Acquire);
+                    let transaction_id = next_native_transaction_id(&event_surface_id);
+                    let Ok((transaction, revision)) = event_buffer.replace_from_surface(
+                        current_revision,
+                        transaction_id,
+                        text,
+                        selection.clone(),
+                    ) else {
+                        return;
+                    };
+                    subscription_revision.store(revision, std::sync::atomic::Ordering::Release);
+                    if let Some(event) = event_transaction
+                        .lock()
+                        .ok()
+                        .and_then(|event| event.clone())
+                    {
+                        let _ = push_event(
+                            &runtime,
+                            NativeEvent::Transaction {
+                                window_id,
+                                event,
+                                transaction,
+                                revision,
+                            },
+                        );
+                    }
+                    if let Some(event) = event_selection.lock().ok().and_then(|event| event.clone())
+                    {
+                        let _ = push_event(
+                            &runtime,
+                            NativeEvent::Selection {
+                                window_id,
+                                event,
+                                selections: vec![selection],
+                                revision,
+                            },
+                        );
+                    }
                 }
-                let state = state.read(cx);
-                let text = state.value().to_string();
-                let selection = match byte_range_to_selection(&text, state.selected_range()) {
-                    Ok(selection) => selection,
-                    Err(_error) => return,
-                };
-                let current_revision =
-                    subscription_revision.load(std::sync::atomic::Ordering::Acquire);
-                let transaction_id = next_native_transaction_id(&event_surface_id);
-                let Ok((transaction, revision)) = event_buffer.replace_from_surface(
-                    current_revision,
-                    transaction_id,
-                    text,
-                    selection.clone(),
-                ) else {
-                    return;
-                };
-                subscription_revision.store(revision, std::sync::atomic::Ordering::Release);
-                if let Some(event) = event_transaction
-                    .lock()
-                    .ok()
-                    .and_then(|event| event.clone())
-                {
-                    let _ = push_event(
-                        &runtime,
-                        NativeEvent::Transaction {
-                            window_id,
-                            event,
-                            transaction,
-                            revision,
-                        },
-                    );
+                InputEvent::PressEnter { shift: false, .. } => {
+                    if let Some(event) = event_submit.lock().ok().and_then(|event| event.clone()) {
+                        let value = event_buffer
+                            .snapshot()
+                            .map(|snapshot| snapshot.text)
+                            .unwrap_or_default();
+                        let _ = push_event(
+                            &runtime,
+                            NativeEvent::Input {
+                                kind: crate::InputKind::Submit,
+                                window_id,
+                                event,
+                                value: Some(crate::EventValue::String(value)),
+                            },
+                        );
+                    }
                 }
-                if let Some(event) = event_selection.lock().ok().and_then(|event| event.clone()) {
-                    let _ = push_event(
-                        &runtime,
-                        NativeEvent::Selection {
-                            window_id,
-                            event,
-                            selections: vec![selection],
-                            revision,
-                        },
-                    );
-                }
+                InputEvent::PressEnter { .. } | InputEvent::Focus | InputEvent::Blur => {}
             },
         );
         context.components.insert_text_surface(
@@ -240,6 +284,7 @@ pub(crate) fn render(
                 revision,
                 event_revision,
                 transaction_event,
+                submit_event,
                 selection_event,
                 viewport_event: node.viewport_change.clone(),
                 geometry_event: node.geometry_change.clone(),
@@ -247,6 +292,10 @@ pub(crate) fn render(
                 hit_test_event: node.hit_test.clone(),
                 focus_event: node.focus.clone(),
                 blur_event: node.blur.clone(),
+                auto_grow: node.auto_grow,
+                min_lines: node.min_lines,
+                max_lines: node.max_lines,
+                submit_policy: node.submit_policy.clone(),
                 scroll_request: 0,
                 last_viewport: None,
                 last_caret: None,
@@ -266,6 +315,9 @@ pub(crate) fn render(
     };
     if let Ok(mut event) = surface.transaction_event.lock() {
         *event = node.transaction.clone();
+    }
+    if let Ok(mut event) = surface.submit_event.lock() {
+        *event = node.submit.clone();
     }
     if let Ok(mut event) = surface.selection_event.lock() {
         *event = node.selection_change.clone();
@@ -302,6 +354,15 @@ pub(crate) fn render(
                 context.cx,
             );
         }
+    }
+
+    let mode_changed = surface.auto_grow != node.auto_grow
+        || surface.min_lines != node.min_lines
+        || surface.max_lines != node.max_lines
+        || surface.submit_policy != node.submit_policy;
+    if mode_changed {
+        context.components.remove_text_surface(&surface_id);
+        return render(_element_id, node, context);
     }
 
     let native_text = surface.state.read(context.cx).value().to_string();

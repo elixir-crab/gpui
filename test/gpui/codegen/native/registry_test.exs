@@ -17,7 +17,7 @@ defmodule GPUI.Codegen.Native.RegistryTest do
              Enum.flat_map(components, fn component ->
                method = registry_method(component)
                [String.to_atom("#{method}_mut"), String.to_atom("insert_#{method}")]
-             end)
+             end) ++ [:remove_text_surface]
   end
 
   test "getters and inserters preserve registry behavior" do

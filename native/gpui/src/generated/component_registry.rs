@@ -299,4 +299,9 @@ impl ComponentRegistry {
         self.active.insert(key.clone());
         self.entries.insert(key, StatefulComponent::TextSurface(component)).is_none()
     }
+    pub(crate) fn remove_text_surface(&mut self, id: &str) -> bool {
+        let key = ComponentKey::new(ComponentKind::TextSurface, id);
+        self.active.remove(&key);
+        self.entries.remove(&key).is_some()
+    }
 }

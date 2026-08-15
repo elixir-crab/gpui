@@ -109,7 +109,19 @@ changing `focus_request` value requests focus without turning focus into
 application-owned boolean state.
 
 The primitive accepts generic input behavior such as soft wrapping, whitespace
-display, tab width, hard tabs, and disabled state. It deliberately does not live
+display, tab width, hard tabs, and disabled state. With `auto_grow`, bounded
+`min_lines` and `max_lines` select the native input's intrinsic wrapped-row
+height; after `max_lines` it retains native internal scrolling. The bounds are
+part of the declarative snapshot and must satisfy `min_lines <= max_lines`.
+
+`submit_policy="newline"` leaves Enter and Shift+Enter as ordinary edits.
+`submit_policy="submit"` requires `phx-submit` and makes plain Enter emit that event
+with the current buffer text without inserting a newline, while Shift+Enter
+continues to insert one. Submission uses the native input action path, so active
+IME composition is handled by the input before application submission; Elixir
+remains responsible for clearing or otherwise mutating the buffer afterward.
+
+It deliberately does not live
 under `GPUI.UI` and does not render line numbers, tabs, diagnostics, completion
 menus, or status bars. External buffer transactions, undo, and redo are
 reconciled into a mounted surface from the buffer revision without echoing them

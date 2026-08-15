@@ -1018,6 +1018,7 @@ defmodule GPUI.TemplateTest do
              type: :text_surface,
              attrs: %{
                :"phx-transaction" => "changed",
+               :"phx-submit" => "submitted",
                :"phx-viewport-change" => "viewport",
                :"phx-geometry-change" => "geometry",
                :"phx-range-geometry-change" => "ranges",
@@ -1072,6 +1073,10 @@ defmodule GPUI.TemplateTest do
                scroll_to: %{line: 0, utf16_offset: 2},
                id: "document",
                focus_request: 2,
+               auto_grow: true,
+               min_lines: 2,
+               max_lines: 6,
+               submit_policy: "submit",
                tab_size: 4
              }
            } =
@@ -1103,8 +1108,13 @@ defmodule GPUI.TemplateTest do
                scroll_request={3}
                scroll_to={GPUI.Text.Position.new(0, 2)}
                focus_request={2}
+               auto_grow={true}
+               min_lines={2}
+               max_lines={6}
+               submit_policy="submit"
                tab_size={4}
                phx-transaction="changed"
+               phx-submit="submitted"
                phx-viewport-change="viewport"
                phx-geometry-change="geometry"
                phx-range-geometry-change="ranges"
@@ -1118,6 +1128,27 @@ defmodule GPUI.TemplateTest do
     assert_raise ArgumentError, ~r/must be a GPUI.Text.Buffer/, fn ->
       ~GPUI"""
       <text_surface id="invalid" buffer="not-a-buffer" />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/min_lines must be less than or equal to max_lines/, fn ->
+      ~GPUI"""
+      <text_surface id="invalid-lines" buffer={buffer} min_lines={9} max_lines={3} />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/max_lines must be at most 64/, fn ->
+      ~GPUI"""
+      <text_surface id="too-tall" buffer={buffer} max_lines={65} />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/requires a non-empty phx-submit event/, fn ->
+      ~GPUI"""
+      <text_surface id="missing-submit" buffer={buffer} submit_policy="submit" />
       """
       |> GPUI.Element.to_payload()
     end

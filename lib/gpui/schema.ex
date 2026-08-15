@@ -596,6 +596,7 @@ defmodule GPUI.Schema do
       stateful: true,
       events: [
         transaction: :"phx-transaction",
+        submit: :"phx-submit",
         selection: :"phx-selection-change",
         viewport: :"phx-viewport-change",
         geometry: :"phx-geometry-change",
@@ -610,6 +611,10 @@ defmodule GPUI.Schema do
         focus_request: {:default, :non_negative_integer, 0},
         disabled: :boolean,
         soft_wrap: :boolean,
+        auto_grow: :boolean,
+        min_lines: {:default, :positive_integer, 1},
+        max_lines: {:default, :positive_integer, 8},
+        submit_policy: {:default, {:enum, ~w(newline submit)}, "newline"},
         show_whitespaces: :boolean,
         tab_size: {:default, :positive_integer, 2},
         hard_tabs: :boolean,
@@ -1027,6 +1032,7 @@ defmodule GPUI.Schema do
     assigns = normalize_event_keys!(assigns, component)
     validate_known_attrs!(assigns, component, extra_attrs)
     validate_declared_attrs!(assigns, component)
+    validate_component_contract!(assigns, component.tag)
     validate_events!(assigns, component)
     validate_required_events!(assigns, component)
     assigns
@@ -1049,6 +1055,42 @@ defmodule GPUI.Schema do
       end
     end)
   end
+
+  defp validate_component_contract!(assigns, :text_surface) do
+    min_lines = Map.get(assigns, :min_lines, 1)
+    max_lines = Map.get(assigns, :max_lines, 8)
+    submit_policy = Map.get(assigns, :submit_policy, "newline")
+    submit_event = Map.get(assigns, :"phx-submit")
+
+    validate_text_surface_line_bounds!(min_lines, max_lines)
+    validate_text_surface_submit!(submit_policy, submit_event)
+    assigns
+  end
+
+  defp validate_component_contract!(assigns, _tag), do: assigns
+
+  defp validate_text_surface_line_bounds!(min_lines, max_lines) do
+    if is_integer(min_lines) and min_lines > 64 do
+      raise ArgumentError, "text_surface min_lines must be at most 64, got: #{inspect(min_lines)}"
+    end
+
+    if is_integer(max_lines) and max_lines > 64 do
+      raise ArgumentError, "text_surface max_lines must be at most 64, got: #{inspect(max_lines)}"
+    end
+
+    if is_integer(min_lines) and is_integer(max_lines) and min_lines > max_lines do
+      raise ArgumentError,
+            "text_surface min_lines must be less than or equal to max_lines, got: #{inspect(min_lines)} > #{inspect(max_lines)}"
+    end
+  end
+
+  defp validate_text_surface_submit!("submit", event)
+       when not (is_binary(event) and event != "") do
+    raise ArgumentError,
+          "text_surface with submit_policy=\"submit\" requires a non-empty phx-submit event"
+  end
+
+  defp validate_text_surface_submit!(_policy, _event), do: :ok
 
   defp validate_events!(assigns, component) do
     Enum.each(component.events, fn {_event, name} ->
