@@ -355,6 +355,95 @@ defmodule GPUI.UITest do
     end
   end
 
+  test "builds selectable rich text from bounded neutral shaping runs" do
+    alias GPUI.Text.{Position, Range, RichRun}
+
+    bold =
+      RichRun.new(
+        Range.new(Position.new(0, 0), Position.new(0, 5)),
+        font_weight: :bold,
+        color: 0xF8FAFC
+      )
+
+    link =
+      RichRun.new(
+        Range.new(Position.new(1, 0), Position.new(1, 6)),
+        underline: 0x60A5FA,
+        link: "https://example.test"
+      )
+
+    assert %Element{type: :ui_rich_text, attrs: attrs, children: []} =
+             UI.rich_text(%{
+               id: "message-body",
+               label: "Message",
+               text: "Hello\nElixir",
+               runs: [bold, link],
+               "phx-link": "open_link"
+             })
+
+    assert attrs[:text] == "Hello\nElixir"
+    assert attrs[:runs] == [bold, link]
+    assert attrs[:selectable] == true
+    assert attrs[:"phx-link"] == "open_link"
+  end
+
+  test "validates rich text UTF-16 runs and link events" do
+    alias GPUI.Text.{Position, Range, RichRun}
+
+    run = fn start_position, end_position, opts ->
+      RichRun.new(Range.new(start_position, end_position), opts)
+    end
+
+    assert %Element{} =
+             UI.rich_text(%{
+               id: "unicode",
+               label: "Unicode",
+               text: "A😀B",
+               runs: [run.(Position.new(0, 1), Position.new(0, 3), color: 0xFFFFFF)]
+             })
+
+    assert_raise ArgumentError, ~r/within text UTF-16 bounds/, fn ->
+      UI.rich_text(%{
+        id: "unicode",
+        label: "Unicode",
+        text: "A😀B",
+        runs: [run.(Position.new(0, 2), Position.new(0, 5), color: 0xFFFFFF)]
+      })
+    end
+
+    assert_raise ArgumentError, ~r/non-empty forward ranges/, fn ->
+      UI.rich_text(%{
+        id: "empty",
+        label: "Empty",
+        text: "value",
+        runs: [run.(Position.new(0, 1), Position.new(0, 1), color: 0xFFFFFF)]
+      })
+    end
+
+    assert_raise ArgumentError, ~r/sorted and non-overlapping/, fn ->
+      UI.rich_text(%{
+        id: "overlap",
+        label: "Overlap",
+        text: "abcdef",
+        runs: [
+          run.(Position.new(0, 0), Position.new(0, 4), color: 0xFFFFFF),
+          run.(Position.new(0, 3), Position.new(0, 5), font_weight: :bold)
+        ]
+      })
+    end
+
+    assert_raise ArgumentError, ~r/requires phx-link/, fn ->
+      UI.rich_text(%{
+        id: "link",
+        label: "Link",
+        text: "open",
+        runs: [
+          run.(Position.new(0, 0), Position.new(0, 4), link: "https://example.test")
+        ]
+      })
+    end
+  end
+
   test "builds source-backed data tables with stable columns and rows" do
     columns = [
       UI.table_column(%{id: "name", label: "Name", width: 240, sortable: true}),

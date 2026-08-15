@@ -68,6 +68,18 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:font_style) => R.option(String.t())
         }
 
+  @type rich_text_run_node :: %{
+          required(:range) => R.path(:TextRange),
+          required(:color) => R.option(R.u32()),
+          required(:background) => R.option(R.u32()),
+          required(:font_weight) => R.option(String.t()),
+          required(:font_style) => R.option(String.t()),
+          required(:underline) => R.option(R.u32()),
+          required(:underline_style) => R.option(String.t()),
+          required(:strikethrough) => R.option(R.u32()),
+          required(:link) => R.option(String.t())
+        }
+
   @type text_inline_projection_node :: %{
           required(:position) => R.path(:TextPosition),
           required(:text) => String.t(),
@@ -334,6 +346,15 @@ defmodule GPUI.Codegen.Native.Elements do
     end
   end
 
+  @spec decode_rich_text_runs(term()) :: R.nif_result(R.vec(R.path(:RichTextRunNode)))
+  defrust decode_rich_text_runs(term) do
+    case component_attr(term, Atoms.runs()) do
+      {:ok, {:some, value}} -> decode_as(value, R.vec(R.path(:RichTextRunNode)))
+      {:ok, nil} -> {:ok, []}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   @spec text_inline_projections_attr(term(), atom()) ::
           R.nif_result(R.vec(R.path(:TextInlineProjectionNode)))
   defrustp text_inline_projections_attr(term, attr) do
@@ -487,7 +508,13 @@ defmodule GPUI.Codegen.Native.Elements do
         ) ++
         MetaAST.struct_type_items(
           __MODULE__,
-          [:text_decoration_node, :text_style_run_node, :text_inline_projection_node, :text_block_projection_node],
+          [
+            :text_decoration_node,
+            :text_style_run_node,
+            :rich_text_run_node,
+            :text_inline_projection_node,
+            :text_block_projection_node
+          ],
           derive: [:Clone, :Debug, :NifMap],
           attrs: [A.attr(:cfg, feature: "real-gpui")],
           vis: :crate,

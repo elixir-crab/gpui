@@ -1,5 +1,6 @@
 use super::component::code_viewer::ComponentCodeViewer;
 use super::component::data_table::ComponentDataTable;
+use super::component::rich_text::ComponentRichText;
 use super::component::tree::ComponentTree;
 use super::component::virtual_collection::ComponentVirtualCollection;
 use super::component::virtual_list::ComponentVirtualList;

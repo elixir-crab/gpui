@@ -272,6 +272,53 @@ application server's clipboard.
 Tests select or cancel files deterministically with `GPUI.Test.file_select/5`
 and `GPUI.Test.file_cancel/3`; neither helper opens a native window.
 
+## Rich selectable text
+
+`rich_text/1` renders consumer-produced text and shaping runs without moving
+Markdown, HTML, syntax, or product policy into the native display. Elixir owns
+parsing and supplies plain UTF-8 text plus sorted, non-overlapping
+`GPUI.Text.RichRun` values:
+
+```elixir
+alias GPUI.Text.{Position, Range, RichRun}
+
+runs = [
+  RichRun.new(
+    Range.new(Position.new(0, 0), Position.new(0, 7)),
+    font_weight: :bold,
+    color: 0xF8FAFC
+  ),
+  RichRun.new(
+    Range.new(Position.new(1, 0), Position.new(1, 12)),
+    color: 0x60A5FA,
+    underline: 0x60A5FA,
+    link: "message://details"
+  )
+]
+
+<UI.rich_text
+  id="message-body"
+  label="Message"
+  text={assigns.text}
+  runs={runs}
+  phx-link="open_link"
+  class="text-slate-300 leading-6"
+/>
+```
+
+Run positions use zero-based `{line, utf16_offset}` coordinates and are
+converted to native UTF-8 shaping ranges without splitting surrogate pairs.
+Runs can set foreground/background color, font weight/style, solid or wavy
+underline, strikethrough, and an opaque bounded link value. Unstyled gaps
+inherit ordinary component text styles.
+
+Selection is transient native state. Pointer dragging paints selection, and the
+platform copy shortcut writes selected text to the system clipboard. A link
+requires `phx-link` and emits its opaque value as an ordinary `:link` event;
+the framework does not open URLs or interpret schemes. Rich text is bounded to
+1 MiB and 2,048 runs and is serialized normally for local, test, and remote
+displays.
+
 ## Virtualized collections
 
 `virtual_collection/1` is the variable-height primitive for transcripts,

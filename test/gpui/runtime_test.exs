@@ -17,6 +17,9 @@ defmodule GPUI.RuntimeTest do
     def handle_event("rename", %{value: name}, assigns),
       do: {:noreply, %{assigns | name: name}}
 
+    def handle_event("open-link", %{type: :link, value: link}, assigns),
+      do: {:noreply, %{assigns | name: link}}
+
     @impl GPUI.View
     def handle_info({:rename, name}, assigns),
       do: {:noreply, %{assigns | name: name}}
@@ -273,6 +276,22 @@ defmodule GPUI.RuntimeTest do
         :release_frame -> :ok
       end
     end
+  end
+
+  test "dispatches typed rich link events through the ordinary view callback" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(app: DemoApp, display: RecordingDisplay, poll_interval: nil)
+
+    {handled, snapshot} =
+      GPUI.Runtime.dispatch_event(runtime, %{
+        type: :link,
+        window_id: 1,
+        event: "open-link",
+        value: "message://details"
+      })
+
+    assert handled.type == :link
+    assert %{windows: [%{root: %{assigns: %{name: "message://details"}}}]} = snapshot
   end
 
   test "typed view outcomes mutate window topology atomically" do

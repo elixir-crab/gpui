@@ -172,6 +172,95 @@ defmodule GPUI.UI.CollectionValidation do
         "ui_virtual_collection #{name} must be a non-negative integer"
       )
 
+  @max_rich_text_bytes 1_048_576
+  @max_rich_text_runs 2_048
+
+  def validate_rich_text!(assigns) do
+    validate_collection_label!(:ui_rich_text, Map.get(assigns, :label))
+    text = assigns.text
+    runs = assigns.runs
+
+    unless is_binary(text) and byte_size(text) <= @max_rich_text_bytes do
+      raise ArgumentError,
+            "ui_rich_text text must be a string no larger than #{@max_rich_text_bytes} bytes"
+    end
+
+    unless is_list(runs) and
+             Enum.count_until(runs, @max_rich_text_runs + 1) <= @max_rich_text_runs do
+      raise ArgumentError, "ui_rich_text supports at most #{@max_rich_text_runs} runs"
+    end
+
+    line_offsets = utf16_line_offsets(text)
+    validate_rich_runs!(runs, line_offsets)
+    validate_rich_link_event!(runs, assigns)
+  end
+
+  defp validate_rich_runs!(runs, line_offsets) do
+    _last_end =
+      Enum.reduce(runs, nil, fn run, previous_end ->
+        validate_rich_run_type!(run)
+        GPUI.Text.RichRun.validate!(run)
+        start_offset = rich_position_offset!(run.range.start, line_offsets)
+        end_offset = rich_position_offset!(run.range.end, line_offsets)
+        validate_rich_run_range!(start_offset, end_offset, previous_end)
+        end_offset
+      end)
+
+    :ok
+  end
+
+  defp validate_rich_run_type!(%GPUI.Text.RichRun{}), do: :ok
+
+  defp validate_rich_run_type!(_run),
+    do: raise(ArgumentError, "ui_rich_text runs must be GPUI.Text.RichRun values")
+
+  defp validate_rich_run_range!(start_offset, end_offset, previous_end) do
+    unless start_offset < end_offset do
+      raise ArgumentError, "ui_rich_text runs must be non-empty forward ranges"
+    end
+
+    if previous_end && start_offset < previous_end do
+      raise ArgumentError, "ui_rich_text runs must be sorted and non-overlapping"
+    end
+  end
+
+  defp validate_rich_link_event!(runs, assigns) do
+    if Enum.any?(runs, &(not is_nil(&1.link))) do
+      validate_event!(:ui_rich_text, assigns, :"phx-link")
+    end
+
+    :ok
+  end
+
+  defp utf16_line_offsets(text) do
+    text
+    |> String.split("\n", trim: false)
+    |> Enum.map(fn line ->
+      line
+      |> :unicode.characters_to_binary(:utf8, {:utf16, :little})
+      |> byte_size()
+      |> div(2)
+    end)
+  end
+
+  defp rich_position_offset!(%GPUI.Text.Position{line: line, utf16_offset: offset}, line_offsets)
+       when is_integer(line) and line >= 0 and is_integer(offset) and offset >= 0 do
+    case Enum.fetch(line_offsets, line) do
+      {:ok, line_length} when offset <= line_length ->
+        line_offsets
+        |> Enum.take(line)
+        |> Enum.sum()
+        |> Kernel.+(line)
+        |> Kernel.+(offset)
+
+      _other ->
+        raise ArgumentError, "ui_rich_text run positions must be within text UTF-16 bounds"
+    end
+  end
+
+  defp rich_position_offset!(_position, _line_offsets),
+    do: raise(ArgumentError, "ui_rich_text runs require GPUI.Text.Position ranges")
+
   def validate_virtual_collection!(component, assigns, item_ids) do
     validate_collection_label!(component, Map.get(assigns, :label))
     validate_item_height!(component, assigns.item_height)

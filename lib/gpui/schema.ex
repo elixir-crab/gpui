@@ -391,6 +391,20 @@ defmodule GPUI.Schema do
       attrs: [id: :string, revision: {:default, :non_negative_integer, 0}]
     },
     %Component{
+      tag: :ui_rich_text,
+      kind: :rich_text_component,
+      stateful: true,
+      events: [link: :"phx-link"],
+      public_required_attrs: [:label, :text],
+      attrs: [
+        id: :string,
+        label: :string,
+        text: {:default, :string},
+        runs: :rich_text_runs,
+        selectable: {:default, :boolean, true}
+      ]
+    },
+    %Component{
       tag: :ui_data_table,
       kind: :data_table_component,
       stateful: true,
@@ -1197,6 +1211,15 @@ defmodule GPUI.Schema do
         invalid_attr!(tag, name, "at most 128 bounded GPUI.Text.InlineProjection values", value)
   end
 
+  defp validate_attr!(tag, name, :rich_text_runs, value) when is_list(value) do
+    if Enum.count_until(value, 2_049) <= 2_048 and
+         Enum.all?(value, &match?(%GPUI.Text.RichRun{}, &1)) do
+      :ok
+    else
+      invalid_attr!(tag, name, "at most 2048 GPUI.Text.RichRun values", value)
+    end
+  end
+
   defp validate_attr!(tag, name, :text_style_runs, value) when is_list(value) do
     valid? = Enum.count_until(value, 513) <= 512 and Enum.all?(value, &valid_style_run?/1)
 
@@ -1318,6 +1341,8 @@ defmodule GPUI.Schema do
   defp expected_attr_type(:text_buffer), do: "a GPUI.Text.Buffer"
   defp expected_attr_type(:text_ranges), do: "at most 64 GPUI.Text.Range values"
   defp expected_attr_type(:text_position), do: "a GPUI.Text.Position"
+  defp expected_attr_type(:rich_text_runs), do: "at most 2048 GPUI.Text.RichRun values"
+
   defp expected_attr_type(:text_decorations), do: "at most 256 GPUI.Text.Decoration values"
   defp expected_attr_type(:text_style_runs), do: "at most 512 bounded GPUI.Text.StyleRun values"
 

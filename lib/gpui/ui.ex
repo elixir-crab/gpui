@@ -49,6 +49,7 @@ defmodule GPUI.UI do
     virtual_list_item_options: :ui_virtual_list_item,
     virtual_collection_options: :ui_virtual_collection,
     virtual_item_options: :ui_virtual_item,
+    rich_text_options: :ui_rich_text,
     data_table_options: :ui_data_table,
     table_column_options: :ui_table_column,
     table_row_options: :ui_table_row,
@@ -433,6 +434,28 @@ defmodule GPUI.UI do
     )
 
     component(:ui_virtual_item, assigns)
+  end
+
+  @doc """
+  Builds immutable, selectable, natively shaped rich text.
+
+  Elixir supplies plain UTF-8 `text` and bounded `GPUI.Text.RichRun` renderer
+  facts. Runs use zero-based UTF-16 document positions and must be sorted,
+  non-overlapping, non-empty, and within the supplied text. Unstyled gaps inherit
+  the component's ordinary text style.
+
+  Native state owns transient selection and system copy. Link runs require
+  `phx-link`; activation emits the run's opaque `link` value through the ordinary
+  controlled event path. This component does not parse Markdown or HTML.
+
+  #{Schema.component_options_doc(:ui_rich_text)}
+  """
+  @spec rich_text(rich_text_options()) :: Element.t()
+  def rich_text(assigns) when is_map(assigns) do
+    assigns = normalize_attr_key(assigns, :"phx-link")
+    assigns = Schema.apply_defaults(assigns, :ui_rich_text)
+    CollectionValidation.validate_rich_text!(assigns)
+    component(:ui_rich_text, assigns)
   end
 
   @doc """

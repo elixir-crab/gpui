@@ -14,6 +14,7 @@ defmodule GPUI.Event do
           | :search
           | :submit
           | :range
+          | :link
           | :transaction
           | :selection
           | :viewport

@@ -34,6 +34,7 @@ defmodule GPUI.SchemaTest do
              :ui_virtual_list_item,
              :ui_virtual_collection,
              :ui_virtual_item,
+             :ui_rich_text,
              :ui_data_table,
              :ui_table_column,
              :ui_table_row,
@@ -58,6 +59,7 @@ defmodule GPUI.SchemaTest do
     assert :"phx-search" in GPUI.Schema.events()
     assert :"phx-release" in GPUI.Schema.events()
     assert :"phx-select" in GPUI.Schema.events()
+    assert :"phx-link" in GPUI.Schema.events()
     assert :"phx-range" in GPUI.Schema.events()
     assert :"phx-toggle" in GPUI.Schema.events()
     assert :"phx-copy" in GPUI.Schema.events()
@@ -82,6 +84,7 @@ defmodule GPUI.SchemaTest do
     assert :ui_virtual_list_item in GPUI.Schema.identified_tags()
     assert :ui_virtual_collection in GPUI.Schema.identified_tags()
     assert :ui_virtual_item in GPUI.Schema.identified_tags()
+    assert :ui_rich_text in GPUI.Schema.identified_tags()
     assert :ui_tree in GPUI.Schema.identified_tags()
     assert :ui_tree_item in GPUI.Schema.identified_tags()
     assert :ui_code_viewer in GPUI.Schema.identified_tags()
@@ -102,6 +105,7 @@ defmodule GPUI.SchemaTest do
              :combobox_component,
              :virtual_list_component,
              :virtual_collection_component,
+             :rich_text_component,
              :data_table_component,
              :tree_component,
              :code_viewer_component,
@@ -160,6 +164,7 @@ defmodule GPUI.SchemaTest do
       :virtual_list_item,
       :virtual_collection,
       :virtual_item,
+      :rich_text,
       :data_table,
       :table_column,
       :table_row,

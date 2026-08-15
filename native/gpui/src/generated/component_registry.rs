@@ -11,6 +11,7 @@ enum ComponentKind {
     Combobox,
     VirtualList,
     VirtualCollection,
+    RichText,
     DataTable,
     Tree,
     CodeViewer,
@@ -27,6 +28,7 @@ enum StatefulComponent {
     Combobox(ComponentCombobox),
     VirtualList(ComponentVirtualList),
     VirtualCollection(ComponentVirtualCollection),
+    RichText(ComponentRichText),
     DataTable(ComponentDataTable),
     Tree(ComponentTree),
     CodeViewer(ComponentCodeViewer),
@@ -189,6 +191,23 @@ impl ComponentRegistry {
         self.entries
             .insert(key, StatefulComponent::VirtualCollection(component))
             .is_none()
+    }
+    pub(crate) fn rich_text_mut(&mut self, id: &str) -> Option<&mut ComponentRichText> {
+        let key = ComponentKey::new(ComponentKind::RichText, id);
+        self.active.insert(key.clone());
+        match self.entries.get_mut(&key) {
+            Some(StatefulComponent::RichText(component)) => Some(component),
+            _ => None,
+        }
+    }
+    pub(crate) fn insert_rich_text(
+        &mut self,
+        id: &str,
+        component: ComponentRichText,
+    ) -> bool {
+        let key = ComponentKey::new(ComponentKind::RichText, id);
+        self.active.insert(key.clone());
+        self.entries.insert(key, StatefulComponent::RichText(component)).is_none()
     }
     pub(crate) fn data_table_mut(
         &mut self,

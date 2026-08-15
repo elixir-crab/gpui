@@ -33,6 +33,7 @@ pub enum GeneratedComponentKind {
     VirtualListItemComponent,
     VirtualCollectionComponent,
     VirtualItemComponent,
+    RichTextComponent,
     DataTableComponent,
     TableColumnComponent,
     TableRowComponent,
@@ -538,6 +539,19 @@ pub(crate) struct TextSurfaceNode {
 }
 #[derive(Clone, Debug, NifMap)]
 #[cfg(feature = "real-gpui")]
+pub(crate) struct RichTextRunNode {
+    pub(crate) range: TextRange,
+    pub(crate) color: Option<u32>,
+    pub(crate) background: Option<u32>,
+    pub(crate) font_weight: Option<String>,
+    pub(crate) font_style: Option<String>,
+    pub(crate) underline: Option<u32>,
+    pub(crate) underline_style: Option<String>,
+    pub(crate) strikethrough: Option<u32>,
+    pub(crate) link: Option<String>,
+}
+#[derive(Clone, Debug, NifMap)]
+#[cfg(feature = "real-gpui")]
 pub(crate) struct TextBlockProjectionNode {
     pub(crate) line: u64,
     pub(crate) text: String,
@@ -763,6 +777,16 @@ pub(crate) fn text_style_runs_attr<'a>(
 ) -> NifResult<Vec<TextStyleRunNode>> {
     match component_attr(term, attr) {
         Ok(Some(value)) => value.decode::<Vec<TextStyleRunNode>>(),
+        Ok(None) => Ok(vec![]),
+        Err(reason) => Err(reason),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_rich_text_runs<'a>(
+    term: Term<'a>,
+) -> NifResult<Vec<RichTextRunNode>> {
+    match component_attr(term, atoms::runs()) {
+        Ok(Some(value)) => value.decode::<Vec<RichTextRunNode>>(),
         Ok(None) => Ok(vec![]),
         Err(reason) => Err(reason),
     }
@@ -3021,6 +3045,34 @@ pub(crate) fn decode_generated_virtual_item_component<'a>(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct RichTextComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) label: Option<String>,
+    pub(crate) text: String,
+    pub(crate) runs: Vec<RichTextRunNode>,
+    pub(crate) selectable: bool,
+    pub(crate) link: Option<String>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_rich_text_component<'a>(
+    term: Term<'a>,
+) -> NifResult<RichTextComponentNode> {
+    Ok(RichTextComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        label: component_string_attr(term, atoms::label())?,
+        text: component_string_attr(term, atoms::text())?.unwrap_or_default(),
+        runs: decode_rich_text_runs(term)?,
+        selectable: component_bool_attr(term, atoms::selectable())?.unwrap_or(true),
+        link: component_string_attr(term, atoms::phx_link())?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct DataTableComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -3484,6 +3536,7 @@ pub(crate) enum ElementNode {
     VirtualListItemComponent(VirtualListItemComponentNode),
     VirtualCollectionComponent(VirtualCollectionComponentNode),
     VirtualItemComponent(VirtualItemComponentNode),
+    RichTextComponent(RichTextComponentNode),
     DataTableComponent(DataTableComponentNode),
     TableColumnComponent(TableColumnComponentNode),
     TableRowComponent(TableRowComponentNode),
@@ -3530,6 +3583,7 @@ pub enum GeneratedElementTag {
     UiVirtualListItem,
     UiVirtualCollection,
     UiVirtualItem,
+    UiRichText,
     UiDataTable,
     UiTableColumn,
     UiTableRow,
@@ -3584,6 +3638,7 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_virtual_list_item" => GeneratedElementTag::UiVirtualListItem,
         "ui_virtual_collection" => GeneratedElementTag::UiVirtualCollection,
         "ui_virtual_item" => GeneratedElementTag::UiVirtualItem,
+        "ui_rich_text" => GeneratedElementTag::UiRichText,
         "ui_data_table" => GeneratedElementTag::UiDataTable,
         "ui_table_column" => GeneratedElementTag::UiTableColumn,
         "ui_table_row" => GeneratedElementTag::UiTableRow,
@@ -3665,6 +3720,7 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::UiVirtualItem => {
             GeneratedComponentKind::VirtualItemComponent
         }
+        GeneratedElementTag::UiRichText => GeneratedComponentKind::RichTextComponent,
         GeneratedElementTag::UiDataTable => GeneratedComponentKind::DataTableComponent,
         GeneratedElementTag::UiTableColumn => {
             GeneratedComponentKind::TableColumnComponent
@@ -3810,6 +3866,10 @@ pub(crate) fn decode_generated_element_node<'a>(
             decode_generated_virtual_item_component(term)
                 .map(|node| ElementNode::VirtualItemComponent(node))
         }
+        GeneratedComponentKind::RichTextComponent => {
+            decode_generated_rich_text_component(term)
+                .map(|node| ElementNode::RichTextComponent(node))
+        }
         GeneratedComponentKind::DataTableComponent => {
             decode_generated_data_table_component(term)
                 .map(|node| ElementNode::DataTableComponent(node))
@@ -3943,6 +4003,9 @@ pub(crate) fn render_generated_component_node(
         }
         ElementNode::VirtualItemComponent(node) => {
             element::component::virtual_collection::render_item(node, context)
+        }
+        ElementNode::RichTextComponent(node) => {
+            element::component::rich_text::render(node, context)
         }
         ElementNode::DataTableComponent(node) => {
             element::component::data_table::render(node, context)

@@ -342,6 +342,7 @@ defmodule GPUI.Remote.Client do
               :search,
               :submit,
               :range,
+              :link,
               :keydown,
               :keyup,
               :window_closed

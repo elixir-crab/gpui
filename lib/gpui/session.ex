@@ -351,6 +351,7 @@ defmodule GPUI.Session do
               :search,
               :submit,
               :range,
+              :link,
               :transaction,
               :selection,
               :viewport,
