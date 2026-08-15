@@ -1,7 +1,7 @@
 defmodule Features.RichTranscript.View do
   use GPUI.View
 
-  alias GPUI.Text.{Position, Range, RichRun}
+  alias GPUI.Text.{Edit, Position, Range, RichRun, Selection, Transaction}
   alias GPUI.UI
 
   @impl GPUI.View
@@ -33,6 +33,26 @@ defmodule Features.RichTranscript.View do
         {Enum.map(assigns.messages, &message/1)}
       </UI.virtual_collection>
 
+      <div class="px-5 py-3 bg-slate-900 border-t border-slate-800">
+        <text_surface
+          id="transcript-composer"
+          buffer={assigns.draft_buffer}
+          focus_request={assigns.composer_focus_request}
+          soft_wrap={true}
+          auto_grow={true}
+          min_lines={2}
+          max_lines={6}
+          submit_policy="submit"
+          phx-transaction="draft-transaction"
+          phx-submit="submit-draft"
+          class="w-full p-3 bg-slate-800 border border-slate-700 rounded-lg text-sm"
+        />
+        <div class="flex items-center justify-between pt-2">
+          <text class="text-xs text-slate-400">Enter submits · Shift+Enter adds a line · draft revision {assigns.draft_revision}</text>
+          <text class="text-xs text-slate-400">{assigns.draft_status}</text>
+        </div>
+      </div>
+
       <div class="flex items-center justify-between px-5 py-2 bg-slate-900 border-t border-slate-800">
         <text class="text-xs text-slate-400">{assigns.visible}</text>
         <text class="text-xs text-slate-400">{assigns.status}</text>
@@ -42,6 +62,34 @@ defmodule Features.RichTranscript.View do
   end
 
   @impl GPUI.View
+  def handle_event("draft-transaction", %{revision: revision}, assigns),
+    do: {:noreply, %{assigns | draft_revision: revision, draft_status: "Draft updated"}}
+
+  def handle_event("submit-draft", %{value: value}, assigns) do
+    case String.trim(value) do
+      "" ->
+        {:noreply, %{assigns | draft_status: "Write something before submitting"}}
+
+      text ->
+        number = next_number(assigns.messages)
+        {:ok, revision} = clear_draft(assigns.draft_buffer)
+
+        message =
+          message_data(number)
+          |> Map.put(:body, text <> "\nOpen details")
+
+        {:noreply,
+         %{
+           assigns
+           | messages: assigns.messages ++ [message],
+             follow_request: assigns.follow_request + 1,
+             draft_revision: revision,
+             draft_status: "Submitted message #{number}",
+             composer_focus_request: assigns.composer_focus_request + 1
+         }}
+    end
+  end
+
   def handle_event("visible-range", %{value: range}, assigns),
     do: {:noreply, %{assigns | visible: "visible #{range.first}–#{range.last}"}}
 
@@ -79,6 +127,27 @@ defmodule Features.RichTranscript.View do
   end
 
   defp next_number(messages), do: List.last(messages).number + 1
+
+  defp clear_draft(buffer) do
+    {:ok, snapshot} = GPUI.Text.Buffer.snapshot(buffer)
+    start_position = Position.new(0, 0)
+    end_position = end_position(snapshot.text)
+
+    {:ok, %{revision: revision}} =
+      GPUI.Text.Buffer.transact(buffer, %Transaction{
+        id: "transcript-submit-#{System.unique_integer([:positive])}",
+        base_revision: snapshot.revision,
+        edits: [Edit.new(Range.new(start_position, end_position), "")],
+        selections: [Selection.caret("primary", start_position, primary: true)]
+      })
+
+    {:ok, revision}
+  end
+
+  defp end_position(text) do
+    lines = String.split(text, "\n", trim: false)
+    Position.new(Enum.count(lines) - 1, lines |> List.last() |> utf16_length())
+  end
 
   def message_data(number) do
     body =
@@ -151,6 +220,8 @@ defmodule Features.RichTranscript.App do
   def mount(_args) do
     messages = Enum.map(1..18, &Features.RichTranscript.View.message_data/1)
 
+    {:ok, draft_buffer} = GPUI.Text.Buffer.new("")
+
     {:ok,
      [
        window "Rich Transcript" do
@@ -158,6 +229,10 @@ defmodule Features.RichTranscript.App do
 
          root(Features.RichTranscript.View,
            messages: messages,
+           draft_buffer: draft_buffer,
+           draft_revision: 0,
+           draft_status: "Ready",
+           composer_focus_request: 1,
            follow_request: 0,
            visible: "range pending",
            status: "Select and copy text, or activate a link"

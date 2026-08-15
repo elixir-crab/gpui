@@ -143,6 +143,7 @@ pub(crate) fn render(
     node: TextSurfaceNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
+    use gpui::prelude::FluentBuilder;
     use gpui::{AppContext, Focusable, InteractiveElement, IntoElement, ParentElement, Styled};
     use gpui_component::input::{Input, InputEvent, InputState, TabSize};
 
@@ -484,7 +485,8 @@ pub(crate) fn render(
         .appearance(false)
         .bordered(false)
         .focus_bordered(false)
-        .h_full();
+        .when(!node.auto_grow, |input| input.h_full())
+        .w_full();
     let projection_labels = projection_labels(
         &surface.state,
         &surface.text,
@@ -557,7 +559,8 @@ pub(crate) fn render(
                 }
             }
         })
-        .size_full()
+        .when(node.auto_grow, |surface| surface.w_full())
+        .when(!node.auto_grow, |surface| surface.size_full())
         .child(apply_component_styles(input, node.style))
         .child(decorations)
         .into_any_element()
