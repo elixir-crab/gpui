@@ -31,6 +31,8 @@ pub enum GeneratedComponentKind {
     AccordionItemComponent,
     VirtualListComponent,
     VirtualListItemComponent,
+    VirtualCollectionComponent,
+    VirtualItemComponent,
     DataTableComponent,
     TableColumnComponent,
     TableRowComponent,
@@ -2929,6 +2931,96 @@ pub(crate) fn decode_generated_virtual_list_item_component<'a>(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct VirtualCollectionComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) label: Option<String>,
+    pub(crate) alignment: Option<String>,
+    pub(crate) overdraw: f64,
+    pub(crate) reveal: Option<String>,
+    pub(crate) reveal_request: u64,
+    pub(crate) reveal_strategy: Option<String>,
+    pub(crate) follow: Option<String>,
+    pub(crate) follow_request: u64,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) range: Option<String>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_virtual_collection_component<'a>(
+    term: Term<'a>,
+) -> NifResult<VirtualCollectionComponentNode> {
+    Ok(VirtualCollectionComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        label: component_string_attr(term, atoms::label())?,
+        alignment: match component_enum_attr(
+            term,
+            atoms::alignment(),
+            &vec!["top", "bottom"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("top".to_string()),
+        },
+        overdraw: component_number_attr(term, atoms::overdraw())?.unwrap_or(256.0),
+        reveal: component_string_attr(term, atoms::reveal())?,
+        reveal_request: component_non_negative_integer_attr(
+                term,
+                atoms::reveal_request(),
+            )?
+            .unwrap_or(0),
+        reveal_strategy: match component_enum_attr(
+            term,
+            atoms::reveal_strategy(),
+            &vec!["nearest", "top"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("nearest".to_string()),
+        },
+        follow: match component_enum_attr(
+            term,
+            atoms::follow(),
+            &vec!["none", "tail"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("none".to_string()),
+        },
+        follow_request: component_non_negative_integer_attr(
+                term,
+                atoms::follow_request(),
+            )?
+            .unwrap_or(0),
+        children: decode_children(term)?,
+        range: component_string_attr(term, atoms::phx_range())?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct VirtualItemComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) revision: u64,
+    pub(crate) children: Vec<ElementNode>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_virtual_item_component<'a>(
+    term: Term<'a>,
+) -> NifResult<VirtualItemComponentNode> {
+    Ok(VirtualItemComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        revision: component_non_negative_integer_attr(term, atoms::revision())?
+            .unwrap_or(0),
+        children: decode_children(term)?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct DataTableComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -3390,6 +3482,8 @@ pub(crate) enum ElementNode {
     AccordionItemComponent(AccordionItemComponentNode),
     VirtualListComponent(VirtualListComponentNode),
     VirtualListItemComponent(VirtualListItemComponentNode),
+    VirtualCollectionComponent(VirtualCollectionComponentNode),
+    VirtualItemComponent(VirtualItemComponentNode),
     DataTableComponent(DataTableComponentNode),
     TableColumnComponent(TableColumnComponentNode),
     TableRowComponent(TableRowComponentNode),
@@ -3434,6 +3528,8 @@ pub enum GeneratedElementTag {
     UiAccordionItem,
     UiVirtualList,
     UiVirtualListItem,
+    UiVirtualCollection,
+    UiVirtualItem,
     UiDataTable,
     UiTableColumn,
     UiTableRow,
@@ -3486,6 +3582,8 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_accordion_item" => GeneratedElementTag::UiAccordionItem,
         "ui_virtual_list" => GeneratedElementTag::UiVirtualList,
         "ui_virtual_list_item" => GeneratedElementTag::UiVirtualListItem,
+        "ui_virtual_collection" => GeneratedElementTag::UiVirtualCollection,
+        "ui_virtual_item" => GeneratedElementTag::UiVirtualItem,
         "ui_data_table" => GeneratedElementTag::UiDataTable,
         "ui_table_column" => GeneratedElementTag::UiTableColumn,
         "ui_table_row" => GeneratedElementTag::UiTableRow,
@@ -3560,6 +3658,12 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         }
         GeneratedElementTag::UiVirtualListItem => {
             GeneratedComponentKind::VirtualListItemComponent
+        }
+        GeneratedElementTag::UiVirtualCollection => {
+            GeneratedComponentKind::VirtualCollectionComponent
+        }
+        GeneratedElementTag::UiVirtualItem => {
+            GeneratedComponentKind::VirtualItemComponent
         }
         GeneratedElementTag::UiDataTable => GeneratedComponentKind::DataTableComponent,
         GeneratedElementTag::UiTableColumn => {
@@ -3698,6 +3802,14 @@ pub(crate) fn decode_generated_element_node<'a>(
             decode_generated_virtual_list_item_component(term)
                 .map(|node| ElementNode::VirtualListItemComponent(node))
         }
+        GeneratedComponentKind::VirtualCollectionComponent => {
+            decode_generated_virtual_collection_component(term)
+                .map(|node| ElementNode::VirtualCollectionComponent(node))
+        }
+        GeneratedComponentKind::VirtualItemComponent => {
+            decode_generated_virtual_item_component(term)
+                .map(|node| ElementNode::VirtualItemComponent(node))
+        }
         GeneratedComponentKind::DataTableComponent => {
             decode_generated_data_table_component(term)
                 .map(|node| ElementNode::DataTableComponent(node))
@@ -3825,6 +3937,12 @@ pub(crate) fn render_generated_component_node(
         }
         ElementNode::VirtualListItemComponent(node) => {
             element::component::virtual_list::render_item(node, context)
+        }
+        ElementNode::VirtualCollectionComponent(node) => {
+            element::component::virtual_collection::render(node, context)
+        }
+        ElementNode::VirtualItemComponent(node) => {
+            element::component::virtual_collection::render_item(node, context)
         }
         ElementNode::DataTableComponent(node) => {
             element::component::data_table::render(node, context)

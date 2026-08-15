@@ -366,6 +366,31 @@ defmodule GPUI.Schema do
       attrs: [id: :string, disabled: :boolean]
     },
     %Component{
+      tag: :ui_virtual_collection,
+      kind: :virtual_collection_component,
+      stateful: true,
+      events: [range: :"phx-range"],
+      children: true,
+      public_required_attrs: [:label],
+      attrs: [
+        id: :string,
+        label: :string,
+        alignment: {:default, {:enum, ~w(top bottom)}, "top"},
+        overdraw: {:default, :number, 256.0},
+        reveal: :string,
+        reveal_request: {:default, :non_negative_integer, 0},
+        reveal_strategy: {:default, {:enum, ~w(nearest top)}, "nearest"},
+        follow: {:default, {:enum, ~w(none tail)}, "none"},
+        follow_request: {:default, :non_negative_integer, 0}
+      ]
+    },
+    %Component{
+      tag: :ui_virtual_item,
+      kind: :virtual_item_component,
+      children: true,
+      attrs: [id: :string, revision: {:default, :non_negative_integer, 0}]
+    },
+    %Component{
       tag: :ui_data_table,
       kind: :data_table_component,
       stateful: true,

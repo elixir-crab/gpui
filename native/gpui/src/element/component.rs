@@ -13,6 +13,7 @@ pub(crate) mod tabs;
 pub(crate) mod text_surface;
 pub(crate) mod tree;
 pub(crate) mod uniform_collection;
+pub(crate) mod virtual_collection;
 pub(crate) mod virtual_list;
 
 use super::apply_generated_render_styles;

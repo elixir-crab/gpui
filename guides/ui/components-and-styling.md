@@ -274,7 +274,52 @@ and `GPUI.Test.file_cancel/3`; neither helper opens a native window.
 
 ## Virtualized collections
 
-`virtual_list/1` presents large collections through GPUI's native uniform-list
+`virtual_collection/1` is the variable-height primitive for transcripts,
+activity feeds, and other heterogeneous collections. The complete logical
+collection stays in the renderer-independent snapshot, while the native display
+measures and renders the visible region with bounded pixel `overdraw`.
+
+```elixir
+<UI.virtual_collection
+  id="transcript"
+  label="Conversation"
+  alignment="bottom"
+  follow="tail"
+  follow_request={assigns.follow_request}
+  overdraw={320}
+  phx-range="messages_visible"
+  class="h-[560px]"
+>
+  {Enum.map(assigns.messages, fn message ->
+    UI.virtual_item(%{
+      id: message.id,
+      revision: message.revision,
+      children: [render_message(message)]
+    })
+  end)}
+</UI.virtual_collection>
+```
+
+`alignment="bottom"` starts short collections at the lower edge. `follow="tail"`
+tracks appended or growing tail content until the user scrolls away; increment
+`follow_request` to explicitly return to the tail. To reveal a retained item,
+set `reveal` and increment `reveal_request`. The truthful placement strategies
+for the variable-height primitive are `nearest` and `top`.
+
+Every item ID is stable, unique, non-empty, and at most 128 bytes. Increment an
+item's `revision` when retained content may change measured height. Appends,
+prepends, removals, and revision changes preserve GPUI's measured-height cache
+for unaffected IDs. Collections are bounded to 100,000 items and `overdraw` to
+4,096 pixels.
+
+`phx-range` emits deduplicated visible `%{first: first, last: last}` ranges with
+an exclusive
+`last`. Unlike the uniform source-backed primitive below, variable collections
+currently require all logical item nodes in each snapshot: unknown offscreen
+heights have no truthful placeholder geometry. Remote displays receive this
+same complete serializable contract.
+
+`virtual_list/1` presents source-backed uniform collections through GPUI's native uniform-list
 layout. Every row has a stable ID and the same declared height; only the visible
 range is constructed and laid out natively.
 

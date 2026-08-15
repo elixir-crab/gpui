@@ -32,6 +32,8 @@ defmodule GPUI.SchemaTest do
              :ui_accordion_item,
              :ui_virtual_list,
              :ui_virtual_list_item,
+             :ui_virtual_collection,
+             :ui_virtual_item,
              :ui_data_table,
              :ui_table_column,
              :ui_table_row,
@@ -78,6 +80,8 @@ defmodule GPUI.SchemaTest do
     assert :ui_dropdown_menu in GPUI.Schema.identified_tags()
     assert :ui_virtual_list in GPUI.Schema.identified_tags()
     assert :ui_virtual_list_item in GPUI.Schema.identified_tags()
+    assert :ui_virtual_collection in GPUI.Schema.identified_tags()
+    assert :ui_virtual_item in GPUI.Schema.identified_tags()
     assert :ui_tree in GPUI.Schema.identified_tags()
     assert :ui_tree_item in GPUI.Schema.identified_tags()
     assert :ui_code_viewer in GPUI.Schema.identified_tags()
@@ -97,6 +101,7 @@ defmodule GPUI.SchemaTest do
              :select_component,
              :combobox_component,
              :virtual_list_component,
+             :virtual_collection_component,
              :data_table_component,
              :tree_component,
              :code_viewer_component,
@@ -153,6 +158,8 @@ defmodule GPUI.SchemaTest do
       :accordion_item,
       :virtual_list,
       :virtual_list_item,
+      :virtual_collection,
+      :virtual_item,
       :data_table,
       :table_column,
       :table_row,

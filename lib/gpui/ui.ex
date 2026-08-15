@@ -47,6 +47,8 @@ defmodule GPUI.UI do
     accordion_item_options: :ui_accordion_item,
     virtual_list_options: :ui_virtual_list,
     virtual_list_item_options: :ui_virtual_list_item,
+    virtual_collection_options: :ui_virtual_collection,
+    virtual_item_options: :ui_virtual_item,
     data_table_options: :ui_data_table,
     table_column_options: :ui_table_column,
     table_row_options: :ui_table_row,
@@ -375,6 +377,63 @@ defmodule GPUI.UI do
   @spec virtual_list_item(virtual_list_item_options()) :: Element.t()
   def virtual_list_item(assigns) when is_map(assigns),
     do: component(:ui_virtual_list_item, Schema.apply_defaults(assigns, :ui_virtual_list_item))
+
+  @doc """
+  Builds a variable-height virtual collection from stable `virtual_item/1` children.
+
+  The complete logical collection remains in the renderer-independent snapshot,
+  while the native display measures and renders only the visible region. Items
+  may have different heights and may change height between snapshots.
+
+  `alignment` controls the initial edge, `follow` enables native tail-following,
+  and incrementing `follow_request` explicitly returns to the tail. Increment
+  `reveal_request` to repeat a reveal of the same item. `phx-range`, when set,
+  receives deduplicated `%{first: first, last: last}` visible ranges where
+  `last` is exclusive.
+
+  Source-backed slices are intentionally unsupported until unloaded variable
+  heights have an explicit estimation contract.
+
+  #{Schema.component_options_doc(:ui_virtual_collection)}
+  """
+  @spec virtual_collection(virtual_collection_options()) :: Element.t()
+  def virtual_collection(assigns) when is_map(assigns) do
+    assigns = normalize_attr_key(assigns, :"phx-range")
+    children = Map.get(assigns, :children, [])
+    assigns = Schema.apply_defaults(assigns, :ui_virtual_collection)
+
+    item_ids =
+      CollectionValidation.collection_item_ids!(
+        :ui_virtual_collection,
+        :ui_virtual_item,
+        children
+      )
+
+    CollectionValidation.validate_variable_collection!(assigns, item_ids)
+    component(:ui_virtual_collection, assigns)
+  end
+
+  @doc """
+  Builds one stable, variable-height item for `virtual_collection/1`.
+
+  IDs are renderer identity and must be non-empty UTF-8 strings no larger than
+  128 bytes. Increment `revision` whenever a retained item's content can change
+  its measured height; unchanged revisions preserve the native height cache.
+
+  #{Schema.component_options_doc(:ui_virtual_item)}
+  """
+  @spec virtual_item(virtual_item_options()) :: Element.t()
+  def virtual_item(assigns) when is_map(assigns) do
+    assigns = Schema.apply_defaults(assigns, :ui_virtual_item)
+
+    CollectionValidation.validate_non_negative_integer!(
+      :ui_virtual_item,
+      :revision,
+      assigns.revision
+    )
+
+    component(:ui_virtual_item, assigns)
+  end
 
   @doc """
   Builds an accessible source-backed data grid with fixed column definitions.

@@ -109,6 +109,69 @@ defmodule GPUI.UI.CollectionValidation do
     item_ids
   end
 
+  @max_variable_collection_items 100_000
+  @max_variable_item_id_bytes 128
+  @max_variable_overdraw 4_096.0
+
+  def validate_variable_collection!(assigns, item_ids) do
+    validate_collection_label!(:ui_virtual_collection, Map.get(assigns, :label))
+
+    if length(item_ids) > @max_variable_collection_items do
+      raise ArgumentError,
+            "ui_virtual_collection supports at most #{@max_variable_collection_items} items"
+    end
+
+    Enum.each(item_ids, &validate_variable_item_id!/1)
+
+    unless is_number(assigns.overdraw) and assigns.overdraw >= 0 and
+             assigns.overdraw <= @max_variable_overdraw do
+      raise ArgumentError,
+            "ui_virtual_collection overdraw must be between zero and #{@max_variable_overdraw} pixels"
+    end
+
+    unless assigns.reveal_strategy in ~w(nearest top) do
+      raise ArgumentError,
+            "ui_virtual_collection reveal_strategy must be nearest or top"
+    end
+
+    validate_variable_reveal!(Map.get(assigns, :reveal), item_ids)
+    validate_monotonic_request!(:reveal_request, assigns.reveal_request)
+    validate_monotonic_request!(:follow_request, assigns.follow_request)
+  end
+
+  defp validate_variable_item_id!(id)
+       when is_binary(id) and id != "" and byte_size(id) <= @max_variable_item_id_bytes,
+       do: :ok
+
+  defp validate_variable_item_id!(_id) do
+    raise ArgumentError,
+          "ui_virtual_collection item IDs must be non-empty strings no larger than #{@max_variable_item_id_bytes} bytes"
+  end
+
+  defp validate_variable_reveal!(nil, _item_ids), do: :ok
+
+  defp validate_variable_reveal!(reveal, item_ids) when is_binary(reveal) do
+    if reveal in item_ids do
+      :ok
+    else
+      raise ArgumentError, "ui_virtual_collection reveal must identify a child"
+    end
+  end
+
+  defp validate_variable_reveal!(_reveal, _item_ids),
+    do: raise(ArgumentError, "ui_virtual_collection reveal must identify a child")
+
+  defp validate_monotonic_request!(_name, request)
+       when is_integer(request) and request >= 0,
+       do: :ok
+
+  defp validate_monotonic_request!(name, _request),
+    do:
+      raise(
+        ArgumentError,
+        "ui_virtual_collection #{name} must be a non-negative integer"
+      )
+
   def validate_virtual_collection!(component, assigns, item_ids) do
     validate_collection_label!(component, Map.get(assigns, :label))
     validate_item_height!(component, assigns.item_height)

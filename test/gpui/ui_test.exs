@@ -264,6 +264,97 @@ defmodule GPUI.UITest do
     end
   end
 
+  test "builds variable-height virtual collections from complete stable snapshots" do
+    first = UI.virtual_item(%{id: "message-1", children: ["Short"]})
+
+    second =
+      UI.virtual_item(%{
+        id: "message-2",
+        children: ["A much longer message that may wrap to several native lines."]
+      })
+
+    assert %Element{
+             type: :ui_virtual_collection,
+             attrs: attrs,
+             children: [^first, ^second]
+           } =
+             UI.virtual_collection(%{
+               :"phx-range" => "visible_messages",
+               id: "transcript",
+               label: "Conversation",
+               alignment: "bottom",
+               overdraw: 320,
+               reveal: "message-1",
+               reveal_request: 2,
+               reveal_strategy: "top",
+               follow: "tail",
+               follow_request: 4,
+               children: [first, second]
+             })
+
+    assert attrs[:alignment] == "bottom"
+    assert attrs[:overdraw] == 320
+    assert attrs[:reveal_request] == 2
+    assert attrs[:follow] == "tail"
+    assert attrs[:follow_request] == 4
+    assert attrs[:"phx-range"] == "visible_messages"
+  end
+
+  test "validates bounded variable collection identity and requests" do
+    item = UI.virtual_item(%{id: "message-1"})
+
+    assert_raise ArgumentError, ~r/only accepts ui_virtual_item children/, fn ->
+      UI.virtual_collection(%{
+        id: "transcript",
+        label: "Conversation",
+        children: [UI.virtual_list_item(%{id: "message-1"})]
+      })
+    end
+
+    assert_raise ArgumentError, ~r/item IDs must be unique/, fn ->
+      UI.virtual_collection(%{
+        id: "transcript",
+        label: "Conversation",
+        children: [item, item]
+      })
+    end
+
+    assert_raise ArgumentError, ~r/no larger than 128 bytes/, fn ->
+      UI.virtual_collection(%{
+        id: "transcript",
+        label: "Conversation",
+        children: [UI.virtual_item(%{id: String.duplicate("x", 129)})]
+      })
+    end
+
+    assert_raise ArgumentError, ~r/reveal must identify a child/, fn ->
+      UI.virtual_collection(%{
+        id: "transcript",
+        label: "Conversation",
+        reveal: "missing",
+        children: [item]
+      })
+    end
+
+    assert_raise ArgumentError, ~r/follow_request must be a non-negative integer/, fn ->
+      UI.virtual_collection(%{
+        id: "transcript",
+        label: "Conversation",
+        follow_request: -1,
+        children: [item]
+      })
+    end
+
+    assert_raise ArgumentError, ~r/received unsupported attributes: :total_count/, fn ->
+      UI.virtual_collection(%{
+        id: "transcript",
+        label: "Conversation",
+        total_count: 10,
+        children: [item]
+      })
+    end
+  end
+
   test "builds source-backed data tables with stable columns and rows" do
     columns = [
       UI.table_column(%{id: "name", label: "Name", width: 240, sortable: true}),
