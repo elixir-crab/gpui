@@ -36,6 +36,13 @@ defmodule GPUI.Native.RichTextE2ETest do
           phx-link="link-opened"
           class="w-[420px] text-lg leading-7 text-slate-300"
         />
+        <UI.input
+          id="clipboard-probe"
+          label="Clipboard probe"
+          value={assigns.clipboard}
+          phx-change="clipboard-changed"
+          class="mt-4 w-[420px]"
+        />
         <text class="mt-6 text-white">Links: {assigns.links}; Last: {assigns.last_link || "none"}</text>
       </div>
       """
@@ -44,6 +51,9 @@ defmodule GPUI.Native.RichTextE2ETest do
     @impl GPUI.View
     def handle_event("link-opened", %{type: :link, value: link}, assigns),
       do: {:noreply, %{assigns | links: assigns.links + 1, last_link: link}}
+
+    def handle_event("clipboard-changed", %{value: clipboard}, assigns),
+      do: {:noreply, %{assigns | clipboard: clipboard}}
   end
 
   defmodule RichTextApp do
@@ -55,7 +65,7 @@ defmodule GPUI.Native.RichTextE2ETest do
        [
          window "GPUI Rich Text E2E" do
            size(480, 260)
-           root(RichTextView, links: 0, last_link: nil)
+           root(RichTextView, links: 0, last_link: nil, clipboard: "")
          end
        ]}
     end
@@ -83,7 +93,18 @@ defmodule GPUI.Native.RichTextE2ETest do
     Desktop.command!(["mousemove", "--window", native_window_id, "125", "34"])
     Desktop.command!(["mouseup", "1"])
     Desktop.key!(native_window_id, "ctrl+c")
+    Desktop.click!(native_window_id, 120, 108)
+    Desktop.key!(native_window_id, "ctrl+v")
+
+    Desktop.eventually(fn ->
+      assigns = runtime |> GPUI.Runtime.snapshot() |> hd_window_assigns()
+      assert assigns.clipboard != ""
+      assert String.contains?("Hello world", assigns.clipboard)
+    end)
 
     assert Process.alive?(runtime)
   end
+
+  defp hd_window_assigns(snapshot),
+    do: snapshot.windows |> hd() |> get_in([:root, :assigns])
 end

@@ -17,6 +17,7 @@ use std::sync::{Arc, Mutex};
 pub(crate) struct ComponentRichText {
     selection: Arc<Mutex<RichSelection>>,
     focus_handle: gpui::FocusHandle,
+    text: String,
 }
 
 #[cfg(feature = "components")]
@@ -25,6 +26,7 @@ impl ComponentRichText {
         Self {
             selection: Arc::new(Mutex::new(RichSelection::default())),
             focus_handle: cx.focus_handle(),
+            text: String::new(),
         }
     }
 }
@@ -192,7 +194,7 @@ impl gpui::Element for RichTextElement {
                 let hitbox = hitbox.clone();
                 let layout = layout.clone();
                 let selection = self.selection.clone();
-                move |event: &gpui::MouseDownEvent, phase, window, cx| {
+                move |event: &gpui::MouseDownEvent, phase, window, _cx| {
                     if !phase.bubble()
                         || event.button != gpui::MouseButton::Left
                         || !hitbox.is_hovered(window)
@@ -205,7 +207,6 @@ impl gpui::Element for RichTextElement {
                         selection.head = index;
                         selection.dragging = true;
                     }
-                    cx.stop_propagation();
                 }
             });
             window.on_mouse_event({
@@ -294,7 +295,24 @@ impl gpui::Element for RichTextElement {
                 .map(|character| character.len_utf8() as u8)
                 .collect::<Vec<_>>(),
         );
-        builder.push_child(builder.synthetic_node_id(0), run);
+        let run_id = builder.synthetic_node_id(0);
+        builder.push_child(run_id, run);
+
+        if let Ok(selection) = self.selection.lock() {
+            let range = selection.range();
+            builder
+                .parent_node()
+                .set_text_selection(gpui::accesskit::TextSelection {
+                    anchor: gpui::accesskit::TextPosition {
+                        node: run_id,
+                        character_index: byte_to_character_index(&self.text, range.start),
+                    },
+                    focus: gpui::accesskit::TextPosition {
+                        node: run_id,
+                        character_index: byte_to_character_index(&self.text, range.end),
+                    },
+                });
+        }
     }
 }
 
@@ -315,10 +333,13 @@ pub(crate) fn render(
         .rich_text_mut(&node.id)
         .expect("rich text component must exist after insertion");
     if let Ok(mut selection) = component.selection.lock() {
-        if selection.anchor > node.text.len() || selection.head > node.text.len() {
+        if component.text != node.text || !node.selectable {
             selection.clear();
+        } else {
+            clamp_selection(&mut selection, &node.text);
         }
     }
+    component.text.clone_from(&node.text);
     let selection = component.selection.clone();
     let focus_handle = component.focus_handle.clone();
     let text_element = RichTextElement::new(
@@ -356,6 +377,26 @@ fn closest_index(layout: &gpui::TextLayout, position: gpui::Point<gpui::Pixels>)
     match layout.index_for_position(position) {
         Ok(index) | Err(index) => index,
     }
+}
+
+#[cfg(feature = "components")]
+fn clamp_selection(selection: &mut RichSelection, text: &str) {
+    selection.anchor = clamp_byte_index(text, selection.anchor);
+    selection.head = clamp_byte_index(text, selection.head);
+}
+
+#[cfg(feature = "components")]
+fn clamp_byte_index(text: &str, index: usize) -> usize {
+    let mut index = index.min(text.len());
+    while !text.is_char_boundary(index) {
+        index = index.saturating_sub(1);
+    }
+    index
+}
+
+#[cfg(feature = "components")]
+fn byte_to_character_index(text: &str, byte: usize) -> usize {
+    text[..clamp_byte_index(text, byte)].chars().count()
 }
 
 #[cfg(feature = "components")]
@@ -515,6 +556,27 @@ pub(crate) fn render(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn clamps_selection_to_utf8_boundaries_and_normalizes_backward_ranges() {
+        let text = "A😀B";
+        let mut selection = RichSelection {
+            anchor: 4,
+            head: 2,
+            dragging: true,
+        };
+        clamp_selection(&mut selection, text);
+
+        assert_eq!(selection.anchor, 1);
+        assert_eq!(selection.head, 1);
+        assert!(selection.range().is_empty());
+
+        selection.anchor = text.len();
+        selection.head = 1;
+        assert_eq!(selection.range(), 1..text.len());
+        assert_eq!(byte_to_character_index(text, text.len()), 3);
+        assert_eq!(byte_to_character_index(text, 5), 2);
+    }
 
     #[test]
     fn converts_utf16_positions_without_splitting_surrogates() {
