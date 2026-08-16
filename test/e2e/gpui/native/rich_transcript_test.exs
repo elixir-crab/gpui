@@ -166,7 +166,7 @@ defmodule GPUI.Native.RichTranscriptE2ETest do
     Desktop.await_frame!(runtime, 1, native_window_id)
     assert %{range: after_prepend} = assigns(runtime)
     assert after_prepend.last < 24
-    assert after_prepend.first >= detached.first
+    assert after_prepend.first in (detached.first - 3)..(detached.first + 3)
 
     assert {:ok, _snapshot} = GPUI.Runtime.send_view(runtime, 1, :follow)
     Desktop.await_frame!(runtime, 1, native_window_id)

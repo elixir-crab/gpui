@@ -85,6 +85,7 @@ defmodule GPUI.Native.ComposerTranscriptE2ETest do
             id={"rich-#{message.id}"}
             label={"Transcript message #{message.id}"}
             text={message.text}
+            runs={[]}
             class="text-slate-200"
           />
         </div>
