@@ -212,14 +212,14 @@ impl gpui::Element for RichTextElement {
             window.on_mouse_event({
                 let layout = layout.clone();
                 let selection = self.selection.clone();
-                move |event: &gpui::MouseMoveEvent, phase, window, cx| {
+                move |event: &gpui::MouseMoveEvent, phase, window, _cx| {
                     if !phase.bubble() || event.pressed_button != Some(gpui::MouseButton::Left) {
                         return;
                     }
                     if let Ok(mut selection) = selection.lock() {
                         if selection.dragging {
                             selection.head = closest_index(&layout, event.position);
-                            cx.notify(window.current_view());
+                            window.refresh();
                         }
                     }
                 }
