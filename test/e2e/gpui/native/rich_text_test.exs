@@ -88,12 +88,24 @@ defmodule GPUI.Native.RichTextE2ETest do
                       ]
                     }}
 
+    Desktop.key!(native_window_id, "ctrl+a")
+    Desktop.key!(native_window_id, "ctrl+c")
+    Desktop.click!(native_window_id, 120, 108)
+    Desktop.key!(native_window_id, "ctrl+v")
+
+    Desktop.eventually(fn ->
+      assigns = runtime |> GPUI.Runtime.snapshot() |> hd_window_assigns()
+      assert assigns.clipboard == "Hello world\nOpen details"
+    end)
+
+    Desktop.click!(native_window_id, 32, 34)
     Desktop.command!(["mousemove", "--window", native_window_id, "32", "34"])
     Desktop.command!(["mousedown", "1"])
     Desktop.command!(["mousemove", "--window", native_window_id, "125", "34"])
     Desktop.command!(["mouseup", "1"])
     Desktop.key!(native_window_id, "ctrl+c")
     Desktop.click!(native_window_id, 120, 108)
+    Desktop.key!(native_window_id, "ctrl+a")
     Desktop.key!(native_window_id, "ctrl+v")
 
     Desktop.eventually(fn ->

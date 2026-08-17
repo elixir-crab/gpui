@@ -348,8 +348,14 @@ pub(crate) fn render(
         context.runtime.clone(),
         context.window_id,
     );
-    let copy_element =
-        RichTextElement::new(&node, selection, context.runtime.clone(), context.window_id);
+    let copy_element = RichTextElement::new(
+        &node,
+        selection.clone(),
+        context.runtime.clone(),
+        context.window_id,
+    );
+    let selection_for_keyboard = selection.clone();
+    let selection_for_outside = selection;
 
     let focus_for_pointer = focus_handle.clone();
 
@@ -359,9 +365,29 @@ pub(crate) fn render(
         .on_mouse_down(gpui::MouseButton::Left, move |_event, window, cx| {
             focus_for_pointer.focus(window, cx);
         })
-        .on_key_down(move |event, _window, cx| {
+        .on_mouse_down_out(move |_event, window, _cx| {
+            if let Ok(mut selection) = selection_for_outside.lock() {
+                selection.clear();
+            }
+            window.refresh();
+        })
+        .on_key_down(move |event, window, cx| {
             let key = event.keystroke.key.as_str();
-            if key == "c" && event.keystroke.modifiers.secondary() {
+            if key == "a" && event.keystroke.modifiers.secondary() {
+                if let Ok(mut selection) = selection_for_keyboard.lock() {
+                    selection.anchor = 0;
+                    selection.head = node.text.len();
+                    selection.dragging = false;
+                }
+                window.refresh();
+                cx.stop_propagation();
+            } else if key == "escape" {
+                if let Ok(mut selection) = selection_for_keyboard.lock() {
+                    selection.clear();
+                }
+                window.refresh();
+                cx.stop_propagation();
+            } else if key == "c" && event.keystroke.modifiers.secondary() {
                 if let Some(text) = copy_element.selected_text() {
                     cx.write_to_clipboard(gpui::ClipboardItem::new_string(text));
                     cx.stop_propagation();
@@ -518,6 +544,64 @@ fn apply_run_style(run: &mut gpui::TextRun, source: &RichTextRunNode) {
 }
 
 #[cfg(feature = "components")]
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct SelectionRectangle {
+    left: f32,
+    top: f32,
+    right: f32,
+    bottom: f32,
+}
+
+#[cfg(feature = "components")]
+fn selection_rectangles(
+    start: (f32, f32),
+    end: (f32, f32),
+    left: f32,
+    right: f32,
+    line_height: f32,
+) -> Vec<SelectionRectangle> {
+    let (start, end) = if start.1 < end.1 || (start.1 == end.1 && start.0 <= end.0) {
+        (start, end)
+    } else {
+        (end, start)
+    };
+    if start == end {
+        return Vec::new();
+    }
+    if start.1 == end.1 {
+        return vec![SelectionRectangle {
+            left: start.0,
+            top: start.1,
+            right: end.0,
+            bottom: end.1 + line_height,
+        }];
+    }
+
+    let mut rectangles = vec![SelectionRectangle {
+        left: start.0,
+        top: start.1,
+        right,
+        bottom: start.1 + line_height,
+    }];
+    let middle_top = start.1 + line_height;
+    if end.1 > middle_top {
+        rectangles.push(SelectionRectangle {
+            left,
+            top: middle_top,
+            right,
+            bottom: end.1,
+        });
+    }
+    rectangles.push(SelectionRectangle {
+        left,
+        top: end.1,
+        right: end.0,
+        bottom: end.1 + line_height,
+    });
+    rectangles
+}
+
+#[cfg(feature = "components")]
 fn paint_selection(
     selection: &Range<usize>,
     layout: &gpui::TextLayout,
@@ -533,35 +617,23 @@ fn paint_selection(
     ) else {
         return;
     };
-    let line_height = layout.line_height();
+    let rectangles = selection_rectangles(
+        (f32::from(start.x), f32::from(start.y)),
+        (f32::from(end.x), f32::from(end.y)),
+        f32::from(bounds.left()),
+        f32::from(bounds.right()),
+        f32::from(layout.line_height()),
+    );
     let color = gpui::rgba(0x3B82F680);
-    if start.y == end.y {
-        window.paint_quad(gpui::fill(
-            gpui::Bounds::from_corners(start, gpui::point(end.x, end.y + line_height)),
-            color,
-        ));
-        return;
-    }
-    window.paint_quad(gpui::fill(
-        gpui::Bounds::from_corners(start, gpui::point(bounds.right(), start.y + line_height)),
-        color,
-    ));
-    if end.y > start.y + line_height {
+    for rectangle in rectangles {
         window.paint_quad(gpui::fill(
             gpui::Bounds::from_corners(
-                gpui::point(bounds.left(), start.y + line_height),
-                gpui::point(bounds.right(), end.y),
+                gpui::point(gpui::px(rectangle.left), gpui::px(rectangle.top)),
+                gpui::point(gpui::px(rectangle.right), gpui::px(rectangle.bottom)),
             ),
             color,
         ));
     }
-    window.paint_quad(gpui::fill(
-        gpui::Bounds::from_corners(
-            gpui::point(bounds.left(), end.y),
-            gpui::point(end.x, end.y + line_height),
-        ),
-        color,
-    ));
 }
 
 #[cfg(not(feature = "components"))]
@@ -609,6 +681,70 @@ mod tests {
         assert_eq!(selection.range(), 1..text.len());
         assert_eq!(byte_to_character_index(text, text.len()), 3);
         assert_eq!(byte_to_character_index(text, 5), 2);
+    }
+
+    #[test]
+    fn splits_forward_and_backward_multiline_selection_into_bounded_rectangles() {
+        let expected = vec![
+            SelectionRectangle {
+                left: 24.0,
+                top: 10.0,
+                right: 220.0,
+                bottom: 30.0,
+            },
+            SelectionRectangle {
+                left: 10.0,
+                top: 30.0,
+                right: 220.0,
+                bottom: 50.0,
+            },
+            SelectionRectangle {
+                left: 10.0,
+                top: 50.0,
+                right: 80.0,
+                bottom: 70.0,
+            },
+        ];
+
+        assert_eq!(
+            selection_rectangles((24.0, 10.0), (80.0, 50.0), 10.0, 220.0, 20.0),
+            expected
+        );
+        assert_eq!(
+            selection_rectangles((80.0, 50.0), (24.0, 10.0), 10.0, 220.0, 20.0),
+            expected
+        );
+    }
+
+    #[test]
+    fn handles_single_line_adjacent_line_and_empty_selection_rectangles() {
+        assert_eq!(
+            selection_rectangles((20.0, 10.0), (70.0, 10.0), 10.0, 220.0, 20.0),
+            vec![SelectionRectangle {
+                left: 20.0,
+                top: 10.0,
+                right: 70.0,
+                bottom: 30.0,
+            }]
+        );
+        assert_eq!(
+            selection_rectangles((20.0, 10.0), (70.0, 30.0), 10.0, 220.0, 20.0),
+            vec![
+                SelectionRectangle {
+                    left: 20.0,
+                    top: 10.0,
+                    right: 220.0,
+                    bottom: 30.0,
+                },
+                SelectionRectangle {
+                    left: 10.0,
+                    top: 30.0,
+                    right: 70.0,
+                    bottom: 50.0,
+                },
+            ]
+        );
+        assert!(selection_rectangles((20.0, 10.0), (20.0, 10.0), 10.0, 220.0, 20.0).is_empty());
     }
 
     #[test]
