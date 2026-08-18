@@ -299,17 +299,17 @@ impl gpui::Element for RichTextElement {
         builder.push_child(run_id, run);
 
         if let Ok(selection) = self.selection.lock() {
-            let range = selection.range();
+            let (anchor, focus) = selection_character_indices(&self.text, &selection);
             builder
                 .parent_node()
                 .set_text_selection(gpui::accesskit::TextSelection {
                     anchor: gpui::accesskit::TextPosition {
                         node: run_id,
-                        character_index: byte_to_character_index(&self.text, range.start),
+                        character_index: anchor,
                     },
                     focus: gpui::accesskit::TextPosition {
                         node: run_id,
-                        character_index: byte_to_character_index(&self.text, range.end),
+                        character_index: focus,
                     },
                 });
         }
@@ -442,6 +442,14 @@ fn clamp_byte_index(text: &str, index: usize) -> usize {
 #[cfg(feature = "components")]
 fn byte_to_character_index(text: &str, byte: usize) -> usize {
     text[..clamp_byte_index(text, byte)].chars().count()
+}
+
+#[cfg(feature = "components")]
+fn selection_character_indices(text: &str, selection: &RichSelection) -> (usize, usize) {
+    (
+        byte_to_character_index(text, selection.anchor),
+        byte_to_character_index(text, selection.head),
+    )
 }
 
 #[cfg(feature = "components")]
@@ -679,6 +687,7 @@ mod tests {
         selection.anchor = text.len();
         selection.head = 1;
         assert_eq!(selection.range(), 1..text.len());
+        assert_eq!(selection_character_indices(text, &selection), (3, 1));
         assert_eq!(byte_to_character_index(text, text.len()), 3);
         assert_eq!(byte_to_character_index(text, 5), 2);
     }
