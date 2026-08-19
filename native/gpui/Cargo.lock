@@ -2531,6 +2531,7 @@ dependencies = [
  "libc",
  "ropey",
  "rustler",
+ "smallvec",
  "unicode-segmentation",
 ]
 

@@ -49,6 +49,7 @@ defmodule GPUI.UI do
     virtual_list_item_options: :ui_virtual_list_item,
     virtual_collection_options: :ui_virtual_collection,
     virtual_item_options: :ui_virtual_item,
+    drop_target_options: :ui_drop_target,
     rich_text_options: :ui_rich_text,
     data_table_options: :ui_data_table,
     table_column_options: :ui_table_column,
@@ -434,6 +435,27 @@ defmodule GPUI.UI do
     )
 
     component(:ui_virtual_item, assigns)
+  end
+
+  @doc """
+  Builds a neutral operating-system external-path drop target.
+
+  Paths always refer to the display machine. The renderer bounds and validates
+  paths before emitting typed drag events and never reads dropped files.
+
+  #{Schema.component_options_doc(:ui_drop_target)}
+  """
+  @spec drop_target(drop_target_options()) :: Element.t()
+  def drop_target(assigns) when is_map(assigns) do
+    assigns =
+      Enum.reduce(~w(phx-drag-enter phx-drag-move phx-drag-leave phx-drop)a, assigns, fn key,
+                                                                                         attrs ->
+        normalize_attr_key(attrs, key)
+      end)
+
+    assigns = Schema.apply_defaults(assigns, :ui_drop_target)
+    Schema.validate_component_assigns!(assigns, :ui_drop_target)
+    component(:ui_drop_target, assigns)
   end
 
   @doc """

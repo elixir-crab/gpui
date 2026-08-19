@@ -19,11 +19,12 @@ mod atoms {
         "closable", close_button = "close_button", color = "color", command = "command",
         commands = "commands", compact = "compact", cursor = "cursor", dark = "dark",
         data = "data", decorations = "decorations", delay = "delay", disabled =
-        "disabled", display = "display", error = "error", event = "event", expanded =
-        "expanded", first = "first", fit = "fit", flex = "flex", flex_basis =
-        "flex_basis", flex_direction = "flex_direction", flex_grow = "flex_grow",
-        flex_shrink = "flex_shrink", flex_wrap = "flex_wrap", focus = "focus",
-        focus_request = "focus_request", follow = "follow", follow_request =
+        "disabled", display = "display", drag_enter = "drag_enter", drag_leave =
+        "drag_leave", drag_move = "drag_move", drop = "drop", error = "error", event =
+        "event", expanded = "expanded", first = "first", fit = "fit", flex = "flex",
+        flex_basis = "flex_basis", flex_direction = "flex_direction", flex_grow =
+        "flex_grow", flex_shrink = "flex_shrink", flex_wrap = "flex_wrap", focus =
+        "focus", focus_request = "focus_request", follow = "follow", follow_request =
         "follow_request", font_size = "font_size", font_weight = "font_weight", format =
         "format", gap = "gap", geometry = "geometry", geometry_ranges =
         "geometry_ranges", hard_tabs = "hard_tabs", header_height = "header_height",
@@ -54,16 +55,17 @@ mod atoms {
         padding_x = "padding_x", padding_y = "padding_y", parent_id = "parent_id",
         phx_blur = "phx-blur", phx_bounds_change = "phx-bounds-change", phx_cell_change =
         "phx-cell-change", phx_change = "phx-change", phx_click = "phx-click", phx_copy =
-        "phx-copy", phx_focus = "phx-focus", phx_geometry_change = "phx-geometry-change",
-        phx_hit_test = "phx-hit-test", phx_keydown = "phx-keydown", phx_keyup =
-        "phx-keyup", phx_link = "phx-link", phx_range = "phx-range",
-        phx_range_geometry_change = "phx-range-geometry-change", phx_release =
-        "phx-release", phx_search = "phx-search", phx_select = "phx-select",
-        phx_selection_change = "phx-selection-change", phx_sort = "phx-sort", phx_submit
-        = "phx-submit", phx_toggle = "phx-toggle", phx_transaction = "phx-transaction",
-        phx_viewport_change = "phx-viewport-change", placeholder = "placeholder",
-        position = "position", position_mode = "position_mode", position_x =
-        "position_x", position_y = "position_y", priority = "priority", prompt =
+        "phx-copy", phx_drag_enter = "phx-drag-enter", phx_drag_leave = "phx-drag-leave",
+        phx_drag_move = "phx-drag-move", phx_drop = "phx-drop", phx_focus = "phx-focus",
+        phx_geometry_change = "phx-geometry-change", phx_hit_test = "phx-hit-test",
+        phx_keydown = "phx-keydown", phx_keyup = "phx-keyup", phx_link = "phx-link",
+        phx_range = "phx-range", phx_range_geometry_change = "phx-range-geometry-change",
+        phx_release = "phx-release", phx_search = "phx-search", phx_select =
+        "phx-select", phx_selection_change = "phx-selection-change", phx_sort =
+        "phx-sort", phx_submit = "phx-submit", phx_toggle = "phx-toggle", phx_transaction
+        = "phx-transaction", phx_viewport_change = "phx-viewport-change", placeholder =
+        "placeholder", position = "position", position_mode = "position_mode", position_x
+        = "position_x", position_y = "position_y", priority = "priority", prompt =
         "prompt", range = "range", range_geometry = "range_geometry", raster = "raster",
         reason = "reason", release = "release", resizable = "resizable", resize_request =
         "resize_request", resource_ref = "resource_ref", resource_type = "resource_type",

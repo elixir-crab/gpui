@@ -3,6 +3,7 @@ pub(crate) mod code_viewer;
 pub(crate) mod controls;
 pub(crate) mod data_table;
 pub(crate) mod display;
+pub(crate) mod drop_target;
 pub(crate) mod form;
 pub(crate) mod overlay;
 pub(crate) mod radio;

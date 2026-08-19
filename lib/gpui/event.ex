@@ -25,6 +25,10 @@ defmodule GPUI.Event do
           | :blur
           | :keydown
           | :keyup
+          | :drag_enter
+          | :drag_move
+          | :drag_leave
+          | :drop
           | :window_close_request
           | :window_focus
           | :window_blur

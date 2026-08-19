@@ -355,6 +355,30 @@ defmodule GPUI.UITest do
     end
   end
 
+  test "builds a neutral external-path drop target" do
+    child = %Element{type: :text, children: ["Drop files"]}
+
+    assert %Element{
+             type: :ui_drop_target,
+             attrs: attrs,
+             children: [^child]
+           } =
+             UI.drop_target(%{
+               id: "drop-zone",
+               children: [child],
+               "phx-drag-enter": "entered",
+               "phx-drag-move": "moved",
+               "phx-drag-leave": "left",
+               "phx-drop": "dropped"
+             })
+
+    assert attrs[:id] == "drop-zone"
+    assert attrs[:"phx-drag-enter"] == "entered"
+    assert attrs[:"phx-drag-move"] == "moved"
+    assert attrs[:"phx-drag-leave"] == "left"
+    assert attrs[:"phx-drop"] == "dropped"
+  end
+
   test "builds selectable rich text from bounded neutral shaping runs" do
     alias GPUI.Text.{Position, Range, RichRun}
 

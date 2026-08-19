@@ -52,6 +52,18 @@ defmodule GPUI.Schema do
       ]
     },
     %Component{
+      tag: :ui_drop_target,
+      kind: :drop_target_component,
+      children: true,
+      attrs: [id: :required_string],
+      events: [
+        drag_enter: :"phx-drag-enter",
+        drag_move: :"phx-drag-move",
+        drag_leave: :"phx-drag-leave",
+        drop: :"phx-drop"
+      ]
+    },
+    %Component{
       tag: :ui_split,
       kind: :split_component,
       stateful: true,

@@ -345,6 +345,10 @@ defmodule GPUI.Remote.Client do
               :link,
               :keydown,
               :keyup,
+              :drag_enter,
+              :drag_move,
+              :drag_leave,
+              :drop,
               :window_closed
             ] do
     event

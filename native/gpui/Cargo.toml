@@ -30,6 +30,7 @@ unicode-segmentation = { version = "1.12", optional = true }
 
 [dev-dependencies]
 zed_gpui = { git = "https://github.com/zed-industries/zed", package = "gpui", features = ["test-support"] }
+smallvec = "1"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 libc = "0.2"

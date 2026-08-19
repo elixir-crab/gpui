@@ -29,6 +29,8 @@ use event::EventValue;
 use event::{decode_event_value, encode_native_event, push_event, InputKind, NativeEvent};
 #[cfg(feature = "components")]
 use event::{TextCaretGeometry, TextRangeGeometry, TextRectangle, TextViewportGeometry};
+#[cfg(feature = "components")]
+use event::{TransferEventValue, TransferPayload};
 #[cfg(feature = "real-gpui")]
 use input::{bind_input_keys, NativeTextInput};
 #[cfg(feature = "real-gpui")]

@@ -58,6 +58,24 @@ pub(crate) struct ElementBoundsGeometry {
     pub(crate) coordinate_space: String,
 }
 
+#[cfg_attr(not(feature = "components"), allow(dead_code))]
+#[derive(Clone, Debug, PartialEq, rustler::NifMap)]
+pub(crate) struct TransferPayload {
+    pub(crate) text: Option<String>,
+    pub(crate) external_paths: Vec<String>,
+}
+
+#[cfg_attr(not(feature = "components"), allow(dead_code))]
+#[derive(Clone, Debug, PartialEq, rustler::NifMap)]
+pub(crate) struct TransferEventValue {
+    pub(crate) session_id: u64,
+    pub(crate) target_id: String,
+    pub(crate) x: f64,
+    pub(crate) y: f64,
+    pub(crate) coordinate_space: String,
+    pub(crate) payload: Option<TransferPayload>,
+}
+
 #[derive(Clone, Debug)]
 pub(crate) enum NativeEvent {
     Click {
@@ -128,6 +146,13 @@ pub(crate) enum NativeEvent {
         window_id: u64,
         event: String,
         value: ElementBoundsGeometry,
+    },
+    #[cfg(feature = "components")]
+    Transfer {
+        kind: InputKind,
+        window_id: u64,
+        event: String,
+        value: TransferEventValue,
     },
     WindowCloseRequest {
         window_id: u64,
@@ -329,6 +354,21 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             env,
             vec![
                 (atoms::type_atom(), atoms::bounds().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
+                (atoms::value(), value.encode(env)),
+            ],
+        ),
+        #[cfg(feature = "components")]
+        NativeEvent::Transfer {
+            kind,
+            window_id,
+            event,
+            value,
+        } => encode_event_map(
+            env,
+            vec![
+                (atoms::type_atom(), kind.atom().to_term(env)),
                 (atoms::window_id(), window_id.encode(env)),
                 (atoms::event(), event.encode(env)),
                 (atoms::value(), value.encode(env)),

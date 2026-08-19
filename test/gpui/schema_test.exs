@@ -6,6 +6,7 @@ defmodule GPUI.SchemaTest do
              :div,
              :button,
              :layer,
+             :ui_drop_target,
              :ui_split,
              :ui_button,
              :ui_progress,

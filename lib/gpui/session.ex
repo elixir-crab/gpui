@@ -362,7 +362,11 @@ defmodule GPUI.Session do
               :focus,
               :blur,
               :keydown,
-              :keyup
+              :keyup,
+              :drag_enter,
+              :drag_move,
+              :drag_leave,
+              :drop
             ] do
     case Enum.find(state.windows, &(&1.id == window_id)) do
       %WindowSpec{root: {module, assigns}} = window ->

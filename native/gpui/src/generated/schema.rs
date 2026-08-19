@@ -5,6 +5,7 @@ pub enum GeneratedComponentKind {
     Viewport,
     Container,
     AnchoredLayer,
+    DropTargetComponent,
     SplitComponent,
     ButtonComponent,
     ProgressComponent,
@@ -2166,6 +2167,34 @@ pub(crate) fn append_radio_option(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct DropTargetComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) drag_enter: Option<String>,
+    pub(crate) drag_move: Option<String>,
+    pub(crate) drag_leave: Option<String>,
+    pub(crate) drop: Option<String>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_drop_target_component<'a>(
+    term: Term<'a>,
+) -> NifResult<DropTargetComponentNode> {
+    Ok(DropTargetComponentNode {
+        style: decode_style(term)?,
+        id: component_required_string_attr(term, atoms::id())?,
+        children: decode_children(term)?,
+        drag_enter: component_string_attr(term, atoms::phx_drag_enter())?,
+        drag_move: component_string_attr(term, atoms::phx_drag_move())?,
+        drag_leave: component_string_attr(term, atoms::phx_drag_leave())?,
+        drop: component_string_attr(term, atoms::phx_drop())?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct SplitComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -3521,6 +3550,7 @@ pub(crate) enum ElementNode {
     AnchoredLayer(AnchoredLayerNode),
     TextSurface(TextSurfaceNode),
     Input(InputNode),
+    DropTargetComponent(DropTargetComponentNode),
     SplitComponent(SplitComponentNode),
     ButtonComponent(ButtonComponentNode),
     ProgressComponent(ProgressComponentNode),
@@ -3568,6 +3598,7 @@ pub enum GeneratedElementTag {
     Div,
     Button,
     Layer,
+    UiDropTarget,
     UiSplit,
     UiButton,
     UiProgress,
@@ -3623,6 +3654,7 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "div" => GeneratedElementTag::Div,
         "button" => GeneratedElementTag::Button,
         "layer" => GeneratedElementTag::Layer,
+        "ui_drop_target" => GeneratedElementTag::UiDropTarget,
         "ui_split" => GeneratedElementTag::UiSplit,
         "ui_button" => GeneratedElementTag::UiButton,
         "ui_progress" => GeneratedElementTag::UiProgress,
@@ -3679,6 +3711,7 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::Div => GeneratedComponentKind::Container,
         GeneratedElementTag::Button => GeneratedComponentKind::Container,
         GeneratedElementTag::Layer => GeneratedComponentKind::AnchoredLayer,
+        GeneratedElementTag::UiDropTarget => GeneratedComponentKind::DropTargetComponent,
         GeneratedElementTag::UiSplit => GeneratedComponentKind::SplitComponent,
         GeneratedElementTag::UiButton => GeneratedComponentKind::ButtonComponent,
         GeneratedElementTag::UiProgress => GeneratedComponentKind::ProgressComponent,
@@ -3767,6 +3800,10 @@ pub(crate) fn decode_generated_element_node<'a>(
         GeneratedComponentKind::Viewport => decode_viewport_node(term, tag),
         GeneratedComponentKind::Container => decode_container_node(term, tag),
         GeneratedComponentKind::AnchoredLayer => decode_anchored_layer_node(term, tag),
+        GeneratedComponentKind::DropTargetComponent => {
+            decode_generated_drop_target_component(term)
+                .map(|node| ElementNode::DropTargetComponent(node))
+        }
         GeneratedComponentKind::SplitComponent => {
             decode_generated_split_component(term)
                 .map(|node| ElementNode::SplitComponent(node))
@@ -3933,6 +3970,9 @@ pub(crate) fn render_generated_component_node(
     context: &mut element::ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     match node {
+        ElementNode::DropTargetComponent(node) => {
+            element::component::drop_target::render(node, context)
+        }
         ElementNode::SplitComponent(node) => {
             element::component::split::render(node, context)
         }
