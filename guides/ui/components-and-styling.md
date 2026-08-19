@@ -312,10 +312,24 @@ Runs can set foreground/background color, font weight/style, solid or wavy
 underline, strikethrough, and an opaque bounded link value. Unstyled gaps
 inherit ordinary component text styles.
 
-Selection is transient native state. Pointer dragging paints selection, and the
-platform copy shortcut writes selected text to the system clipboard. A link
-requires `phx-link` and emits its opaque value as an ordinary `:link` event;
-the framework does not open URLs or interpret schemes. Rich text is bounded to
+Selection is transient native state. Pointer dragging paints selection, the
+platform select-all and copy shortcuts operate on it, Escape clears it, and a
+pointer press outside the component discards it. Retained content keeps an
+unchanged selected byte range across ordinary rerenders and streaming appends;
+changing the selected bytes or removing the stateful component discards the
+selection.
+
+A link requires `phx-link` and emits its opaque value as an ordinary `:link`
+event; the framework does not open URLs or interpret schemes. Linked rich text
+is one native Tab stop. Left/Up and Right/Down navigate links in document order,
+and Enter or Space uses the same typed event path as pointer activation.
+AccessKit currently exposes the continuous value as `Role::Document` with a
+synthetic `Role::TextRun`, character lengths, and directional selection facts.
+Per-link AccessKit actions remain unsupported because pinned GPUI does not
+provide public action listeners for synthetic child node IDs; the framework
+does not advertise synthetic clickable links it cannot activate truthfully.
+
+Rich text is bounded to
 1 MiB and 2,048 runs and is serialized normally for local, test, and remote
 displays.
 

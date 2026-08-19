@@ -770,6 +770,88 @@ mod tests {
     }
 
     #[test]
+    fn shaped_runs_cover_default_gaps_and_supported_run_styles() {
+        let base = gpui::TextStyle::default();
+        let runs = vec![
+            NativeRichRun {
+                range: 1..3,
+                source: rich_run(1, 3, |run| {
+                    run.color = Some(0x112233);
+                    run.background = Some(0x445566);
+                    run.font_weight = Some("bold".to_string());
+                    run.font_style = Some("italic".to_string());
+                    run.underline = Some(0x778899);
+                    run.underline_style = Some("wavy".to_string());
+                    run.strikethrough = Some(0xAABBCC);
+                }),
+            },
+            NativeRichRun {
+                range: 5..7,
+                source: rich_run(5, 7, |run| {
+                    run.font_weight = Some("light".to_string());
+                    run.font_style = Some("oblique".to_string());
+                    run.underline = Some(0x010203);
+                    run.underline_style = Some("solid".to_string());
+                }),
+            },
+        ];
+
+        let shaped = shaped_runs(&base, 8, &runs);
+        assert_eq!(
+            shaped.iter().map(|run| run.len).collect::<Vec<_>>(),
+            [1, 2, 2, 2, 1]
+        );
+        assert_eq!(shaped.iter().map(|run| run.len).sum::<usize>(), 8);
+        assert_eq!(shaped[1].font.weight, gpui::FontWeight::BOLD);
+        assert_eq!(shaped[1].font.style, gpui::FontStyle::Italic);
+        assert_eq!(shaped[1].color, gpui::rgb(0x112233).into());
+        assert_eq!(shaped[1].background_color, Some(gpui::rgb(0x445566).into()));
+        assert!(shaped[1]
+            .underline
+            .as_ref()
+            .is_some_and(|underline| underline.wavy));
+        assert!(shaped[1].strikethrough.is_some());
+        assert_eq!(shaped[3].font.weight, gpui::FontWeight::LIGHT);
+        assert_eq!(shaped[3].font.style, gpui::FontStyle::Oblique);
+        assert!(shaped[3]
+            .underline
+            .as_ref()
+            .is_some_and(|underline| !underline.wavy));
+        assert_eq!(shaped[0], base.to_run(1));
+        assert_eq!(shaped[2], base.to_run(2));
+        assert_eq!(shaped[4], base.to_run(1));
+    }
+
+    fn rich_run(
+        start: u64,
+        end: u64,
+        configure: impl FnOnce(&mut RichTextRunNode),
+    ) -> RichTextRunNode {
+        let mut run = RichTextRunNode {
+            range: crate::TextRange {
+                start: TextPosition {
+                    line: 0,
+                    utf16_offset: start,
+                },
+                end: TextPosition {
+                    line: 0,
+                    utf16_offset: end,
+                },
+            },
+            color: None,
+            background: None,
+            font_weight: None,
+            font_style: None,
+            underline: None,
+            underline_style: None,
+            strikethrough: None,
+            link: None,
+        };
+        configure(&mut run);
+        run
+    }
+
+    #[test]
     fn keyboard_link_navigation_wraps_and_uses_document_order() {
         assert_eq!(next_link_index("arrowright", None, 3), 0);
         assert_eq!(next_link_index("arrowdown", Some(0), 3), 1);
