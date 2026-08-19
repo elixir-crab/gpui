@@ -107,7 +107,7 @@ defmodule GPUI.Remote.Server do
         acceptor_monitor: nil,
         connections: %{},
         session_registry: SessionRegistry.new(),
-        negotiated_connections: MapSet.new(),
+        negotiated_connections: %{},
         session_ttl: session_ttl,
         connection_request_limit: connection_request_limit,
         session_request_limit: session_request_limit
@@ -188,8 +188,12 @@ defmodule GPUI.Remote.Server do
        )
        when is_map(payload) do
     case Protocol.negotiate(payload) do
-      {:ok, reply} -> {{:ok, reply}, mark_negotiated(state, connection_id)}
-      {:error, reason} -> {{:error, reason}, state}
+      {:ok, reply} ->
+        negotiated = Map.get(payload, :capabilities, [])
+        {{:ok, reply}, mark_negotiated(state, connection_id, negotiated)}
+
+      {:error, reason} ->
+        {{:error, reason}, state}
     end
   end
 
@@ -200,7 +204,7 @@ defmodule GPUI.Remote.Server do
         {{:error, :handshake_required}, state}
 
       Protocol.known_op?(op) ->
-        dispatch_call(op, payload, state)
+        dispatch_negotiated_call(op, payload, connection_id, state)
 
       true ->
         {{:error, {:unsupported_op, op}}, state}
@@ -212,6 +216,24 @@ defmodule GPUI.Remote.Server do
 
   defp dispatch_request(_request, _connection_id, state),
     do: {{:error, :unsupported_request}, state}
+
+  defp dispatch_negotiated_call(:event, event, connection_id, state)
+       when is_map(event) do
+    if Protocol.transfer_event?(event) do
+      with true <- negotiated_capability?(state, connection_id, :external_path_transfer_v1),
+           {:ok, event} <- Protocol.validate_transfer_event(event) do
+        dispatch_call(:event, event, state)
+      else
+        false -> {{:error, {:missing_capability, :external_path_transfer_v1}}, state}
+        {:error, reason} -> {{:error, reason}, state}
+      end
+    else
+      dispatch_call(:event, event, state)
+    end
+  end
+
+  defp dispatch_negotiated_call(op, payload, _connection_id, state),
+    do: dispatch_call(op, payload, state)
 
   defp dispatch_call(:mount, payload, state) do
     session_id = Map.get(payload, :session_id, :default)
@@ -317,9 +339,13 @@ defmodule GPUI.Remote.Server do
   end
 
   defp negotiated?(state, connection_id),
-    do: MapSet.member?(state.negotiated_connections, connection_id)
+    do: Map.has_key?(state.negotiated_connections, connection_id)
 
-  defp mark_negotiated(state, connection_id) do
-    update_in(state.negotiated_connections, &MapSet.put(&1, connection_id))
+  defp negotiated_capability?(state, connection_id, capability) do
+    capability in Map.get(state.negotiated_connections, connection_id, [])
+  end
+
+  defp mark_negotiated(state, connection_id, capabilities) do
+    put_in(state.negotiated_connections[connection_id], capabilities)
   end
 end

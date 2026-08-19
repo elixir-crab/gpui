@@ -68,8 +68,11 @@ defmodule GPUI.Remote.Client do
     case GPUI.Polling.interval(opts) do
       {:ok, poll_interval} ->
         case start_rpc_client(opts) do
-          {:ok, rpc} -> start_display(rpc, display_module, display_opts, poll_interval, opts)
-          {:error, reason} -> {:stop, {:rpc_start_failed, reason}}
+          {:ok, rpc, capabilities} ->
+            start_display(rpc, capabilities, display_module, display_opts, poll_interval, opts)
+
+          {:error, reason} ->
+            {:stop, {:rpc_start_failed, reason}}
         end
 
       {:error, reason} ->
@@ -77,12 +80,13 @@ defmodule GPUI.Remote.Client do
     end
   end
 
-  defp start_display(rpc, display_module, display_opts, poll_interval, opts) do
+  defp start_display(rpc, capabilities, display_module, display_opts, poll_interval, opts) do
     case GPUI.Display.start(display_module, display_opts) do
       {:ok, display} ->
         state = %{
           opts: opts,
           rpc: rpc,
+          negotiated_capabilities: capabilities,
           display: display,
           display_module: display_module,
           mounted_args: nil,
@@ -247,8 +251,11 @@ defmodule GPUI.Remote.Client do
     Reconnect.stop_client(state.rpc)
 
     case start_rpc_client(state.opts) do
-      {:ok, rpc} -> resume_or_remount(%{state | rpc: rpc})
-      {:error, reason} -> {:error, reason, state}
+      {:ok, rpc, capabilities} ->
+        resume_or_remount(%{state | rpc: rpc, negotiated_capabilities: capabilities})
+
+      {:error, reason} ->
+        {:error, reason, state}
     end
   end
 
@@ -322,7 +329,7 @@ defmodule GPUI.Remote.Client do
   defp enqueue_display_events(state, events) do
     new_events =
       Enum.flat_map(events, fn event ->
-        case display_event_payload(event, state.session_id) do
+        case display_event_payload(event, state.session_id, state.negotiated_capabilities) do
           nil -> []
           payload -> [payload]
         end
@@ -332,7 +339,18 @@ defmodule GPUI.Remote.Client do
     %{state | pending_events: pending}
   end
 
-  defp display_event_payload(%{type: type} = event, session_id)
+  defp display_event_payload(
+         %{type: type} = event,
+         session_id,
+         capabilities
+       )
+       when type in [:drag_enter, :drag_move, :drag_leave, :drop] do
+    if :external_path_transfer_v1 in capabilities do
+      normalize_display_event(event, session_id)
+    end
+  end
+
+  defp display_event_payload(%{type: type} = event, session_id, _capabilities)
        when type in [
               :click,
               :command,
@@ -351,13 +369,17 @@ defmodule GPUI.Remote.Client do
               :drop,
               :window_closed
             ] do
+    normalize_display_event(event, session_id)
+  end
+
+  defp display_event_payload(_event, _session_id, _capabilities), do: nil
+
+  defp normalize_display_event(event, session_id) do
     event
     |> GPUI.Event.normalize()
     |> Map.put(:session_id, session_id)
     |> Map.put(:request_id, new_request_id())
   end
-
-  defp display_event_payload(_event, _session_id), do: nil
 
   defp flush_pending_events(%{pending_events: []} = state), do: state
 
@@ -435,8 +457,12 @@ defmodule GPUI.Remote.Client do
     %{op: op, payload: payload} = Protocol.hello()
 
     case safe_call(client, op, payload) do
-      {:ok, _hello} ->
-        {:ok, client}
+      {:ok, %{capabilities: capabilities}} when is_list(capabilities) ->
+        {:ok, client, capabilities}
+
+      {:ok, reply} ->
+        Reconnect.stop_client(client)
+        {:error, {:invalid_reply, :hello, reply}}
 
       {:error, reason} ->
         Reconnect.stop_client(client)

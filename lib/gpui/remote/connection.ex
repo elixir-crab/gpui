@@ -63,7 +63,7 @@ defmodule GPUI.Remote.Connection do
     state = %{state | connections: connections}
 
     if connection do
-      update_in(state.negotiated_connections, &MapSet.delete(&1, connection.id))
+      update_in(state.negotiated_connections, &Map.delete(&1, connection.id))
     else
       state
     end

@@ -10,6 +10,9 @@ defmodule GPUI.Transfer.PayloadTest do
         value: %{
           session_id: 17,
           target_id: "drop-zone",
+          x: 10.0,
+          y: 20.0,
+          coordinate_space: "window_native_pixels",
           payload: %{text: nil, external_paths: ["/display/tmp/a"]}
         }
       })

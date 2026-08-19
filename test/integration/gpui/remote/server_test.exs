@@ -35,6 +35,9 @@ defmodule GPUI.Remote.ServerTest do
     def handle_event("file_selected", %{value: value}, assigns),
       do: {:noreply, %{assigns | file: value}}
 
+    def handle_event("files_dropped", %{value: value}, assigns),
+      do: {:noreply, %{assigns | file: value}}
+
     def handle_event("records_range", %{value: value}, assigns),
       do: {:noreply, %{assigns | range: value}}
 
@@ -1033,6 +1036,82 @@ defmodule GPUI.Remote.ServerTest do
              )
 
     Process.flag(:trap_exit, previous)
+  end
+
+  test "requires the negotiated transfer capability for remote drop events" do
+    {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    {:ok, client} = raw_client(port)
+
+    assert {:ok, _hello} =
+             SafeRPC.call(client, :hello, %{version: 2, capabilities: [:display_v1]})
+
+    assert {:ok, _mount} = SafeRPC.call(client, :mount, %{session_id: "legacy-transfer"})
+
+    event = %{
+      session_id: "legacy-transfer",
+      request_id: "drop-1",
+      type: :drop,
+      window_id: 1,
+      event: "files_dropped",
+      value: %{
+        session_id: 1,
+        target_id: "drop-zone",
+        x: 10.0,
+        y: 20.0,
+        coordinate_space: "window_native_pixels",
+        payload: %{text: nil, external_paths: ["/display/tmp/a"]}
+      }
+    }
+
+    assert {:error, {:missing_capability, :external_path_transfer_v1}} =
+             SafeRPC.call(client, :event, event)
+  end
+
+  test "validates negotiated remote transfer events before session dispatch" do
+    {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    {:ok, client} = start_client(port)
+    assert {:ok, _mount} = SafeRPC.call(client, :mount, %{session_id: "transfer"})
+
+    base = %{
+      session_id: "transfer",
+      request_id: "drop-1",
+      type: :drop,
+      window_id: 1,
+      event: "files_dropped"
+    }
+
+    assert {:error, {:invalid_transfer_event, :coordinate_space}} =
+             SafeRPC.call(
+               client,
+               :event,
+               Map.put(base, :value, %{
+                 session_id: 1,
+                 target_id: "drop-zone",
+                 x: 10.0,
+                 y: 20.0,
+                 coordinate_space: "screen_pixels",
+                 payload: %{text: nil, external_paths: ["/display/tmp/a"]}
+               })
+             )
+
+    assert {:ok, %{snapshot: %{windows: [%{root: %{assigns: assigns}}]}}} =
+             SafeRPC.call(
+               client,
+               :event,
+               Map.put(base, :value, %{
+                 session_id: 1,
+                 target_id: "drop-zone",
+                 x: 10.0,
+                 y: 20.0,
+                 coordinate_space: "window_native_pixels",
+                 payload: %{text: nil, external_paths: ["/display/tmp/a"]}
+               })
+             )
+
+    assert %GPUI.Transfer.Payload{external_paths: ["/display/tmp/a"]} = assigns.file.payload
+    assert assigns.file.target_id == "drop-zone"
   end
 
   test "rejects unauthorized clients" do

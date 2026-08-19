@@ -48,6 +48,23 @@ defmodule GPUI.Remote.Protocol do
     )
   end
 
+  @spec transfer_event?(term()) :: boolean()
+  def transfer_event?(%{type: type}), do: GPUI.Transfer.Event.type?(type)
+  def transfer_event?(_event), do: false
+
+  @spec validate_transfer_event(map()) :: {:ok, map()} | {:error, term()}
+  def validate_transfer_event(%{type: type, value: value} = event) do
+    with true <- GPUI.Transfer.Event.type?(type),
+         {:ok, value} <- GPUI.Transfer.Event.normalize(type, value) do
+      {:ok, Map.put(event, :value, value)}
+    else
+      false -> {:error, {:invalid_transfer_event, :type}}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def validate_transfer_event(_event), do: {:error, {:invalid_transfer_event, :shape}}
+
   def mount(args \\ %{}) when is_map(args), do: message(:mount, args)
   def resume_session(session_id), do: message(:resume_session, %{session_id: session_id})
   def event(event) when is_map(event), do: message(:event, event)

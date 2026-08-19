@@ -104,8 +104,15 @@ path facts or wants to apply policy before accepting a transfer.
 
 ## Remote displays
 
-Transfer support is additive capability negotiation within an exact remote
-protocol version. A remote display that lacks transfer support must reject or
+Transfer support uses the additive `:external_path_transfer_v1` capability
+within the exact remote protocol version. A display forwards transfer events
+only when that capability appears in the server hello response. The server
+retains peer capabilities per connection, rejects transfer events from peers
+that did not advertise the capability, and validates bounded transfer values
+before session dispatch. Reconnection performs a fresh hello before queued
+transfer events resume.
+
+A remote display that lacks transfer support must reject or
 omit the opt-in feature explicitly. Remote paths are never rewritten as BEAM
 host paths, and payload bytes remain bounded before transport.
 
