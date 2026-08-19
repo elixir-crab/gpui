@@ -334,6 +334,113 @@ mod tests {
     use super::*;
     use std::path::{Path, PathBuf};
 
+    #[cfg(feature = "components")]
+    #[gpui::test]
+    fn rendered_target_routes_enter_move_drop_and_rejects_stale_submit(
+        cx: &mut gpui::TestAppContext,
+    ) {
+        use gpui::{point, px, size, FileDropEvent, IntoElement};
+        use smallvec::smallvec;
+        use std::path::PathBuf;
+
+        let runtime = std::sync::Arc::new(crate::runtime::RuntimeState::new());
+        let state = std::sync::Arc::new(crate::WindowState::new(drop_target_tree(), Vec::new()));
+        let runtime_for_view = runtime.clone();
+        let state_for_view = state;
+        let (view, cx) = cx.add_window_view(move |_window, _cx| {
+            crate::ElixirRoot::new(state_for_view, runtime_for_view, 7, false, false)
+        });
+        cx.draw(
+            point(px(0.0), px(0.0)),
+            size(px(200.0), px(120.0)),
+            |_window, _cx| view.clone().into_any_element(),
+        );
+
+        let position = point(px(20.0), px(20.0));
+        cx.simulate_event(FileDropEvent::Entered {
+            position,
+            paths: gpui::ExternalPaths(smallvec![PathBuf::from("/display/a")]),
+        });
+        cx.simulate_event(FileDropEvent::Pending {
+            position: point(px(30.0), px(25.0)),
+        });
+        cx.simulate_event(FileDropEvent::Submit {
+            position: point(px(30.0), px(25.0)),
+        });
+        cx.simulate_event(FileDropEvent::Submit {
+            position: point(px(30.0), px(25.0)),
+        });
+
+        let events = runtime.events.lock().unwrap();
+        assert_eq!(transfer_kinds(&events), vec!["enter", "move", "drop"]);
+        let session_ids = events
+            .iter()
+            .filter_map(|event| match event {
+                crate::NativeEvent::Transfer { value, .. } => Some(value.session_id),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(session_ids.len(), 3);
+        assert!(session_ids.iter().all(|id| *id == session_ids[0]));
+    }
+
+    #[cfg(feature = "components")]
+    #[gpui::test]
+    fn rendered_target_routes_platform_exit(cx: &mut gpui::TestAppContext) {
+        use gpui::{point, px, size, FileDropEvent, IntoElement};
+        use smallvec::smallvec;
+        use std::path::PathBuf;
+
+        let runtime = std::sync::Arc::new(crate::runtime::RuntimeState::new());
+        let state = std::sync::Arc::new(crate::WindowState::new(drop_target_tree(), Vec::new()));
+        let runtime_for_view = runtime.clone();
+        let (view, cx) = cx.add_window_view(move |_window, _cx| {
+            crate::ElixirRoot::new(state, runtime_for_view, 7, false, false)
+        });
+        cx.draw(
+            point(px(0.0), px(0.0)),
+            size(px(200.0), px(120.0)),
+            |_window, _cx| view.clone().into_any_element(),
+        );
+        cx.simulate_event(FileDropEvent::Entered {
+            position: point(px(20.0), px(20.0)),
+            paths: gpui::ExternalPaths(smallvec![PathBuf::from("/display/a")]),
+        });
+        cx.simulate_event(FileDropEvent::Exited);
+
+        assert_eq!(
+            transfer_kinds(&runtime.events.lock().unwrap()),
+            vec!["enter", "leave"]
+        );
+    }
+
+    #[cfg(feature = "components")]
+    fn drop_target_tree() -> crate::ElementNode {
+        let mut style = crate::StyleAttrs::default();
+        style.width = Some(gpui::px(160.0).into());
+        style.height = Some(gpui::px(80.0).into());
+        crate::ElementNode::DropTargetComponent(crate::DropTargetComponentNode {
+            style,
+            id: "drop-zone".to_string(),
+            children: Vec::new(),
+            drag_enter: Some("enter".to_string()),
+            drag_move: Some("move".to_string()),
+            drag_leave: Some("leave".to_string()),
+            drop: Some("drop".to_string()),
+        })
+    }
+
+    #[cfg(feature = "components")]
+    fn transfer_kinds(events: &[crate::NativeEvent]) -> Vec<&str> {
+        events
+            .iter()
+            .filter_map(|event| match event {
+                crate::NativeEvent::Transfer { event, .. } => Some(event.as_str()),
+                _ => None,
+            })
+            .collect()
+    }
+
     #[test]
     fn bounds_and_deduplicates_external_paths() {
         let paths = [
