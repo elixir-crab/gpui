@@ -340,6 +340,16 @@ defmodule GPUI.Remote.Client do
   end
 
   defp display_event_payload(
+         %{type: :clipboard} = event,
+         session_id,
+         capabilities
+       ) do
+    if :clipboard_text_v1 in capabilities do
+      normalize_display_event(event, session_id)
+    end
+  end
+
+  defp display_event_payload(
          %{type: type} = event,
          session_id,
          capabilities
@@ -367,6 +377,7 @@ defmodule GPUI.Remote.Client do
               :drag_move,
               :drag_leave,
               :drop,
+              :clipboard,
               :window_closed
             ] do
     normalize_display_event(event, session_id)

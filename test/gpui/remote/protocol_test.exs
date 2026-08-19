@@ -15,6 +15,7 @@ defmodule GPUI.Remote.ProtocolTest do
              Protocol.hello(%{role: :display_client})
 
     assert :external_path_transfer_v1 in capabilities
+    assert :clipboard_text_v1 in capabilities
 
     assert %{op: :mount, payload: %{args: []}} = Protocol.mount(%{args: []})
 
@@ -25,6 +26,20 @@ defmodule GPUI.Remote.ProtocolTest do
     assert %{op: :snapshot, payload: %{}} = Protocol.snapshot()
   end
 
+  test "validates bounded clipboard events" do
+    assert {:ok, %{value: %GPUI.Transfer.Payload{text: "paste"}}} =
+             Protocol.validate_clipboard_event(%{
+               type: :clipboard,
+               value: %{text: "paste", external_paths: []}
+             })
+
+    assert {:error, {:invalid_clipboard_event, _reason}} =
+             Protocol.validate_clipboard_event(%{
+               type: :clipboard,
+               value: %{text: :binary.copy("x", 1_048_577), external_paths: []}
+             })
+  end
+
   test "negotiates protocol version and capabilities" do
     assert {:ok, %{version: 2, capabilities: capabilities}} =
              Protocol.negotiate(%{version: 2, capabilities: [:display_v1]})
@@ -32,6 +47,7 @@ defmodule GPUI.Remote.ProtocolTest do
     assert :app_server in capabilities
     assert :window_topology_v1 in capabilities
     assert :external_path_transfer_v1 in capabilities
+    assert :clipboard_text_v1 in capabilities
 
     assert {:error, {:incompatible_version, %{expected: 2, got: 1}}} =
              Protocol.negotiate(%{version: 1, capabilities: [:display_v1]})

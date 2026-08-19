@@ -336,6 +336,87 @@ mod tests {
 
     #[cfg(feature = "components")]
     #[gpui::test]
+    fn removing_an_active_target_emits_leave_and_rejects_submit(cx: &mut gpui::TestAppContext) {
+        use gpui::{point, px, size, FileDropEvent, IntoElement};
+        use smallvec::smallvec;
+        use std::path::PathBuf;
+
+        let runtime = std::sync::Arc::new(crate::runtime::RuntimeState::new());
+        let state = std::sync::Arc::new(crate::WindowState::new(drop_target_tree(), Vec::new()));
+        let runtime_for_view = runtime.clone();
+        let state_for_view = state.clone();
+        let (view, cx) = cx.add_window_view(move |_window, _cx| {
+            crate::ElixirRoot::new(state_for_view, runtime_for_view, 7, false, false)
+        });
+        cx.draw(
+            point(px(0.0), px(0.0)),
+            size(px(200.0), px(120.0)),
+            |_window, _cx| view.clone().into_any_element(),
+        );
+        cx.simulate_event(FileDropEvent::Entered {
+            position: point(px(20.0), px(20.0)),
+            paths: gpui::ExternalPaths(smallvec![PathBuf::from("/display/a")]),
+        });
+
+        *state.tree.lock().unwrap() = crate::ElementNode::empty_root();
+        cx.update(|window, cx| window.draw(cx).clear());
+        cx.simulate_event(FileDropEvent::Submit {
+            position: point(px(20.0), px(20.0)),
+        });
+
+        assert_eq!(
+            transfer_kinds(&runtime.events.lock().unwrap()),
+            vec!["enter", "leave"]
+        );
+    }
+
+    #[cfg(feature = "components")]
+    #[gpui::test]
+    fn stable_target_identity_survives_rerender(cx: &mut gpui::TestAppContext) {
+        use gpui::{point, px, size, FileDropEvent, IntoElement};
+        use smallvec::smallvec;
+        use std::path::PathBuf;
+
+        let runtime = std::sync::Arc::new(crate::runtime::RuntimeState::new());
+        let state = std::sync::Arc::new(crate::WindowState::new(drop_target_tree(), Vec::new()));
+        let runtime_for_view = runtime.clone();
+        let state_for_view = state.clone();
+        let (view, cx) = cx.add_window_view(move |_window, _cx| {
+            crate::ElixirRoot::new(state_for_view, runtime_for_view, 7, false, false)
+        });
+        cx.draw(
+            point(px(0.0), px(0.0)),
+            size(px(200.0), px(120.0)),
+            |_window, _cx| view.clone().into_any_element(),
+        );
+        cx.simulate_event(FileDropEvent::Entered {
+            position: point(px(20.0), px(20.0)),
+            paths: gpui::ExternalPaths(smallvec![PathBuf::from("/display/a")]),
+        });
+
+        *state.tree.lock().unwrap() = drop_target_tree();
+        cx.update(|window, cx| window.draw(cx).clear());
+        cx.simulate_event(FileDropEvent::Pending {
+            position: point(px(30.0), px(25.0)),
+        });
+        cx.simulate_event(FileDropEvent::Submit {
+            position: point(px(30.0), px(25.0)),
+        });
+
+        let events = runtime.events.lock().unwrap();
+        assert_eq!(transfer_kinds(&events), vec!["enter", "move", "drop"]);
+        let ids = events
+            .iter()
+            .filter_map(|event| match event {
+                crate::NativeEvent::Transfer { value, .. } => Some(value.session_id),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert!(ids.iter().all(|id| *id == ids[0]));
+    }
+
+    #[cfg(feature = "components")]
+    #[gpui::test]
     fn rendered_target_routes_enter_move_drop_and_rejects_stale_submit(
         cx: &mut gpui::TestAppContext,
     ) {

@@ -31,6 +31,7 @@ defmodule GPUI.Event do
           | :drag_move
           | :drag_leave
           | :drop
+          | :clipboard
           | :window_close_request
           | :window_focus
           | :window_blur
@@ -51,6 +52,10 @@ defmodule GPUI.Event do
   def normalize(%{type: type, value: value} = event)
       when type in [:drag_enter, :drag_move, :drag_leave, :drop] do
     Map.put(event, :value, TransferEvent.normalize!(type, value))
+  end
+
+  def normalize(%{type: :clipboard, value: value} = event) when is_map(value) do
+    Map.put(event, :value, GPUI.Transfer.Payload.new(value))
   end
 
   def normalize(%{type: _type} = event), do: event

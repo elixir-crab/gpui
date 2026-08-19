@@ -36,6 +36,7 @@ defmodule GPUI.UI do
     button_options: :ui_button,
     progress_options: :ui_progress,
     file_picker_options: :ui_file_picker,
+    clipboard_read_options: :ui_clipboard_read,
     copy_button_options: :ui_copy_button,
     checkbox_options: :ui_checkbox,
     input_options: :ui_input,
@@ -137,6 +138,23 @@ defmodule GPUI.UI do
   end
 
   @doc """
+  Builds an explicit user-triggered bounded clipboard reader.
+
+  Activation reads at most 1 MiB of UTF-8 text from the display machine and
+  emits it as `GPUI.Transfer.Payload` through `phx-read`. Empty, non-text, or
+  oversized clipboard contents produce a bounded payload with `text: nil`.
+
+  #{Schema.component_options_doc(:ui_clipboard_read)}
+  """
+  @spec clipboard_read(clipboard_read_options()) :: Element.t()
+  def clipboard_read(assigns) when is_map(assigns) do
+    assigns = normalize_attr_key(assigns, :"phx-read")
+    assigns = Schema.apply_defaults(assigns, :ui_clipboard_read)
+    validate_non_empty_label!(:ui_clipboard_read, Map.get(assigns, :label))
+    component(:ui_clipboard_read, assigns)
+  end
+
+  @doc """
   Builds a button that writes text to the display-side clipboard before `phx-click`.
 
   Clipboard ownership follows the renderer, so remote clients write to the
@@ -149,8 +167,9 @@ defmodule GPUI.UI do
     assigns = Schema.apply_defaults(assigns, :ui_copy_button)
     validate_non_empty_label!(:ui_copy_button, Map.get(assigns, :label))
 
-    unless is_binary(Map.get(assigns, :text)) do
-      raise ArgumentError, "ui_copy_button requires string text"
+    unless is_binary(Map.get(assigns, :text)) and
+             byte_size(assigns.text) <= 1_048_576 do
+      raise ArgumentError, "ui_copy_button requires string text no larger than 1 MiB"
     end
 
     component(:ui_copy_button, assigns)

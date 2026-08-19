@@ -40,6 +40,15 @@ defmodule GPUI.UITest do
     assert_raise ArgumentError, ~r/requires string text/, fn ->
       UI.copy_button(%{:"phx-click" => "copied", id: "copy", label: "Copy", text: :invalid})
     end
+
+    assert_raise ArgumentError, ~r/no larger than 1 MiB/, fn ->
+      UI.copy_button(%{
+        :"phx-click" => "copied",
+        id: "copy",
+        label: "Copy",
+        text: :binary.copy("x", 1_048_577)
+      })
+    end
   end
 
   test "validates schema-backed component attributes before native rendering" do
@@ -377,6 +386,14 @@ defmodule GPUI.UITest do
     assert attrs[:"phx-drag-move"] == "moved"
     assert attrs[:"phx-drag-leave"] == "left"
     assert attrs[:"phx-drop"] == "dropped"
+  end
+
+  test "builds an explicit bounded clipboard reader" do
+    assert %Element{type: :ui_clipboard_read, attrs: attrs} =
+             UI.clipboard_read(%{id: "paste", label: "Paste", "phx-read": "clipboard_read"})
+
+    assert attrs[:label] == "Paste"
+    assert attrs[:"phx-read"] == "clipboard_read"
   end
 
   test "builds selectable rich text from bounded neutral shaping runs" do

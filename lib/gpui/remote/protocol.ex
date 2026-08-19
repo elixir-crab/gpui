@@ -14,9 +14,10 @@ defmodule GPUI.Remote.Protocol do
     :safe_rpc,
     :snapshot_v2,
     :window_topology_v1,
-    :external_path_transfer_v1
+    :external_path_transfer_v1,
+    :clipboard_text_v1
   ]
-  @display_capabilities [:display_v1, :external_path_transfer_v1]
+  @display_capabilities [:display_v1, :external_path_transfer_v1, :clipboard_text_v1]
   @ops [:hello, :mount, :resume_session, :event, :snapshot]
 
   @type op :: :hello | :mount | :resume_session | :event | :snapshot
@@ -47,6 +48,19 @@ defmodule GPUI.Remote.Protocol do
       @server_capabilities
     )
   end
+
+  @spec clipboard_event?(term()) :: boolean()
+  def clipboard_event?(%{type: :clipboard}), do: true
+  def clipboard_event?(_event), do: false
+
+  @spec validate_clipboard_event(map()) :: {:ok, map()} | {:error, term()}
+  def validate_clipboard_event(%{type: :clipboard, value: value} = event) when is_map(value) do
+    {:ok, Map.put(event, :value, GPUI.Transfer.Payload.new(value))}
+  rescue
+    error in ArgumentError -> {:error, {:invalid_clipboard_event, Exception.message(error)}}
+  end
+
+  def validate_clipboard_event(_event), do: {:error, {:invalid_clipboard_event, :shape}}
 
   @spec transfer_event?(term()) :: boolean()
   def transfer_event?(%{type: type}), do: GPUI.Transfer.Event.type?(type)

@@ -366,7 +366,8 @@ defmodule GPUI.Session do
               :drag_enter,
               :drag_move,
               :drag_leave,
-              :drop
+              :drop,
+              :clipboard
             ] do
     case Enum.find(state.windows, &(&1.id == window_id)) do
       %WindowSpec{root: {module, assigns}} = window ->

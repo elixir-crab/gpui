@@ -10,6 +10,7 @@ pub enum GeneratedComponentKind {
     ButtonComponent,
     ProgressComponent,
     FilePickerComponent,
+    ClipboardReadComponent,
     CopyButtonComponent,
     PopoverComponent,
     PopoverTriggerComponent,
@@ -2341,6 +2342,30 @@ pub(crate) fn decode_generated_file_picker_component<'a>(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct ClipboardReadComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) label: String,
+    pub(crate) disabled: bool,
+    pub(crate) clipboard: Option<String>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_clipboard_read_component<'a>(
+    term: Term<'a>,
+) -> NifResult<ClipboardReadComponentNode> {
+    Ok(ClipboardReadComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        label: component_required_string_attr(term, atoms::label())?,
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        clipboard: component_string_attr(term, atoms::phx_read())?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct CopyButtonComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -3555,6 +3580,7 @@ pub(crate) enum ElementNode {
     ButtonComponent(ButtonComponentNode),
     ProgressComponent(ProgressComponentNode),
     FilePickerComponent(FilePickerComponentNode),
+    ClipboardReadComponent(ClipboardReadComponentNode),
     CopyButtonComponent(CopyButtonComponentNode),
     PopoverComponent(PopoverComponentNode),
     PopoverTriggerComponent(PopoverTriggerComponentNode),
@@ -3603,6 +3629,7 @@ pub enum GeneratedElementTag {
     UiButton,
     UiProgress,
     UiFilePicker,
+    UiClipboardRead,
     UiCopyButton,
     UiPopover,
     UiPopoverTrigger,
@@ -3659,6 +3686,7 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_button" => GeneratedElementTag::UiButton,
         "ui_progress" => GeneratedElementTag::UiProgress,
         "ui_file_picker" => GeneratedElementTag::UiFilePicker,
+        "ui_clipboard_read" => GeneratedElementTag::UiClipboardRead,
         "ui_copy_button" => GeneratedElementTag::UiCopyButton,
         "ui_popover" => GeneratedElementTag::UiPopover,
         "ui_popover_trigger" => GeneratedElementTag::UiPopoverTrigger,
@@ -3716,6 +3744,9 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::UiButton => GeneratedComponentKind::ButtonComponent,
         GeneratedElementTag::UiProgress => GeneratedComponentKind::ProgressComponent,
         GeneratedElementTag::UiFilePicker => GeneratedComponentKind::FilePickerComponent,
+        GeneratedElementTag::UiClipboardRead => {
+            GeneratedComponentKind::ClipboardReadComponent
+        }
         GeneratedElementTag::UiCopyButton => GeneratedComponentKind::CopyButtonComponent,
         GeneratedElementTag::UiPopover => GeneratedComponentKind::PopoverComponent,
         GeneratedElementTag::UiPopoverTrigger => {
@@ -3819,6 +3850,10 @@ pub(crate) fn decode_generated_element_node<'a>(
         GeneratedComponentKind::FilePickerComponent => {
             decode_generated_file_picker_component(term)
                 .map(|node| ElementNode::FilePickerComponent(node))
+        }
+        GeneratedComponentKind::ClipboardReadComponent => {
+            decode_generated_clipboard_read_component(term)
+                .map(|node| ElementNode::ClipboardReadComponent(node))
         }
         GeneratedComponentKind::CopyButtonComponent => {
             decode_generated_copy_button_component(term)
@@ -3984,6 +4019,9 @@ pub(crate) fn render_generated_component_node(
         }
         ElementNode::FilePickerComponent(node) => {
             element::component::display::render_file_picker(node, context)
+        }
+        ElementNode::ClipboardReadComponent(node) => {
+            element::component::display::render_clipboard_read(node, context)
         }
         ElementNode::CopyButtonComponent(node) => {
             element::component::display::render_copy_button(node, context)

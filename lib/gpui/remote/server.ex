@@ -219,16 +219,27 @@ defmodule GPUI.Remote.Server do
 
   defp dispatch_negotiated_call(:event, event, connection_id, state)
        when is_map(event) do
-    if Protocol.transfer_event?(event) do
-      with true <- negotiated_capability?(state, connection_id, :external_path_transfer_v1),
-           {:ok, event} <- Protocol.validate_transfer_event(event) do
+    cond do
+      Protocol.transfer_event?(event) ->
+        with true <- negotiated_capability?(state, connection_id, :external_path_transfer_v1),
+             {:ok, event} <- Protocol.validate_transfer_event(event) do
+          dispatch_call(:event, event, state)
+        else
+          false -> {{:error, {:missing_capability, :external_path_transfer_v1}}, state}
+          {:error, reason} -> {{:error, reason}, state}
+        end
+
+      Protocol.clipboard_event?(event) ->
+        with true <- negotiated_capability?(state, connection_id, :clipboard_text_v1),
+             {:ok, event} <- Protocol.validate_clipboard_event(event) do
+          dispatch_call(:event, event, state)
+        else
+          false -> {{:error, {:missing_capability, :clipboard_text_v1}}, state}
+          {:error, reason} -> {{:error, reason}, state}
+        end
+
+      true ->
         dispatch_call(:event, event, state)
-      else
-        false -> {{:error, {:missing_capability, :external_path_transfer_v1}}, state}
-        {:error, reason} -> {{:error, reason}, state}
-      end
-    else
-      dispatch_call(:event, event, state)
     end
   end
 

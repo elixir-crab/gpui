@@ -90,12 +90,15 @@ synchronous pointer NIF is introduced.
 
 ## Clipboard contract
 
-Clipboard integration should begin with explicit opt-in operations rather than
-a global clipboard subscription:
+Clipboard integration begins with explicit opt-in operations rather than a
+global clipboard subscription. `GPUI.UI.clipboard_read/1` renders a native
+button whose user activation reads bounded display-machine clipboard text and
+emits `:clipboard` with `%GPUI.Transfer.Payload{}` through `phx-read`.
+Non-text, empty, or text over 1 MiB produces `text: nil`; arbitrary MIME bytes
+are never exposed. Existing `GPUI.UI.copy_button/1` remains the explicit bounded
+text write surface.
 
-- bounded paste into a focused editable surface;
-- an explicit typed clipboard-read event for controls that declare one;
-- bounded text/path clipboard-write requests with acknowledgement where needed.
+Remote clipboard events require the additive `:clipboard_text_v1` capability.
 
 Native editable text keeps its immediate platform paste and IME behavior. The
 buffer transaction remains the authoritative application-visible result.

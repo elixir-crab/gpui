@@ -58,6 +58,9 @@ pub(crate) struct ElementBoundsGeometry {
     pub(crate) coordinate_space: String,
 }
 
+#[cfg(feature = "components")]
+pub(crate) const MAX_TRANSFER_TEXT_BYTES: usize = 1_048_576;
+
 #[cfg_attr(not(feature = "components"), allow(dead_code))]
 #[derive(Clone, Debug, PartialEq, rustler::NifMap)]
 pub(crate) struct TransferPayload {
@@ -146,6 +149,12 @@ pub(crate) enum NativeEvent {
         window_id: u64,
         event: String,
         value: ElementBoundsGeometry,
+    },
+    #[cfg(feature = "components")]
+    ClipboardRead {
+        window_id: u64,
+        event: String,
+        payload: TransferPayload,
     },
     #[cfg(feature = "components")]
     Transfer {
@@ -384,6 +393,20 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
                 (atoms::window_id(), window_id.encode(env)),
                 (atoms::event(), event.encode(env)),
                 (atoms::value(), value.encode(env)),
+            ],
+        ),
+        #[cfg(feature = "components")]
+        NativeEvent::ClipboardRead {
+            window_id,
+            event,
+            payload,
+        } => encode_event_map(
+            env,
+            vec![
+                (atoms::type_atom(), atoms::clipboard().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
+                (atoms::value(), payload.encode(env)),
             ],
         ),
         #[cfg(feature = "components")]

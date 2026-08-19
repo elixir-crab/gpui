@@ -30,7 +30,7 @@ use event::{decode_event_value, encode_native_event, push_event, InputKind, Nati
 #[cfg(feature = "components")]
 use event::{TextCaretGeometry, TextRangeGeometry, TextRectangle, TextViewportGeometry};
 #[cfg(feature = "components")]
-use event::{TransferEventValue, TransferPayload};
+use event::{TransferEventValue, TransferPayload, MAX_TRANSFER_TEXT_BYTES};
 #[cfg(feature = "real-gpui")]
 use input::{bind_input_keys, NativeTextInput};
 #[cfg(feature = "real-gpui")]

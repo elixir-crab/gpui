@@ -125,6 +125,14 @@ defmodule GPUI.Schema do
       ]
     },
     %Component{
+      tag: :ui_clipboard_read,
+      kind: :clipboard_read_component,
+      events: [clipboard: :"phx-read"],
+      required_events: [:"phx-read"],
+      public_required_attrs: [:label],
+      attrs: [id: :string, label: :required_string, disabled: :boolean]
+    },
+    %Component{
       tag: :ui_copy_button,
       kind: :copy_button_component,
       events: [click: :"phx-click"],

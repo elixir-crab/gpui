@@ -1,4 +1,6 @@
 use crate::element::ElementRenderContext;
+#[cfg(feature = "components")]
+use crate::ClipboardReadComponentNode;
 use crate::{gpui, CopyButtonComponentNode, FilePickerComponentNode, ProgressComponentNode};
 
 #[cfg(not(feature = "components"))]
@@ -143,6 +145,55 @@ pub(crate) fn render_file_picker(
     super::apply_component_styles(button, node.style).into_any_element()
 }
 
+#[cfg(any(feature = "components", test))]
+fn bounded_clipboard_text(text: Option<String>) -> Option<String> {
+    text.filter(|text| !text.is_empty() && text.len() <= crate::MAX_TRANSFER_TEXT_BYTES)
+}
+
+#[cfg(feature = "components")]
+pub(crate) fn render_clipboard_read(
+    node: ClipboardReadComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    use gpui::IntoElement;
+    use gpui_component::{button::Button, Disableable};
+
+    let runtime = context.runtime.clone();
+    let window_id = context.window_id;
+    let event = node.clipboard;
+    let button = Button::new(node.id)
+        .label(node.label)
+        .disabled(node.disabled)
+        .on_click(move |_click, _window, cx| {
+            let Some(event) = event.as_ref() else {
+                return;
+            };
+            let text =
+                bounded_clipboard_text(cx.read_from_clipboard().and_then(|item| item.text()));
+            let _ = crate::push_event(
+                &runtime,
+                crate::NativeEvent::ClipboardRead {
+                    window_id,
+                    event: event.clone(),
+                    payload: crate::TransferPayload {
+                        text,
+                        external_paths: Vec::new(),
+                    },
+                },
+            );
+        });
+
+    super::apply_component_styles(button, node.style).into_any_element()
+}
+
+#[cfg(not(feature = "components"))]
+pub(crate) fn render_clipboard_read(
+    node: crate::ClipboardReadComponentNode,
+    context: &mut ElementRenderContext<'_, '_>,
+) -> gpui::AnyElement {
+    render_component_fallback(node.style, node.label.into(), Vec::new(), context)
+}
+
 #[cfg(feature = "components")]
 pub(crate) fn render_copy_button(
     node: CopyButtonComponentNode,
@@ -208,6 +259,20 @@ fn read_file(path: std::path::PathBuf, max_bytes: usize) -> FileDialogResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn bounds_clipboard_text_before_emitting() {
+        assert_eq!(
+            bounded_clipboard_text(Some("hello".to_string())),
+            Some("hello".to_string())
+        );
+        assert_eq!(bounded_clipboard_text(Some(String::new())), None);
+        assert_eq!(
+            bounded_clipboard_text(Some("x".repeat(crate::MAX_TRANSFER_TEXT_BYTES + 1))),
+            None
+        );
+        assert_eq!(bounded_clipboard_text(None), None);
+    }
 
     #[test]
     fn bounds_selected_file_reads() {
