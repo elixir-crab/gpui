@@ -17,7 +17,8 @@ defmodule GPUI.Native.RichTextE2ETest do
       runs = [
         RichRun.new(Range.new(Position.new(0, 0), Position.new(0, 5)),
           color: 0xF8FAFC,
-          font_weight: :bold
+          font_weight: :bold,
+          link: "message://hello"
         ),
         RichRun.new(Range.new(Position.new(1, 0), Position.new(1, 11)),
           color: 0x60A5FA,
@@ -80,6 +81,26 @@ defmodule GPUI.Native.RichTextE2ETest do
     Desktop.await_frame!(runtime, 1, native_window_id)
 
     Desktop.click!(native_window_id, 80, 62)
+
+    assert_receive {:gpui, ^runtime,
+                    %GPUI.Runtime.Update{
+                      events: [
+                        %{type: :link, event: "link-opened", value: "message://details"}
+                      ]
+                    }}
+
+    Desktop.key!(native_window_id, "Left")
+    Desktop.key!(native_window_id, "Return")
+
+    assert_receive {:gpui, ^runtime,
+                    %GPUI.Runtime.Update{
+                      events: [
+                        %{type: :link, event: "link-opened", value: "message://hello"}
+                      ]
+                    }}
+
+    Desktop.key!(native_window_id, "Right")
+    Desktop.key!(native_window_id, "space")
 
     assert_receive {:gpui, ^runtime,
                     %GPUI.Runtime.Update{
