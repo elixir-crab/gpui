@@ -9,7 +9,14 @@ defmodule GPUI.Remote.Protocol do
   @version 2
   @capability :gpui_app
   @required_peer_capabilities [:display_v1]
-  @server_capabilities [:app_server, :safe_rpc, :snapshot_v2, :window_topology_v1]
+  @server_capabilities [
+    :app_server,
+    :safe_rpc,
+    :snapshot_v2,
+    :window_topology_v1,
+    :external_path_transfer_v1
+  ]
+  @display_capabilities [:display_v1, :external_path_transfer_v1]
   @ops [:hello, :mount, :resume_session, :event, :snapshot]
 
   @type op :: :hello | :mount | :resume_session | :event | :snapshot
@@ -24,7 +31,10 @@ defmodule GPUI.Remote.Protocol do
 
   def hello(payload \\ %{}) when is_map(payload) do
     payload =
-      Map.merge(%{role: :display_client, version: @version, capabilities: [:display_v1]}, payload)
+      Map.merge(
+        %{role: :display_client, version: @version, capabilities: @display_capabilities},
+        payload
+      )
 
     message(:hello, payload)
   end

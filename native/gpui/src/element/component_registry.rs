@@ -1,5 +1,6 @@
 use super::component::code_viewer::ComponentCodeViewer;
 use super::component::data_table::ComponentDataTable;
+use super::component::drop_target::ComponentDropTarget;
 use super::component::rich_text::ComponentRichText;
 use super::component::tree::ComponentTree;
 use super::component::virtual_collection::ComponentVirtualCollection;
@@ -304,11 +305,15 @@ impl ComponentRegistry {
         let mut close_dialog = false;
         for (key, component) in &self.entries {
             if !self.active.contains(key) {
-                if let StatefulComponent::Dialog(dialog) = component {
-                    if let Ok(mut opened) = dialog.opened.lock() {
-                        close_dialog |= *opened;
-                        *opened = false;
+                match component {
+                    StatefulComponent::Dialog(dialog) => {
+                        if let Ok(mut opened) = dialog.opened.lock() {
+                            close_dialog |= *opened;
+                            *opened = false;
+                        }
                     }
+                    StatefulComponent::DropTarget(target) => target.terminate_removed(),
+                    _ => {}
                 }
             }
         }

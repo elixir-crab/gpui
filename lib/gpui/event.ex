@@ -3,6 +3,8 @@ defmodule GPUI.Event do
   Normalized UI event delivered from a display into `GPUI.Session`.
   """
 
+  alias GPUI.Transfer.Payload
+
   defstruct [:type, :window_id, :event, :value, attrs: %{}]
 
   @type type ::
@@ -46,6 +48,11 @@ defmodule GPUI.Event do
   def normalize(%__MODULE__{} = event), do: to_map(event)
   def normalize(event) when is_list(event), do: event |> Map.new() |> normalize()
 
+  def normalize(%{type: type, value: value} = event)
+      when type in [:drag_enter, :drag_move, :drag_leave, :drop] do
+    Map.put(event, :value, normalize_transfer_value(value))
+  end
+
   def normalize(%{type: _type} = event), do: event
 
   def normalize(%{window_id: _window_id, event: _event} = event),
@@ -62,4 +69,10 @@ defmodule GPUI.Event do
     |> Enum.reject(fn {_key, value} -> is_nil(value) end)
     |> Map.new()
   end
+
+  defp normalize_transfer_value(%{payload: payload} = value) when is_map(payload) do
+    Map.put(value, :payload, Payload.new(payload))
+  end
+
+  defp normalize_transfer_value(value), do: value
 end

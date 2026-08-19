@@ -3,6 +3,22 @@ defmodule GPUI.Transfer.PayloadTest do
 
   alias GPUI.Transfer.Payload
 
+  test "normalizes transfer event payloads into the public value type" do
+    event =
+      GPUI.Event.normalize(%{
+        type: :drop,
+        value: %{
+          session_id: 17,
+          target_id: "drop-zone",
+          payload: %{text: nil, external_paths: ["/display/tmp/a"]}
+        }
+      })
+
+    assert %Payload{external_paths: ["/display/tmp/a"]} = event.value.payload
+    assert event.value.session_id == 17
+    assert event.value.target_id == "drop-zone"
+  end
+
   test "builds bounded text and display-machine path facts" do
     payload = Payload.new(text: "hello", external_paths: ["/tmp/a", "/tmp/a", "/tmp/b"])
 

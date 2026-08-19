@@ -54,6 +54,7 @@ defmodule GPUI.Schema do
     %Component{
       tag: :ui_drop_target,
       kind: :drop_target_component,
+      stateful: true,
       children: true,
       attrs: [id: :required_string],
       events: [

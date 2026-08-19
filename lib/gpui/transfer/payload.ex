@@ -20,8 +20,16 @@ defmodule GPUI.Transfer.Payload do
           external_paths: [String.t()]
         }
 
-  @spec new(keyword()) :: t()
-  def new(opts \\ []) when is_list(opts) do
+  @spec new(keyword() | map()) :: t()
+  def new(opts \\ [])
+
+  def new(opts) when is_list(opts) do
+    payload = struct!(__MODULE__, opts)
+    validate!(payload)
+    payload
+  end
+
+  def new(opts) when is_map(opts) do
     payload = struct!(__MODULE__, opts)
     validate!(payload)
     payload

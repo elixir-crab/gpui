@@ -2,16 +2,64 @@ use crate::{gpui, DropTargetComponentNode, ElementRenderContext};
 
 #[cfg(feature = "components")]
 use std::sync::atomic::{AtomicU64, Ordering};
+#[cfg(feature = "components")]
+use std::sync::{Arc, Mutex};
 
 #[cfg(feature = "components")]
 static NEXT_TRANSFER_SESSION_ID: AtomicU64 = AtomicU64::new(1);
 
-#[cfg(feature = "components")]
+#[cfg(any(feature = "components", test))]
 const MAX_PATHS: usize = 64;
-#[cfg(feature = "components")]
+#[cfg(any(feature = "components", test))]
 const MAX_PATH_BYTES: usize = 4_096;
-#[cfg(feature = "components")]
+#[cfg(any(feature = "components", test))]
 const MAX_ALL_PATH_BYTES: usize = 262_144;
+
+#[cfg(feature = "components")]
+pub(crate) struct ComponentDropTarget {
+    id: String,
+    session: Arc<Mutex<Option<TransferSession>>>,
+    runtime: crate::SharedRuntime,
+    window_id: u64,
+    leave_event: Option<String>,
+}
+
+#[cfg(feature = "components")]
+impl ComponentDropTarget {
+    fn new(node: &DropTargetComponentNode, context: &ElementRenderContext<'_, '_>) -> Self {
+        Self {
+            id: node.id.clone(),
+            session: Arc::new(Mutex::new(None)),
+            runtime: context.runtime.clone(),
+            window_id: context.window_id,
+            leave_event: node.drag_leave.clone(),
+        }
+    }
+
+    fn update(&mut self, node: &DropTargetComponentNode) {
+        self.leave_event.clone_from(&node.drag_leave);
+    }
+
+    pub(crate) fn terminate_removed(&self) {
+        let Ok(mut session) = self.session.lock() else {
+            return;
+        };
+        if let (Some(active), Some(event)) = (session.take(), self.leave_event.as_deref()) {
+            emit_transfer(
+                &self.runtime,
+                crate::InputKind::DragLeave,
+                self.window_id,
+                event,
+                TransferEmission {
+                    target_id: &self.id,
+                    session_id: active.session_id,
+                    position: active.last_position,
+                    paths: None,
+                },
+            );
+        }
+    }
+}
 
 #[cfg(feature = "components")]
 pub(crate) fn render(
@@ -21,60 +69,101 @@ pub(crate) fn render(
     use crate::element::apply_generated_render_styles;
     use gpui::{InteractiveElement, IntoElement, ParentElement};
 
+    if context.components.drop_target_mut(&node.id).is_none() {
+        let component = ComponentDropTarget::new(&node, context);
+        context.components.insert_drop_target(&node.id, component);
+    }
+    let component = context
+        .components
+        .drop_target_mut(&node.id)
+        .expect("drop target must exist after insertion");
+    component.update(&node);
+    let move_session = component.session.clone();
+    let drop_session = component.session.clone();
+    let exit_session = component.session.clone();
+
     let children = node
         .children
         .into_iter()
         .map(|child| child.render(context))
         .collect::<Vec<_>>();
-    let session = std::sync::Arc::new(std::sync::Mutex::new(None::<TransferSession>));
-    let move_session = session.clone();
-    let drop_session = session;
     let move_runtime = context.runtime.clone();
     let drop_runtime = context.runtime.clone();
+    let exit_runtime = context.runtime.clone();
     let window_id = context.window_id;
     let target_id = node.id.clone();
     let move_target_id = target_id.clone();
+    let exit_target_id = target_id.clone();
     let move_event = node.drag_move.clone();
     let enter_event = node.drag_enter.clone();
     let leave_event = node.drag_leave.clone();
+    let exit_event = node.drag_leave.clone();
     let drop_event = node.drop.clone();
 
     apply_generated_render_styles(gpui::div(), node.style)
         .id(node.id)
         .children(children)
+        .child(gpui::canvas(
+            |_bounds, _window, _cx| (),
+            move |_bounds, (), window, _cx| {
+                let session = exit_session.clone();
+                let runtime = exit_runtime.clone();
+                let event = exit_event.clone();
+                let target_id = exit_target_id.clone();
+                window.on_mouse_event(
+                    move |file_event: &gpui::FileDropEvent, phase, _window, _cx| {
+                        if phase != gpui::DispatchPhase::Bubble
+                            || !matches!(file_event, gpui::FileDropEvent::Exited)
+                        {
+                            return;
+                        }
+                        let Ok(mut session) = session.lock() else {
+                            return;
+                        };
+                        let position = session.as_ref().map(|active| active.last_position);
+                        if let Some(position) = position {
+                            terminate_session(
+                                &mut session,
+                                &runtime,
+                                window_id,
+                                event.as_deref(),
+                                &target_id,
+                                position,
+                            );
+                        }
+                    },
+                );
+            },
+        ))
         .can_drop(|value, _window, _cx| value.is::<gpui::ExternalPaths>())
         .on_drag_move::<gpui::ExternalPaths>(move |event, _window, cx| {
             let paths = bounded_paths(event.drag(cx));
             let Ok(mut session) = move_session.lock() else {
                 return;
             };
-            let inside = event.bounds.contains(&event.event.position);
-            if !inside {
-                if let Some(active) = session.take() {
-                    if let Some(event_name) = leave_event.as_deref() {
-                        emit_transfer(
-                            &move_runtime,
-                            crate::InputKind::DragLeave,
-                            window_id,
-                            event_name,
-                            TransferEmission {
-                                target_id: &move_target_id,
-                                session_id: active.session_id,
-                                position: event.event.position,
-                                paths: None,
-                            },
-                        );
-                    }
-                }
+            let position = event.event.position;
+            if !event.bounds.contains(&position) {
+                terminate_session(
+                    &mut session,
+                    &move_runtime,
+                    window_id,
+                    leave_event.as_deref(),
+                    &move_target_id,
+                    position,
+                );
                 return;
             }
             if session.is_none() {
+                let Some(paths) = paths else {
+                    return;
+                };
                 let session_id = NEXT_TRANSFER_SESSION_ID.fetch_add(1, Ordering::Relaxed);
                 *session = Some(TransferSession {
                     session_id,
-                    last_position: None,
+                    last_position: position,
+                    paths: paths.clone(),
                 });
-                if let (Some(event_name), Some(paths)) = (enter_event.as_deref(), paths.as_ref()) {
+                if let Some(event_name) = enter_event.as_deref() {
                     emit_transfer(
                         &move_runtime,
                         crate::InputKind::DragEnter,
@@ -83,21 +172,17 @@ pub(crate) fn render(
                         TransferEmission {
                             target_id: &move_target_id,
                             session_id,
-                            position: event.event.position,
-                            paths: Some(paths.clone()),
+                            position,
+                            paths: Some(paths),
                         },
                     );
                 }
             }
             if let (Some(event_name), Some(session)) = (move_event.as_deref(), session.as_mut()) {
-                let position = (
-                    f32::from(event.event.position.x),
-                    f32::from(event.event.position.y),
-                );
-                if session.last_position == Some(position) {
+                if session.last_position == position {
                     return;
                 }
-                session.last_position = Some(position);
+                session.last_position = position;
                 emit_transfer(
                     &move_runtime,
                     crate::InputKind::DragMove,
@@ -106,21 +191,20 @@ pub(crate) fn render(
                     TransferEmission {
                         target_id: &move_target_id,
                         session_id: session.session_id,
-                        position: event.event.position,
+                        position,
                         paths: None,
                     },
                 );
             }
         })
-        .on_drop::<gpui::ExternalPaths>(move |paths, window, _cx| {
+        .on_drop::<gpui::ExternalPaths>(move |_paths, window, _cx| {
             let Ok(mut session) = drop_session.lock() else {
                 return;
             };
-            let session_id = session
-                .take()
-                .map(|session| session.session_id)
-                .unwrap_or_else(|| NEXT_TRANSFER_SESSION_ID.fetch_add(1, Ordering::Relaxed));
-            if let (Some(event_name), Some(paths)) = (drop_event.as_deref(), bounded_paths(paths)) {
+            let Some(active) = session.take() else {
+                return;
+            };
+            if let Some(event_name) = drop_event.as_deref() {
                 emit_transfer(
                     &drop_runtime,
                     crate::InputKind::Drop,
@@ -128,9 +212,9 @@ pub(crate) fn render(
                     event_name,
                     TransferEmission {
                         target_id: &target_id,
-                        session_id,
+                        session_id: active.session_id,
                         position: window.mouse_position(),
-                        paths: Some(paths),
+                        paths: Some(active.paths),
                     },
                 );
             }
@@ -139,17 +223,45 @@ pub(crate) fn render(
 }
 
 #[cfg(feature = "components")]
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct TransferSession {
     session_id: u64,
-    last_position: Option<(f32, f32)>,
+    last_position: gpui::Point<gpui::Pixels>,
+    paths: Vec<String>,
 }
 
 #[cfg(feature = "components")]
-fn bounded_paths(paths: &gpui::ExternalPaths) -> Option<Vec<String>> {
+fn terminate_session(
+    session: &mut Option<TransferSession>,
+    runtime: &crate::SharedRuntime,
+    window_id: u64,
+    event: Option<&str>,
+    target_id: &str,
+    position: gpui::Point<gpui::Pixels>,
+) {
+    if let (Some(active), Some(event)) = (session.take(), event) {
+        emit_transfer(
+            runtime,
+            crate::InputKind::DragLeave,
+            window_id,
+            event,
+            TransferEmission {
+                target_id,
+                session_id: active.session_id,
+                position,
+                paths: None,
+            },
+        );
+    }
+}
+
+#[cfg(any(feature = "components", test))]
+fn bounded_path_strings<'a>(
+    paths: impl IntoIterator<Item = &'a std::path::Path>,
+) -> Option<Vec<String>> {
     let mut result = Vec::new();
     let mut total = 0;
-    for path in paths.paths() {
+    for path in paths {
         if result.len() >= MAX_PATHS {
             return None;
         }
@@ -158,12 +270,17 @@ fn bounded_paths(paths: &gpui::ExternalPaths) -> Option<Vec<String>> {
         if path.is_empty() || bytes > MAX_PATH_BYTES || total + bytes > MAX_ALL_PATH_BYTES {
             return None;
         }
-        total += bytes;
         if !result.iter().any(|existing| existing == path) {
+            total += bytes;
             result.push(path.to_string());
         }
     }
     Some(result)
+}
+
+#[cfg(feature = "components")]
+fn bounded_paths(paths: &gpui::ExternalPaths) -> Option<Vec<String>> {
+    bounded_path_strings(paths.paths().iter().map(std::path::PathBuf::as_path))
 }
 
 #[cfg(feature = "components")]
@@ -215,26 +332,38 @@ pub(crate) fn render(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use smallvec::smallvec;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
 
     #[test]
     fn bounds_and_deduplicates_external_paths() {
-        let paths = gpui::ExternalPaths(smallvec![
-            PathBuf::from("/tmp/a"),
-            PathBuf::from("/tmp/a"),
-            PathBuf::from("/tmp/b")
-        ]);
+        let paths = [
+            Path::new("/tmp/a"),
+            Path::new("/tmp/a"),
+            Path::new("/tmp/b"),
+        ];
         assert_eq!(
-            bounded_paths(&paths),
+            bounded_path_strings(paths),
             Some(vec!["/tmp/a".to_string(), "/tmp/b".to_string()])
         );
 
-        let paths = gpui::ExternalPaths(
-            (0..65)
-                .map(|index| PathBuf::from(format!("/{index}")))
-                .collect(),
+        let paths = (0..65)
+            .map(|index| PathBuf::from(format!("/{index}")))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            bounded_path_strings(paths.iter().map(PathBuf::as_path)),
+            None
         );
-        assert_eq!(bounded_paths(&paths), None);
+    }
+
+    #[test]
+    fn duplicate_paths_do_not_consume_aggregate_limit_twice() {
+        let long = format!("/{}", "a".repeat(MAX_PATH_BYTES - 1));
+        let paths = (0..MAX_PATHS)
+            .map(|_| PathBuf::from(&long))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            bounded_path_strings(paths.iter().map(PathBuf::as_path)),
+            Some(vec![long])
+        );
     }
 }

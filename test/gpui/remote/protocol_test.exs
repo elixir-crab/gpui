@@ -11,8 +11,10 @@ defmodule GPUI.Remote.ProtocolTest do
   end
 
   test "builds transport-independent messages" do
-    assert %{op: :hello, payload: %{role: :display_client}} =
+    assert %{op: :hello, payload: %{role: :display_client, capabilities: capabilities}} =
              Protocol.hello(%{role: :display_client})
+
+    assert :external_path_transfer_v1 in capabilities
 
     assert %{op: :mount, payload: %{args: []}} = Protocol.mount(%{args: []})
 
@@ -29,6 +31,7 @@ defmodule GPUI.Remote.ProtocolTest do
 
     assert :app_server in capabilities
     assert :window_topology_v1 in capabilities
+    assert :external_path_transfer_v1 in capabilities
 
     assert {:error, {:incompatible_version, %{expected: 2, got: 1}}} =
              Protocol.negotiate(%{version: 1, capabilities: [:display_v1]})

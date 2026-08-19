@@ -97,6 +97,7 @@ defmodule GPUI.SchemaTest do
     assert GPUI.Schema.component!(:text_surface).required_events == []
 
     assert Enum.map(GPUI.Schema.stateful_components(), & &1.kind) == [
+             :drop_target_component,
              :split_component,
              :popover_component,
              :dialog_component,

@@ -2,6 +2,7 @@
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 enum ComponentKind {
+    DropTarget,
     Split,
     Popover,
     Dialog,
@@ -19,6 +20,7 @@ enum ComponentKind {
     TextSurface,
 }
 enum StatefulComponent {
+    DropTarget(ComponentDropTarget),
     Split(ComponentSplit),
     Popover(ComponentPopover),
     Dialog(ComponentDialog),
@@ -36,6 +38,26 @@ enum StatefulComponent {
     TextSurface(ComponentTextSurface),
 }
 impl ComponentRegistry {
+    pub(crate) fn drop_target_mut(
+        &mut self,
+        id: &str,
+    ) -> Option<&mut ComponentDropTarget> {
+        let key = ComponentKey::new(ComponentKind::DropTarget, id);
+        self.active.insert(key.clone());
+        match self.entries.get_mut(&key) {
+            Some(StatefulComponent::DropTarget(component)) => Some(component),
+            _ => None,
+        }
+    }
+    pub(crate) fn insert_drop_target(
+        &mut self,
+        id: &str,
+        component: ComponentDropTarget,
+    ) -> bool {
+        let key = ComponentKey::new(ComponentKind::DropTarget, id);
+        self.active.insert(key.clone());
+        self.entries.insert(key, StatefulComponent::DropTarget(component)).is_none()
+    }
     pub(crate) fn split_mut(&mut self, id: &str) -> Option<&mut ComponentSplit> {
         let key = ComponentKey::new(ComponentKind::Split, id);
         self.active.insert(key.clone());
