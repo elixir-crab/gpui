@@ -16,6 +16,7 @@ use std::sync::{Arc, Mutex};
 #[cfg(feature = "components")]
 pub(crate) struct ComponentRichText {
     selection: Arc<Mutex<RichSelection>>,
+    active_link: Arc<Mutex<Option<usize>>>,
     focus_handle: gpui::FocusHandle,
     text: String,
 }
@@ -25,6 +26,7 @@ impl ComponentRichText {
     fn new(cx: &mut gpui::Context<'_, crate::ElixirRoot>) -> Self {
         Self {
             selection: Arc::new(Mutex::new(RichSelection::default())),
+            active_link: Arc::new(Mutex::new(None)),
             focus_handle: cx.focus_handle(),
             text: String::new(),
         }
@@ -67,6 +69,7 @@ struct RichTextElement {
     runs: Vec<NativeRichRun>,
     selectable: bool,
     selection: Arc<Mutex<RichSelection>>,
+    active_link: Arc<Mutex<Option<usize>>>,
     link_event: Option<String>,
     runtime: crate::SharedRuntime,
     window_id: u64,
@@ -78,6 +81,7 @@ impl RichTextElement {
     fn new(
         node: &RichTextComponentNode,
         selection: Arc<Mutex<RichSelection>>,
+        active_link: Arc<Mutex<Option<usize>>>,
         runtime: crate::SharedRuntime,
         window_id: u64,
     ) -> Self {
@@ -90,6 +94,7 @@ impl RichTextElement {
             runs,
             selectable: node.selectable,
             selection,
+            active_link,
             link_event: node.link.clone(),
             runtime,
             window_id,
@@ -109,6 +114,18 @@ impl RichTextElement {
             .iter()
             .find(|run| run.range.contains(&index))
             .and_then(|run| run.source.link.as_deref())
+    }
+
+    fn links(&self) -> Vec<(Range<usize>, String)> {
+        self.runs
+            .iter()
+            .filter_map(|run| {
+                run.source
+                    .link
+                    .as_ref()
+                    .map(|link| (run.range.clone(), link.clone()))
+            })
+            .collect()
     }
 }
 
@@ -230,6 +247,7 @@ impl gpui::Element for RichTextElement {
             let hitbox = hitbox.clone();
             let layout = layout.clone();
             let selection = self.selection.clone();
+            let active_link = self.active_link.clone();
             let runs = self.runs.clone();
             let event_name = self.link_event.clone();
             let runtime = self.runtime.clone();
@@ -253,21 +271,19 @@ impl gpui::Element for RichTextElement {
                     return;
                 }
                 let index = closest_index(&layout, event.position);
-                let link = runs
-                    .iter()
-                    .find(|run| run.range.contains(&index))
-                    .and_then(|run| run.source.link.as_deref());
-                if let (Some(link), Some(event_name)) = (link, event_name.as_deref()) {
-                    let _ = crate::push_event(
-                        &runtime,
-                        crate::NativeEvent::Input {
-                            kind: crate::InputKind::Link,
-                            window_id,
-                            event: event_name.to_string(),
-                            value: Some(crate::EventValue::String(link.to_string())),
-                        },
-                    );
-                    cx.stop_propagation();
+                let link = runs.iter().enumerate().find(|(_link_index, run)| {
+                    run.range.contains(&index) && run.source.link.is_some()
+                });
+                if let Some((link_index, run)) = link {
+                    if let Ok(mut active_link) = active_link.lock() {
+                        *active_link = Some(link_index);
+                    }
+                    if let (Some(link), Some(event_name)) =
+                        (run.source.link.as_deref(), event_name.as_deref())
+                    {
+                        emit_link(&runtime, window_id, event_name, link);
+                        cx.stop_propagation();
+                    }
                 }
             }
         });
@@ -322,7 +338,7 @@ pub(crate) fn render(
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     use crate::element::apply_generated_render_styles;
-    use gpui::{InteractiveElement, IntoElement, ParentElement};
+    use gpui::{InteractiveElement, IntoElement, ParentElement, Styled};
 
     if context.components.rich_text_mut(&node.id).is_none() {
         let component = ComponentRichText::new(context.cx);
@@ -339,29 +355,47 @@ pub(crate) fn render(
             reconcile_selection(&mut selection, &component.text, &node.text);
         }
     }
+    if let Ok(mut active_link) = component.active_link.lock() {
+        let link_count = node.runs.iter().filter(|run| run.link.is_some()).count();
+        if active_link.is_some_and(|index| index >= link_count) {
+            *active_link = None;
+        }
+    }
     component.text.clone_from(&node.text);
     let selection = component.selection.clone();
+    let active_link = component.active_link.clone();
     let focus_handle = component.focus_handle.clone();
     let text_element = RichTextElement::new(
         &node,
         selection.clone(),
+        active_link.clone(),
         context.runtime.clone(),
         context.window_id,
     );
+    let links = text_element.links();
     let copy_element = RichTextElement::new(
         &node,
         selection.clone(),
+        active_link.clone(),
         context.runtime.clone(),
         context.window_id,
     );
     let selection_for_keyboard = selection.clone();
     let selection_for_outside = selection;
+    let link_count = links.len();
+    let keyboard_links = links;
+    let active_link_for_keyboard = active_link;
+    let link_runtime = context.runtime.clone();
+    let link_event = node.link.clone();
+    let link_window_id = context.window_id;
+    let keyboard_text_len = node.text.len();
 
     let focus_for_pointer = focus_handle.clone();
 
     apply_generated_render_styles(gpui::div(), node.style)
         .id(node.id)
-        .track_focus(&focus_handle)
+        .track_focus(&focus_handle.tab_stop(link_count > 0))
+        .focus_visible(|style| style.border_2().border_color(gpui::rgb(0x60a5fa)))
         .on_mouse_down(gpui::MouseButton::Left, move |_event, window, cx| {
             focus_for_pointer.focus(window, cx);
         })
@@ -376,7 +410,7 @@ pub(crate) fn render(
             if key == "a" && event.keystroke.modifiers.secondary() {
                 if let Ok(mut selection) = selection_for_keyboard.lock() {
                     selection.anchor = 0;
-                    selection.head = node.text.len();
+                    selection.head = keyboard_text_len;
                     selection.dragging = false;
                 }
                 window.refresh();
@@ -384,6 +418,26 @@ pub(crate) fn render(
             } else if key == "escape" {
                 if let Ok(mut selection) = selection_for_keyboard.lock() {
                     selection.clear();
+                }
+                window.refresh();
+                cx.stop_propagation();
+            } else if matches!(key, "enter" | "space") {
+                let index = active_link_for_keyboard
+                    .lock()
+                    .ok()
+                    .and_then(|active| active.or((link_count > 0).then_some(0)));
+                if let (Some(index), Some(event_name)) = (index, link_event.as_deref()) {
+                    if let Some((_range, link)) = keyboard_links.get(index) {
+                        emit_link(&link_runtime, link_window_id, event_name, link);
+                        cx.stop_propagation();
+                    }
+                }
+            } else if matches!(key, "arrowleft" | "arrowup" | "arrowright" | "arrowdown")
+                && link_count > 0
+            {
+                if let Ok(mut active) = active_link_for_keyboard.lock() {
+                    let next = next_link_index(key, *active, link_count);
+                    *active = Some(next);
                 }
                 window.refresh();
                 cx.stop_propagation();
@@ -396,6 +450,29 @@ pub(crate) fn render(
         })
         .child(text_element)
         .into_any_element()
+}
+
+#[cfg(feature = "components")]
+fn next_link_index(key: &str, active: Option<usize>, link_count: usize) -> usize {
+    match (key, active) {
+        ("arrowleft" | "arrowup", Some(index)) => index.checked_sub(1).unwrap_or(link_count - 1),
+        ("arrowleft" | "arrowup", None) => link_count - 1,
+        (_, Some(index)) => (index + 1) % link_count,
+        (_, None) => 0,
+    }
+}
+
+#[cfg(feature = "components")]
+fn emit_link(runtime: &crate::SharedRuntime, window_id: u64, event: &str, link: &str) {
+    let _ = crate::push_event(
+        runtime,
+        crate::NativeEvent::Input {
+            kind: crate::InputKind::Link,
+            window_id,
+            event: event.to_string(),
+            value: Some(crate::EventValue::String(link.to_string())),
+        },
+    );
 }
 
 #[cfg(feature = "components")]
@@ -690,6 +767,16 @@ mod tests {
         assert_eq!(selection_character_indices(text, &selection), (3, 1));
         assert_eq!(byte_to_character_index(text, text.len()), 3);
         assert_eq!(byte_to_character_index(text, 5), 2);
+    }
+
+    #[test]
+    fn keyboard_link_navigation_wraps_and_uses_document_order() {
+        assert_eq!(next_link_index("arrowright", None, 3), 0);
+        assert_eq!(next_link_index("arrowdown", Some(0), 3), 1);
+        assert_eq!(next_link_index("arrowright", Some(2), 3), 0);
+        assert_eq!(next_link_index("arrowleft", None, 3), 2);
+        assert_eq!(next_link_index("arrowup", Some(0), 3), 2);
+        assert_eq!(next_link_index("arrowleft", Some(2), 3), 1);
     }
 
     #[test]
