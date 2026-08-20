@@ -56,7 +56,7 @@ defmodule Examples.ElixirWorkbench.View do
           <div class="flex grow min-h-0 flex-col">
           <div class="flex items-center justify-between px-4 py-2 bg-[#172236]">
             <div class="flex min-w-0 items-center gap-3"><text class="truncate text-white">{preview_title(assigns.preview)}</text><text style={[color: status_color(assigns.preview.status)]}>{status_label(assigns.preview.status)}</text></div>
-            <UI.copy_button id="copy-path" label="Copy path" text={assigns.preview.path} phx-click="path_copied" />
+            <UI.button id="copy-path" label="Copy path" clipboard_text={assigns.preview.path} phx-clipboard-write="path_copied" />
           </div>
           <div class="flex h-[510px]">{code_panel(assigns)}</div>
 

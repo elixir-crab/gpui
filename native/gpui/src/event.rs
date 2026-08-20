@@ -81,6 +81,11 @@ pub(crate) struct TransferEventValue {
 
 #[derive(Clone, Debug)]
 pub(crate) enum NativeEvent {
+    #[cfg(feature = "components")]
+    Copy {
+        window_id: u64,
+        event: String,
+    },
     Click {
         window_id: u64,
         event: String,
@@ -149,6 +154,11 @@ pub(crate) enum NativeEvent {
         window_id: u64,
         event: String,
         value: ElementBoundsGeometry,
+    },
+    #[cfg(feature = "components")]
+    ClipboardWrite {
+        window_id: u64,
+        event: String,
     },
     #[cfg(feature = "components")]
     ClipboardRead {
@@ -233,6 +243,15 @@ pub(crate) fn push_event(runtime: &SharedRuntime, event: NativeEvent) -> NifResu
 
 pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifResult<Term<'a>> {
     match event {
+        #[cfg(feature = "components")]
+        NativeEvent::Copy { window_id, event } => encode_event_map(
+            env,
+            vec![
+                (atoms::type_atom(), atoms::copy().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
+            ],
+        ),
         NativeEvent::Click { window_id, event } => encode_event_map(
             env,
             vec![
@@ -393,6 +412,15 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
                 (atoms::window_id(), window_id.encode(env)),
                 (atoms::event(), event.encode(env)),
                 (atoms::value(), value.encode(env)),
+            ],
+        ),
+        #[cfg(feature = "components")]
+        NativeEvent::ClipboardWrite { window_id, event } => encode_event_map(
+            env,
+            vec![
+                (atoms::type_atom(), atoms::clipboard_write().to_term(env)),
+                (atoms::window_id(), window_id.encode(env)),
+                (atoms::event(), event.encode(env)),
             ],
         ),
         #[cfg(feature = "components")]

@@ -586,6 +586,11 @@ pub(crate) fn render_container_primitive(
         element = element.child(child.render(context));
     }
 
+    let mut accessibility = accessibility;
+    if tag == GeneratedElementTag::Button {
+        accessibility.role = Some(AccessibilityRole::Button);
+    }
+
     if focus_request > 0 || focus.is_some() || blur.is_some() {
         let id = stable_id
             .clone()

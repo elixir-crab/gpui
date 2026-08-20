@@ -268,7 +268,7 @@ pub(crate) fn render(
                     if let Some(copy_event) = copy_event.as_ref() {
                         let _ = crate::push_event(
                             &runtime,
-                            crate::NativeEvent::Click {
+                            crate::NativeEvent::Copy {
                                 window_id,
                                 event: copy_event.clone(),
                             },

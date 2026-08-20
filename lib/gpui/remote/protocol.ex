@@ -50,10 +50,12 @@ defmodule GPUI.Remote.Protocol do
   end
 
   @spec clipboard_event?(term()) :: boolean()
-  def clipboard_event?(%{type: :clipboard}), do: true
+  def clipboard_event?(%{type: type}) when type in [:clipboard, :clipboard_write], do: true
   def clipboard_event?(_event), do: false
 
   @spec validate_clipboard_event(map()) :: {:ok, map()} | {:error, term()}
+  def validate_clipboard_event(%{type: :clipboard_write} = event), do: {:ok, event}
+
   def validate_clipboard_event(%{type: :clipboard, value: value} = event) when is_map(value) do
     {:ok, Map.put(event, :value, GPUI.Transfer.Payload.new(value))}
   rescue

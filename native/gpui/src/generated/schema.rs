@@ -10,7 +10,6 @@ pub enum GeneratedComponentKind {
     ButtonComponent,
     ProgressComponent,
     FilePickerComponent,
-    CopyButtonComponent,
     PopoverComponent,
     PopoverTriggerComponent,
     PopoverContentComponent,
@@ -2244,6 +2243,7 @@ pub(crate) struct ButtonComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
     pub(crate) label: String,
+    pub(crate) clipboard_text: Option<String>,
     pub(crate) variant: Option<String>,
     pub(crate) size: Option<String>,
     pub(crate) disabled: bool,
@@ -2254,6 +2254,7 @@ pub(crate) struct ButtonComponentNode {
     pub(crate) children: Vec<ElementNode>,
     pub(crate) click: Option<String>,
     pub(crate) clipboard: Option<String>,
+    pub(crate) clipboard_write: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
 #[allow(clippy::redundant_field_names)]
@@ -2265,6 +2266,7 @@ pub(crate) fn decode_generated_button_component<'a>(
         style: decode_style(term)?,
         id: component_id(term)?,
         label: component_required_string_attr(term, atoms::label())?,
+        clipboard_text: component_string_attr(term, atoms::clipboard_text())?,
         variant: component_enum_attr(
             term,
             atoms::variant(),
@@ -2282,6 +2284,7 @@ pub(crate) fn decode_generated_button_component<'a>(
         children: decode_children(term)?,
         click: component_string_attr(term, atoms::phx_click())?,
         clipboard: component_string_attr(term, atoms::phx_clipboard_read())?,
+        clipboard_write: component_string_attr(term, atoms::phx_clipboard_write())?,
     })
 }
 #[derive(Clone, Debug)]
@@ -2338,32 +2341,6 @@ pub(crate) fn decode_generated_file_picker_component<'a>(
             .unwrap_or(26214400),
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         change: component_string_attr(term, atoms::phx_change())?,
-    })
-}
-#[derive(Clone, Debug)]
-#[cfg(feature = "real-gpui")]
-#[allow(dead_code)]
-pub(crate) struct CopyButtonComponentNode {
-    pub(crate) style: StyleAttrs,
-    pub(crate) id: String,
-    pub(crate) label: Option<String>,
-    pub(crate) text: String,
-    pub(crate) disabled: bool,
-    pub(crate) click: Option<String>,
-}
-#[cfg(feature = "real-gpui")]
-#[allow(clippy::redundant_field_names)]
-#[allow(clippy::useless_vec)]
-pub(crate) fn decode_generated_copy_button_component<'a>(
-    term: Term<'a>,
-) -> NifResult<CopyButtonComponentNode> {
-    Ok(CopyButtonComponentNode {
-        style: decode_style(term)?,
-        id: component_id(term)?,
-        label: component_string_attr(term, atoms::label())?,
-        text: component_string_attr(term, atoms::text())?.unwrap_or_default(),
-        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
-        click: component_string_attr(term, atoms::phx_click())?,
     })
 }
 #[derive(Clone, Debug)]
@@ -3557,7 +3534,6 @@ pub(crate) enum ElementNode {
     ButtonComponent(ButtonComponentNode),
     ProgressComponent(ProgressComponentNode),
     FilePickerComponent(FilePickerComponentNode),
-    CopyButtonComponent(CopyButtonComponentNode),
     PopoverComponent(PopoverComponentNode),
     PopoverTriggerComponent(PopoverTriggerComponentNode),
     PopoverContentComponent(PopoverContentComponentNode),
@@ -3605,7 +3581,6 @@ pub enum GeneratedElementTag {
     UiButton,
     UiProgress,
     UiFilePicker,
-    UiCopyButton,
     UiPopover,
     UiPopoverTrigger,
     UiPopoverContent,
@@ -3661,7 +3636,6 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_button" => GeneratedElementTag::UiButton,
         "ui_progress" => GeneratedElementTag::UiProgress,
         "ui_file_picker" => GeneratedElementTag::UiFilePicker,
-        "ui_copy_button" => GeneratedElementTag::UiCopyButton,
         "ui_popover" => GeneratedElementTag::UiPopover,
         "ui_popover_trigger" => GeneratedElementTag::UiPopoverTrigger,
         "ui_popover_content" => GeneratedElementTag::UiPopoverContent,
@@ -3718,7 +3692,6 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::UiButton => GeneratedComponentKind::ButtonComponent,
         GeneratedElementTag::UiProgress => GeneratedComponentKind::ProgressComponent,
         GeneratedElementTag::UiFilePicker => GeneratedComponentKind::FilePickerComponent,
-        GeneratedElementTag::UiCopyButton => GeneratedComponentKind::CopyButtonComponent,
         GeneratedElementTag::UiPopover => GeneratedComponentKind::PopoverComponent,
         GeneratedElementTag::UiPopoverTrigger => {
             GeneratedComponentKind::PopoverTriggerComponent
@@ -3821,10 +3794,6 @@ pub(crate) fn decode_generated_element_node<'a>(
         GeneratedComponentKind::FilePickerComponent => {
             decode_generated_file_picker_component(term)
                 .map(|node| ElementNode::FilePickerComponent(node))
-        }
-        GeneratedComponentKind::CopyButtonComponent => {
-            decode_generated_copy_button_component(term)
-                .map(|node| ElementNode::CopyButtonComponent(node))
         }
         GeneratedComponentKind::PopoverComponent => {
             decode_generated_popover_component(term)
@@ -3986,9 +3955,6 @@ pub(crate) fn render_generated_component_node(
         }
         ElementNode::FilePickerComponent(node) => {
             element::component::display::render_file_picker(node, context)
-        }
-        ElementNode::CopyButtonComponent(node) => {
-            element::component::display::render_copy_button(node, context)
         }
         ElementNode::PopoverComponent(node) => {
             element::component::overlay::render(node, context)

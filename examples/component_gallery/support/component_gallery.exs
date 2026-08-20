@@ -329,7 +329,7 @@ defmodule Examples.ComponentGallery.View do
         </div>
         <UI.progress id="gallery-progress" label="Deployment progress" value={72} max={100} />
       </div>
-      <UI.copy_button id="copy-token" label="Copy token" text="gpui_live_42" phx-click="noop" />
+      <UI.button id="copy-token" label="Copy token" clipboard_text="gpui_live_42" phx-clipboard-write="noop" />
     </div>
     """
   end

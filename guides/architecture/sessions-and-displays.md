@@ -131,8 +131,8 @@ def handle_event("close-details", _event, assigns) do
 end
 ```
 
-Supported view results are `{:noreply, assigns}`, `{:reply, reply, assigns}`,
-`{:close, assigns}`, `{:open_window, spec, assigns}`, and
+Supported view results are `{:noreply, assigns}`, `{:close, assigns}`,
+`{:open_window, spec, assigns}`, and
 `{:close_window, key_or_id, assigns}`. A topology outcome and its originating
 assigns update form one session transition and one synchronized snapshot.
 Duplicate keys and missing close targets leave the authoritative topology and

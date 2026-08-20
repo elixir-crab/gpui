@@ -255,17 +255,18 @@ The event value is one of:
 %{operation_id: 42, status: :error, reason: "..."}
 ```
 
-`copy_button/1` writes its controlled `text` to the clipboard owned by the
-local display and emits `phx-click` after the platform write is requested. This
-also gives remote applications the expected user-side clipboard rather than the
-application server's clipboard.
+An ordinary `button/1` writes bounded `clipboard_text` to the clipboard owned by
+the local display when `phx-clipboard-write` is present. The named event is
+emitted after the platform write is requested. This gives remote applications
+the expected user-side clipboard rather than the application server's
+clipboard.
 
 ```elixir
-<UI.copy_button
+<UI.button
   id="copy-css"
   label="Copy CSS"
-  text={assigns.css}
-  phx-click="css_copied"
+  clipboard_text={assigns.css}
+  phx-clipboard-write="css_copied"
 />
 ```
 
@@ -757,6 +758,11 @@ notification after a window actually closes. Window `:focus` and `:blur`
 callbacks report native activation and are separate from element focus.
 
 ## Focus
+
+The semantic `<button>` primitive is a styled native button region with built-in
+button accessibility role, Tab focus, Enter/Space activation, and unified
+pointer/AccessKit activation. Use `<UI.button>` when GPUI Component variants,
+sizing, loading, selection, or clipboard capabilities are needed.
 
 Focusable primitives use a monotonic request token instead of an
 application-controlled focus boolean:

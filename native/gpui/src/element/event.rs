@@ -23,10 +23,18 @@ pub(crate) fn apply_click_event(
                 .is_some_and(AccessibilityRole::is_activatable);
         let element = super::apply_accessibility_semantics(element, accessibility);
         let element = if activatable {
+            let keyboard_runtime = runtime.clone();
+            let keyboard_event = event.clone();
             element
                 .key_context("GPUIAccessibleControl")
                 .tab_index(0)
                 .focus_visible(|style| style.border_2().border_color(gpui::rgb(0x60a5fa)))
+                .on_key_down(move |key, _window, cx| {
+                    if matches!(key.keystroke.key.as_str(), "enter" | "space") {
+                        emit_click_event(&keyboard_runtime, window_id, &keyboard_event);
+                        cx.stop_propagation();
+                    }
+                })
         } else {
             element
         };

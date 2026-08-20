@@ -31,7 +31,7 @@ The example keeps each responsibility explicit:
   every later snapshot;
 - stale work is cancelled and progress returns through acknowledged
   `GPUI.Runtime.send_view/3` messages;
-- `GPUI.UI.progress/1`, `file_picker/1`, and `copy_button/1` keep progress,
+- `GPUI.UI.progress/1`, `file_picker/1`, and button clipboard capabilities keep progress,
   platform selection, and clipboard behavior reusable.
 
 The palette algorithm samples at most about 80,000 pixels, groups colors into

@@ -27,7 +27,11 @@ defmodule GPUI.Schema do
         focus: :"phx-focus",
         blur: :"phx-blur"
       ],
-      attrs: [id: :string, focus_request: {:default, :non_negative_integer, 0}]
+      attrs:
+        Keyword.merge(@accessibility_attrs,
+          id: :string,
+          focus_request: {:default, :non_negative_integer, 0}
+        )
     },
     %Component{
       tag: :layer,
@@ -83,11 +87,16 @@ defmodule GPUI.Schema do
     %Component{
       tag: :ui_button,
       kind: :button_component,
-      events: [click: :"phx-click", clipboard: :"phx-clipboard-read"],
+      events: [
+        click: :"phx-click",
+        clipboard: :"phx-clipboard-read",
+        clipboard_write: :"phx-clipboard-write"
+      ],
       children: true,
       attrs: [
         id: :string,
         label: :required_string,
+        clipboard_text: :string,
         variant:
           {:enum, ~w(default primary secondary danger warning success info ghost link text)},
         size: {:enum, ~w(xs sm md lg)},
@@ -123,14 +132,6 @@ defmodule GPUI.Schema do
         max_bytes: {:default, :positive_integer, 26_214_400},
         disabled: :boolean
       ]
-    },
-    %Component{
-      tag: :ui_copy_button,
-      kind: :copy_button_component,
-      events: [click: :"phx-click"],
-      required_events: [:"phx-click"],
-      public_required_attrs: [:label, :text],
-      attrs: [id: :string, label: :string, text: {:default, :string}, disabled: :boolean]
     },
     %Component{
       tag: :ui_popover,

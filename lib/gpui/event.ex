@@ -32,11 +32,12 @@ defmodule GPUI.Event do
           | :drag_leave
           | :drop
           | :clipboard
+          | :clipboard_write
+          | :copy
           | :window_close_request
           | :window_focus
           | :window_blur
           | :window_closed
-          | atom()
   @type t :: %__MODULE__{
           type: type(),
           window_id: pos_integer() | nil,

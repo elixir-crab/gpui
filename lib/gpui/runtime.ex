@@ -95,7 +95,7 @@ defmodule GPUI.Runtime do
   @spec refresh(GenServer.server()) :: {:ok, GPUI.Snapshot.t()} | {:error, term()}
   def refresh(runtime), do: GenServer.call(runtime, :refresh, @call_timeout)
 
-  @doc "Injects an event into the active display without dispatching it immediately."
+  @doc false
   @spec inject_event(GenServer.server(), map()) :: {:ok, term()} | {:error, term()}
   def inject_event(runtime, event),
     do: GenServer.call(runtime, {:inject_event, event}, @call_timeout)

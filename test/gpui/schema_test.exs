@@ -11,7 +11,6 @@ defmodule GPUI.SchemaTest do
              :ui_button,
              :ui_progress,
              :ui_file_picker,
-             :ui_copy_button,
              :ui_popover,
              :ui_popover_trigger,
              :ui_popover_content,
@@ -75,7 +74,6 @@ defmodule GPUI.SchemaTest do
     assert :"phx-blur" in GPUI.Schema.events()
     assert :ui_progress in GPUI.Schema.identified_tags()
     assert :ui_file_picker in GPUI.Schema.identified_tags()
-    assert :ui_copy_button in GPUI.Schema.identified_tags()
     assert :ui_select in GPUI.Schema.identified_tags()
     assert :ui_popover in GPUI.Schema.identified_tags()
     assert :ui_tooltip in GPUI.Schema.identified_tags()
@@ -153,7 +151,6 @@ defmodule GPUI.SchemaTest do
       :button,
       :progress,
       :file_picker,
-      :copy_button,
       :checkbox,
       :input,
       :select,

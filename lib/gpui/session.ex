@@ -367,7 +367,9 @@ defmodule GPUI.Session do
               :drag_move,
               :drag_leave,
               :drop,
-              :clipboard
+              :clipboard,
+              :clipboard_write,
+              :copy
             ] do
     case Enum.find(state.windows, &(&1.id == window_id)) do
       %WindowSpec{root: {module, assigns}} = window ->
@@ -422,12 +424,6 @@ defmodule GPUI.Session do
   end
 
   defp apply_view_result({:noreply, assigns}, event, state, window, module)
-       when is_map(assigns) do
-    {_event, state} = update_window(event, state, window, module, assigns)
-    {:ok, state}
-  end
-
-  defp apply_view_result({:reply, _reply, assigns}, event, state, window, module)
        when is_map(assigns) do
     {_event, state} = update_window(event, state, window, module, assigns)
     {:ok, state}

@@ -1,5 +1,5 @@
 use crate::element::ElementRenderContext;
-use crate::{gpui, CopyButtonComponentNode, FilePickerComponentNode, ProgressComponentNode};
+use crate::{gpui, FilePickerComponentNode, ProgressComponentNode};
 
 #[cfg(not(feature = "components"))]
 use super::render_component_fallback;
@@ -148,37 +148,6 @@ pub(crate) fn bounded_clipboard_text(text: Option<String>) -> Option<String> {
     text.filter(|text| !text.is_empty() && text.len() <= crate::MAX_TRANSFER_TEXT_BYTES)
 }
 
-#[cfg(feature = "components")]
-pub(crate) fn render_copy_button(
-    node: CopyButtonComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    use gpui::{ClipboardItem, IntoElement};
-    use gpui_component::{button::Button, Disableable};
-
-    let runtime = context.runtime.clone();
-    let window_id = context.window_id;
-    let event = node.click;
-    let text = node.text;
-    let button = Button::new(node.id)
-        .label(node.label.unwrap_or_else(|| "Copy".to_string()))
-        .disabled(node.disabled)
-        .on_click(move |_click, _window, cx| {
-            cx.write_to_clipboard(ClipboardItem::new_string(text.clone()));
-            if let Some(event) = event.as_ref() {
-                let _ = crate::push_event(
-                    &runtime,
-                    crate::NativeEvent::Click {
-                        window_id,
-                        event: event.clone(),
-                    },
-                );
-            }
-        });
-
-    super::apply_component_styles(button, node.style).into_any_element()
-}
-
 #[cfg(any(feature = "components", test))]
 #[derive(Clone, Debug)]
 pub(crate) enum FileDialogResult {
@@ -264,14 +233,6 @@ pub(crate) fn render_progress(
 #[cfg(not(feature = "components"))]
 pub(crate) fn render_file_picker(
     node: FilePickerComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    render_component_fallback(node.style, node.label, Vec::new(), context)
-}
-
-#[cfg(not(feature = "components"))]
-pub(crate) fn render_copy_button(
-    node: CopyButtonComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     render_component_fallback(node.style, node.label, Vec::new(), context)

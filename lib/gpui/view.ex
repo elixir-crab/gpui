@@ -13,7 +13,6 @@ defmodule GPUI.View do
 
   @type callback_result ::
           {:noreply, map()}
-          | {:reply, term(), map()}
           | {:close, map()}
           | {:open_window, GPUI.WindowSpec.t(), map()}
           | {:close_window, GPUI.WindowSpec.key() | pos_integer(), map()}

@@ -17,10 +17,15 @@ defmodule GPUI.UITest do
 
     assert picker[:max_bytes] == 25 * 1_024 * 1_024
 
-    assert %Element{type: :ui_copy_button, attrs: copy} =
-             UI.copy_button(%{:"phx-click" => "copied", id: "copy", label: "Copy", text: "value"})
+    assert %Element{type: :ui_button, attrs: copy} =
+             UI.button(%{
+               :"phx-clipboard-write" => "copied",
+               id: "copy",
+               label: "Copy",
+               clipboard_text: "value"
+             })
 
-    assert copy[:text] == "value"
+    assert copy[:clipboard_text] == "value"
   end
 
   test "validates progress, file picker, and clipboard values" do
@@ -37,16 +42,21 @@ defmodule GPUI.UITest do
       })
     end
 
-    assert_raise ArgumentError, ~r/requires string text/, fn ->
-      UI.copy_button(%{:"phx-click" => "copied", id: "copy", label: "Copy", text: :invalid})
+    assert_raise ArgumentError, ~r/clipboard_text/, fn ->
+      UI.button(%{
+        :"phx-clipboard-write" => "copied",
+        id: "copy",
+        label: "Copy",
+        clipboard_text: :invalid
+      })
     end
 
     assert_raise ArgumentError, ~r/no larger than 1 MiB/, fn ->
-      UI.copy_button(%{
-        :"phx-click" => "copied",
+      UI.button(%{
+        :"phx-clipboard-write" => "copied",
         id: "copy",
         label: "Copy",
-        text: :binary.copy("x", 1_048_577)
+        clipboard_text: :binary.copy("x", 1_048_577)
       })
     end
   end

@@ -360,6 +360,19 @@ defmodule GPUI.TemplateTest do
     end
   end
 
+  test "serializes semantic accessibility on primitive buttons" do
+    button =
+      ~GPUI"""
+      <button id="save" phx-click="save" accessibility_label="Save changes">
+        <text>Save</text>
+      </button>
+      """
+      |> GPUI.Element.to_payload()
+
+    assert button.attrs.accessibility_label == "Save changes"
+    assert button.attrs[:"phx-click"] == "save"
+  end
+
   test "serializes monotonic focus contracts on focusable primitives" do
     button =
       ~GPUI"""

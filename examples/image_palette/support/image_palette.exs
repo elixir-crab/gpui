@@ -246,12 +246,12 @@ defmodule Examples.ImagePalette.View do
             disabled={not palette_interactive?(assigns) or String.trim(assigns.export_path) == ""}
             phx-click="export_palette"
           />
-          <UI.copy_button
+          <UI.button
             id="copy-palette-css"
             label="Copy CSS"
-            text={Analysis.css(assigns.palette)}
+            clipboard_text={Analysis.css(assigns.palette)}
             disabled={not palette_interactive?(assigns)}
-            phx-click="palette_copied"
+            phx-clipboard-write="palette_copied"
           />
         </div>
         <text style={[color: status_color(assigns.status)]}>{status_text(assigns)}</text>

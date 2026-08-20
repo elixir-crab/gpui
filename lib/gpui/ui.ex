@@ -36,7 +36,6 @@ defmodule GPUI.UI do
     button_options: :ui_button,
     progress_options: :ui_progress,
     file_picker_options: :ui_file_picker,
-    copy_button_options: :ui_copy_button,
     checkbox_options: :ui_checkbox,
     input_options: :ui_input,
     select_options: :ui_select,
@@ -77,16 +76,33 @@ defmodule GPUI.UI do
   @doc """
   Builds a native button.
 
-  `phx-clipboard-read` optionally reads bounded text from the display-side
-  clipboard on activation and emits it as `GPUI.Transfer.Payload`. When both
-  `phx-click` and `phx-clipboard-read` are present, the clipboard event is
-  emitted first.
+  `phx-clipboard-write` writes bounded `clipboard_text` to the display-side
+  clipboard on activation. `phx-clipboard-read` reads bounded display-side text
+  and emits it as `GPUI.Transfer.Payload`. When clipboard and click events are
+  combined, the clipboard operation is performed first.
 
   #{Schema.component_options_doc(:ui_button)}
   """
   @spec button(button_options()) :: Element.t()
   def button(assigns) when is_map(assigns) do
-    assigns = normalize_attr_key(assigns, :"phx-clipboard-read")
+    assigns =
+      assigns
+      |> normalize_attr_key(:"phx-clipboard-read")
+      |> normalize_attr_key(:"phx-clipboard-write")
+
+    case Map.get(assigns, :clipboard_text) do
+      nil ->
+        :ok
+
+      text when is_binary(text) and byte_size(text) <= 1_048_576 ->
+        unless String.valid?(text),
+          do: raise(ArgumentError, "GPUI.UI.button/1 clipboard_text must be valid UTF-8")
+
+      _invalid ->
+        raise ArgumentError,
+              "GPUI.UI.button/1 clipboard_text must be UTF-8 text no larger than 1 MiB"
+    end
+
     component(:ui_button, assigns)
   end
 
@@ -137,27 +153,6 @@ defmodule GPUI.UI do
     end
 
     component(:ui_file_picker, assigns)
-  end
-
-  @doc """
-  Builds a button that writes text to the display-side clipboard before `phx-click`.
-
-  Clipboard ownership follows the renderer, so remote clients write to the
-  user's clipboard rather than the application server's clipboard.
-
-  #{Schema.component_options_doc(:ui_copy_button)}
-  """
-  @spec copy_button(copy_button_options()) :: Element.t()
-  def copy_button(assigns) when is_map(assigns) do
-    assigns = Schema.apply_defaults(assigns, :ui_copy_button)
-    validate_non_empty_label!(:ui_copy_button, Map.get(assigns, :label))
-
-    unless is_binary(Map.get(assigns, :text)) and
-             byte_size(assigns.text) <= 1_048_576 do
-      raise ArgumentError, "ui_copy_button requires string text no larger than 1 MiB"
-    end
-
-    component(:ui_copy_button, assigns)
   end
 
   @doc """

@@ -20,6 +20,8 @@ pub(crate) fn render_button_component(
     let window_id = context.window_id;
     let click_event = node.click;
     let clipboard_event = node.clipboard;
+    let clipboard_write_event = node.clipboard_write;
+    let clipboard_text = node.clipboard_text;
     let mut button = Button::new(node.id);
 
     button = match node.variant.as_deref() {
@@ -57,8 +59,20 @@ pub(crate) fn render_button_component(
     for child in node.children {
         button = button.child(child.render(context));
     }
-    if click_event.is_some() || clipboard_event.is_some() {
+    if click_event.is_some() || clipboard_event.is_some() || clipboard_write_event.is_some() {
         button = button.on_click(move |_click, _window, cx| {
+            if let Some(event) = clipboard_write_event.as_ref() {
+                if let Some(text) = clipboard_text.as_ref() {
+                    cx.write_to_clipboard(gpui::ClipboardItem::new_string(text.clone()));
+                    let _ = push_event(
+                        &runtime,
+                        NativeEvent::ClipboardWrite {
+                            window_id,
+                            event: event.clone(),
+                        },
+                    );
+                }
+            }
             if let Some(event) = clipboard_event.as_ref() {
                 let text = super::display::bounded_clipboard_text(
                     cx.read_from_clipboard().and_then(|item| item.text()),

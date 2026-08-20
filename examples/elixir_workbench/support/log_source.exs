@@ -310,11 +310,11 @@ defmodule Examples.ElixirWorkbench.LogView do
         {Enum.map(Enum.with_index(assigns.detail_lines), &detail_line(&1, assigns.event.level))}
       </UI.code_viewer>
       <div class="flex items-center gap-2">
-        <UI.copy_button
+        <UI.button
           id="copy-event-message"
           label="Copy message"
-          text={assigns.event.message}
-          phx-click="event_message_copied"
+          clipboard_text={assigns.event.message}
+          phx-clipboard-write="event_message_copied"
         />
         <text style={[color: {:rgb, 0x86EFAC}]}>{copied_label(assigns.copy_count)}</text>
       </div>

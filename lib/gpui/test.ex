@@ -161,7 +161,8 @@ defmodule GPUI.Test do
 
   @doc "Acknowledges deterministic copying of a selected code-viewer line."
   @spec copy_selected_line(GenServer.server(), String.t(), keyword()) :: Snapshot.t()
-  def copy_selected_line(runtime, event, opts \\ []), do: click(runtime, event, opts)
+  def copy_selected_line(runtime, event, opts \\ []),
+    do: dispatch_named(runtime, :copy, event, opts)
 
   @doc "Selects deterministic file bytes for a display-side file picker."
   @spec file_select(GenServer.server(), String.t(), String.t(), binary(), keyword()) ::

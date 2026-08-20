@@ -104,8 +104,8 @@ display-machine clipboard text and emits `:clipboard` with `%GPUI.Transfer.Paylo
 
 When both `phx-click` and `phx-clipboard-read` are present, the bounded
 clipboard event is emitted first and the ordinary click follows. Non-text, empty, or text over 1 MiB produces `text: nil`; arbitrary MIME bytes
-are never exposed. Existing `GPUI.UI.copy_button/1` remains the explicit bounded
-text write surface.
+are never exposed. Ordinary `GPUI.UI.button/1` activation may write bounded
+`clipboard_text` through `phx-clipboard-write`.
 
 Remote clipboard events require the additive `:clipboard_text_v1` capability.
 

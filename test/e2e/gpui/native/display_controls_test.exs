@@ -14,11 +14,11 @@ defmodule GPUI.Native.DisplayControlsE2ETest do
     def render(assigns) do
       ~GPUI"""
       <div class="flex flex-col w-[420px] h-[220px] gap-4 p-4 bg-slate-900">
-        <UI.copy_button
+        <UI.button
           id="copy-value"
           label="Copy value"
-          text="copied from display"
-          phx-click="copied"
+          clipboard_text="copied from display"
+          phx-clipboard-write="copied"
         />
         <UI.input id="paste-target" label="Paste target" value={assigns.value} phx-change="value_changed" />
         <UI.progress id="deterministic-progress" label="Importing" value={40} max={100} />

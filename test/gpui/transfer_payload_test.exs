@@ -50,12 +50,22 @@ defmodule GPUI.Transfer.PayloadTest do
       Payload.new(text: :binary.copy("x", 1_048_577))
     end
 
-    assert_raise ArgumentError, ~r/at most 64 external paths/, fn ->
-      Payload.new(external_paths: List.duplicate("/tmp/a", 65))
+    paths = Enum.map(0..64, &"/tmp/#{&1}")
+
+    assert_raise ArgumentError, ~r/at most 64 unique external paths/, fn ->
+      Payload.new(external_paths: paths)
     end
 
     assert_raise ArgumentError, ~r/no larger than 4096 bytes/, fn ->
       Payload.new(external_paths: [:binary.copy("x", 4_097)])
+    end
+
+    assert_raise ArgumentError, ~r/valid UTF-8/, fn ->
+      Payload.new(text: <<255>>)
+    end
+
+    assert_raise ArgumentError, ~r/valid UTF-8/, fn ->
+      Payload.new(external_paths: [<<255>>])
     end
 
     assert_raise ArgumentError, ~r/non-empty UTF-8 strings/, fn ->

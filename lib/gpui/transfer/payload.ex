@@ -23,15 +23,13 @@ defmodule GPUI.Transfer.Payload do
   @spec new(keyword() | map()) :: t()
   def new(opts \\ [])
 
-  def new(opts) when is_list(opts) do
-    payload = struct!(__MODULE__, opts)
-    validate!(payload)
-    payload
-  end
+  def new(opts) when is_list(opts), do: opts |> Map.new() |> new()
 
   def new(opts) when is_map(opts) do
     payload = struct!(__MODULE__, opts)
-    validate!(payload)
+    paths = normalize_paths!(payload.external_paths)
+    payload = %{payload | external_paths: paths}
+    validate_text!(payload.text)
     payload
   end
 
@@ -39,7 +37,11 @@ defmodule GPUI.Transfer.Payload do
   @spec validate!(t()) :: :ok
   def validate!(%__MODULE__{text: text, external_paths: paths}) do
     validate_text!(text)
-    validate_paths!(paths)
+
+    if normalize_paths!(paths) != paths do
+      raise ArgumentError, "transfer external_paths must be normalized in first-seen order"
+    end
+
     :ok
   end
 
@@ -47,38 +49,46 @@ defmodule GPUI.Transfer.Payload do
   @spec to_payload(t()) :: map()
   def to_payload(%__MODULE__{} = payload) do
     validate!(payload)
-    %{text: payload.text, external_paths: Enum.uniq(payload.external_paths)}
+    %{text: payload.text, external_paths: payload.external_paths}
   end
 
   defp validate_text!(nil), do: :ok
 
   defp validate_text!(text)
-       when is_binary(text) and byte_size(text) <= @max_text_bytes,
-       do: :ok
+       when is_binary(text) and byte_size(text) <= @max_text_bytes do
+    if String.valid?(text),
+      do: :ok,
+      else: raise(ArgumentError, "transfer text must be valid UTF-8")
+  end
 
   defp validate_text!(_text),
     do: raise(ArgumentError, "transfer text must be UTF-8 binary data no larger than 1 MiB")
 
-  defp validate_paths!(paths) when is_list(paths) do
-    if Enum.count_until(paths, @max_paths + 1) > @max_paths do
-      raise ArgumentError, "transfer payload accepts at most 64 external paths"
-    end
+  defp normalize_paths!(paths) when is_list(paths) do
+    paths =
+      Enum.map(paths, fn
+        path when is_binary(path) and path != "" and byte_size(path) <= @max_path_bytes ->
+          if String.valid?(path),
+            do: path,
+            else: raise(ArgumentError, "transfer external paths must be valid UTF-8 strings")
 
-    total =
-      Enum.reduce(paths, 0, fn
-        path, total when is_binary(path) and path != "" and byte_size(path) <= @max_path_bytes ->
-          total + byte_size(path)
-
-        _path, _total ->
+        _path ->
           raise ArgumentError,
                 "transfer external paths must be non-empty UTF-8 strings no larger than 4096 bytes"
       end)
+      |> Enum.uniq()
 
-    if total > @max_all_path_bytes do
-      raise ArgumentError, "transfer external paths must total no more than 256 KiB"
+    if length(paths) > @max_paths do
+      raise ArgumentError, "transfer payload accepts at most 64 unique external paths"
     end
+
+    if Enum.reduce(paths, 0, &(byte_size(&1) + &2)) > @max_all_path_bytes do
+      raise ArgumentError, "transfer unique external paths must total no more than 256 KiB"
+    end
+
+    paths
   end
 
-  defp validate_paths!(_paths),
+  defp normalize_paths!(_paths),
     do: raise(ArgumentError, "transfer external_paths must be a list")
 end
