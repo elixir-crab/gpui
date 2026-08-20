@@ -1,4 +1,4 @@
-name: Native validation
+name: Native quality
 
 on:
   push:
@@ -18,34 +18,33 @@ on:
       - "mix.exs"
       - "mix.lock"
       - ".github/workflows/native.yml"
-  schedule:
-    - cron: "17 4 * * 1"
+  pull_request:
+    paths:
+      - "native/**"
+      - "codegen/**"
+      - "test/e2e/**"
+      - "test/support/e2e/**"
+      - "test/support/e2e_driver/**"
+      - "lib/gpui/native.ex"
+      - "lib/gpui/display/native.ex"
+      - "lib/gpui/runtime.ex"
+      - "lib/gpui/session.ex"
+      - "rust-toolchain.toml"
+      - "rustq.exs"
+      - "mix.exs"
+      - "mix.lock"
+      - ".github/workflows/native.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: native-${{ github.ref }}
+  group: native-quality-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  rust-audit:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.95.0
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: rust-audit
-      - run: cargo install cargo-audit --locked
-      - run: >-
-          cargo audit --deny unsound --file native/gpui/Cargo.lock
-          --ignore RUSTSEC-2026-0194
-          --ignore RUSTSEC-2026-0195
-
-  native-quality:
+  quality:
     uses: elixir-vibe/actions/.github/workflows/elixir-rustler-ci.yml@v1
     with:
       latest-elixir: "1.20.2"
@@ -56,110 +55,5 @@ jobs:
       apt-packages: libxkbcommon-dev libxkbcommon-x11-dev
       extra-env: |
         RUST_FONTCONFIG_DLOPEN=1
-      rust-cache-workspaces: |
-        native/gpui -> target
-        test/support/e2e_driver -> target
-      timeout-minutes: 45
-
-  native-e2e:
-    needs: native-quality
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    env:
-      MIX_ENV: e2e
-      RUST_FONTCONFIG_DLOPEN: "1"
-      LIBGL_ALWAYS_SOFTWARE: "1"
-      GALLIUM_DRIVER: llvmpipe
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.95.0
-      - uses: elixir-vibe/actions/setup-elixir@v1
-        with:
-          otp-version: "29.0.2"
-          elixir-version: "1.20.2"
-          cache-prefix: native-e2e
-          restore-plt-cache: "false"
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: native-e2e
-          workspaces: |
-            native/gpui -> target
-            test/support/e2e_driver -> target
-      - name: Install native E2E dependencies
-        run: >-
-          sudo apt-get update && sudo apt-get install -y --no-install-recommends
-          dbus-x11 libvulkan1 libxkbcommon-dev libxkbcommon-x11-dev
-          mesa-vulkan-drivers vulkan-tools xdotool xvfb
-      - name: Verify Lavapipe under Xvfb
-        run: xvfb-run -a vulkaninfo --summary
-      - name: Run isolated native ExUnit groups
-        shell: bash
-        run: |
-          set -uo pipefail
-          failures=0
-          run_group() {
-            local name="$1"
-            shift
-            echo "::group::Native E2E: ${name}"
-            if ! xvfb-run -a dbus-run-session -- mix test --only e2e "$@"; then
-              failures=1
-            fi
-            echo "::endgroup::"
-          }
-
-          run_group "rich text and transcript" \
-            test/e2e/gpui/native/rich_text_test.exs \
-            test/e2e/gpui/native/rich_transcript_test.exs \
-            test/e2e/gpui/native/composer_transcript_test.exs \
-            test/e2e/gpui/native/virtual_collection_test.exs
-          run_group "editable text" \
-            test/e2e/gpui/native/text_surface_test.exs \
-            test/e2e/gpui/native/text_style_run_test.exs
-          run_group "overlays and topology" \
-            test/e2e/gpui/native/overlay_test.exs \
-            test/e2e/gpui/native/multi_window_topology_test.exs
-          run_group "remote display" test/e2e/gpui/remote
-          run_group "native controls and examples" \
-            test/e2e/gpui/native/code_viewer_test.exs \
-            test/e2e/gpui/native/components_test.exs \
-            test/e2e/gpui/native/data_table_test.exs \
-            test/e2e/gpui/native/display_controls_test.exs \
-            test/e2e/gpui/native/elixir_workbench_log_source_test.exs \
-            test/e2e/gpui/native/elixir_workbench_repository_source_test.exs \
-            test/e2e/gpui/native/form_controls_test.exs \
-            test/e2e/gpui/native/image_palette_test.exs \
-            test/e2e/gpui/native/interactivity_test.exs \
-            test/e2e/gpui/native/lifecycle_test.exs \
-            test/e2e/gpui/native/split_test.exs \
-            test/e2e/gpui/native/tree_test.exs \
-            test/e2e/gpui/native/virtual_list_test.exs
-
-          exit "$failures"
-
-  macos-native:
-    runs-on: macos-15
-    timeout-minutes: 45
-    env:
-      GPUI_BUILD_FROM_SOURCE: "1"
-      RUST_FONTCONFIG_DLOPEN: "1"
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.95.0
-        with:
-          components: clippy,rustfmt
-      - uses: elixir-vibe/actions/setup-elixir@v1
-        with:
-          otp-version: "29.0.2"
-          elixir-version: "1.20.2"
-          cache-prefix: macos-native
-          restore-plt-cache: "false"
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: macos-native
-          workspaces: native/gpui -> target
-      - name: Select full Xcode toolchain
-        run: sudo xcode-select --switch /Applications/Xcode.app
-      - name: Build native NIF from source
-        run: mix compile --force --warnings-as-errors
-      - name: Run native boundary tests
-        run: mix test test/gpui/native_test.exs test/gpui/image_test.exs
+      restore-rust-cache: false
+      timeout-minutes: 30

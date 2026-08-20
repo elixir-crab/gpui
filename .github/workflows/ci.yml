@@ -3,7 +3,15 @@ name: CI
 on:
   push:
     branches: [main, clean-architecture]
+    paths-ignore:
+      - "**/*.md"
+      - "LICENSE"
+      - ".gitignore"
   pull_request:
+    paths-ignore:
+      - "**/*.md"
+      - "LICENSE"
+      - ".gitignore"
   workflow_dispatch:
 
 permissions:
@@ -14,41 +22,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  fast:
-    uses: elixir-vibe/actions/.github/workflows/elixir-rustler-ci.yml@v1
-    with:
-      latest-elixir: "1.20.2"
-      latest-otp: "29.0.2"
-      latest-command: mix ci.checks
-      run-min: false
-      rust-toolchain: "1.95.0"
-      rust-components: ""
-      apt-packages: inotify-tools
-      extra-env: |
-        RUST_FONTCONFIG_DLOPEN=1
-      rust-cache-workspaces: native/gpui -> target
-      restore-plt-cache: false
-      timeout-minutes: 15
-
-  rustq-freshness:
+  checks:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
-      MIX_ENV: dev
-      ERL_FLAGS: "+S 4:4"
+      MIX_ENV: test
+      GPUI_SKIP_NATIVE: "1"
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.95.0
-        with:
-          components: rustfmt
       - uses: elixir-vibe/actions/setup-elixir@v1
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          cache-prefix: rustq-codegen
+          cache-prefix: checks
           restore-plt-cache: "false"
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: rustq-codegen
-          workspaces: deps/rustq/native/rustq_nif -> target
-      - run: mix rustq.gen --check
+      - run: mix ci.checks

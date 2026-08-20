@@ -1022,6 +1022,7 @@ defmodule GPUI.TemplateTest do
     end
   end
 
+  @tag :native
   test "text surface validates and serializes its native buffer reference" do
     {:ok, buffer} = GPUI.Text.Buffer.new("hello")
 

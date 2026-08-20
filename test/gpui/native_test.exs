@@ -1,6 +1,8 @@
 defmodule GPUI.NativeTest do
   use ExUnit.Case, async: true
 
+  @moduletag :native
+
   test "generated lifecycle boundary starts and stops a native runtime" do
     assert GPUI.Native.compiled?()
     assert {:ok, runtime} = GPUI.Native.start_runtime()

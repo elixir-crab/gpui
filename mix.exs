@@ -35,9 +35,6 @@ defmodule GPUI.MixProject do
         ci: :test,
         "ci.checks": :test,
         "ci.native": :test,
-        test_unit: :test,
-        test_integration: :test,
-        test_all: :test,
         "gpui.release.check": :release,
         "gpui.visual.capture": :e2e
       ]
@@ -240,19 +237,17 @@ defmodule GPUI.MixProject do
 
   defp aliases() do
     [
-      test_unit: ["test test/gpui test/gpui_test.exs"],
-      test_integration: ["test test/integration"],
-      test_all: ["test"],
       "ci.checks": [
         "compile --warnings-as-errors",
         "format --check-formatted",
-        "test_all",
+        "test --exclude native",
         "credo --strict",
         "ex_dna --max-clones 0",
         "reach.check --arch --smells"
       ],
       "ci.native": [
         "compile --warnings-as-errors",
+        "rustq.check",
         "rust.fmt --check",
         "rust.check",
         "rust.clippy",
@@ -261,6 +256,7 @@ defmodule GPUI.MixProject do
         "rust.e2e.fmt --check",
         "rust.e2e.clippy",
         "rust.test",
+        "test --only native",
         "dialyzer"
       ],
       ci: [
@@ -275,7 +271,7 @@ defmodule GPUI.MixProject do
         "rust.e2e.fmt --check",
         "rust.e2e.clippy",
         "rust.test",
-        "test_all",
+        "test",
         "credo --strict",
         "dialyzer",
         "ex_dna --max-clones 0",

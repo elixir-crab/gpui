@@ -1,6 +1,8 @@
 defmodule GPUI.ImageTest do
   use ExUnit.Case, async: true
 
+  @moduletag :native
+
   test "decodes encoded images into RGBA rasters" do
     assert {:ok,
             %GPUI.Raster{

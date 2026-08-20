@@ -3,6 +3,8 @@ GPUITest.Examples.load!(:rich_transcript)
 defmodule GPUI.RichTranscriptExampleTest do
   use GPUI.Test, async: true
 
+  @moduletag :native
+
   alias GPUI.Text.{Edit, Position, Range, Selection, Transaction}
 
   test "composes variable collection items with neutral rich text runs" do

@@ -1,6 +1,8 @@
 defmodule GPUI.Text.BufferTest do
   use ExUnit.Case, async: true
 
+  @moduletag :native
+
   alias GPUI.Text.{Buffer, Edit, Position, Range, Selection, Transaction}
 
   test "applies revisioned UTF-16 edits and snapshots native Rope state" do

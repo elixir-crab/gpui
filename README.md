@@ -183,7 +183,10 @@ MIX_ENV=e2e xvfb-run -a dbus-run-session -- mix test --only e2e test/e2e
 
 `mix ci` covers Elixir, generated Rust freshness, Cargo feature matrices,
 Clippy, native unit tests, Dialyzer, Credo, duplication, and architecture
-checks. See [Testing GPUI applications](guides/testing/testing.md) for native
+checks. Hosted push validation splits the renderer-independent and native
+checks; the full native interaction and release-package suite is an explicit
+`Release candidate` workflow rather than a scheduled or per-push job. See
+[Testing GPUI applications](guides/testing/testing.md) for native
 Xvfb/Lavapipe interaction coverage.
 
 ## License
