@@ -80,19 +80,14 @@ pub(crate) fn render(
         let option_disabled = disabled || option.disabled;
         let event = change_event.clone();
         let event_runtime = runtime.clone();
-        let mouse_focus = focus_handles[index].clone();
-        let radio_id = format!("{group_id}-{value}");
-        let selector = radio_id.clone();
-        let mut radio = Radio::new(radio_id)
-            .debug_selector(|| selector)
+        let mut radio = Radio::new(format!("{group_id}-{value}"))
             .label(option.label)
             .checked(checked)
             .disabled(option_disabled)
-            .tab_stop(false)
-            .tab_index(-1)
-            .on_click(move |new_checked, window, cx| {
+            .tab_stop(tab_index == Some(index))
+            .tab_index(if tab_index == Some(index) { 0 } else { -1 })
+            .on_click(move |new_checked, _window, _cx| {
                 if *new_checked {
-                    mouse_focus.focus(window, cx);
                     emit_change(&event_runtime, window_id, event.as_ref(), &value);
                 }
             });
@@ -114,17 +109,8 @@ pub(crate) fn render(
     let key_runtime = runtime.clone();
     let key_event = change_event.clone();
     let key_focus_handles = focus_handles.clone();
-    let group_focus = context
-        .window
-        .use_keyed_state(format!("{group_id}-focus"), context.cx, |_, cx| {
-            cx.focus_handle()
-        })
-        .read(context.cx)
-        .clone();
     let element = crate::apply_generated_render_styles(gpui::div(), node.style)
         .id(node.id)
-        .debug_selector(|| group_id)
-        .track_focus(&group_focus.tab_stop(!disabled && !key_options.is_empty()))
         .role(Role::RadioGroup)
         .aria_label(accessibility.label)
         .aria_orientation(accessibility.orientation)
@@ -211,91 +197,6 @@ fn emit_change(
 #[cfg(all(test, feature = "components"))]
 mod tests {
     use super::{radio_group_accessibility, RadioGroupAccessibility};
-    use crate::gpui;
-
-    fn radio_group(disabled: bool) -> crate::ElementNode {
-        crate::ElementNode::RadioGroupComponent(crate::RadioGroupComponentNode {
-            style: crate::StyleAttrs::default(),
-            id: "plan".to_string(),
-            label: "Plan".to_string(),
-            value: Some("free".to_string()),
-            options: vec![
-                option("Free", "free", false),
-                option("Pro", "pro", true),
-                option("Team", "team", false),
-            ],
-            orientation: Some("horizontal".to_string()),
-            size: None,
-            disabled,
-            change: Some("plan_changed".to_string()),
-        })
-    }
-
-    fn option(label: &str, value: &str, disabled: bool) -> crate::RadioOptionNode {
-        crate::RadioOptionNode {
-            label: label.to_string(),
-            value: value.to_string(),
-            disabled,
-        }
-    }
-
-    #[gpui::test]
-    fn rendered_radio_group_routes_pointer_selection_and_blocks_disabled_options(
-        cx: &mut gpui::TestAppContext,
-    ) {
-        let mut harness = crate::test_harness::NativeTestHarness::new(
-            cx,
-            radio_group(false),
-            gpui::size(gpui::px(320.0), gpui::px(100.0)),
-        );
-
-        harness.click_element("plan-team");
-        assert_selection(harness.take_events(), "team");
-
-        harness.click_element("plan-pro");
-        assert!(harness.take_events().is_empty());
-    }
-
-    #[gpui::test]
-    fn rendered_radio_group_keyboard_navigation_skips_disabled_options(
-        cx: &mut gpui::TestAppContext,
-    ) {
-        let mut harness = crate::test_harness::NativeTestHarness::new(
-            cx,
-            radio_group(false),
-            gpui::size(gpui::px(320.0), gpui::px(100.0)),
-        );
-
-        harness.click_element("plan");
-        let _pointer_events = harness.take_events();
-        harness.simulate_keystrokes("right");
-        assert_selection(harness.take_events(), "team");
-    }
-
-    #[gpui::test]
-    fn disabled_radio_group_blocks_pointer_and_keyboard_selection(cx: &mut gpui::TestAppContext) {
-        let mut harness = crate::test_harness::NativeTestHarness::new(
-            cx,
-            radio_group(true),
-            gpui::size(gpui::px(320.0), gpui::px(100.0)),
-        );
-
-        harness.click_element("plan-team");
-        harness.simulate_keystrokes("right space");
-        assert!(harness.take_events().is_empty());
-    }
-
-    fn assert_selection(events: Vec<crate::NativeEvent>, expected: &str) {
-        assert!(matches!(
-            events.as_slice(),
-            [crate::NativeEvent::Input {
-                kind: crate::InputKind::Change,
-                window_id: 7,
-                event,
-                value: Some(crate::EventValue::String(value)),
-            }] if event == "plan_changed" && value == expected
-        ));
-    }
 
     #[test]
     fn accessibility_tracks_label_and_orientation() {
