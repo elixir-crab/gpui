@@ -4,6 +4,7 @@ use crate::gpui;
 #[cfg(test)]
 pub(crate) struct NativeTestHarness<'a> {
     pub(crate) runtime: crate::SharedRuntime,
+    pub(crate) view: gpui::Entity<crate::ElixirRoot>,
     pub(crate) cx: &'a mut gpui::VisualTestContext,
 }
 
@@ -30,7 +31,7 @@ impl<'a> NativeTestHarness<'a> {
             view.clone().into_any_element()
         });
 
-        Self { runtime, cx }
+        Self { runtime, view, cx }
     }
 
     pub(crate) fn click(&mut self, position: gpui::Point<gpui::Pixels>) {
@@ -49,6 +50,22 @@ impl<'a> NativeTestHarness<'a> {
 
     pub(crate) fn simulate_keystrokes(&mut self, keystrokes: &str) {
         self.cx.simulate_keystrokes(keystrokes);
+    }
+
+    pub(crate) fn focus_component(&mut self, kind: &str, id: &str) {
+        let view = self.view.clone();
+        self.cx.update(|window, cx| {
+            let focus = view.update(cx, |root, _cx| match kind {
+                "tree" => root
+                    .components
+                    .tree_mut(id)
+                    .unwrap_or_else(|| panic!("missing rendered tree {id:?}"))
+                    .focus_handle
+                    .clone(),
+                _ => panic!("unsupported native test component kind {kind:?}"),
+            });
+            focus.focus(window, cx);
+        });
     }
 
     fn element_bounds(&mut self, id: &'static str) -> gpui::Bounds<gpui::Pixels> {

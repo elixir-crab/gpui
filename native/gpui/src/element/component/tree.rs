@@ -65,7 +65,7 @@ pub(crate) fn render(
 ) -> gpui::AnyElement {
     use crate::element::apply_generated_render_styles;
     use gpui::{
-        uniform_list, InteractiveElement, IntoElement, ParentElement, Role,
+        prelude::FluentBuilder, uniform_list, InteractiveElement, IntoElement, ParentElement, Role,
         StatefulInteractiveElement, Styled,
     };
 
@@ -165,14 +165,19 @@ pub(crate) fn render(
     let key_items = keys.clone();
     let key_scroll = scroll_handle.clone();
     let disabled = node.disabled;
+    let group_focus = focus_handle.clone();
     let selected_for_keys = selected_index
         .and_then(|selected_index| keys.iter().position(|key| key.index == selected_index));
 
     apply_generated_render_styles(gpui::div(), node.style)
         .id(node.id.clone())
+        .debug_selector(|| node.id.clone())
         .role(Role::Tree)
         .aria_label(node.label.unwrap_or_else(|| "Tree".to_string()))
         .track_focus(&focus_handle.tab_stop(!disabled))
+        .when(!disabled, |element| {
+            element.on_click(move |_event, window, cx| group_focus.focus(window, cx))
+        })
         .on_key_down(move |event, window, cx| {
             if disabled {
                 return;
@@ -458,6 +463,111 @@ pub(crate) fn render_item(
 #[cfg(all(test, feature = "components"))]
 mod tests {
     use super::*;
+
+    fn tree(selected: &str, expanded: bool, disabled: bool) -> crate::ElementNode {
+        crate::ElementNode::TreeComponent(crate::TreeComponentNode {
+            style: crate::StyleAttrs::default(),
+            id: "files".to_string(),
+            label: Some("Files".to_string()),
+            selected: Some(selected.to_string()),
+            selected_index: None,
+            reveal: None,
+            reveal_index: None,
+            reveal_strategy: Some("nearest".to_string()),
+            total_count: 4,
+            offset: 0,
+            overscan: 2,
+            item_height: 40.0,
+            disabled,
+            children: vec![
+                item("root", None, 1, true, expanded, false),
+                item("disabled", Some("root"), 2, false, false, true),
+                item("child", Some("root"), 2, false, false, false),
+                item("sibling", None, 1, false, false, false),
+            ],
+            change: Some("tree_selected".to_string()),
+            toggle: Some("tree_toggled".to_string()),
+            range: None,
+        })
+    }
+
+    fn item(
+        id: &str,
+        parent_id: Option<&str>,
+        level: u64,
+        branch: bool,
+        expanded: bool,
+        disabled: bool,
+    ) -> crate::ElementNode {
+        crate::ElementNode::TreeItemComponent(crate::TreeItemComponentNode {
+            style: crate::StyleAttrs::default(),
+            id: id.to_string(),
+            parent_id: parent_id.map(str::to_string),
+            level,
+            branch,
+            expanded,
+            position: None,
+            set_size: None,
+            disabled,
+            children: Vec::new(),
+        })
+    }
+
+    #[gpui::test]
+    fn rendered_tree_keyboard_navigation_selects_and_toggles_hierarchy(
+        cx: &mut gpui::TestAppContext,
+    ) {
+        let mut harness = crate::test_harness::NativeTestHarness::new(
+            cx,
+            tree("root", false, false),
+            gpui::size(gpui::px(320.0), gpui::px(200.0)),
+        );
+
+        harness.focus_component("tree", "files");
+        harness.simulate_keystrokes("right");
+        assert_change(harness.take_events(), "tree_toggled", "root");
+
+        harness.simulate_keystrokes("down");
+        assert_change(harness.take_events(), "tree_selected", "child");
+    }
+
+    #[gpui::test]
+    fn rendered_expanded_tree_navigates_to_children(cx: &mut gpui::TestAppContext) {
+        let mut harness = crate::test_harness::NativeTestHarness::new(
+            cx,
+            tree("root", true, false),
+            gpui::size(gpui::px(320.0), gpui::px(200.0)),
+        );
+
+        harness.focus_component("tree", "files");
+        harness.simulate_keystrokes("right");
+        assert_change(harness.take_events(), "tree_selected", "child");
+    }
+
+    #[gpui::test]
+    fn disabled_tree_blocks_keyboard_events(cx: &mut gpui::TestAppContext) {
+        let mut harness = crate::test_harness::NativeTestHarness::new(
+            cx,
+            tree("root", false, true),
+            gpui::size(gpui::px(320.0), gpui::px(200.0)),
+        );
+
+        harness.focus_component("tree", "files");
+        harness.simulate_keystrokes("right down");
+        assert!(harness.take_events().is_empty());
+    }
+
+    fn assert_change(events: Vec<crate::NativeEvent>, event_name: &str, expected: &str) {
+        assert!(matches!(
+            events.as_slice(),
+            [crate::NativeEvent::Input {
+                kind: crate::InputKind::Change,
+                window_id: 7,
+                event,
+                value: Some(crate::EventValue::String(value)),
+            }] if event == event_name && value == expected
+        ));
+    }
 
     fn key(
         id: &str,
