@@ -10,13 +10,27 @@ defmodule GPUI.Schema do
 
   @accessibility_attrs GPUI.Accessibility.attrs()
 
+  @motion_attrs [
+    id: :string,
+    motion_request: {:default, :non_negative_integer, 0},
+    motion_duration: {:default, :positive_integer, 180},
+    motion_delay: {:default, :non_negative_integer, 0},
+    motion_easing: {:default, {:enum, ~w(linear ease_in ease_out ease_in_out)}, "ease_out"},
+    motion_policy: {:default, {:enum, ~w(respect_system disabled)}, "respect_system"},
+    motion_from_opacity: {:default, :number, 1.0},
+    motion_from_x: {:default, :number, 0.0},
+    motion_from_y: {:default, :number, 0.0}
+  ]
+
+  @container_attrs Keyword.merge(@accessibility_attrs, @motion_attrs)
+
   @components [
     %Component{tag: :viewport, kind: :viewport, children: true},
     %Component{
       tag: :div,
       kind: :container,
       events: [click: :"phx-click", bounds: :"phx-bounds-change"],
-      attrs: @accessibility_attrs
+      attrs: @container_attrs
     },
     %Component{
       tag: :button,
@@ -28,8 +42,7 @@ defmodule GPUI.Schema do
         blur: :"phx-blur"
       ],
       attrs:
-        Keyword.merge(@accessibility_attrs,
-          id: :string,
+        Keyword.merge(@container_attrs,
           focus_request: {:default, :non_negative_integer, 0}
         )
     },
@@ -572,25 +585,25 @@ defmodule GPUI.Schema do
       tag: :span,
       kind: :container,
       events: [click: :"phx-click", bounds: :"phx-bounds-change"],
-      attrs: @accessibility_attrs
+      attrs: @container_attrs
     },
     %Component{
       tag: :scroll,
       kind: :container,
       events: [click: :"phx-click", bounds: :"phx-bounds-change"],
-      attrs: @accessibility_attrs
+      attrs: @container_attrs
     },
     %Component{
       tag: :list,
       kind: :container,
       events: [click: :"phx-click", bounds: :"phx-bounds-change"],
-      attrs: @accessibility_attrs
+      attrs: @container_attrs
     },
     %Component{
       tag: :item,
       kind: :container,
       events: [click: :"phx-click", bounds: :"phx-bounds-change"],
-      attrs: @accessibility_attrs
+      attrs: @container_attrs
     },
     %Component{
       tag: :text_surface,
@@ -1069,7 +1082,44 @@ defmodule GPUI.Schema do
     assigns
   end
 
+  defp validate_component_contract!(assigns, tag)
+       when tag in [:div, :button, :span, :scroll, :list, :item] do
+    request = Map.get(assigns, :motion_request, 0)
+    duration = Map.get(assigns, :motion_duration, 180)
+    delay = Map.get(assigns, :motion_delay, 0)
+    opacity = Map.get(assigns, :motion_from_opacity, 1.0)
+    x = Map.get(assigns, :motion_from_x, 0.0)
+    y = Map.get(assigns, :motion_from_y, 0.0)
+
+    if request > 0 and not (is_binary(Map.get(assigns, :id)) and Map.get(assigns, :id) != "") do
+      raise ArgumentError, "#{tag} with motion_request requires a non-empty string id"
+    end
+
+    validate_motion_bound!(tag, :motion_duration, duration, 10_000)
+    validate_motion_bound!(tag, :motion_delay, delay, 10_000)
+
+    unless is_number(opacity) and opacity >= 0.0 and opacity <= 1.0 do
+      invalid_attr!(tag, :motion_from_opacity, "a number from 0.0 through 1.0", opacity)
+    end
+
+    validate_motion_offset!(tag, :motion_from_x, x)
+    validate_motion_offset!(tag, :motion_from_y, y)
+    assigns
+  end
+
   defp validate_component_contract!(assigns, _tag), do: assigns
+
+  defp validate_motion_bound!(tag, name, value, max) do
+    if is_integer(value) and value <= max,
+      do: :ok,
+      else: invalid_attr!(tag, name, "an integer no greater than #{max}", value)
+  end
+
+  defp validate_motion_offset!(tag, name, value) do
+    if is_number(value) and value >= -4_096 and value <= 4_096,
+      do: :ok,
+      else: invalid_attr!(tag, name, "a number from -4096 through 4096", value)
+  end
 
   defp validate_text_surface_line_bounds!(min_lines, max_lines) do
     if is_integer(min_lines) and min_lines > 64 do

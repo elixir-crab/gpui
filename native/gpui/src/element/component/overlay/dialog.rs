@@ -395,6 +395,14 @@ fn dialog_content_tree(content: DialogContentComponentNode) -> crate::ElementNod
         focus_request: 0,
         focus: None,
         blur: None,
+        motion_request: 0,
+        motion_duration: 180,
+        motion_delay: 0,
+        motion_easing: "ease_out".to_string(),
+        motion_policy: "respect_system".to_string(),
+        motion_from_opacity: 1.0,
+        motion_from_x: 0.0,
+        motion_from_y: 0.0,
     })
 }
 

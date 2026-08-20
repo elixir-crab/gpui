@@ -73,11 +73,13 @@ defmodule GPUI.Element do
       Map.get(attrs_map, :focus_request, 0) > 0 or
         Map.has_key?(attrs_map, :"phx-focus") or Map.has_key?(attrs_map, :"phx-blur")
 
+    motion? = Map.get(attrs_map, :motion_request, 0) > 0
+    motion_declared? = motion_attrs?(attrs_map)
     accessible? = GPUI.Accessibility.metadata?(attrs_map)
 
-    if observed? or focused? or accessible? do
-      if observed? or focused?, do: validate_feature_id!(type, attrs_map, observed?)
+    validate_interactive_feature_id!(type, attrs_map, observed?, focused?, motion?)
 
+    if observed? or focused? or motion_declared? or accessible? do
       attrs_map
       |> GPUI.Schema.validate_component_assigns!(type)
       |> then(&GPUI.Accessibility.validate_generic!(type, &1))
@@ -89,9 +91,24 @@ defmodule GPUI.Element do
 
   defp validated_primitive_attrs(%__MODULE__{attrs: attrs}), do: attrs
 
-  defp validate_feature_id!(type, attrs, observed?) do
+  defp motion_attrs?(attrs) do
+    Enum.any?(Map.keys(attrs), &String.starts_with?(Atom.to_string(&1), "motion_"))
+  end
+
+  defp validate_interactive_feature_id!(_type, _attrs, false, false, false), do: :ok
+
+  defp validate_interactive_feature_id!(type, attrs, observed?, _focused?, motion?),
+    do: validate_feature_id!(type, attrs, observed?, motion?)
+
+  defp validate_feature_id!(type, attrs, observed?, motion?) do
     unless is_binary(Map.get(attrs, :id)) and Map.get(attrs, :id) != "" do
-      feature = if observed?, do: "phx-bounds-change", else: "focus behavior"
+      feature =
+        cond do
+          observed? -> "phx-bounds-change"
+          motion? -> "motion_request"
+          true -> "focus behavior"
+        end
+
       raise ArgumentError, "#{type} with #{feature} requires a non-empty string id"
     end
   end

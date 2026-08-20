@@ -680,6 +680,31 @@ mapped to different GPUI behavior. Enum values retain the project's established
 underscore convention (`bottom_left`, `snap_with_margin`), while element
 composition and static styling remain HTML/Tailwind-like.
 
+## Motion
+
+Ordinary containers support bounded entrance motion with a stable `id` and a
+monotonic request token:
+
+```heex
+<div
+  id="saved-notice"
+  motion_request={assigns.saved_notice_motion}
+  motion_duration={180}
+  motion_easing="ease_out"
+  motion_from_opacity={0.0}
+  motion_from_y={8}
+>
+  ...
+</div>
+```
+
+The native display interpolates opacity and window-native-pixel x/y offsets to
+the ordinary destination presentation. Reusing the token does not restart the
+animation. Motion respects GPUI's reduced-motion preference and emits no
+completion event; application behavior must not depend on presentation timing.
+See [Declarative native motion boundaries](declarative-motion-boundaries.html)
+for bounds, ownership, interruption, and remote-display behavior.
+
 ## Element bounds
 
 Ordinary containers can opt into asynchronous native bounds events when a

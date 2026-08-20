@@ -26,7 +26,15 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:bounds_change) => R.option(String.t()),
           required(:focus_request) => R.u64(),
           required(:focus) => R.option(String.t()),
-          required(:blur) => R.option(String.t())
+          required(:blur) => R.option(String.t()),
+          required(:motion_request) => R.u64(),
+          required(:motion_duration) => R.u64(),
+          required(:motion_delay) => R.u64(),
+          required(:motion_easing) => String.t(),
+          required(:motion_policy) => String.t(),
+          required(:motion_from_opacity) => R.f64(),
+          required(:motion_from_x) => R.f64(),
+          required(:motion_from_y) => R.f64()
         }
 
   @type anchored_layer_node :: %{
@@ -227,7 +235,22 @@ defmodule GPUI.Codegen.Native.Elements do
          focus_request:
            unwrap!(component_non_negative_integer_attr(term, Atoms.focus_request())).unwrap_or(0),
          focus: string_attr(term, Atoms.phx_focus()),
-         blur: string_attr(term, Atoms.phx_blur())
+         blur: string_attr(term, Atoms.phx_blur()),
+         motion_request:
+           unwrap!(component_non_negative_integer_attr(term, Atoms.motion_request())).unwrap_or(0),
+         motion_duration:
+           unwrap!(component_positive_integer_attr(term, Atoms.motion_duration())).unwrap_or(180),
+         motion_delay:
+           unwrap!(component_non_negative_integer_attr(term, Atoms.motion_delay())).unwrap_or(0),
+         motion_easing:
+           string_attr(term, Atoms.motion_easing()).unwrap_or("ease_out".to_string()),
+         motion_policy:
+           string_attr(term, Atoms.motion_policy()).unwrap_or("respect_system".to_string()),
+         motion_from_opacity:
+           unwrap!(component_number_attr(term, Atoms.motion_from_opacity())).unwrap_or(1.0),
+         motion_from_x:
+           unwrap!(component_number_attr(term, Atoms.motion_from_x())).unwrap_or(0.0),
+         motion_from_y: unwrap!(component_number_attr(term, Atoms.motion_from_y())).unwrap_or(0.0)
        )
      )}
   end

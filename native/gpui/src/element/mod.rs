@@ -45,6 +45,14 @@ impl ElementNode {
             focus_request: 0,
             focus: None,
             blur: None,
+            motion_request: 0,
+            motion_duration: 180,
+            motion_delay: 0,
+            motion_easing: "ease_out".to_string(),
+            motion_policy: "respect_system".to_string(),
+            motion_from_opacity: 1.0,
+            motion_from_x: 0.0,
+            motion_from_y: 0.0,
         })
     }
 
@@ -508,6 +516,89 @@ pub(crate) fn render_input_primitive(
 }
 
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::too_many_arguments)]
+fn apply_container_motion(
+    element: gpui::Div,
+    stable_id: Option<String>,
+    request: u64,
+    duration_ms: u64,
+    delay_ms: u64,
+    easing: String,
+    enabled: bool,
+    from_opacity: f64,
+    from_x: f64,
+    from_y: f64,
+) -> gpui::Div {
+    use gpui::{Animation, AnimationExt, IntoElement, ParentElement, Styled};
+    use std::time::Duration;
+
+    if !enabled {
+        return element;
+    }
+
+    let id = format!(
+        "gpui-motion-{}-{request}",
+        stable_id.expect("motion-enabled containers require stable IDs")
+    );
+    let duration_ms = duration_ms.max(1);
+    let total_ms = duration_ms.saturating_add(delay_ms);
+    let animation = Animation::new(Duration::from_millis(total_ms)).with_easing(move |delta| {
+        let elapsed_ms = delta * total_ms as f32;
+        let progress = ((elapsed_ms - delay_ms as f32) / duration_ms as f32).clamp(0.0, 1.0);
+        motion_easing(&easing, progress)
+    });
+
+    gpui::div().child(
+        element
+            .relative()
+            .with_animation(id, animation, move |element, delta| {
+                element
+                    .opacity(lerp(from_opacity as f32, 1.0, delta))
+                    .left(gpui::px(lerp(from_x as f32, 0.0, delta)))
+                    .top(gpui::px(lerp(from_y as f32, 0.0, delta)))
+            })
+            .into_any_element(),
+    )
+}
+
+#[cfg(feature = "real-gpui")]
+fn motion_easing(easing: &str, delta: f32) -> f32 {
+    match easing {
+        "ease_in" => delta * delta * delta,
+        "ease_in_out" if delta < 0.5 => 4.0 * delta * delta * delta,
+        "ease_in_out" => 1.0 - (-2.0 * delta + 2.0).powi(3) / 2.0,
+        "ease_out" => 1.0 - (1.0 - delta).powi(3),
+        _ => delta,
+    }
+}
+
+#[cfg(feature = "real-gpui")]
+fn lerp(from: f32, to: f32, delta: f32) -> f32 {
+    from + (to - from) * delta
+}
+
+#[cfg(all(test, feature = "real-gpui"))]
+mod motion_tests {
+    use super::{lerp, motion_easing};
+
+    #[test]
+    fn easing_presets_are_bounded_and_reach_endpoints() {
+        for easing in ["linear", "ease_in", "ease_out", "ease_in_out"] {
+            assert_eq!(motion_easing(easing, 0.0), 0.0);
+            assert_eq!(motion_easing(easing, 1.0), 1.0);
+            assert!((0.0..=1.0).contains(&motion_easing(easing, 0.5)));
+        }
+    }
+
+    #[test]
+    fn interpolation_reaches_declared_endpoints() {
+        assert_eq!(lerp(-12.0, 0.0, 0.0), -12.0);
+        assert_eq!(lerp(-12.0, 0.0, 1.0), 0.0);
+        assert_eq!(lerp(0.25, 1.0, 0.5), 0.625);
+    }
+}
+
+#[cfg(feature = "real-gpui")]
 pub(crate) fn render_container_primitive(
     element_id: usize,
     node: ContainerNode,
@@ -526,6 +617,14 @@ pub(crate) fn render_container_primitive(
         focus_request,
         focus,
         blur,
+        motion_request,
+        motion_duration,
+        motion_delay,
+        motion_easing,
+        motion_policy,
+        motion_from_opacity,
+        motion_from_x,
+        motion_from_y,
     } = node;
     let runtime = context.runtime.clone();
     let window_id = context.window_id;
@@ -586,6 +685,9 @@ pub(crate) fn render_container_primitive(
         element = element.child(child.render(context));
     }
 
+    let motion_id = stable_id.clone();
+    let motion_enabled = motion_request > 0 && motion_policy != "disabled";
+
     let mut accessibility = accessibility;
     if tag == GeneratedElementTag::Button {
         accessibility.role = Some(AccessibilityRole::Button);
@@ -605,7 +707,20 @@ pub(crate) fn render_container_primitive(
                 context.id_namespace
             )
         });
-        let element = element.id(scroll_id).overflow_y_scroll();
+        let element = apply_container_motion(
+            element,
+            motion_id,
+            motion_request,
+            motion_duration,
+            motion_delay,
+            motion_easing,
+            motion_enabled,
+            motion_from_opacity,
+            motion_from_x,
+            motion_from_y,
+        )
+        .id(scroll_id)
+        .overflow_y_scroll();
         let element = apply_accessibility_semantics(element, accessibility.clone());
 
         if let Some(event) = click {
@@ -625,6 +740,18 @@ pub(crate) fn render_container_primitive(
             element.into_any_element()
         }
     } else {
+        let element = apply_container_motion(
+            element,
+            motion_id,
+            motion_request,
+            motion_duration,
+            motion_delay,
+            motion_easing,
+            motion_enabled,
+            motion_from_opacity,
+            motion_from_x,
+            motion_from_y,
+        );
         let element_id =
             stable_id.unwrap_or_else(|| format!("{}-{element_id}", context.id_namespace));
         apply_click_event(

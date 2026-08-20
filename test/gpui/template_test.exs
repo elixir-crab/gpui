@@ -360,6 +360,55 @@ defmodule GPUI.TemplateTest do
     end
   end
 
+  test "serializes bounded monotonic motion contracts on identified containers" do
+    payload =
+      ~GPUI"""
+      <div
+        id="notice"
+        motion_request={2}
+        motion_duration={240}
+        motion_delay={40}
+        motion_easing="ease_in_out"
+        motion_from_opacity={0.25}
+        motion_from_x={-12}
+        motion_from_y={8}
+      />
+      """
+      |> GPUI.Element.to_payload()
+
+    assert payload.attrs == %{
+             id: "notice",
+             motion_request: 2,
+             motion_duration: 240,
+             motion_delay: 40,
+             motion_easing: "ease_in_out",
+             motion_from_opacity: 0.25,
+             motion_from_x: -12,
+             motion_from_y: 8
+           }
+
+    assert_raise ArgumentError, ~r/motion_request requires a non-empty string id/, fn ->
+      ~GPUI"""
+      <div motion_request={1} />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/motion_duration.*no greater than 10000/, fn ->
+      ~GPUI"""
+      <div id="slow" motion_request={1} motion_duration={10_001} />
+      """
+      |> GPUI.Element.to_payload()
+    end
+
+    assert_raise ArgumentError, ~r/motion_from_opacity.*0.0 through 1.0/, fn ->
+      ~GPUI"""
+      <div id="opaque" motion_request={1} motion_from_opacity={1.5} />
+      """
+      |> GPUI.Element.to_payload()
+    end
+  end
+
   test "serializes semantic accessibility on primitive buttons" do
     button =
       ~GPUI"""

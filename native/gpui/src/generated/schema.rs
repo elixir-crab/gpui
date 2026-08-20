@@ -475,6 +475,14 @@ pub(crate) struct ContainerNode {
     pub(crate) focus_request: u64,
     pub(crate) focus: Option<String>,
     pub(crate) blur: Option<String>,
+    pub(crate) motion_request: u64,
+    pub(crate) motion_duration: u64,
+    pub(crate) motion_delay: u64,
+    pub(crate) motion_easing: String,
+    pub(crate) motion_policy: String,
+    pub(crate) motion_from_opacity: f64,
+    pub(crate) motion_from_x: f64,
+    pub(crate) motion_from_y: f64,
 }
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
@@ -671,6 +679,34 @@ pub(crate) fn decode_container_node<'a>(
                 .unwrap_or(0),
             focus: string_attr(term, atoms::phx_focus()),
             blur: string_attr(term, atoms::phx_blur()),
+            motion_request: component_non_negative_integer_attr(
+                    term,
+                    atoms::motion_request(),
+                )?
+                .unwrap_or(0),
+            motion_duration: component_positive_integer_attr(
+                    term,
+                    atoms::motion_duration(),
+                )?
+                .unwrap_or(180),
+            motion_delay: component_non_negative_integer_attr(
+                    term,
+                    atoms::motion_delay(),
+                )?
+                .unwrap_or(0),
+            motion_easing: string_attr(term, atoms::motion_easing())
+                .unwrap_or("ease_out".to_string()),
+            motion_policy: string_attr(term, atoms::motion_policy())
+                .unwrap_or("respect_system".to_string()),
+            motion_from_opacity: component_number_attr(
+                    term,
+                    atoms::motion_from_opacity(),
+                )?
+                .unwrap_or(1.0),
+            motion_from_x: component_number_attr(term, atoms::motion_from_x())?
+                .unwrap_or(0.0),
+            motion_from_y: component_number_attr(term, atoms::motion_from_y())?
+                .unwrap_or(0.0),
         }),
     )
 }

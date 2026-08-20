@@ -46,33 +46,37 @@ mod atoms {
         "max_lines", max_sizes = "max_sizes", max_width = "max_width", menu = "menu", min
         = "min", min_height = "min_height", min_lines = "min_lines", min_size =
         "min_size", min_sizes = "min_sizes", min_width = "min_width", missing_resource =
-        "missing_resource", mode = "mode", multiple = "multiple", name = "name", nil =
-        "nil", nothing_to_redo = "nothing_to_redo", nothing_to_undo = "nothing_to_undo",
-        number = "number", offset = "offset", offset_x = "offset_x", offset_y =
-        "offset_y", ok = "ok", opacity = "opacity", open = "open", operation_id =
-        "operation_id", options = "options", orientation = "orientation", outline =
-        "outline", overdraw = "overdraw", overflow = "overflow", overlapping_edits =
-        "overlapping_edits", overlay = "overlay", overscan = "overscan", padding =
-        "padding", padding_bottom = "padding_bottom", padding_left = "padding_left",
-        padding_right = "padding_right", padding_top = "padding_top", padding_x =
-        "padding_x", padding_y = "padding_y", parent_id = "parent_id", phx_blur =
-        "phx-blur", phx_bounds_change = "phx-bounds-change", phx_cell_change =
-        "phx-cell-change", phx_change = "phx-change", phx_click = "phx-click",
-        phx_clipboard_read = "phx-clipboard-read", phx_clipboard_write =
-        "phx-clipboard-write", phx_copy = "phx-copy", phx_drag_enter = "phx-drag-enter",
-        phx_drag_leave = "phx-drag-leave", phx_drag_move = "phx-drag-move", phx_drop =
-        "phx-drop", phx_file_read = "phx-file-read", phx_focus = "phx-focus",
-        phx_geometry_change = "phx-geometry-change", phx_hit_test = "phx-hit-test",
-        phx_keydown = "phx-keydown", phx_keyup = "phx-keyup", phx_link = "phx-link",
-        phx_range = "phx-range", phx_range_geometry_change = "phx-range-geometry-change",
-        phx_release = "phx-release", phx_search = "phx-search", phx_select =
-        "phx-select", phx_selection_change = "phx-selection-change", phx_sort =
-        "phx-sort", phx_submit = "phx-submit", phx_toggle = "phx-toggle", phx_transaction
-        = "phx-transaction", phx_viewport_change = "phx-viewport-change", placeholder =
-        "placeholder", position = "position", position_mode = "position_mode", position_x
-        = "position_x", position_y = "position_y", priority = "priority", range =
-        "range", range_geometry = "range_geometry", raster = "raster", reason = "reason",
-        release = "release", resizable = "resizable", resize_request = "resize_request",
+        "missing_resource", mode = "mode", motion_delay = "motion_delay", motion_duration
+        = "motion_duration", motion_easing = "motion_easing", motion_from_opacity =
+        "motion_from_opacity", motion_from_x = "motion_from_x", motion_from_y =
+        "motion_from_y", motion_policy = "motion_policy", motion_request =
+        "motion_request", multiple = "multiple", name = "name", nil = "nil",
+        nothing_to_redo = "nothing_to_redo", nothing_to_undo = "nothing_to_undo", number
+        = "number", offset = "offset", offset_x = "offset_x", offset_y = "offset_y", ok =
+        "ok", opacity = "opacity", open = "open", operation_id = "operation_id", options
+        = "options", orientation = "orientation", outline = "outline", overdraw =
+        "overdraw", overflow = "overflow", overlapping_edits = "overlapping_edits",
+        overlay = "overlay", overscan = "overscan", padding = "padding", padding_bottom =
+        "padding_bottom", padding_left = "padding_left", padding_right = "padding_right",
+        padding_top = "padding_top", padding_x = "padding_x", padding_y = "padding_y",
+        parent_id = "parent_id", phx_blur = "phx-blur", phx_bounds_change =
+        "phx-bounds-change", phx_cell_change = "phx-cell-change", phx_change =
+        "phx-change", phx_click = "phx-click", phx_clipboard_read = "phx-clipboard-read",
+        phx_clipboard_write = "phx-clipboard-write", phx_copy = "phx-copy",
+        phx_drag_enter = "phx-drag-enter", phx_drag_leave = "phx-drag-leave",
+        phx_drag_move = "phx-drag-move", phx_drop = "phx-drop", phx_file_read =
+        "phx-file-read", phx_focus = "phx-focus", phx_geometry_change =
+        "phx-geometry-change", phx_hit_test = "phx-hit-test", phx_keydown =
+        "phx-keydown", phx_keyup = "phx-keyup", phx_link = "phx-link", phx_range =
+        "phx-range", phx_range_geometry_change = "phx-range-geometry-change", phx_release
+        = "phx-release", phx_search = "phx-search", phx_select = "phx-select",
+        phx_selection_change = "phx-selection-change", phx_sort = "phx-sort", phx_submit
+        = "phx-submit", phx_toggle = "phx-toggle", phx_transaction = "phx-transaction",
+        phx_viewport_change = "phx-viewport-change", placeholder = "placeholder",
+        position = "position", position_mode = "position_mode", position_x =
+        "position_x", position_y = "position_y", priority = "priority", range = "range",
+        range_geometry = "range_geometry", raster = "raster", reason = "reason", release
+        = "release", resizable = "resizable", resize_request = "resize_request",
         resource_ref = "resource_ref", resource_type = "resource_type", reveal =
         "reveal", reveal_index = "reveal_index", reveal_request = "reveal_request",
         reveal_strategy = "reveal_strategy", reverse = "reverse", revision = "revision",
