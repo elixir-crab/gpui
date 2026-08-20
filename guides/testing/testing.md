@@ -21,6 +21,23 @@ permission, builds the Swift desktop driver, and uses the active WindowServer
 and real Metal renderer. Both paths execute ordinary ExUnit tests through
 `GPUITest.Desktop`; no separate test runner is involved.
 
+## Deterministic native component tests
+
+Native renderer behavior that does not depend on an operating-system window is
+covered in Rust with GPUI's own `TestAppContext`. The repository's test-only
+native harness renders the real decoded `ElementNode` through `ElixirRoot`,
+uses GPUI's rendered element bounds for input simulation, and asserts the same
+native event queue consumed by the BEAM. Prefer this layer for component hit
+testing, keyboard behavior, controlled state, disabled behavior, scrolling,
+and other renderer semantics; it avoids desktop focus and coordinate races and
+runs cross-platform through `mix rust.test`.
+
+Real desktop E2E remains necessary for platform facts such as window creation,
+application-owned chrome, OS close requests, clipboard integration, external
+file drops, IME behavior, and accessibility adapters. Screenshot coverage is a
+separate concern: GPUI's deterministic Metal visual context is currently
+macOS-only, while Linux pixel evidence continues to use Xvfb and Lavapipe.
+
 ## Deterministic application tests
 
 ```elixir

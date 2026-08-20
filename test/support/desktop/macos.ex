@@ -18,9 +18,12 @@ defmodule GPUITest.Desktop.MacOS do
     do: driver_ok!("click", [window_id, to_string(x), to_string(y)])
 
   def type!(window_id, text), do: driver_ok!("type", [window_id, text])
-  def key!(window_id, key), do: driver_ok!("key", [window_id, key])
+  def key!(window_id, key), do: driver_ok!("key", [window_id, normalize_key(key)])
   def close_window!(window_id), do: driver_ok!("close", [window_id])
   def capture!(window_id, path), do: driver_ok!("capture", [window_id, path])
+
+  defp normalize_key("primary+" <> key), do: "super+" <> key
+  defp normalize_key(key), do: key
 
   def window_info!(window_id) do
     [

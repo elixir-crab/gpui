@@ -13,7 +13,7 @@ defmodule GPUI.Native.DisplayControlsE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="flex flex-col w-[420px] h-[220px] gap-4 p-4 bg-slate-900">
+      <div class="flex flex-col w-[420px] h-[220px] gap-4 p-4 bg-white text-slate-900">
         <UI.button
           id="copy-value"
           label="Copy value"
@@ -62,7 +62,7 @@ defmodule GPUI.Native.DisplayControlsE2ETest do
     assert_receive {:gpui, ^runtime, %GPUI.Runtime.Update{events: [%{event: "copied"}]}}
 
     Desktop.click!(native_window_id, 120, 80)
-    Desktop.key!(native_window_id, "ctrl+v")
+    Desktop.key!(native_window_id, "primary+v")
 
     Desktop.eventually(fn ->
       assert %{copied: true, value: "copied from display"} =

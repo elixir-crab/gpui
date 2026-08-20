@@ -12,7 +12,7 @@ defmodule GPUI.Native.FormControlsE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="flex flex-col w-[360px] h-[180px] p-4 gap-4 bg-slate-900">
+      <div class="flex flex-col w-[360px] h-[180px] p-4 gap-4 bg-white text-slate-900">
         <GPUI.UI.switch
           id="form-notifications"
           label="Notifications"

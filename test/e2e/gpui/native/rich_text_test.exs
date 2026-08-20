@@ -16,7 +16,7 @@ defmodule GPUI.Native.RichTextE2ETest do
     def render(assigns) do
       runs = [
         RichRun.new(Range.new(Position.new(0, 0), Position.new(0, 5)),
-          color: 0xF8FAFC,
+          color: 0x0F172A,
           font_weight: :bold,
           link: "message://hello"
         ),
@@ -28,14 +28,14 @@ defmodule GPUI.Native.RichTextE2ETest do
       ]
 
       ~GPUI"""
-      <div class="w-[480px] h-[260px] p-6 bg-slate-950">
+      <div class="w-[480px] h-[260px] p-6 bg-white text-slate-900">
         <UI.rich_text
           id="rich-message"
           label="Rich message"
           text={"Hello world\nOpen details"}
           runs={runs}
           phx-link="link-opened"
-          class="w-[420px] text-lg leading-7 text-slate-300"
+          class="w-[420px] text-lg leading-7 text-slate-700"
         />
         <UI.input
           id="clipboard-probe"
@@ -44,7 +44,7 @@ defmodule GPUI.Native.RichTextE2ETest do
           phx-change="clipboard-changed"
           class="mt-4 w-[420px]"
         />
-        <text class="mt-6 text-white">Links: {assigns.links}; Last: {assigns.last_link || "none"}</text>
+        <text class="mt-6 text-slate-900">Links: {assigns.links}; Last: {assigns.last_link || "none"}</text>
       </div>
       """
     end

@@ -23,6 +23,8 @@ mod input;
 #[cfg(feature = "real-gpui")]
 mod resource;
 mod runtime;
+#[cfg(all(test, feature = "components"))]
+mod test_harness;
 mod text_buffer;
 #[cfg(any(feature = "components", feature = "real-gpui"))]
 use event::EventValue;

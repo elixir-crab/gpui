@@ -23,7 +23,7 @@ defmodule GPUI.Native.TreeE2ETest do
         end
 
       ~GPUI"""
-      <div class="w-[420px] h-[420px] bg-slate-900">
+      <div class="w-[420px] h-[420px] bg-white text-slate-900">
         <UI.tree
           id="source-tree"
           label="Source-backed tree"
@@ -87,7 +87,7 @@ defmodule GPUI.Native.TreeE2ETest do
         set_size={item_assigns.set_size}
       >
         <div class="flex items-center h-[40px] px-3">
-          <text class="text-white">{item_assigns.id}</text>
+          <text class="text-slate-900">{item_assigns.id}</text>
         </div>
       </UI.tree_item>
       """

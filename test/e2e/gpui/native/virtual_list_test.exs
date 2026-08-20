@@ -13,7 +13,7 @@ defmodule GPUI.Native.VirtualListE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="w-[420px] h-[420px] bg-slate-900">
+      <div class="w-[420px] h-[420px] bg-white text-slate-900">
         <UI.virtual_list
           id="large-list"
           label="Large item list"
@@ -78,7 +78,7 @@ defmodule GPUI.Native.VirtualListE2ETest do
         end
 
       ~GPUI"""
-      <div class="w-[420px] h-[420px] bg-slate-900">
+      <div class="w-[420px] h-[420px] bg-white text-slate-900">
         <UI.virtual_list
           id="source-list"
           label="Source-backed items"
