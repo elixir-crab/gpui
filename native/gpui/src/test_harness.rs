@@ -47,6 +47,10 @@ impl<'a> NativeTestHarness<'a> {
         self.click(bounds.origin + offset);
     }
 
+    pub(crate) fn simulate_keystrokes(&mut self, keystrokes: &str) {
+        self.cx.simulate_keystrokes(keystrokes);
+    }
+
     fn element_bounds(&mut self, id: &'static str) -> gpui::Bounds<gpui::Pixels> {
         self.cx
             .debug_bounds(id)

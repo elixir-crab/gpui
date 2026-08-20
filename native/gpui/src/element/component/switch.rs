@@ -31,7 +31,8 @@ pub(crate) fn render(
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     use gpui::{
-        InteractiveElement, IntoElement, ParentElement, Role, StatefulInteractiveElement, Styled,
+        prelude::FluentBuilder, InteractiveElement, IntoElement, ParentElement, Role,
+        StatefulInteractiveElement, Styled,
     };
     use gpui_component::{h_flex, spinner::Spinner, switch::Switch, Disableable, Sizable};
 
@@ -51,14 +52,9 @@ pub(crate) fn render(
         })
         .read(context.cx)
         .clone();
-    let mouse_focus = focus_handle.clone();
-    let mut element = Switch::new(switch_id)
+    let mut element = Switch::new(switch_id.clone())
         .checked(checked)
-        .disabled(unavailable)
-        .on_click(move |checked, window, cx| {
-            mouse_focus.focus(window, cx);
-            emit_change(&runtime, window_id, change_event.as_ref(), *checked);
-        });
+        .disabled(unavailable);
     element = element.label(node.label);
     element = match node.size.as_deref() {
         Some("xs") => element.xsmall(),
@@ -77,12 +73,23 @@ pub(crate) fn render(
         content = content.child(spinner);
     }
 
+    let mouse_runtime = runtime.clone();
+    let mouse_event = change_event.clone();
+    let mouse_focus = focus_handle.clone();
+
     gpui::div()
         .id(node.id)
+        .debug_selector(|| switch_id)
         .role(Role::Switch)
         .aria_label(accessibility.label)
         .aria_toggled(accessibility.toggled)
         .track_focus(&focus_handle.tab_stop(!unavailable))
+        .when(!unavailable, |element| {
+            element.on_click(move |_event, window, cx| {
+                mouse_focus.focus(window, cx);
+                emit_change(&mouse_runtime, window_id, mouse_event.as_ref(), !checked);
+            })
+        })
         .on_key_down(move |event, _window, cx| {
             if unavailable || !matches!(event.keystroke.key.as_str(), "enter" | "space") {
                 return;
@@ -120,6 +127,64 @@ fn emit_change(
 #[cfg(all(test, feature = "components"))]
 mod tests {
     use super::{switch_accessibility, SwitchAccessibility};
+    use crate::gpui;
+
+    fn switch(checked: bool, disabled: bool, loading: bool) -> crate::ElementNode {
+        crate::ElementNode::SwitchComponent(crate::SwitchComponentNode {
+            style: crate::StyleAttrs::default(),
+            id: "notifications".to_string(),
+            checked,
+            label: "Notifications".to_string(),
+            size: None,
+            disabled,
+            loading,
+            change: Some("notifications_changed".to_string()),
+        })
+    }
+
+    #[gpui::test]
+    fn rendered_switch_routes_pointer_and_keyboard_activation(cx: &mut gpui::TestAppContext) {
+        let mut harness = crate::test_harness::NativeTestHarness::new(
+            cx,
+            switch(false, false, false),
+            gpui::size(gpui::px(240.0), gpui::px(80.0)),
+        );
+
+        harness.click_element("notifications");
+        assert_change(harness.take_events(), true);
+
+        harness.click_element("notifications");
+        let _focus_activation = harness.take_events();
+        harness.simulate_keystrokes("space");
+        assert_change(harness.take_events(), true);
+    }
+
+    #[gpui::test]
+    fn rendered_switch_blocks_disabled_and_loading_activation(cx: &mut gpui::TestAppContext) {
+        for tree in [switch(false, true, false), switch(false, false, true)] {
+            let mut harness = crate::test_harness::NativeTestHarness::new(
+                cx,
+                tree,
+                gpui::size(gpui::px(240.0), gpui::px(80.0)),
+            );
+
+            harness.click_element("notifications");
+            harness.simulate_keystrokes("space");
+            assert!(harness.take_events().is_empty());
+        }
+    }
+
+    fn assert_change(events: Vec<crate::NativeEvent>, expected: bool) {
+        assert!(matches!(
+            events.as_slice(),
+            [crate::NativeEvent::Input {
+                kind: crate::InputKind::Change,
+                window_id: 7,
+                event,
+                value: Some(crate::EventValue::Boolean(value)),
+            }] if event == "notifications_changed" && *value == expected
+        ));
+    }
 
     #[test]
     fn accessibility_tracks_label_and_controlled_state() {
