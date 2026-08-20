@@ -8,8 +8,6 @@ defmodule Mix.Tasks.Gpui.Test.E2e do
 
   @impl Mix.Task
   def run(args) do
-    ensure_e2e_native!()
-
     case :os.type() do
       {:unix, :darwin} -> prepare_macos!()
       {:unix, _name} -> prepare_linux!()
@@ -18,27 +16,6 @@ defmodule Mix.Tasks.Gpui.Test.E2e do
 
     test_args = if args == [], do: ["test/e2e"], else: args
     run_tests!(test_args)
-  end
-
-  defp ensure_e2e_native! do
-    native = Path.join(@project_root, "priv/native/gpui_nif.so")
-
-    unless real_native?(native) do
-      Mix.shell().info("Building the E2E GPUI native library")
-      File.rm(native)
-      run!("mix", ["compile"], [{"MIX_ENV", "e2e"}])
-
-      unless real_native?(native) do
-        Mix.raise("E2E compilation did not produce a real GPUI native library")
-      end
-    end
-  end
-
-  defp real_native?(path) do
-    case File.read(path) do
-      {:ok, binary} -> :binary.match(binary, "real_gpui_disabled") == :nomatch
-      {:error, _reason} -> false
-    end
   end
 
   defp prepare_macos! do

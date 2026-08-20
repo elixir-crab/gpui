@@ -31,12 +31,9 @@ defmodule GPUITest.Desktop.Linux do
   def type!(window_id, text),
     do: command!(["type", "--window", window_id, "--delay", "30", text])
 
-  def key!(window_id, key), do: command!(["key", "--window", window_id, normalize_key(key)])
+  def key!(window_id, key), do: command!(["key", "--window", window_id, key])
   def close_window!(window_id), do: driver!("close-window", [window_id])
   def capture!(window_id, path), do: driver!("capture-window", [window_id, path])
-
-  defp normalize_key("primary+" <> key), do: "ctrl+" <> key
-  defp normalize_key(key), do: key
 
   def window_info!(window_id) do
     output = command!(["getwindowgeometry", "--shell", window_id])

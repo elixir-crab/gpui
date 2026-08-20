@@ -14,7 +14,7 @@ defmodule GPUI.Native.VirtualCollectionE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="w-[420px] h-[420px] p-3 bg-white text-slate-900">
+      <div class="w-[420px] h-[420px] p-3 bg-slate-950">
         <UI.virtual_collection
           id="transcript"
           label="Conversation transcript"
@@ -26,7 +26,7 @@ defmodule GPUI.Native.VirtualCollectionE2ETest do
           reveal_strategy="top"
           overdraw={120}
           phx-range="visible-range"
-          class="h-[396px] bg-slate-50"
+          class="h-[396px] bg-slate-900"
         >
           {Enum.map(assigns.messages, &message/1)}
         </UI.virtual_collection>

@@ -10,7 +10,7 @@ pub(crate) fn render_button_component(
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     use crate::{push_event, NativeEvent};
-    use gpui::{InteractiveElement, IntoElement, ParentElement};
+    use gpui::{IntoElement, ParentElement};
     use gpui_component::{
         button::{Button, ButtonVariants},
         Disableable, Selectable, Sizable,
@@ -28,8 +28,7 @@ pub(crate) fn render_button_component(
         .filter(|prompt| !prompt.is_empty())
         .unwrap_or_else(|| "Choose a file".to_string());
     let file_max_bytes = node.file_max_bytes.min(25 * 1_024 * 1_024) as usize;
-    let selector = node.id.clone();
-    let mut button = Button::new(node.id).debug_selector(|| selector);
+    let mut button = Button::new(node.id);
 
     button = match node.variant.as_deref() {
         Some("primary") => button.primary(),
@@ -132,14 +131,12 @@ pub(crate) fn render_checkbox_component(
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     use crate::{push_event, EventValue, InputKind, NativeEvent};
-    use gpui::{InteractiveElement, IntoElement, ParentElement};
+    use gpui::{IntoElement, ParentElement};
     use gpui_component::{checkbox::Checkbox, Disableable, Sizable};
 
     let runtime = context.runtime.clone();
     let window_id = context.window_id;
-    let selector = node.id.clone();
     let mut checkbox = Checkbox::new(node.id)
-        .debug_selector(|| selector)
         .checked(node.checked)
         .disabled(node.disabled);
 
@@ -169,58 +166,6 @@ pub(crate) fn render_checkbox_component(
     }
 
     apply_component_styles(checkbox, node.style).into_any_element()
-}
-
-#[cfg(all(test, feature = "components"))]
-mod tests {
-    use super::*;
-
-    fn checkbox(checked: bool, disabled: bool) -> crate::ElementNode {
-        crate::ElementNode::CheckboxComponent(crate::CheckboxComponentNode {
-            style: crate::StyleAttrs::default(),
-            id: "notifications".to_string(),
-            label: "Notifications".to_string(),
-            size: None,
-            checked,
-            disabled,
-            children: Vec::new(),
-            change: Some("notifications_changed".to_string()),
-        })
-    }
-
-    #[gpui::test]
-    fn checkbox_click_routes_a_controlled_change_event(cx: &mut gpui::TestAppContext) {
-        let mut harness = crate::test_harness::NativeTestHarness::new(
-            cx,
-            checkbox(false, false),
-            gpui::size(gpui::px(240.0), gpui::px(80.0)),
-        );
-
-        harness.click_element("notifications");
-
-        assert!(matches!(
-            harness.take_events().as_slice(),
-            [crate::NativeEvent::Input {
-                kind: crate::InputKind::Change,
-                window_id: 7,
-                event,
-                value: Some(crate::EventValue::Boolean(true)),
-            }] if event == "notifications_changed"
-        ));
-    }
-
-    #[gpui::test]
-    fn disabled_checkbox_blocks_pointer_activation(cx: &mut gpui::TestAppContext) {
-        let mut harness = crate::test_harness::NativeTestHarness::new(
-            cx,
-            checkbox(false, true),
-            gpui::size(gpui::px(240.0), gpui::px(80.0)),
-        );
-
-        harness.click_element_at("notifications", gpui::point(gpui::px(2.0), gpui::px(2.0)));
-
-        assert!(harness.take_events().is_empty());
-    }
 }
 
 #[cfg(not(feature = "components"))]

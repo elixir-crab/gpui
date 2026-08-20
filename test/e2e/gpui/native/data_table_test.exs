@@ -23,7 +23,7 @@ defmodule GPUI.Native.DataTableE2ETest do
         end
 
       ~GPUI"""
-      <div class="w-[640px] h-[420px] bg-white text-slate-900 p-2">
+      <div class="w-[640px] h-[420px] bg-slate-900 p-2">
         <UI.data_table
           id="source-table"
           label="Source-backed records"
