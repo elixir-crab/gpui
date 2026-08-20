@@ -4,7 +4,7 @@ defmodule GPUI.Native.ElixirWorkbenchLogSourceE2ETest do
   use ExUnit.Case, async: false
 
   alias Examples.ElixirWorkbench.LogApp, as: App
-  alias GPUITest.E2E.Desktop
+  alias GPUITest.Desktop
 
   @moduletag :e2e
 

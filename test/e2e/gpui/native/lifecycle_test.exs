@@ -2,7 +2,7 @@ defmodule GPUI.Native.LifecycleE2ETest do
   use ExUnit.Case, async: false
 
   alias GPUI.Snapshot
-  alias GPUITest.E2E.Desktop
+  alias GPUITest.Desktop
 
   @moduletag :e2e
 
@@ -174,7 +174,7 @@ defmodule GPUI.Native.LifecycleE2ETest do
     Desktop.await_frame!(display, 1, native_window_id)
     assert {:ok, generation} = GPUI.Display.Native.frame_token(display, 1)
 
-    Desktop.command!(["windowsize", native_window_id, "700", "460"])
+    Desktop.resize!(native_window_id, 700, 460)
     Desktop.await_frame_after!(display, 1, generation)
 
     assert {:ok, resized_generation} = GPUI.Display.Native.frame_token(display, 1)

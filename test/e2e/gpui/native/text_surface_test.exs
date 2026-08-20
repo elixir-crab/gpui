@@ -2,7 +2,7 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
   use ExUnit.Case, async: false
 
   alias GPUI.Text.{Buffer, Edit, Position, Range, Selection, Transaction}
-  alias GPUITest.E2E.Desktop
+  alias GPUITest.Desktop
 
   @moduletag :e2e
   @moduletag timeout: 30_000

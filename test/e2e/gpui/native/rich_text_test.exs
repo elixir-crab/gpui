@@ -1,7 +1,7 @@
 defmodule GPUI.Native.RichTextE2ETest do
   use ExUnit.Case, async: false
 
-  alias GPUITest.E2E.Desktop
+  alias GPUITest.Desktop
 
   @moduletag :e2e
   @moduletag timeout: 30_000
@@ -120,10 +120,7 @@ defmodule GPUI.Native.RichTextE2ETest do
     end)
 
     Desktop.click!(native_window_id, 32, 34)
-    Desktop.command!(["mousemove", "--window", native_window_id, "32", "34"])
-    Desktop.command!(["mousedown", "1"])
-    Desktop.command!(["mousemove", "--window", native_window_id, "125", "34"])
-    Desktop.command!(["mouseup", "1"])
+    Desktop.drag!(native_window_id, 32, 34, 125, 34)
     Desktop.key!(native_window_id, "ctrl+c")
     Desktop.click!(native_window_id, 120, 108)
     Desktop.key!(native_window_id, "ctrl+a")

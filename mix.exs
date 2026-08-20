@@ -314,13 +314,19 @@ defmodule GPUI.MixProject do
   defp rust_core_clippy(_args), do: run_rust_clippy(["--no-default-features"])
 
   defp rust_e2e_fmt(args),
-    do: rust_cmd(["fmt", "--manifest-path", "test/support/e2e_driver/Cargo.toml"] ++ args)
+    do:
+      rust_cmd([
+        "fmt",
+        "--manifest-path",
+        "test/support/desktop/drivers/linux/Cargo.toml"
+        | args
+      ])
 
   defp rust_e2e_clippy(_args) do
     rust_cmd([
       "clippy",
       "--manifest-path",
-      "test/support/e2e_driver/Cargo.toml",
+      "test/support/desktop/drivers/linux/Cargo.toml",
       "--",
       "-D",
       "warnings"

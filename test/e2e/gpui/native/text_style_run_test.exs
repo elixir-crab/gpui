@@ -5,7 +5,7 @@ defmodule GPUI.Native.TextStyleRunE2ETest do
   alias GPUI.Text.Position
   alias GPUI.Text.Range
   alias GPUI.Text.StyleRun
-  alias GPUITest.E2E.Desktop
+  alias GPUITest.Desktop
 
   @moduletag :e2e
 

@@ -1,7 +1,7 @@
 defmodule GPUI.Native.CodeViewerE2ETest do
   use ExUnit.Case, async: false
 
-  alias GPUITest.E2E.Desktop
+  alias GPUITest.Desktop
 
   @moduletag :e2e
 
@@ -154,8 +154,7 @@ defmodule GPUI.Native.CodeViewerE2ETest do
 
     assert root_assigns(runtime).copies == 1
 
-    Desktop.command!(["mousemove", "--window", window_id, "500", "200"])
-    Desktop.command!(["click", "--repeat", "20", "7"])
+    Desktop.repeat_click!(window_id, 500, 200, 20)
     assert :ok = GPUI.Runtime.request_frame(runtime)
     Desktop.await_frame!(runtime, 1, window_id)
     assert Process.alive?(runtime)

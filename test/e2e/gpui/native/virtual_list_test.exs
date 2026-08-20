@@ -1,7 +1,7 @@
 defmodule GPUI.Native.VirtualListE2ETest do
   use ExUnit.Case, async: false
 
-  alias GPUITest.E2E.Desktop
+  alias GPUITest.Desktop
 
   @moduletag :e2e
 
@@ -231,8 +231,7 @@ defmodule GPUI.Native.VirtualListE2ETest do
     assert selected == clicked
 
     assert {:ok, generation} = GPUI.Runtime.frame_token(runtime, 1)
-    Desktop.command!(["mousemove", "--window", native_window_id, "120", "200"])
-    Desktop.command!(["click", "--repeat", "12", "4"])
+    Desktop.repeat_click!(native_window_id, 120, 200, 12)
     assert :ok = GPUI.Runtime.request_frame(runtime)
     Desktop.await_frame_after!(runtime, 1, generation)
 
@@ -282,8 +281,7 @@ defmodule GPUI.Native.VirtualListE2ETest do
                     }}
 
     assert {:ok, generation} = GPUI.Runtime.frame_token(runtime, 1)
-    Desktop.command!(["mousemove", "--window", native_window_id, "120", "200"])
-    Desktop.command!(["click", "--repeat", "12", "5"])
+    Desktop.repeat_click!(native_window_id, 120, 200, 12)
     assert :ok = GPUI.Runtime.request_frame(runtime)
     Desktop.await_frame_after!(runtime, 1, generation)
     Desktop.click!(native_window_id, 120, 200)
@@ -314,7 +312,7 @@ defmodule GPUI.Native.VirtualListE2ETest do
              )
 
     Desktop.await_frame!(runtime, 1, native_window_id)
-    Desktop.command!(["windowsize", native_window_id, "500", "300"])
+    Desktop.resize!(native_window_id, 500, 300)
     Desktop.await_frame!(runtime, 1, native_window_id)
 
     assert {:ok, %{windows: [%{root: %{assigns: %{selected: nil}}}]}} =

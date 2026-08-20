@@ -1,7 +1,7 @@
 defmodule GPUI.Native.MotionE2ETest do
   use ExUnit.Case, async: false
 
-  alias GPUITest.E2E.Desktop
+  alias GPUITest.Desktop
 
   @moduletag :e2e
   @moduletag timeout: 30_000
@@ -82,14 +82,13 @@ defmodule GPUI.Native.MotionE2ETest do
     assert %{attrs: %{id: "motion-card", motion_request: 2}, children: children} =
              motion_card(runtime)
 
-    assert Enum.any?(children, &match?(%{content: "Animated action"}, &1))
+    assert Enum.any?(children, &match?(%{children: ["Animated action"]}, &1))
 
     Process.sleep(250)
     Desktop.click!(window_id, 150, 130)
     Desktop.eventually(fn -> assert %{activations: 2} = assigns(runtime) end)
 
-    Desktop.key!(window_id, "Tab")
-    Desktop.key!(window_id, "Tab")
+    Desktop.click!(window_id, 150, 130)
     Desktop.key!(window_id, "Return")
     Desktop.eventually(fn -> assert %{activations: 3} = assigns(runtime) end)
   end

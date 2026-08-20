@@ -233,7 +233,8 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
   end
 
   defp capture!(window_id, path) do
-    manifest = Path.expand("../../../test/support/e2e_driver/Cargo.toml", __DIR__)
+    manifest =
+      Path.expand("../../../test/support/desktop/drivers/linux/Cargo.toml", __DIR__)
 
     args = [
       "run",

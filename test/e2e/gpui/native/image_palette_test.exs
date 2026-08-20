@@ -5,7 +5,7 @@ defmodule GPUI.Native.ImagePaletteE2ETest do
 
   alias Examples.ImagePalette.App
   alias Examples.ImagePalette.Coordinator
-  alias GPUITest.E2E.Desktop
+  alias GPUITest.Desktop
 
   @moduletag :e2e
 

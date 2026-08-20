@@ -1,7 +1,7 @@
 defmodule GPUI.Native.OverlayE2ETest do
   use ExUnit.Case, async: false
 
-  alias GPUITest.E2E.Desktop
+  alias GPUITest.Desktop
 
   @moduletag :e2e
   @moduletag timeout: 30_000
@@ -280,12 +280,12 @@ defmodule GPUI.Native.OverlayE2ETest do
     Desktop.eventually(fn -> assert %{open: false} = assigns(runtime) end)
 
     assert {:ok, hover_generation} = GPUI.Runtime.frame_token(runtime, 1)
-    Desktop.command!(["mousemove", "--sync", "--window", window_id, "50", "72"])
+    Desktop.request_frame!(window_id, 50, 72)
     Desktop.await_frame_after!(runtime, 1, hover_generation)
     assert {:ok, tooltip_generation} = GPUI.Runtime.frame_token(runtime, 1)
     Desktop.await_frame_after!(runtime, 1, tooltip_generation)
     assert Process.alive?(runtime)
-    Desktop.command!(["mousemove", "--sync", "--window", window_id, "360", "190"])
+    Desktop.request_frame!(window_id, 360, 190)
     Desktop.click!(window_id, 50, 72)
     Desktop.eventually(fn -> assert %{tooltip_clicked: true} = assigns(runtime) end)
 

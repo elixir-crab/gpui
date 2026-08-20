@@ -163,7 +163,7 @@ cleanup. Scenarios must not sample live state when stable screenshots are
 required.
 
 Inspect the resulting images for spacing, clipping, contrast, popup placement,
-and state variants. `GPUITest.E2E.Desktop.capture!/2` remains a single-purpose
+and state variants. `GPUITest.Desktop.capture!/2` remains a single-purpose
 explicit capture helper for repository E2E tests; it does not wait, inspect
 environment variables, or choose paths.
 

@@ -1,53 +1,44 @@
-defmodule GPUITest.E2E.Desktop do
+defmodule GPUITest.Desktop do
   @moduledoc false
 
   import ExUnit.Assertions
 
   @update_timeout 3_000
-  @driver_manifest Path.expand("../e2e_driver/Cargo.toml", __DIR__)
+  @backend (case :os.type() do
+              {:unix, :darwin} -> GPUITest.Desktop.MacOS
+              {:unix, _name} -> GPUITest.Desktop.Linux
+            end)
 
-  def command!(arguments) do
-    case System.cmd("xdotool", arguments, stderr_to_stdout: true) do
-      {output, 0} ->
-        String.trim(output)
+  def platform, do: if(@backend == GPUITest.Desktop.MacOS, do: :macos, else: :linux)
+  def capabilities, do: @backend.capabilities()
+  def window_id!(title), do: @backend.window_id!(title)
+  def request_frame!(window_id, x \\ 1, y \\ 1), do: @backend.request_frame!(window_id, x, y)
+  def click!(window_id, x, y), do: @backend.click!(window_id, x, y)
+  def type!(window_id, text), do: @backend.type!(window_id, text)
+  def key!(window_id, key), do: @backend.key!(window_id, key)
+  def close_window!(window_id), do: @backend.close_window!(window_id)
+  def capture!(window_id, path), do: @backend.capture!(window_id, path)
+  def repeat_click!(window_id, x, y, count), do: @backend.repeat_click!(window_id, x, y, count)
 
-      {output, status} ->
-        flunk("xdotool #{Enum.join(arguments, " ")} failed (#{status}): #{output}")
-    end
+  def drag!(window_id, from_x, from_y, to_x, to_y),
+    do: @backend.drag!(window_id, from_x, from_y, to_x, to_y)
+
+  def resize!(window_id, width, height), do: @backend.resize!(window_id, width, height)
+
+  def require_capability!(capability) do
+    unless MapSet.member?(capabilities(), capability),
+      do: flunk("desktop backend #{platform()} lacks #{inspect(capability)}")
+
+    :ok
   end
-
-  def window_id!(title) do
-    case System.cmd(
-           "xdotool",
-           ["search", "--sync", "--onlyvisible", "--name", "^#{title}$"],
-           stderr_to_stdout: true
-         ) do
-      {output, 0} -> output |> String.split() |> List.first()
-      {output, status} -> flunk("window lookup failed (#{status}): #{output}")
-    end
-  end
-
-  def request_frame!(window_id, x \\ 1, y \\ 1),
-    do: command!(["mousemove", "--sync", "--window", window_id, to_string(x), to_string(y)])
 
   def await_frame!(source, window_id, native_window_id) do
     nudge_frame!(native_window_id)
     assert :ok = GPUI.Display.call_await_frame(source, window_id, @update_timeout)
   end
 
-  def click!(window_id, x, y) do
-    request_frame!(window_id, x, y)
-    command!(["click", "1"])
-  end
-
-  def type!(window_id, text),
-    do: command!(["type", "--window", window_id, "--delay", "30", text])
-
-  def key!(window_id, key), do: command!(["key", "--window", window_id, key])
-
   def await_frame_after!(source, window_id, generation, timeout \\ @update_timeout) do
-    assert :ok =
-             GPUI.Display.call_await_frame_after(source, window_id, generation, timeout)
+    assert :ok = GPUI.Display.call_await_frame_after(source, window_id, generation, timeout)
   end
 
   def assert_no_runtime_update!(runtime, window_id, native_window_id, action) do
@@ -59,26 +50,6 @@ defmodule GPUITest.E2E.Desktop do
     await_frame_after!(runtime, window_id, generation)
     GPUI.Runtime.drain_events(runtime)
     refute_receive {:gpui, ^runtime, %GPUI.Runtime.Update{}}, 0
-  end
-
-  def close_window!(window_id), do: driver!("close-window", [window_id])
-
-  def capture!(window_id, path), do: driver!("capture-window", [window_id, path])
-
-  defp driver!(command, arguments) do
-    args = [
-      "run",
-      "--quiet",
-      "--manifest-path",
-      @driver_manifest,
-      "--",
-      command | arguments
-    ]
-
-    case System.cmd("cargo", args, stderr_to_stdout: true) do
-      {_output, 0} -> :ok
-      {output, status} -> flunk("#{command} failed (#{status}): #{output}")
-    end
   end
 
   def eventually(fun, timeout \\ @update_timeout) do
@@ -112,14 +83,7 @@ defmodule GPUITest.E2E.Desktop do
   defp nudge_frame!(native_window_id) do
     coordinate = Process.get(:gpui_frame_coordinate, 1)
     Process.put(:gpui_frame_coordinate, 3 - coordinate)
-
-    command!([
-      "mousemove",
-      "--window",
-      native_window_id,
-      to_string(coordinate),
-      to_string(coordinate)
-    ])
+    request_frame!(native_window_id, coordinate, coordinate)
   end
 
   defp flush_updates(source) do

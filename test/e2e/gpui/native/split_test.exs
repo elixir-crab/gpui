@@ -2,7 +2,7 @@ defmodule GPUI.Native.SplitE2ETest do
   use ExUnit.Case, async: false
 
   alias GPUI.UI
-  alias GPUITest.E2E.Desktop
+  alias GPUITest.Desktop
 
   @moduletag :e2e
 
@@ -55,10 +55,7 @@ defmodule GPUI.Native.SplitE2ETest do
     native_window = Desktop.window_id!(title)
     Desktop.await_frame!(runtime, 1, native_window)
 
-    Desktop.command!(["mousemove", "--window", native_window, "260", "200"])
-    Desktop.command!(["mousedown", "1"])
-    Desktop.command!(["mousemove", "--sync", "--window", native_window, "360", "200"])
-    Desktop.command!(["mouseup", "1"])
+    Desktop.drag!(native_window, 260, 200, 360, 200)
 
     resized =
       Desktop.eventually(fn ->

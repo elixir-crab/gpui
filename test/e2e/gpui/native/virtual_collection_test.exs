@@ -1,7 +1,7 @@
 defmodule GPUI.Native.VirtualCollectionE2ETest do
   use ExUnit.Case, async: false
 
-  alias GPUITest.E2E.Desktop
+  alias GPUITest.Desktop
 
   @moduletag :e2e
   @moduletag timeout: 30_000
@@ -121,8 +121,7 @@ defmodule GPUI.Native.VirtualCollectionE2ETest do
     following = await_range(runtime, &(&1.last == 33))
     assert following.first >= initial.first
 
-    Desktop.command!(["mousemove", "--window", native_window_id, "200", "180"])
-    Desktop.command!(["click", "--repeat", "12", "4"])
+    Desktop.repeat_click!(native_window_id, 200, 180, 12)
     Desktop.await_frame!(runtime, 1, native_window_id)
     detached = await_range(runtime, &(&1.last < 33))
     flush_updates(runtime)

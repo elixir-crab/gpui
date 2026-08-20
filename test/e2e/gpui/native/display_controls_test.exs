@@ -1,7 +1,7 @@
 defmodule GPUI.Native.DisplayControlsE2ETest do
   use ExUnit.Case, async: false
 
-  alias GPUITest.E2E.Desktop
+  alias GPUITest.Desktop
 
   @moduletag :e2e
 

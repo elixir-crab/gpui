@@ -24,7 +24,8 @@ erl_crash.dump
 
 # Ignore native Rust build artifacts.
 /native/*/target/
-/test/support/e2e_driver/target/
+/test/support/desktop/drivers/linux/target/
+/test/support/desktop/drivers/macos/.build/
 /priv/native/
 
 # Local git worktrees.
