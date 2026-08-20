@@ -24,6 +24,7 @@ defmodule GPUI.Application do
           size: 2,
           min_size: 2,
           resizable: 1,
+          chrome: 1,
           root: 1,
           root: 2,
           shortcut: 2
@@ -62,6 +63,9 @@ defmodule GPUI.Application do
         {:resizable, resizable}, spec ->
           %{spec | resizable: resizable}
 
+        {:chrome, chrome}, spec ->
+          %{spec | chrome: chrome}
+
         {:root, module, assigns}, spec ->
           %{spec | root: {module, Map.new(assigns)}}
 
@@ -79,6 +83,9 @@ defmodule GPUI.Application do
 
   @doc "Declares whether the native window can be resized by the user."
   defmacro resizable(value), do: quote(do: {:resizable, unquote(value)})
+
+  @doc "Declares whether the window uses system or application-rendered content chrome."
+  defmacro chrome(value), do: quote(do: {:chrome, unquote(value)})
 
   @doc "Binds an application command to a modified shortcut inside `window`."
   defmacro shortcut(id, keys), do: quote(do: {:command, unquote(id), unquote(keys)})

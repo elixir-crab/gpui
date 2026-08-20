@@ -11,6 +11,7 @@ defmodule GPUI.WindowSpec do
 
   @type root :: {module(), map() | keyword()}
   @type key :: String.t()
+  @type chrome :: :system | :content
   @type t :: %__MODULE__{
           id: pos_integer() | nil,
           key: key() | nil,
@@ -18,12 +19,23 @@ defmodule GPUI.WindowSpec do
           size: {pos_integer(), pos_integer()} | nil,
           min_size: {pos_integer(), pos_integer()} | nil,
           resizable: boolean(),
+          chrome: chrome(),
           root: root() | nil,
           commands: [GPUI.Command.t()]
         }
 
   @enforce_keys [:title]
-  defstruct [:id, :key, :title, :size, :min_size, :root, resizable: true, commands: []]
+  defstruct [
+    :id,
+    :key,
+    :title,
+    :size,
+    :min_size,
+    :root,
+    resizable: true,
+    chrome: :system,
+    commands: []
+  ]
 
   @spec validate!(t()) :: t()
   def validate!(
@@ -33,6 +45,7 @@ defmodule GPUI.WindowSpec do
           size: size,
           min_size: min_size,
           resizable: resizable,
+          chrome: chrome,
           root: root,
           commands: commands
         } = window
@@ -49,6 +62,9 @@ defmodule GPUI.WindowSpec do
     end
 
     unless is_boolean(resizable), do: raise(ArgumentError, "window resizable must be a boolean")
+
+    unless chrome in [:system, :content],
+      do: raise(ArgumentError, "window chrome must be :system or :content")
 
     unless valid_root?(root) do
       raise ArgumentError, "window root must contain a module and map or keyword assigns"

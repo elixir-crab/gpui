@@ -53,6 +53,7 @@ impl ElementNode {
             motion_from_opacity: 1.0,
             motion_from_x: 0.0,
             motion_from_y: 0.0,
+            window_control: None,
         })
     }
 
@@ -726,6 +727,61 @@ mod motion_tests {
 }
 
 #[cfg(feature = "real-gpui")]
+pub(crate) fn apply_window_control(
+    mut element: gpui::Stateful<gpui::Div>,
+    control: Option<String>,
+    runtime: SharedRuntime,
+    window_id: u64,
+) -> gpui::Stateful<gpui::Div> {
+    use gpui::{InteractiveElement, MouseButton, StatefulInteractiveElement, WindowControlArea};
+
+    match control.as_deref() {
+        Some("drag") => {
+            element = element.window_control_area(WindowControlArea::Drag);
+            #[cfg(not(target_os = "windows"))]
+            {
+                element = element.on_mouse_down(MouseButton::Left, move |event, window, _cx| {
+                    if event.click_count == 2 {
+                        #[cfg(target_os = "macos")]
+                        window.titlebar_double_click();
+                        #[cfg(not(target_os = "macos"))]
+                        window.zoom_window();
+                    } else {
+                        window.start_window_move();
+                    }
+                });
+            }
+        }
+        Some("close") => {
+            element = element.window_control_area(WindowControlArea::Close);
+            #[cfg(not(target_os = "windows"))]
+            {
+                element = element.on_click(move |_event, _window, _cx| {
+                    let _ = push_event(&runtime, NativeEvent::WindowCloseRequest { window_id });
+                });
+            }
+        }
+        Some("maximize") => {
+            element = element.window_control_area(WindowControlArea::Max);
+            #[cfg(not(target_os = "windows"))]
+            {
+                element = element.on_click(|_event, window, _cx| window.zoom_window());
+            }
+        }
+        Some("minimize") => {
+            element = element.window_control_area(WindowControlArea::Min);
+            #[cfg(not(target_os = "windows"))]
+            {
+                element = element.on_click(|_event, window, _cx| window.minimize_window());
+            }
+        }
+        _ => {}
+    }
+
+    element
+}
+
+#[cfg(feature = "real-gpui")]
 pub(crate) fn render_container_primitive(
     element_id: usize,
     node: ContainerNode,
@@ -752,6 +808,7 @@ pub(crate) fn render_container_primitive(
         motion_from_opacity,
         motion_from_x,
         motion_from_y,
+        window_control,
     } = node;
     let runtime = context.runtime.clone();
     let window_id = context.window_id;
@@ -844,6 +901,7 @@ pub(crate) fn render_container_primitive(
             )
         });
         let element = element.id(scroll_id.clone()).overflow_y_scroll();
+        let element = apply_window_control(element, window_control, runtime.clone(), window_id);
         let element = if let Some(event) = click {
             let runtime_for_click = runtime.clone();
             element.on_click(move |_event, _window, _cx| {
@@ -871,6 +929,7 @@ pub(crate) fn render_container_primitive(
             runtime,
             window_id,
             element_motion,
+            window_control,
         )
     }
 }

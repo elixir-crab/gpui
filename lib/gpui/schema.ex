@@ -22,7 +22,9 @@ defmodule GPUI.Schema do
     motion_from_y: {:default, :number, 0.0}
   ]
 
-  @container_attrs Keyword.merge(@accessibility_attrs, @motion_attrs)
+  @container_attrs @accessibility_attrs
+                   |> Keyword.merge(@motion_attrs)
+                   |> Keyword.put(:window_control, {:enum, ~w(drag close maximize minimize)})
 
   @components [
     %Component{tag: :viewport, kind: :viewport, children: true},

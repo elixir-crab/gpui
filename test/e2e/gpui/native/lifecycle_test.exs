@@ -149,7 +149,7 @@ defmodule GPUI.Native.LifecycleE2ETest do
     assert is_binary(final_window_id)
     assert Process.alive?(display)
     assert %{windows: windows, resources: resources} = :sys.get_state(display)
-    assert MapSet.equal?(windows, MapSet.new([1]))
+    assert Map.keys(windows) == [1]
     assert Map.has_key?(resources, "pixel")
   end
 

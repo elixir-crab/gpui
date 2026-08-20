@@ -15,19 +15,19 @@ mod atoms {
         = "border_radius", border_width = "border_width", bordered = "bordered", bottom =
         "bottom", bounds = "bounds", branch = "branch", buffer = "buffer", cancelled =
         "cancelled", cell_change = "cell_change", change = "change", checked = "checked",
-        children = "children", cleanable = "cleanable", click = "click", clipboard =
-        "clipboard", clipboard_text = "clipboard_text", clipboard_write =
-        "clipboard_write", closable = "closable", close_button = "close_button", color =
-        "color", command = "command", commands = "commands", compact = "compact", copy =
-        "copy", cursor = "cursor", dark = "dark", data = "data", decorations =
-        "decorations", delay = "delay", disabled = "disabled", display = "display",
-        drag_enter = "drag_enter", drag_leave = "drag_leave", drag_move = "drag_move",
-        drop = "drop", error = "error", event = "event", expanded = "expanded",
-        file_max_bytes = "file_max_bytes", file_prompt = "file_prompt", file_read =
-        "file_read", first = "first", fit = "fit", flex = "flex", flex_basis =
-        "flex_basis", flex_direction = "flex_direction", flex_grow = "flex_grow",
-        flex_shrink = "flex_shrink", flex_wrap = "flex_wrap", focus = "focus",
-        focus_request = "focus_request", follow = "follow", follow_request =
+        children = "children", chrome = "chrome", cleanable = "cleanable", click =
+        "click", clipboard = "clipboard", clipboard_text = "clipboard_text",
+        clipboard_write = "clipboard_write", closable = "closable", close_button =
+        "close_button", color = "color", command = "command", commands = "commands",
+        compact = "compact", copy = "copy", cursor = "cursor", dark = "dark", data =
+        "data", decorations = "decorations", delay = "delay", disabled = "disabled",
+        display = "display", drag_enter = "drag_enter", drag_leave = "drag_leave",
+        drag_move = "drag_move", drop = "drop", error = "error", event = "event",
+        expanded = "expanded", file_max_bytes = "file_max_bytes", file_prompt =
+        "file_prompt", file_read = "file_read", first = "first", fit = "fit", flex =
+        "flex", flex_basis = "flex_basis", flex_direction = "flex_direction", flex_grow =
+        "flex_grow", flex_shrink = "flex_shrink", flex_wrap = "flex_wrap", focus =
+        "focus", focus_request = "focus_request", follow = "follow", follow_request =
         "follow_request", font_size = "font_size", font_weight = "font_weight", format =
         "format", gap = "gap", geometry = "geometry", geometry_ranges =
         "geometry_ranges", hard_tabs = "hard_tabs", header_height = "header_height",
@@ -98,6 +98,7 @@ mod atoms {
         truncate = "truncate", type_atom = "type", value = "value", variant = "variant",
         viewport = "viewport", white_space = "white_space", width = "width", window_blur
         = "window_blur", window_close_request = "window_close_request", window_closed =
-        "window_closed", window_focus = "window_focus", window_id = "window_id"
+        "window_closed", window_control = "window_control", window_focus =
+        "window_focus", window_id = "window_id"
     }
 }

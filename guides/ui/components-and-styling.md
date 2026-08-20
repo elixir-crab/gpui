@@ -749,6 +749,7 @@ window "Workspace" do
   size 1100, 720
   min_size 760, 480
   resizable true
+  chrome :content
   root WorkspaceView
 end
 ```
@@ -777,8 +778,13 @@ application-owned confirmation dialog—or `{:close, assigns}` to approve closur
 Ordinary `handle_event/3` handlers may also return `{:close, assigns}` after a
 confirmation action.
 
-`min_size` and `resizable` are declarative creation options interpreted by the
-native display. The existing `:window_closed` event remains an internal final
+`min_size`, `resizable`, and `chrome` are declarative creation options interpreted by the
+native display. `chrome :system` is the default; `chrome :content` extends
+application content into native chrome and enables ordinary containers marked
+with `window_control="drag|close|maximize|minimize"`. Creation-option changes
+reopen the native window while retaining its session ID. See
+[Declarative native window chrome boundaries](declarative-window-chrome-boundaries.html)
+for platform behavior and fallback rules. The existing `:window_closed` event remains an internal final
 notification after a window actually closes. Window `:focus` and `:blur`
 callbacks report native activation and are separate from element focus.
 

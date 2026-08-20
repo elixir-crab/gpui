@@ -169,6 +169,7 @@ defmodule GPUI.CommandTest do
            size(480, 320)
            min_size(320, 240)
            resizable(false)
+           chrome(:content)
            shortcut("refresh", "primary-r")
            shortcut("focus_filter", "primary-shift-f")
            root(View)
@@ -188,6 +189,7 @@ defmodule GPUI.CommandTest do
 
     assert window.min_size == {320, 240}
     refute window.resizable
+    assert window.chrome == :content
 
     payload = Session.window_payload(window)
     assert payload.lifecycle == [:close_request, :focus, :blur]
@@ -195,6 +197,7 @@ defmodule GPUI.CommandTest do
     assert %{
              min_size: [320, 240],
              resizable: false,
+             chrome: :content,
              commands: [
                {"refresh", "primary-r"},
                {"focus_filter", "primary-shift-f"}
@@ -302,6 +305,11 @@ defmodule GPUI.CommandTest do
 
     assert_raise ArgumentError, ~r/resizable must be a boolean/, fn ->
       window = struct!(WindowSpec, title: "Invalid", resizable: :yes)
+      WindowSpec.validate!(window)
+    end
+
+    assert_raise ArgumentError, ~r/window chrome must be :system or :content/, fn ->
+      window = struct!(WindowSpec, title: "Invalid", chrome: :frameless)
       WindowSpec.validate!(window)
     end
 

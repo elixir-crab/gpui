@@ -360,6 +360,25 @@ defmodule GPUI.TemplateTest do
     end
   end
 
+  test "serializes neutral native window control regions" do
+    for control <- ~w(drag close maximize minimize) do
+      payload =
+        ~GPUI"""
+        <div window_control={control}><text>{control}</text></div>
+        """
+        |> GPUI.Element.to_payload()
+
+      assert payload.attrs.window_control == control
+    end
+
+    assert_raise ArgumentError, ~r/window_control/, fn ->
+      ~GPUI"""
+      <div window_control="menu" />
+      """
+      |> GPUI.Element.to_payload()
+    end
+  end
+
   test "serializes bounded monotonic motion contracts on identified containers" do
     payload =
       ~GPUI"""

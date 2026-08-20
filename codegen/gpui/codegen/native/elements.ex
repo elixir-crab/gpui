@@ -34,7 +34,8 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:motion_policy) => String.t(),
           required(:motion_from_opacity) => R.f64(),
           required(:motion_from_x) => R.f64(),
-          required(:motion_from_y) => R.f64()
+          required(:motion_from_y) => R.f64(),
+          required(:window_control) => R.option(String.t())
         }
 
   @type anchored_layer_node :: %{
@@ -250,7 +251,9 @@ defmodule GPUI.Codegen.Native.Elements do
            unwrap!(component_number_attr(term, Atoms.motion_from_opacity())).unwrap_or(1.0),
          motion_from_x:
            unwrap!(component_number_attr(term, Atoms.motion_from_x())).unwrap_or(0.0),
-         motion_from_y: unwrap!(component_number_attr(term, Atoms.motion_from_y())).unwrap_or(0.0)
+         motion_from_y:
+           unwrap!(component_number_attr(term, Atoms.motion_from_y())).unwrap_or(0.0),
+         window_control: string_attr(term, Atoms.window_control())
        )
      )}
   end

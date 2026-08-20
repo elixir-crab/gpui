@@ -74,12 +74,12 @@ defmodule GPUI.Element do
         Map.has_key?(attrs_map, :"phx-focus") or Map.has_key?(attrs_map, :"phx-blur")
 
     motion? = Map.get(attrs_map, :motion_request, 0) > 0
-    motion_declared? = motion_attrs?(attrs_map)
+    declarative_feature? = motion_attrs?(attrs_map) or Map.has_key?(attrs_map, :window_control)
     accessible? = GPUI.Accessibility.metadata?(attrs_map)
 
     validate_interactive_feature_id!(type, attrs_map, observed?, focused?, motion?)
 
-    if observed? or focused? or motion_declared? or accessible? do
+    if observed? or focused? or declarative_feature? or accessible? do
       attrs_map
       |> GPUI.Schema.validate_component_assigns!(type)
       |> then(&GPUI.Accessibility.validate_generic!(type, &1))

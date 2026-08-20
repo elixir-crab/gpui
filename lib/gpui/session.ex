@@ -99,6 +99,7 @@ defmodule GPUI.Session do
       size: Tuple.to_list(window.size || {800, 600}),
       min_size: encode_optional_size(window.min_size),
       resizable: window.resizable,
+      chrome: window.chrome,
       lifecycle: window_lifecycle(window.root),
       commands: Enum.map(window.commands, &GPUI.Command.to_payload/1),
       root: encode_root(window.root)

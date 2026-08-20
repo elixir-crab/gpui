@@ -250,6 +250,23 @@ pub(crate) fn window_bool<'a>(
     }
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn window_atom_string<'a>(
+    window: Term<'a>,
+    attr: Atom,
+    default: String,
+) -> NifResult<String> {
+    match window.map_get(attr) {
+        Ok(value) => {
+            if value.is_atom() {
+                Ok(value.atom_to_string()?)
+            } else {
+                Err(rustler::Error::BadArg)
+            }
+        }
+        Err(_missing) => Ok(default.to_string()),
+    }
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn window_lifecycle<'a>(window: Term<'a>, event: &str) -> NifResult<bool> {
     match window.map_get(atoms::lifecycle()) {
         Ok(value) => {
@@ -483,6 +500,7 @@ pub(crate) struct ContainerNode {
     pub(crate) motion_from_opacity: f64,
     pub(crate) motion_from_x: f64,
     pub(crate) motion_from_y: f64,
+    pub(crate) window_control: Option<String>,
 }
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
@@ -707,6 +725,7 @@ pub(crate) fn decode_container_node<'a>(
                 .unwrap_or(0.0),
             motion_from_y: component_number_attr(term, atoms::motion_from_y())?
                 .unwrap_or(0.0),
+            window_control: string_attr(term, atoms::window_control()),
         }),
     )
 }

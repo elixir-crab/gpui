@@ -232,6 +232,21 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
+  @spec window_atom_string(term(), atom(), String.t()) :: R.nif_result(String.t())
+  defrust window_atom_string(window, attr, default) do
+    case window.map_get(attr) do
+      {:ok, value} ->
+        if value.is_atom() do
+          {:ok, unwrap!(value.atom_to_string())}
+        else
+          {:error, badarg()}
+        end
+
+      {:error, _missing} ->
+        {:ok, default.to_string()}
+    end
+  end
+
   @spec window_lifecycle(term(), R.str()) :: R.nif_result(boolean())
   defrust window_lifecycle(window, event) do
     case window.map_get(Atoms.lifecycle()) do

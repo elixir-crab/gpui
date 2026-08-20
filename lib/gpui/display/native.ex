@@ -65,7 +65,7 @@ defmodule GPUI.Display.Native do
     with :ok <- native_compiled(),
          {:ok, runtime} <- GPUI.Native.start_runtime(),
          :ok <- initialize_theme(runtime, Keyword.get(opts, :theme)) do
-      {:ok, %{runtime: runtime, windows: MapSet.new(), resources: %{}}}
+      {:ok, %{runtime: runtime, windows: %{}, resources: %{}}}
     else
       {:error, reason} -> {:stop, reason}
     end
@@ -172,7 +172,7 @@ defmodule GPUI.Display.Native do
           into: MapSet.new(),
           do: window_id
 
-    %{state | windows: MapSet.difference(state.windows, closed_ids)}
+    %{state | windows: Map.drop(state.windows, MapSet.to_list(closed_ids))}
   end
 
   defp sync_snapshot(state, %{windows: windows, resources: resources}) do
@@ -214,8 +214,8 @@ defmodule GPUI.Display.Native do
   end
 
   defp sync_windows(state, windows) do
-    desired = MapSet.new(windows, & &1.id)
-    removed = MapSet.difference(state.windows, desired)
+    desired = Map.new(windows, &{&1.id, window_open_config(&1)})
+    removed = Map.keys(state.windows) -- Map.keys(desired)
 
     with :ok <- each_ok(removed, &close_window(state.runtime, &1)),
          :ok <- each_ok(windows, &sync_window(state, &1)) do
@@ -232,17 +232,30 @@ defmodule GPUI.Display.Native do
   end
 
   defp sync_window(state, %{id: id} = window) do
+    config = window_open_config(window)
+
     result =
-      if MapSet.member?(state.windows, id) do
-        update_or_reopen_window(state.runtime, window)
-      else
-        GPUI.Native.open_window(state.runtime, window)
+      case Map.fetch(state.windows, id) do
+        {:ok, ^config} ->
+          update_or_reopen_window(state.runtime, window)
+
+        {:ok, _changed_config} ->
+          with :ok <- close_window(state.runtime, id) do
+            GPUI.Native.open_window(state.runtime, window)
+          end
+
+        :error ->
+          GPUI.Native.open_window(state.runtime, window)
       end
 
     case result do
       {:ok, _value} -> :ok
       {:error, reason} -> {:error, reason}
     end
+  end
+
+  defp window_open_config(window) do
+    Map.take(window, [:title, :size, :min_size, :resizable, :chrome, :lifecycle, :commands])
   end
 
   defp update_or_reopen_window(runtime, %{id: id} = window) do

@@ -466,6 +466,7 @@ pub(crate) enum WindowCommand {
         height: f32,
         min_size: Option<(f32, f32)>,
         resizable: bool,
+        content_chrome: bool,
         close_request: bool,
         focus: bool,
         blur: bool,
@@ -583,6 +584,7 @@ fn handle_window_command(
             height,
             min_size,
             resizable,
+            content_chrome,
             close_request,
             focus,
             blur,
@@ -603,6 +605,7 @@ fn handle_window_command(
                     height,
                     min_size,
                     resizable,
+                    content_chrome,
                     close_request,
                     focus,
                     blur,
@@ -863,6 +866,7 @@ struct WindowOpenConfig {
     height: f32,
     min_size: Option<(f32, f32)>,
     resizable: bool,
+    content_chrome: bool,
     close_request: bool,
     focus: bool,
     blur: bool,
@@ -881,7 +885,10 @@ fn open_gpui_window(
     ),
     String,
 > {
-    use gpui::{px, size, AppContext, Bounds, WindowBounds, WindowOptions};
+    use gpui::{
+        px, size, AppContext, Bounds, TitlebarOptions, WindowBounds, WindowDecorations,
+        WindowOptions,
+    };
 
     let WindowOpenConfig {
         title,
@@ -890,12 +897,27 @@ fn open_gpui_window(
         height,
         min_size,
         resizable,
+        content_chrome,
         close_request,
         focus,
         blur,
     } = config;
     let bounds = Bounds::centered(None, size(px(width), px(height)), cx);
     let window_min_size = min_size.map(|(width, height)| size(px(width), px(height)));
+    let titlebar = content_chrome.then(|| TitlebarOptions {
+        title: Some(title.clone().into()),
+        appears_transparent: true,
+        traffic_light_position: Some(gpui::point(px(9.0), px(9.0))),
+    });
+    let titlebar = if content_chrome {
+        titlebar
+    } else {
+        Some(TitlebarOptions {
+            title: Some(title.clone().into()),
+            ..Default::default()
+        })
+    };
+    let window_decorations = content_chrome.then_some(WindowDecorations::Client);
     let view = cx.new(|_cx| ElixirRoot::new(window_state, runtime.clone(), window_id, focus, blur));
     let view_for_root = view.clone();
 
@@ -905,6 +927,9 @@ fn open_gpui_window(
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
                 is_resizable: resizable,
                 window_min_size,
+                titlebar,
+                app_owns_titlebar_drag: content_chrome,
+                window_decorations,
                 ..Default::default()
             },
             |native_window, cx| {

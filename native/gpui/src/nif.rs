@@ -107,6 +107,12 @@ pub(crate) fn open_window_impl<'a>(
     let (width, height) = window_size(window)?;
     let min_size = window_optional_size(window, atoms::min_size())?;
     let resizable = window_bool(window, atoms::resizable(), true)?;
+    let chrome = window_atom_string(window, atoms::chrome(), "system".to_string())?;
+    let content_chrome = match chrome.as_str() {
+        "system" => false,
+        "content" => true,
+        _unsupported => return Err(rustler::Error::BadArg),
+    };
     let close_request = window_lifecycle(window, "close_request")?;
     let focus = window_lifecycle(window, "focus")?;
     let blur = window_lifecycle(window, "blur")?;
@@ -123,6 +129,7 @@ pub(crate) fn open_window_impl<'a>(
         height,
         min_size,
         resizable,
+        content_chrome,
         close_request,
         focus,
         blur,

@@ -1,6 +1,7 @@
 use crate::*;
 
 #[cfg(feature = "real-gpui")]
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn apply_click_event(
     element: gpui::Div,
     element_id: String,
@@ -9,6 +10,7 @@ pub(crate) fn apply_click_event(
     runtime: SharedRuntime,
     window_id: u64,
     motion: super::ContainerMotion,
+    window_control: Option<String>,
 ) -> gpui::AnyElement {
     use gpui::{AccessibleAction, InteractiveElement, StatefulInteractiveElement};
 
@@ -18,6 +20,7 @@ pub(crate) fn apply_click_event(
         element_id
     };
     let element = element.id(element_id);
+    let element = super::apply_window_control(element, window_control, runtime.clone(), window_id);
 
     if let Some(event) = event {
         let enabled = !accessibility.disabled;

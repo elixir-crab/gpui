@@ -403,6 +403,7 @@ fn dialog_content_tree(content: DialogContentComponentNode) -> crate::ElementNod
         motion_from_opacity: 1.0,
         motion_from_x: 0.0,
         motion_from_y: 0.0,
+        window_control: None,
     })
 }
 
