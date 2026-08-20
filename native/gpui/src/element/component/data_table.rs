@@ -84,7 +84,7 @@ pub(crate) fn render(
 ) -> gpui::AnyElement {
     use crate::element::apply_generated_render_styles;
     use gpui::{
-        uniform_list, InteractiveElement, IntoElement, ParentElement, Role,
+        prelude::FluentBuilder, uniform_list, InteractiveElement, IntoElement, ParentElement, Role,
         StatefulInteractiveElement, Styled,
     };
     use gpui_component::{
@@ -193,6 +193,7 @@ pub(crate) fn render(
     });
 
     let header = render_header(
+        &node.id,
         &columns,
         node.sort_column.as_deref(),
         node.sort_direction.as_deref(),
@@ -257,14 +258,19 @@ pub(crate) fn render(
         .unwrap_or(0)
         .min(columns.len().saturating_sub(1));
     let disabled = node.disabled;
+    let group_focus = focus_handle.clone();
 
     apply_generated_render_styles(gpui::div(), node.style)
-        .id(table_id)
+        .id(table_id.clone())
+        .debug_selector(|| table_id)
         .role(Role::Grid)
         .aria_label(node.label.unwrap_or_else(|| "Data table".to_string()))
         .aria_row_count(total_count.saturating_add(1))
         .aria_column_count(columns.len())
         .track_focus(&focus_handle.tab_stop(!disabled))
+        .when(!disabled, |element| {
+            element.on_click(move |_event, window, cx| group_focus.focus(window, cx))
+        })
         .on_key_down(move |event, window, cx| {
             if disabled || key_rows.is_empty() || key_columns.is_empty() {
                 return;
@@ -319,6 +325,7 @@ pub(crate) fn render(
 #[cfg(feature = "components")]
 #[allow(clippy::too_many_arguments)]
 fn render_header(
+    table_id: &str,
     columns: &[TableColumn],
     sort_column: Option<&str>,
     sort_direction: Option<&str>,
@@ -371,6 +378,7 @@ fn render_header(
                 "gpui-elixir-table-header-{window_id}-{}",
                 column.id
             ))
+            .debug_selector(|| format!("{table_id}-{}", column.id))
             .role(Role::ColumnHeader)
             .aria_column_index(index.saturating_add(1))
             .child(label);
@@ -568,6 +576,164 @@ fn key_target(
         |row| row.index,
         |row| row.disabled,
     )
+}
+
+#[cfg(all(test, feature = "components"))]
+mod tests {
+    use super::*;
+
+    fn table(selected: &str, selected_column: &str, disabled: bool) -> crate::ElementNode {
+        crate::ElementNode::DataTableComponent(crate::DataTableComponentNode {
+            style: crate::StyleAttrs::default(),
+            id: "records".to_string(),
+            label: Some("Records".to_string()),
+            selected: Some(selected.to_string()),
+            selected_index: None,
+            selected_column: Some(selected_column.to_string()),
+            reveal: None,
+            reveal_index: None,
+            reveal_strategy: Some("nearest".to_string()),
+            sort_column: Some("name".to_string()),
+            sort_direction: Some("ascending".to_string()),
+            total_count: 3,
+            offset: 0,
+            overscan: 2,
+            item_height: 44.0,
+            header_height: 40.0,
+            disabled,
+            children: vec![
+                column("name", "Name", 140.0, true),
+                column("memory", "Memory", 120.0, true),
+                row("first", false),
+                row("disabled", true),
+                row("third", false),
+            ],
+            change: Some("row_selected".to_string()),
+            cell_change: Some("cell_selected".to_string()),
+            sort: Some("table_sorted".to_string()),
+            range: None,
+        })
+    }
+
+    fn column(id: &str, label: &str, width: f64, sortable: bool) -> crate::ElementNode {
+        crate::ElementNode::TableColumnComponent(crate::TableColumnComponentNode {
+            style: crate::StyleAttrs::default(),
+            id: id.to_string(),
+            label: label.to_string(),
+            width,
+            align: Some("left".to_string()),
+            sortable,
+        })
+    }
+
+    fn row(id: &str, disabled: bool) -> crate::ElementNode {
+        crate::ElementNode::TableRowComponent(crate::TableRowComponentNode {
+            style: crate::StyleAttrs::default(),
+            id: id.to_string(),
+            disabled,
+            children: vec![text(id), text("1 KB")],
+        })
+    }
+
+    fn text(value: &str) -> crate::ElementNode {
+        crate::ElementNode::Text(crate::TextNode {
+            text: value.to_string(),
+            style: crate::StyleAttrs::default(),
+        })
+    }
+
+    #[gpui::test]
+    fn rendered_table_routes_sortable_header_activation(cx: &mut gpui::TestAppContext) {
+        let mut harness = crate::test_harness::NativeTestHarness::new(
+            cx,
+            table("first", "name", false),
+            gpui::size(gpui::px(320.0), gpui::px(220.0)),
+        );
+
+        harness.click_element("records-name");
+        assert!(matches!(
+            harness.take_events().as_slice(),
+            [crate::NativeEvent::Input {
+                kind: crate::InputKind::Change,
+                window_id: 7,
+                event,
+                value: Some(crate::EventValue::String(value)),
+            }] if event == "table_sorted" && value == "name"
+        ));
+    }
+
+    #[gpui::test]
+    fn rendered_table_navigates_cells_and_skips_disabled_rows(cx: &mut gpui::TestAppContext) {
+        let mut harness = crate::test_harness::NativeTestHarness::new(
+            cx,
+            table("first", "name", false),
+            gpui::size(gpui::px(320.0), gpui::px(220.0)),
+        );
+        harness.focus_component("data_table", "records");
+
+        harness.simulate_keystrokes("right");
+        assert_cell(harness.take_events(), "first", "memory");
+
+        harness.simulate_keystrokes("down");
+        assert_row_and_cell(harness.take_events(), "third", "name");
+    }
+
+    #[gpui::test]
+    fn rendered_table_clamps_column_navigation_at_edges(cx: &mut gpui::TestAppContext) {
+        let mut harness = crate::test_harness::NativeTestHarness::new(
+            cx,
+            table("first", "memory", false),
+            gpui::size(gpui::px(320.0), gpui::px(220.0)),
+        );
+        harness.focus_component("data_table", "records");
+
+        harness.simulate_keystrokes("right");
+        assert_cell(harness.take_events(), "first", "memory");
+    }
+
+    #[gpui::test]
+    fn disabled_table_blocks_keyboard_navigation(cx: &mut gpui::TestAppContext) {
+        let mut harness = crate::test_harness::NativeTestHarness::new(
+            cx,
+            table("first", "name", true),
+            gpui::size(gpui::px(320.0), gpui::px(220.0)),
+        );
+        harness.focus_component("data_table", "records");
+        harness.simulate_keystrokes("right down");
+        assert!(harness.take_events().is_empty());
+    }
+
+    fn assert_cell(events: Vec<crate::NativeEvent>, row: &str, column: &str) {
+        assert!(matches!(
+            events.as_slice(),
+            [crate::NativeEvent::Input {
+                kind: crate::InputKind::Change,
+                window_id: 7,
+                event,
+                value: Some(crate::EventValue::Strings(value)),
+            }] if event == "cell_selected" && value == &[row.to_string(), column.to_string()]
+        ));
+    }
+
+    fn assert_row_and_cell(events: Vec<crate::NativeEvent>, row: &str, column: &str) {
+        assert!(matches!(
+            events.as_slice(),
+            [crate::NativeEvent::Input {
+                kind: crate::InputKind::Change,
+                event: row_event,
+                value: Some(crate::EventValue::String(row_value)),
+                ..
+            }, crate::NativeEvent::Input {
+                kind: crate::InputKind::Change,
+                event: cell_event,
+                value: Some(crate::EventValue::Strings(cell_value)),
+                ..
+            }] if row_event == "row_selected"
+                && row_value == row
+                && cell_event == "cell_selected"
+                && cell_value == &[row.to_string(), column.to_string()]
+        ));
+    }
 }
 
 #[cfg(not(feature = "components"))]

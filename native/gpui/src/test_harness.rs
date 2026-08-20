@@ -62,6 +62,13 @@ impl<'a> NativeTestHarness<'a> {
                     .unwrap_or_else(|| panic!("missing rendered tree {id:?}"))
                     .focus_handle
                     .clone(),
+                "data_table" => root
+                    .components
+                    .data_table_mut(id)
+                    .unwrap_or_else(|| panic!("missing rendered data table {id:?}"))
+                    .collection
+                    .focus_handle
+                    .clone(),
                 _ => panic!("unsupported native test component kind {kind:?}"),
             });
             focus.focus(window, cx);
