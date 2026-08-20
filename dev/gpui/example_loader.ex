@@ -1,7 +1,7 @@
 defmodule GPUI.Dev.ExampleLoader do
   @moduledoc "Development loader for compiling and running standalone GPUI examples."
 
-  @root Path.expand("../..", __DIR__)
+  @project_root Mix.Project.project_file() |> Path.dirname()
 
   @sources %{
     beam_observatory: "examples/beam_observatory/support/beam_observatory.exs",
@@ -20,7 +20,7 @@ defmodule GPUI.Dev.ExampleLoader do
   def load!(name) when is_map_key(@sources, name) do
     @sources
     |> Map.fetch!(name)
-    |> then(&Path.join(@root, &1))
+    |> then(&Path.join(@project_root, &1))
     |> Code.require_file()
   end
 end

@@ -3,7 +3,11 @@ defmodule GPUITest.Desktop.Linux do
 
   import ExUnit.Assertions
 
-  @driver_manifest Path.expand("drivers/linux/Cargo.toml", __DIR__)
+  @project_root Mix.Project.project_file() |> Path.dirname()
+  @driver_manifest Path.join(
+                     @project_root,
+                     "test/support/desktop/drivers/linux/Cargo.toml"
+                   )
 
   def window_id!(title) do
     case System.cmd(

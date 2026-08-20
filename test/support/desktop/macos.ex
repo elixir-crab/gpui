@@ -3,9 +3,10 @@ defmodule GPUITest.Desktop.MacOS do
 
   import ExUnit.Assertions
 
-  @driver Path.expand(
-            "drivers/macos/.build/release/gpui-desktop-driver",
-            __DIR__
+  @project_root Mix.Project.project_file() |> Path.dirname()
+  @driver Path.join(
+            @project_root,
+            "test/support/desktop/drivers/macos/.build/release/gpui-desktop-driver"
           )
 
   def window_id!(title), do: driver!("find-window", [title])

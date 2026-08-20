@@ -2,7 +2,8 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
   use Mix.Task
 
   @shortdoc "Captures synchronized native visual scenarios"
-  @scenario_dir Path.expand("../../../test/visual/scenarios", __DIR__)
+  @project_root Mix.Project.project_file() |> Path.dirname()
+  @scenario_dir Path.join(@project_root, "test/visual/scenarios")
 
   @impl Mix.Task
   def run(args) do
@@ -234,7 +235,7 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
 
   defp capture!(window_id, path) do
     manifest =
-      Path.expand("../../../test/support/desktop/drivers/linux/Cargo.toml", __DIR__)
+      Path.join(@project_root, "test/support/desktop/drivers/linux/Cargo.toml")
 
     args = [
       "run",

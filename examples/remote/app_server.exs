@@ -1,7 +1,8 @@
 # Run with:
 #   GPUI_APP_PORT=5050 mix run examples/remote/app_server.exs
 
-Code.require_file("../getting_started/support/settings_form.exs", __DIR__)
+project_root = Mix.Project.project_file() |> Path.dirname()
+Code.require_file(Path.join(project_root, "examples/getting_started/support/settings_form.exs"))
 
 port = System.get_env("GPUI_APP_PORT", "5050") |> String.to_integer()
 

@@ -14,7 +14,8 @@ defmodule GPUI.Native do
 
   if @compiled do
     version = Mix.Project.config()[:version]
-    checksum = Path.expand("../../checksum-Elixir.GPUI.Native.exs", __DIR__)
+    project_root = __DIR__ |> Path.dirname() |> Path.dirname()
+    checksum = Path.join(project_root, "checksum-Elixir.GPUI.Native.exs")
     system_architecture = :erlang.system_info(:system_architecture) |> List.to_string()
 
     precompiled_target? =
