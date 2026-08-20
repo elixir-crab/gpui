@@ -121,7 +121,7 @@ defmodule GPUI.Native.TreeE2ETest do
     end
   end
 
-  test "opens and bounds a source-backed tree in a real native window" do
+  test "virtualizes 100,000 tree items and exposes controlled selection and expansion" do
     {:ok, runtime} = GPUI.Runtime.start_link(app: TreeApp, poll_interval: 10)
     on_exit(fn -> Desktop.stop_process(runtime) end)
     assert :ok = GPUI.Runtime.subscribe(runtime)
@@ -149,11 +149,22 @@ defmodule GPUI.Native.TreeE2ETest do
     assert Enum.count(loaded_items) <= 32
     assert Enum.any?(loaded_items, &match?(%{attrs: %{id: "target"}}, &1))
 
-    assert %{content_frame: %{width: width, height: height}} =
-             Desktop.window_info!(native_window_id)
+    Desktop.click!(native_window_id, 120, 200)
+    clicked = await_value(runtime, "tree_selected")
+    assert is_binary(clicked)
 
-    assert width > 0
-    assert height > 0
+    {_events, _snapshot} =
+      GPUI.Runtime.dispatch_event(runtime, %{
+        type: :change,
+        window_id: 1,
+        event: "tree_selected",
+        value: "target"
+      })
+
+    Desktop.await_frame!(runtime, 1, native_window_id)
+    Desktop.key!(native_window_id, "Right")
+    assert await_value(runtime, "tree_toggled") == "target"
+    assert runtime |> GPUI.Runtime.snapshot() |> GPUI.Test.assigns() |> Map.fetch!(:expanded)
     assert Process.alive?(runtime)
   end
 
@@ -172,6 +183,21 @@ defmodule GPUI.Native.TreeE2ETest do
         end
     after
       5_000 -> flunk("tree did not emit the expected source range")
+    end
+  end
+
+  defp await_value(runtime, event_name) do
+    receive do
+      {:gpui, ^runtime, %GPUI.Runtime.Update{events: events}} ->
+        case Enum.find_value(events, fn
+               %{type: :change, event: ^event_name, value: value} -> value
+               _event -> nil
+             end) do
+          nil -> await_value(runtime, event_name)
+          value -> value
+        end
+    after
+      5_000 -> flunk("tree did not emit #{event_name}")
     end
   end
 end
