@@ -25,6 +25,12 @@ defmodule Examples.ComponentGallery.View do
       description: "Popover, tooltip, dialog, and menu behavior with controlled open state."
     },
     %{
+      id: "motion",
+      group: "INTERACTION",
+      title: "Motion",
+      description: "Bounded native entrance motion driven by monotonic application tokens."
+    },
+    %{
       id: "navigation",
       group: "INTERACTION",
       title: "Navigation & disclosure",
@@ -136,6 +142,15 @@ defmodule Examples.ComponentGallery.View do
   def handle_event("volume_changed", %{value: value}, assigns),
     do: {:noreply, %{assigns | volume: value}}
 
+  def handle_event("replay-motion", _event, assigns),
+    do: {:noreply, %{assigns | motion_request: assigns.motion_request + 1}}
+
+  def handle_event("motion_policy_changed", %{value: value}, assigns),
+    do: {:noreply, %{assigns | motion_policy: value}}
+
+  def handle_event("motion_easing_changed", %{value: value}, assigns),
+    do: {:noreply, %{assigns | motion_easing: value}}
+
   def handle_event("tabs_changed", %{value: value}, assigns),
     do: {:noreply, %{assigns | tab: value}}
 
@@ -237,6 +252,48 @@ defmodule Examples.ComponentGallery.View do
       {section("Layered interaction", "Each overlay preserves focus and reports controlled state changes.", overlay_examples(assigns.assigns))}
       <div class="flex p-4 rounded-lg" style={[background: {:rgb, 0xDBEAFE}]}>
         <text style={[color: {:rgb, 0x1E3A8A}]}>Last menu action: {assigns.assigns.menu_result || "None yet"}</text>
+      </div>
+    </div>
+    """
+  end
+
+  defp story("motion", assigns) do
+    assigns = %{assigns: assigns}
+
+    ~GPUI"""
+    <div class="flex grow flex-col gap-4">
+      <div class="flex items-center gap-3 p-3 rounded-lg" style={[background: {:rgb, 0xFFFFFF}]}>
+        <UI.button id="replay-motion" label="Replay entrance" phx-click="replay_motion" />
+        <UI.select
+          id="motion-easing"
+          label="Easing"
+          value={assigns.assigns.motion_easing}
+          options={[{"Linear", "linear"}, {"Ease in", "ease_in"}, {"Ease out", "ease_out"}, {"Ease in/out", "ease_in_out"}]}
+          phx-change="motion_easing_changed"
+        />
+        <UI.select
+          id="motion-policy"
+          label="Policy"
+          value={assigns.assigns.motion_policy}
+          options={[{"Respect system", "respect_system"}, {"Disabled", "disabled"}]}
+          phx-change="motion_policy_changed"
+        />
+      </div>
+
+      <div
+        id="motion-preview"
+        class="flex flex-col w-[420px] gap-2 p-5 rounded-lg"
+        style={[background: {:rgb, 0xDBEAFE}]}
+        motion_request={assigns.assigns.motion_request}
+        motion_duration={240}
+        motion_easing={assigns.assigns.motion_easing}
+        motion_policy={assigns.assigns.motion_policy}
+        motion_from_opacity={0.0}
+        motion_from_y={12}
+      >
+        <text class="text-lg font-semibold" style={[color: {:rgb, 0x1E3A8A}]}>Snapshot-authoritative destination</text>
+        <text style={[color: {:rgb, 0x1E40AF}]}>The native display owns only transient opacity and translation.</text>
+        <text style={[color: {:rgb, 0x475569}]}>Request {assigns.assigns.motion_request}</text>
       </div>
     </div>
     """
@@ -581,6 +638,9 @@ defmodule Examples.ComponentGallery.View do
       notifications: true,
       plan: "team",
       volume: 65.0,
+      motion_request: 1,
+      motion_policy: "respect_system",
+      motion_easing: "ease_out",
       tab: "overview",
       expanded: ["account"],
       list_selected: nil,
@@ -611,6 +671,9 @@ defmodule Examples.ComponentGallery.App do
       notifications: true,
       plan: "team",
       volume: 65.0,
+      motion_request: 1,
+      motion_policy: "respect_system",
+      motion_easing: "ease_out",
       tab: "overview",
       expanded: ["account"],
       list_selected: nil,

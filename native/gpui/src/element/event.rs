@@ -8,20 +8,25 @@ pub(crate) fn apply_click_event(
     accessibility: super::AccessibilitySemantics,
     runtime: SharedRuntime,
     window_id: u64,
+    motion: super::ContainerMotion,
 ) -> gpui::AnyElement {
-    use gpui::{AccessibleAction, InteractiveElement, IntoElement, StatefulInteractiveElement};
+    use gpui::{AccessibleAction, InteractiveElement, StatefulInteractiveElement};
+
+    let element_id = if event.is_some() {
+        format!("gpui-elixir-click-{window_id}-{element_id}")
+    } else {
+        element_id
+    };
+    let element = element.id(element_id);
 
     if let Some(event) = event {
-        let element_id = format!("gpui-elixir-click-{window_id}-{element_id}");
-
-        let element = element.id(element_id);
         let enabled = !accessibility.disabled;
         let activatable = enabled
             && accessibility
                 .role
                 .as_ref()
                 .is_some_and(AccessibilityRole::is_activatable);
-        let element = super::apply_accessibility_semantics(element, accessibility);
+        let element = super::apply_accessibility_semantics(element, accessibility.clone());
         let element = if activatable {
             let keyboard_runtime = runtime.clone();
             let keyboard_event = event.clone();
@@ -53,12 +58,14 @@ pub(crate) fn apply_click_event(
             element
         };
 
-        element.into_any_element()
-    } else if accessibility.role.is_some() {
-        super::apply_accessibility_semantics(element.id(element_id), accessibility)
-            .into_any_element()
+        let actions = if enabled {
+            vec![AccessibleAction::Click]
+        } else {
+            vec![]
+        };
+        super::apply_container_motion(element, motion, accessibility, actions)
     } else {
-        element.into_any_element()
+        super::apply_container_motion(element, motion, accessibility, vec![])
     }
 }
 

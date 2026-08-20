@@ -29,6 +29,35 @@ defmodule GPUI.ComponentGalleryExampleTest do
     assert %{type: :ui_code_viewer} = runtime |> tree() |> find!(id: "gallery-code")
   end
 
+  test "replays declarative motion with application-owned controls" do
+    runtime = start_gpui!(Examples.ComponentGallery.App, args: %{story: "motion"})
+
+    assert %{motion_request: 1, motion_policy: "respect_system", motion_easing: "ease_out"} =
+             assigns(runtime)
+
+    assert %{
+             type: :div,
+             attrs: %{
+               id: "motion-preview",
+               motion_request: 1,
+               motion_duration: 240,
+               motion_policy: "respect_system",
+               motion_easing: "ease_out",
+               motion_from_opacity: opacity,
+               motion_from_y: 12
+             }
+           } = runtime |> tree() |> find!(id: "motion-preview")
+
+    assert opacity == 0.0
+
+    click(runtime, "replay-motion")
+    select(runtime, "motion_easing_changed", "linear")
+    select(runtime, "motion_policy_changed", "disabled")
+
+    assert %{motion_request: 2, motion_policy: "disabled", motion_easing: "linear"} =
+             assigns(runtime)
+  end
+
   test "covers overlays, navigation, and collection selection" do
     runtime = start_gpui!(Examples.ComponentGallery.App, args: %{story: "overlays"})
 

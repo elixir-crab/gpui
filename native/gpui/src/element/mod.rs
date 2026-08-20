@@ -355,6 +355,37 @@ pub(crate) fn render_missing_resource_placeholder() -> gpui::AnyElement {
 }
 
 #[cfg(feature = "real-gpui")]
+fn write_accessibility_info(
+    node: &mut gpui::accesskit::Node,
+    accessibility: &AccessibilitySemantics,
+) {
+    if let Some(label) = &accessibility.label {
+        node.set_label(label.clone());
+    }
+    if let Some(description) = &accessibility.description {
+        node.set_description(description.clone());
+    }
+    if let Some(value) = &accessibility.value {
+        node.set_value(value.clone());
+    }
+    if let Some(selected) = accessibility.selected {
+        node.set_selected(selected);
+    }
+    if let Some(expanded) = accessibility.expanded {
+        node.set_expanded(expanded);
+    }
+    if let Some(checked) = &accessibility.checked {
+        node.set_toggled(checked.toggled());
+    }
+    if let Some(orientation) = &accessibility.orientation {
+        node.set_orientation(orientation.gpui_orientation());
+    }
+    if accessibility.disabled {
+        node.set_disabled();
+    }
+}
+
+#[cfg(feature = "real-gpui")]
 pub(crate) fn apply_accessibility_semantics(
     mut element: gpui::Stateful<gpui::Div>,
     accessibility: AccessibilitySemantics,
@@ -516,10 +547,8 @@ pub(crate) fn render_input_primitive(
 }
 
 #[cfg(feature = "real-gpui")]
-#[allow(clippy::too_many_arguments)]
-fn apply_container_motion(
-    element: gpui::Div,
-    stable_id: Option<String>,
+pub(crate) struct ContainerMotion {
+    stable_id: String,
     request: u64,
     duration_ms: u64,
     delay_ms: u64,
@@ -528,37 +557,135 @@ fn apply_container_motion(
     from_opacity: f64,
     from_x: f64,
     from_y: f64,
-) -> gpui::Div {
-    use gpui::{Animation, AnimationExt, IntoElement, ParentElement, Styled};
-    use std::time::Duration;
+}
 
-    if !enabled {
-        return element;
+impl<E: gpui::IntoElement + 'static> gpui::IntoElement for MotionElement<E> {
+    type Element = Self;
+
+    fn into_element(self) -> Self::Element {
+        self
+    }
+}
+
+impl<E: gpui::IntoElement + 'static> gpui::Element for MotionElement<E> {
+    type RequestLayoutState = <gpui::AnimationElement<E> as gpui::Element>::RequestLayoutState;
+    type PrepaintState = <gpui::AnimationElement<E> as gpui::Element>::PrepaintState;
+
+    fn id(&self) -> Option<gpui::ElementId> {
+        gpui::Element::id(&self.animation)
     }
 
-    let id = format!(
-        "gpui-motion-{}-{request}",
-        stable_id.expect("motion-enabled containers require stable IDs")
-    );
-    let duration_ms = duration_ms.max(1);
-    let total_ms = duration_ms.saturating_add(delay_ms);
+    fn source_location(&self) -> Option<&'static core::panic::Location<'static>> {
+        gpui::Element::source_location(&self.animation)
+    }
+
+    fn a11y_role(&self) -> Option<gpui::Role> {
+        self.accessibility
+            .role
+            .as_ref()
+            .map(AccessibilityRole::gpui_role)
+    }
+
+    fn write_a11y_info(&self, node: &mut gpui::accesskit::Node) {
+        write_accessibility_info(node, &self.accessibility);
+        for action in &self.actions {
+            node.add_action(*action);
+        }
+    }
+
+    fn request_layout(
+        &mut self,
+        id: Option<&gpui::GlobalElementId>,
+        inspector_id: Option<&gpui::InspectorElementId>,
+        window: &mut gpui::Window,
+        cx: &mut gpui::App,
+    ) -> (gpui::LayoutId, Self::RequestLayoutState) {
+        self.animation.request_layout(id, inspector_id, window, cx)
+    }
+
+    fn prepaint(
+        &mut self,
+        id: Option<&gpui::GlobalElementId>,
+        inspector_id: Option<&gpui::InspectorElementId>,
+        bounds: gpui::Bounds<gpui::Pixels>,
+        state: &mut Self::RequestLayoutState,
+        window: &mut gpui::Window,
+        cx: &mut gpui::App,
+    ) -> Self::PrepaintState {
+        self.animation
+            .prepaint(id, inspector_id, bounds, state, window, cx)
+    }
+
+    fn paint(
+        &mut self,
+        id: Option<&gpui::GlobalElementId>,
+        inspector_id: Option<&gpui::InspectorElementId>,
+        bounds: gpui::Bounds<gpui::Pixels>,
+        request_layout: &mut Self::RequestLayoutState,
+        prepaint: &mut Self::PrepaintState,
+        window: &mut gpui::Window,
+        cx: &mut gpui::App,
+    ) {
+        self.animation.paint(
+            id,
+            inspector_id,
+            bounds,
+            request_layout,
+            prepaint,
+            window,
+            cx,
+        );
+    }
+}
+
+#[cfg(feature = "real-gpui")]
+struct MotionElement<E> {
+    animation: gpui::AnimationElement<E>,
+    accessibility: AccessibilitySemantics,
+    actions: Vec<gpui::AccessibleAction>,
+}
+
+#[cfg(feature = "real-gpui")]
+fn apply_container_motion(
+    element: gpui::Stateful<gpui::Div>,
+    motion: ContainerMotion,
+    accessibility: AccessibilitySemantics,
+    actions: Vec<gpui::AccessibleAction>,
+) -> gpui::AnyElement {
+    use gpui::{Animation, AnimationExt, IntoElement, Styled};
+    use std::time::Duration;
+
+    if !motion.enabled {
+        return element.into_any_element();
+    }
+
+    let id = format!("gpui-motion-{}-{}", motion.stable_id, motion.request);
+    let duration_ms = motion.duration_ms.max(1);
+    let total_ms = duration_ms.saturating_add(motion.delay_ms);
+    let easing = motion.easing;
+    let delay_ms = motion.delay_ms;
     let animation = Animation::new(Duration::from_millis(total_ms)).with_easing(move |delta| {
         let elapsed_ms = delta * total_ms as f32;
         let progress = ((elapsed_ms - delay_ms as f32) / duration_ms as f32).clamp(0.0, 1.0);
         motion_easing(&easing, progress)
     });
+    let from_opacity = motion.from_opacity;
+    let from_x = motion.from_x;
+    let from_y = motion.from_y;
 
-    gpui::div().child(
-        element
+    MotionElement {
+        animation: element
             .relative()
             .with_animation(id, animation, move |element, delta| {
                 element
                     .opacity(lerp(from_opacity as f32, 1.0, delta))
                     .left(gpui::px(lerp(from_x as f32, 0.0, delta)))
                     .top(gpui::px(lerp(from_y as f32, 0.0, delta)))
-            })
-            .into_any_element(),
-    )
+            }),
+        accessibility,
+        actions,
+    }
+    .into_any_element()
 }
 
 #[cfg(feature = "real-gpui")]
@@ -604,7 +731,7 @@ pub(crate) fn render_container_primitive(
     node: ContainerNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
-    use gpui::{div, InteractiveElement, IntoElement, ParentElement, StatefulInteractiveElement};
+    use gpui::{div, InteractiveElement, ParentElement, StatefulInteractiveElement};
 
     let ContainerNode {
         tag,
@@ -685,8 +812,17 @@ pub(crate) fn render_container_primitive(
         element = element.child(child.render(context));
     }
 
-    let motion_id = stable_id.clone();
-    let motion_enabled = motion_request > 0 && motion_policy != "disabled";
+    let motion = |stable_id: String| ContainerMotion {
+        stable_id,
+        request: motion_request,
+        duration_ms: motion_duration,
+        delay_ms: motion_delay,
+        easing: motion_easing,
+        enabled: motion_request > 0 && motion_policy != "disabled",
+        from_opacity: motion_from_opacity,
+        from_x: motion_from_x,
+        from_y: motion_from_y,
+    };
 
     let mut accessibility = accessibility;
     if tag == GeneratedElementTag::Button {
@@ -707,53 +843,26 @@ pub(crate) fn render_container_primitive(
                 context.id_namespace
             )
         });
-        let element = apply_container_motion(
-            element,
-            motion_id,
-            motion_request,
-            motion_duration,
-            motion_delay,
-            motion_easing,
-            motion_enabled,
-            motion_from_opacity,
-            motion_from_x,
-            motion_from_y,
-        )
-        .id(scroll_id)
-        .overflow_y_scroll();
-        let element = apply_accessibility_semantics(element, accessibility.clone());
-
-        if let Some(event) = click {
+        let element = element.id(scroll_id.clone()).overflow_y_scroll();
+        let element = if let Some(event) = click {
             let runtime_for_click = runtime.clone();
-            element
-                .on_click(move |_event, _window, _cx| {
-                    let _ = push_event(
-                        &runtime_for_click,
-                        NativeEvent::Click {
-                            window_id,
-                            event: event.clone(),
-                        },
-                    );
-                })
-                .into_any_element()
+            element.on_click(move |_event, _window, _cx| {
+                let _ = push_event(
+                    &runtime_for_click,
+                    NativeEvent::Click {
+                        window_id,
+                        event: event.clone(),
+                    },
+                );
+            })
         } else {
-            element.into_any_element()
-        }
+            element
+        };
+        apply_container_motion(element, motion(scroll_id), accessibility, vec![])
     } else {
-        let element = apply_container_motion(
-            element,
-            motion_id,
-            motion_request,
-            motion_duration,
-            motion_delay,
-            motion_easing,
-            motion_enabled,
-            motion_from_opacity,
-            motion_from_x,
-            motion_from_y,
-        );
         let element_id =
             stable_id.unwrap_or_else(|| format!("{}-{element_id}", context.id_namespace));
+        let element_motion = motion(element_id.clone());
         apply_click_event(
             element,
             element_id,
@@ -761,6 +870,7 @@ pub(crate) fn render_container_primitive(
             accessibility,
             runtime,
             window_id,
+            element_motion,
         )
     }
 }
