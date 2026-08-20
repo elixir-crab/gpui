@@ -35,6 +35,12 @@ on:
       - "mix.lock"
       - ".github/workflows/native.yml"
   workflow_dispatch:
+    inputs:
+      refresh_cache:
+        description: Save a fresh native dependency cache after validation
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -45,15 +51,29 @@ concurrency:
 
 jobs:
   quality:
-    uses: elixir-vibe/actions/.github/workflows/elixir-rustler-ci.yml@v1
-    with:
-      latest-elixir: "1.20.2"
-      latest-otp: "29.0.2"
-      latest-command: mix ci.native
-      run-min: false
-      rust-toolchain: "1.95.0"
-      apt-packages: libxkbcommon-dev libxkbcommon-x11-dev
-      extra-env: |
-        RUST_FONTCONFIG_DLOPEN=1
-      restore-rust-cache: false
-      timeout-minutes: 30
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      MIX_ENV: test
+      RUST_FONTCONFIG_DLOPEN: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.95.0
+        with:
+          components: clippy,rustfmt
+      - uses: elixir-vibe/actions/setup-elixir@v1
+        with:
+          otp-version: "29.0.2"
+          elixir-version: "1.20.2"
+          cache-prefix: native-quality
+      - name: Restore stable native dependency cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: native-linux
+          workspaces: native/gpui -> target
+          save-if: ${{ github.event_name == 'workflow_dispatch' && inputs.refresh_cache }}
+      - name: Install native dependencies
+        run: >-
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends
+          libxkbcommon-dev libxkbcommon-x11-dev
+      - run: mix ci.native
