@@ -36,4 +36,6 @@ jobs:
           elixir-version: "1.20.2"
           cache-prefix: checks
           restore-plt-cache: "false"
+      - name: Install file watcher dependency
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends inotify-tools
       - run: mix ci.checks
