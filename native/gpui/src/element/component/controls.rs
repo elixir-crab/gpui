@@ -18,6 +18,8 @@ pub(crate) fn render_button_component(
 
     let runtime = context.runtime.clone();
     let window_id = context.window_id;
+    let click_event = node.click;
+    let clipboard_event = node.clipboard;
     let mut button = Button::new(node.id);
 
     button = match node.variant.as_deref() {
@@ -55,15 +57,33 @@ pub(crate) fn render_button_component(
     for child in node.children {
         button = button.child(child.render(context));
     }
-    if let Some(event) = node.click {
-        button = button.on_click(move |_click, _window, _cx| {
-            let _ = push_event(
-                &runtime,
-                NativeEvent::Click {
-                    window_id,
-                    event: event.clone(),
-                },
-            );
+    if click_event.is_some() || clipboard_event.is_some() {
+        button = button.on_click(move |_click, _window, cx| {
+            if let Some(event) = clipboard_event.as_ref() {
+                let text = super::display::bounded_clipboard_text(
+                    cx.read_from_clipboard().and_then(|item| item.text()),
+                );
+                let _ = push_event(
+                    &runtime,
+                    NativeEvent::ClipboardRead {
+                        window_id,
+                        event: event.clone(),
+                        payload: crate::TransferPayload {
+                            text,
+                            external_paths: Vec::new(),
+                        },
+                    },
+                );
+            }
+            if let Some(event) = click_event.as_ref() {
+                let _ = push_event(
+                    &runtime,
+                    NativeEvent::Click {
+                        window_id,
+                        event: event.clone(),
+                    },
+                );
+            }
         });
     }
 

@@ -36,7 +36,6 @@ defmodule GPUI.UI do
     button_options: :ui_button,
     progress_options: :ui_progress,
     file_picker_options: :ui_file_picker,
-    clipboard_read_options: :ui_clipboard_read,
     copy_button_options: :ui_copy_button,
     checkbox_options: :ui_checkbox,
     input_options: :ui_input,
@@ -78,15 +77,18 @@ defmodule GPUI.UI do
   @doc """
   Builds a native button.
 
-  A non-empty `label` provides the native accessibility name; child content may
-  customize the visual body. `phx-click` receives activation;
-  `variant`, `size`, and boolean state attributes use the schema documented in
-  the components guide.
+  `phx-clipboard-read` optionally reads bounded text from the display-side
+  clipboard on activation and emits it as `GPUI.Transfer.Payload`. When both
+  `phx-click` and `phx-clipboard-read` are present, the clipboard event is
+  emitted first.
 
   #{Schema.component_options_doc(:ui_button)}
   """
   @spec button(button_options()) :: Element.t()
-  def button(assigns), do: component(:ui_button, assigns)
+  def button(assigns) when is_map(assigns) do
+    assigns = normalize_attr_key(assigns, :"phx-clipboard-read")
+    component(:ui_button, assigns)
+  end
 
   @doc """
   Builds an accessible controlled progress indicator.
@@ -135,23 +137,6 @@ defmodule GPUI.UI do
     end
 
     component(:ui_file_picker, assigns)
-  end
-
-  @doc """
-  Builds an explicit user-triggered bounded clipboard reader.
-
-  Activation reads at most 1 MiB of UTF-8 text from the display machine and
-  emits it as `GPUI.Transfer.Payload` through `phx-read`. Empty, non-text, or
-  oversized clipboard contents produce a bounded payload with `text: nil`.
-
-  #{Schema.component_options_doc(:ui_clipboard_read)}
-  """
-  @spec clipboard_read(clipboard_read_options()) :: Element.t()
-  def clipboard_read(assigns) when is_map(assigns) do
-    assigns = normalize_attr_key(assigns, :"phx-read")
-    assigns = Schema.apply_defaults(assigns, :ui_clipboard_read)
-    validate_non_empty_label!(:ui_clipboard_read, Map.get(assigns, :label))
-    component(:ui_clipboard_read, assigns)
   end
 
   @doc """

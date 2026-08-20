@@ -388,12 +388,16 @@ defmodule GPUI.UITest do
     assert attrs[:"phx-drop"] == "dropped"
   end
 
-  test "builds an explicit bounded clipboard reader" do
-    assert %Element{type: :ui_clipboard_read, attrs: attrs} =
-             UI.clipboard_read(%{id: "paste", label: "Paste", "phx-read": "clipboard_read"})
+  test "adds bounded clipboard reads to an ordinary button" do
+    assert %Element{type: :ui_button, attrs: attrs} =
+             UI.button(%{
+               id: "paste",
+               label: "Paste",
+               "phx-clipboard-read": "clipboard_read"
+             })
 
     assert attrs[:label] == "Paste"
-    assert attrs[:"phx-read"] == "clipboard_read"
+    assert attrs[:"phx-clipboard-read"] == "clipboard_read"
   end
 
   test "builds selectable rich text from bounded neutral shaping runs" do

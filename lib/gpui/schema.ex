@@ -83,7 +83,7 @@ defmodule GPUI.Schema do
     %Component{
       tag: :ui_button,
       kind: :button_component,
-      events: [click: :"phx-click"],
+      events: [click: :"phx-click", clipboard: :"phx-clipboard-read"],
       children: true,
       attrs: [
         id: :string,
@@ -123,14 +123,6 @@ defmodule GPUI.Schema do
         max_bytes: {:default, :positive_integer, 26_214_400},
         disabled: :boolean
       ]
-    },
-    %Component{
-      tag: :ui_clipboard_read,
-      kind: :clipboard_read_component,
-      events: [clipboard: :"phx-read"],
-      required_events: [:"phx-read"],
-      public_required_attrs: [:label],
-      attrs: [id: :string, label: :required_string, disabled: :boolean]
     },
     %Component{
       tag: :ui_copy_button,
