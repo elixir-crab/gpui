@@ -232,18 +232,18 @@ when the amount of completed work is unknown.
 <UI.progress id="import" label="Importing image" value={assigns.progress} max={100} />
 ```
 
-`file_picker/1` opens the platform picker on the machine running the display.
-It reads one selected file with a bounded size and emits bytes rather than a
-filesystem path, so the same event remains meaningful for remote displays.
-`max_bytes` defaults to 25 MiB and cannot exceed 100 MiB.
+`phx-file-read` on `button/1` opens the platform picker on the machine running
+the display. It reads one selected file with a bounded size and emits bytes
+rather than a filesystem path, so the same event remains meaningful for remote
+displays. `file_max_bytes` defaults to 10 MiB and cannot exceed 25 MiB.
 
 ```elixir
-<UI.file_picker
+<UI.button
   id="source-image"
   label="Choose image"
-  prompt="Choose an image"
-  max_bytes={25 * 1_024 * 1_024}
-  phx-change="image_selected"
+  file_prompt="Choose an image"
+  file_max_bytes={25 * 1_024 * 1_024}
+  phx-file-read="image_selected"
 />
 ```
 
@@ -788,10 +788,14 @@ The event value contains the stable element ID:
 %{type: :blur, value: %{id: "search-trigger"}}
 ```
 
-The first generic contract supports `<button>`, low-level `<input>`,
+The first generic contract supports `<button>`, low-level `<text_input>`,
 `<UI.input>`, and `<text_surface>`. Focus behavior requires a non-empty stable
 `id`; arbitrary focusable containers and controlled `focused={true}` state are
 intentionally unsupported.
+
+Use `<text_input>` only for an unlabelled low-level single-line primitive.
+Ordinary forms should prefer `<UI.input>`; revisioned editor and composer
+surfaces should use `<text_surface>`.
 
 ## Styling
 

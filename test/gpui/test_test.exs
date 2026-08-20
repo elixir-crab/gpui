@@ -19,10 +19,10 @@ defmodule GPUI.TestTest do
           phx-change="name_changed"
           phx-submit="name_submitted"
         />
-        <GPUI.UI.file_picker
+        <GPUI.UI.button
           id="file"
           label="Choose file"
-          phx-change="file_selected"
+          phx-file-read="file_selected"
         />
         <GPUI.UI.select
           id="language"

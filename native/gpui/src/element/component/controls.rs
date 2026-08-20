@@ -22,6 +22,12 @@ pub(crate) fn render_button_component(
     let clipboard_event = node.clipboard;
     let clipboard_write_event = node.clipboard_write;
     let clipboard_text = node.clipboard_text;
+    let file_event = node.file_read;
+    let file_prompt = node
+        .file_prompt
+        .filter(|prompt| !prompt.is_empty())
+        .unwrap_or_else(|| "Choose a file".to_string());
+    let file_max_bytes = node.file_max_bytes.min(25 * 1_024 * 1_024) as usize;
     let mut button = Button::new(node.id);
 
     button = match node.variant.as_deref() {
@@ -59,8 +65,12 @@ pub(crate) fn render_button_component(
     for child in node.children {
         button = button.child(child.render(context));
     }
-    if click_event.is_some() || clipboard_event.is_some() || clipboard_write_event.is_some() {
-        button = button.on_click(move |_click, _window, cx| {
+    if click_event.is_some()
+        || clipboard_event.is_some()
+        || clipboard_write_event.is_some()
+        || file_event.is_some()
+    {
+        button = button.on_click(move |_click, window, cx| {
             if let Some(event) = clipboard_write_event.as_ref() {
                 if let Some(text) = clipboard_text.as_ref() {
                     cx.write_to_clipboard(gpui::ClipboardItem::new_string(text.clone()));
@@ -87,6 +97,17 @@ pub(crate) fn render_button_component(
                             external_paths: Vec::new(),
                         },
                     },
+                );
+            }
+            if let Some(event) = file_event.as_ref() {
+                super::display::start_file_read(
+                    event.clone(),
+                    file_prompt.clone(),
+                    file_max_bytes,
+                    runtime.clone(),
+                    window_id,
+                    window,
+                    cx,
                 );
             }
             if let Some(event) = click_event.as_ref() {

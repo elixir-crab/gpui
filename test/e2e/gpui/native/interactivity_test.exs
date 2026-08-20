@@ -16,8 +16,8 @@ defmodule GPUI.Native.InteractivityE2ETest do
         <button class="w-[160px] h-[48px] bg-blue-600 text-white" phx-click="increment">
           Increment
         </button>
-        <input class="w-[240px] h-[48px]" value={assigns.primary} phx-change="change-primary" phx-keydown="keydown" phx-keyup="keyup" />
-        <input class="w-[240px] h-[48px]" value={assigns.secondary} phx-change="change-secondary" />
+        <text_input class="w-[240px] h-[48px]" value={assigns.primary} phx-change="change-primary" phx-keydown="keydown" phx-keyup="keyup" />
+        <text_input class="w-[240px] h-[48px]" value={assigns.secondary} phx-change="change-secondary" />
         <button class="w-[160px] h-[48px] bg-green-600 text-white" phx-click="reset">
           Reset
         </button>

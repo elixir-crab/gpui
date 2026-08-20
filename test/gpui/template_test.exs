@@ -394,7 +394,7 @@ defmodule GPUI.TemplateTest do
 
     input =
       ~GPUI"""
-      <input id="search" value="" focus_request={1} phx-focus="search-focused" />
+      <text_input id="search" value="" focus_request={1} phx-focus="search-focused" />
       """
       |> GPUI.Element.to_payload()
 
@@ -444,7 +444,7 @@ defmodule GPUI.TemplateTest do
                  type: :item,
                  children: [
                    %GPUI.Element{type: :span},
-                   %GPUI.Element{type: :icon}
+                   %GPUI.Element{type: :text}
                  ]
                }
              ]
@@ -453,7 +453,7 @@ defmodule GPUI.TemplateTest do
              <list>
                <item>
                  <span>Label</span>
-                 <icon>+</icon>
+                 <text>+</text>
                </item>
              </list>
              """

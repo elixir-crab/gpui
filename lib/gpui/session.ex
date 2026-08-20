@@ -365,7 +365,8 @@ defmodule GPUI.Session do
     :drop,
     :clipboard,
     :clipboard_write,
-    :copy
+    :copy,
+    :file_read
   ]
 
   defp handle_event(

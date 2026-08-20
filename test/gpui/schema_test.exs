@@ -10,7 +10,6 @@ defmodule GPUI.SchemaTest do
              :ui_split,
              :ui_button,
              :ui_progress,
-             :ui_file_picker,
              :ui_popover,
              :ui_popover_trigger,
              :ui_popover_content,
@@ -48,9 +47,8 @@ defmodule GPUI.SchemaTest do
              :scroll,
              :list,
              :item,
-             :icon,
              :text_surface,
-             :input,
+             :text_input,
              :img,
              :text
            ]
@@ -73,7 +71,6 @@ defmodule GPUI.SchemaTest do
     assert :"phx-focus" in GPUI.Schema.events()
     assert :"phx-blur" in GPUI.Schema.events()
     assert :ui_progress in GPUI.Schema.identified_tags()
-    assert :ui_file_picker in GPUI.Schema.identified_tags()
     assert :ui_select in GPUI.Schema.identified_tags()
     assert :ui_popover in GPUI.Schema.identified_tags()
     assert :ui_tooltip in GPUI.Schema.identified_tags()
@@ -150,7 +147,6 @@ defmodule GPUI.SchemaTest do
     ui_builders = [
       :button,
       :progress,
-      :file_picker,
       :checkbox,
       :input,
       :select,
@@ -185,9 +181,9 @@ defmodule GPUI.SchemaTest do
 
   test "projects component defaults for public builders and native decoders" do
     assert %{
-             max_bytes: 26_214_400,
+             file_max_bytes: 10_485_760,
              disabled: false
-           } = GPUI.Schema.defaults(:ui_file_picker)
+           } = GPUI.Schema.defaults(:ui_button)
 
     assert %{
              item_height: 40.0,

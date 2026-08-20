@@ -351,6 +351,16 @@ defmodule GPUI.Remote.Client do
   end
 
   defp display_event_payload(
+         %{type: :file_read} = event,
+         session_id,
+         capabilities
+       ) do
+    if :file_read_v1 in capabilities do
+      normalize_display_event(event, session_id)
+    end
+  end
+
+  defp display_event_payload(
          %{type: type} = event,
          session_id,
          capabilities

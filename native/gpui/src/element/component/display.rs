@@ -1,5 +1,5 @@
 use crate::element::ElementRenderContext;
-use crate::{gpui, FilePickerComponentNode, ProgressComponentNode};
+use crate::{gpui, ProgressComponentNode};
 
 #[cfg(not(feature = "components"))]
 use super::render_component_fallback;
@@ -80,67 +80,51 @@ pub(crate) fn render_progress(
 }
 
 #[cfg(feature = "components")]
-pub(crate) fn render_file_picker(
-    node: FilePickerComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    use gpui::{AppContext, IntoElement};
-    use gpui_component::{button::Button, Disableable};
+pub(crate) fn start_file_read(
+    event: String,
+    prompt: String,
+    max_bytes: usize,
+    runtime: crate::SharedRuntime,
+    window_id: u64,
+    window: &mut gpui::Window,
+    cx: &mut gpui::App,
+) {
+    use gpui::AppContext;
 
-    let runtime = context.runtime.clone();
-    let window_id = context.window_id;
-    let event = node.change;
-    let prompt = node
-        .prompt
-        .filter(|prompt| !prompt.is_empty())
-        .unwrap_or_else(|| "Choose a file".to_string());
-    let max_bytes = node.max_bytes.min(100 * 1_024 * 1_024) as usize;
-    let button = Button::new(node.id)
-        .label(node.label.unwrap_or_else(|| "Choose file".to_string()))
-        .disabled(node.disabled)
-        .on_click(move |_click, window, cx| {
-            let Some(event) = event.clone() else {
-                return;
+    let operation_id = NEXT_FILE_OPERATION_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let receiver = cx.prompt_for_paths(gpui::PathPromptOptions {
+        files: true,
+        directories: false,
+        multiple: false,
+        prompt: Some(prompt.into()),
+    });
+
+    window
+        .spawn(cx, async move |cx| {
+            let result = match receiver.await {
+                Ok(Ok(Some(paths))) => match paths.into_iter().next() {
+                    Some(path) => {
+                        cx.background_spawn(async move { read_file(path, max_bytes) })
+                            .await
+                    }
+                    None => FileDialogResult::Cancelled,
+                },
+                Ok(Ok(None)) => FileDialogResult::Cancelled,
+                Ok(Err(error)) => FileDialogResult::Error(error.to_string()),
+                Err(error) => FileDialogResult::Error(error.to_string()),
             };
-            let operation_id =
-                NEXT_FILE_OPERATION_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            let receiver = cx.prompt_for_paths(gpui::PathPromptOptions {
-                files: true,
-                directories: false,
-                multiple: false,
-                prompt: Some(prompt.clone().into()),
-            });
-            let runtime = runtime.clone();
 
-            window
-                .spawn(cx, async move |cx| {
-                    let result = match receiver.await {
-                        Ok(Ok(Some(paths))) => match paths.into_iter().next() {
-                            Some(path) => {
-                                cx.background_spawn(async move { read_file(path, max_bytes) })
-                                    .await
-                            }
-                            None => FileDialogResult::Cancelled,
-                        },
-                        Ok(Ok(None)) => FileDialogResult::Cancelled,
-                        Ok(Err(error)) => FileDialogResult::Error(error.to_string()),
-                        Err(error) => FileDialogResult::Error(error.to_string()),
-                    };
-
-                    let _ = crate::push_event(
-                        &runtime,
-                        crate::NativeEvent::FileDialog {
-                            window_id,
-                            event,
-                            operation_id,
-                            result,
-                        },
-                    );
-                })
-                .detach();
-        });
-
-    super::apply_component_styles(button, node.style).into_any_element()
+            let _ = crate::push_event(
+                &runtime,
+                crate::NativeEvent::FileDialog {
+                    window_id,
+                    event,
+                    operation_id,
+                    result,
+                },
+            );
+        })
+        .detach();
 }
 
 #[cfg(any(feature = "components", test))]
@@ -225,14 +209,6 @@ mod tests {
 #[cfg(not(feature = "components"))]
 pub(crate) fn render_progress(
     node: ProgressComponentNode,
-    context: &mut ElementRenderContext<'_, '_>,
-) -> gpui::AnyElement {
-    render_component_fallback(node.style, node.label, Vec::new(), context)
-}
-
-#[cfg(not(feature = "components"))]
-pub(crate) fn render_file_picker(
-    node: FilePickerComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     render_component_fallback(node.style, node.label, Vec::new(), context)

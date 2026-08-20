@@ -288,8 +288,13 @@ defmodule GPUI.Native.LifecycleE2ETest do
         children: []
       },
       invalid_file_limit: %{
-        type: :ui_file_picker,
-        attrs: %{id: "invalid-picker", label: "Invalid picker", max_bytes: 0},
+        type: :ui_button,
+        attrs: %{
+          id: "invalid-picker",
+          label: "Invalid picker",
+          file_max_bytes: 0,
+          "phx-file-read": "selected"
+        },
         children: []
       }
     ]

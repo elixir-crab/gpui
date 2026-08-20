@@ -17,12 +17,12 @@ defmodule Examples.ImagePalette.View do
           <text style={[color: {:rgb, 0x94A3B8}]}>Decode an image, inspect its dominant colors, and export CSS variables.</text>
         </div>
         <div class="flex items-center gap-3">
-          <UI.file_picker
+          <UI.button
             id="image-file-picker"
             label={picker_label(assigns.status)}
-            prompt="Choose an image"
-            max_bytes={25 * 1_024 * 1_024}
-            phx-change="image_file_selected"
+            file_prompt="Choose an image"
+            file_max_bytes={25 * 1_024 * 1_024}
+            phx-file-read="image_file_selected"
           />
           {cancel_button(assigns)}
           <text style={[color: {:rgb, 0x94A3B8}]}>{source_label(assigns)}</text>

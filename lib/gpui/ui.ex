@@ -17,7 +17,7 @@ defmodule GPUI.UI do
 
   require Schema
 
-  @max_file_bytes 100 * 1_024 * 1_024
+  @max_file_bytes 25 * 1_024 * 1_024
 
   @type select_option ::
           String.t()
@@ -35,7 +35,6 @@ defmodule GPUI.UI do
   Schema.define_component_option_types(
     button_options: :ui_button,
     progress_options: :ui_progress,
-    file_picker_options: :ui_file_picker,
     checkbox_options: :ui_checkbox,
     input_options: :ui_input,
     select_options: :ui_select,
@@ -62,7 +61,7 @@ defmodule GPUI.UI do
     split_options: :ui_split
   )
 
-  @type file_picker_value ::
+  @type file_read_value ::
           %{
             operation_id: non_neg_integer(),
             status: :selected,
@@ -81,6 +80,11 @@ defmodule GPUI.UI do
   and emits it as `GPUI.Transfer.Payload`. When clipboard and click events are
   combined, the clipboard operation is performed first.
 
+  `phx-file-read` opens a display-side file picker, reads one bounded file, and
+  emits `file_read_value/0`. `file_max_bytes` defaults to 10 MiB and may not
+  exceed 25 MiB. Clipboard operations run before file reads, and file reads run
+  before an ordinary click event.
+
   #{Schema.component_options_doc(:ui_button)}
   """
   @spec button(button_options()) :: Element.t()
@@ -89,6 +93,8 @@ defmodule GPUI.UI do
       assigns
       |> normalize_attr_key(:"phx-clipboard-read")
       |> normalize_attr_key(:"phx-clipboard-write")
+
+    assigns = Schema.apply_defaults(assigns, :ui_button)
 
     case Map.get(assigns, :clipboard_text) do
       nil ->
@@ -101,6 +107,12 @@ defmodule GPUI.UI do
       _invalid ->
         raise ArgumentError,
               "GPUI.UI.button/1 clipboard_text must be UTF-8 text no larger than 1 MiB"
+    end
+
+    unless is_integer(Map.get(assigns, :file_max_bytes, 10_485_760)) and
+             Map.get(assigns, :file_max_bytes, 10_485_760) in 1..@max_file_bytes do
+      raise ArgumentError,
+            "GPUI.UI.button/1 file_max_bytes must be between 1 and #{@max_file_bytes}"
     end
 
     component(:ui_button, assigns)
@@ -129,30 +141,6 @@ defmodule GPUI.UI do
     end
 
     component(:ui_progress, assigns)
-  end
-
-  @doc """
-  Builds a display-side file picker that emits selected file bytes through `phx-change`.
-
-  The event value is a selected-file, cancellation, or error map described by
-  `file_picker_value/0`. Bytes are read on the display machine, bounded by
-  `max_bytes`, and can therefore cross a remote display connection without
-  exposing an unusable client-local path.
-
-  #{Schema.component_options_doc(:ui_file_picker)}
-  """
-  @spec file_picker(file_picker_options()) :: Element.t()
-  def file_picker(assigns) when is_map(assigns) do
-    assigns = Schema.apply_defaults(assigns, :ui_file_picker)
-
-    validate_non_empty_label!(:ui_file_picker, Map.get(assigns, :label))
-
-    unless is_integer(assigns.max_bytes) and assigns.max_bytes > 0 and
-             assigns.max_bytes <= @max_file_bytes do
-      raise ArgumentError, "ui_file_picker max_bytes must be between 1 and #{@max_file_bytes}"
-    end
-
-    component(:ui_file_picker, assigns)
   end
 
   @doc """

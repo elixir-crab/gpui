@@ -34,6 +34,7 @@ defmodule GPUI.Event do
           | :clipboard
           | :clipboard_write
           | :copy
+          | :file_read
           | :window_close_request
           | :window_focus
           | :window_blur

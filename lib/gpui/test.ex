@@ -164,23 +164,24 @@ defmodule GPUI.Test do
   def copy_selected_line(runtime, event, opts \\ []),
     do: dispatch_named(runtime, :copy, event, opts)
 
-  @doc "Selects deterministic file bytes for a display-side file picker."
+  @doc "Selects deterministic file bytes for a display-side button file read."
   @spec file_select(GenServer.server(), String.t(), String.t(), binary(), keyword()) ::
           Snapshot.t()
   def file_select(runtime, event, name, data, opts \\ [])
       when is_binary(name) and name != "" and is_binary(data) do
-    change(
+    dispatch_value(
       runtime,
+      :file_read,
       event,
       %{operation_id: 0, status: :selected, name: name, size: byte_size(data), data: data},
       opts
     )
   end
 
-  @doc "Cancels a deterministic display-side file picker."
+  @doc "Cancels a deterministic display-side button file read."
   @spec file_cancel(GenServer.server(), String.t(), keyword()) :: Snapshot.t()
   def file_cancel(runtime, event, opts \\ []),
-    do: change(runtime, event, %{operation_id: 0, status: :cancelled}, opts)
+    do: dispatch_value(runtime, :file_read, event, %{operation_id: 0, status: :cancelled}, opts)
 
   @doc "Toggles a controlled boolean component and returns the updated snapshot."
   @spec toggle(GenServer.server(), String.t(), boolean(), keyword()) :: Snapshot.t()

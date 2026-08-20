@@ -24,7 +24,7 @@ defmodule GPUI.Remote.ServerTest do
           accessibility_disabled={assigns.notifications_disabled}
           phx-click="toggle_notifications"
         />
-        <input value={assigns.name} phx-change="rename" />
+        <text_input value={assigns.name} phx-change="rename" />
       </div>
       """
     end
@@ -106,7 +106,7 @@ defmodule GPUI.Remote.ServerTest do
     assert form.attrs.accessibility_role == "group"
     assert form.attrs.accessibility_label == "Remote profile form"
     assert form.attrs.accessibility_description == "Edits the remotely hosted profile"
-    assert [%{attrs: %{accessibility_checked: "false"}}, %{type: :input}] = form.children
+    assert [%{attrs: %{accessibility_checked: "false"}}, %{type: :text_input}] = form.children
 
     assert {:ok, %{snapshot: %{windows: [%{root: %{tree: toggled_tree}}]}}} =
              SafeRPC.call(client, :event, %{

@@ -238,6 +238,15 @@ defmodule GPUI.Remote.Server do
           {:error, reason} -> {{:error, reason}, state}
         end
 
+      Protocol.file_read_event?(event) ->
+        with true <- negotiated_capability?(state, connection_id, :file_read_v1),
+             {:ok, event} <- Protocol.validate_file_read_event(event) do
+          dispatch_call(:event, event, state)
+        else
+          false -> {{:error, {:missing_capability, :file_read_v1}}, state}
+          {:error, reason} -> {{:error, reason}, state}
+        end
+
       true ->
         dispatch_call(:event, event, state)
     end

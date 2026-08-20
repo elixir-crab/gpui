@@ -90,13 +90,16 @@ defmodule GPUI.Schema do
       events: [
         click: :"phx-click",
         clipboard: :"phx-clipboard-read",
-        clipboard_write: :"phx-clipboard-write"
+        clipboard_write: :"phx-clipboard-write",
+        file_read: :"phx-file-read"
       ],
       children: true,
       attrs: [
         id: :string,
         label: :required_string,
         clipboard_text: :string,
+        file_prompt: :string,
+        file_max_bytes: {:default, :positive_integer, 10_485_760},
         variant:
           {:enum, ~w(default primary secondary danger warning success info ghost link text)},
         size: {:enum, ~w(xs sm md lg)},
@@ -117,20 +120,6 @@ defmodule GPUI.Schema do
         value: {:default, :number, 0.0},
         max: {:default, :positive_number, 100.0},
         indeterminate: :boolean
-      ]
-    },
-    %Component{
-      tag: :ui_file_picker,
-      kind: :file_picker_component,
-      events: [change: :"phx-change"],
-      required_events: [:"phx-change"],
-      public_required_attrs: [:label],
-      attrs: [
-        id: :string,
-        label: :string,
-        prompt: :string,
-        max_bytes: {:default, :positive_integer, 26_214_400},
-        disabled: :boolean
       ]
     },
     %Component{
@@ -603,7 +592,6 @@ defmodule GPUI.Schema do
       events: [click: :"phx-click", bounds: :"phx-bounds-change"],
       attrs: @accessibility_attrs
     },
-    %Component{tag: :icon, kind: :text},
     %Component{
       tag: :text_surface,
       kind: :text_surface,
@@ -642,7 +630,7 @@ defmodule GPUI.Schema do
       ]
     },
     %Component{
-      tag: :input,
+      tag: :text_input,
       kind: :input,
       events: [
         change: :"phx-change",
@@ -1431,7 +1419,7 @@ defmodule GPUI.Schema do
   def identified_tags do
     for %Component{tag: tag, attrs: attrs} <- @components,
         Keyword.has_key?(attrs, :id),
-        tag not in [:div, :button, :span, :scroll, :list, :item, :input],
+        tag not in [:div, :button, :span, :scroll, :list, :item, :text_input],
         do: tag
   end
 

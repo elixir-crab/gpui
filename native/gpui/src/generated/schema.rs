@@ -9,7 +9,6 @@ pub enum GeneratedComponentKind {
     SplitComponent,
     ButtonComponent,
     ProgressComponent,
-    FilePickerComponent,
     PopoverComponent,
     PopoverTriggerComponent,
     PopoverContentComponent,
@@ -43,10 +42,10 @@ pub enum GeneratedComponentKind {
     CodeLineComponent,
     TabsComponent,
     SliderComponent,
-    Text,
     TextSurface,
     Input,
     Image,
+    Text,
     Unknown,
 }
 #[cfg(feature = "real-gpui")]
@@ -2244,6 +2243,8 @@ pub(crate) struct ButtonComponentNode {
     pub(crate) id: String,
     pub(crate) label: String,
     pub(crate) clipboard_text: Option<String>,
+    pub(crate) file_prompt: Option<String>,
+    pub(crate) file_max_bytes: u64,
     pub(crate) variant: Option<String>,
     pub(crate) size: Option<String>,
     pub(crate) disabled: bool,
@@ -2255,6 +2256,7 @@ pub(crate) struct ButtonComponentNode {
     pub(crate) click: Option<String>,
     pub(crate) clipboard: Option<String>,
     pub(crate) clipboard_write: Option<String>,
+    pub(crate) file_read: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
 #[allow(clippy::redundant_field_names)]
@@ -2267,6 +2269,9 @@ pub(crate) fn decode_generated_button_component<'a>(
         id: component_id(term)?,
         label: component_required_string_attr(term, atoms::label())?,
         clipboard_text: component_string_attr(term, atoms::clipboard_text())?,
+        file_prompt: component_string_attr(term, atoms::file_prompt())?,
+        file_max_bytes: component_positive_integer_attr(term, atoms::file_max_bytes())?
+            .unwrap_or(10485760),
         variant: component_enum_attr(
             term,
             atoms::variant(),
@@ -2285,6 +2290,7 @@ pub(crate) fn decode_generated_button_component<'a>(
         click: component_string_attr(term, atoms::phx_click())?,
         clipboard: component_string_attr(term, atoms::phx_clipboard_read())?,
         clipboard_write: component_string_attr(term, atoms::phx_clipboard_write())?,
+        file_read: component_string_attr(term, atoms::phx_file_read())?,
     })
 }
 #[derive(Clone, Debug)]
@@ -2312,35 +2318,6 @@ pub(crate) fn decode_generated_progress_component<'a>(
         max: component_positive_number_attr(term, atoms::max())?.unwrap_or(100.0),
         indeterminate: component_bool_attr(term, atoms::indeterminate())?
             .unwrap_or(false),
-    })
-}
-#[derive(Clone, Debug)]
-#[cfg(feature = "real-gpui")]
-#[allow(dead_code)]
-pub(crate) struct FilePickerComponentNode {
-    pub(crate) style: StyleAttrs,
-    pub(crate) id: String,
-    pub(crate) label: Option<String>,
-    pub(crate) prompt: Option<String>,
-    pub(crate) max_bytes: u64,
-    pub(crate) disabled: bool,
-    pub(crate) change: Option<String>,
-}
-#[cfg(feature = "real-gpui")]
-#[allow(clippy::redundant_field_names)]
-#[allow(clippy::useless_vec)]
-pub(crate) fn decode_generated_file_picker_component<'a>(
-    term: Term<'a>,
-) -> NifResult<FilePickerComponentNode> {
-    Ok(FilePickerComponentNode {
-        style: decode_style(term)?,
-        id: component_id(term)?,
-        label: component_string_attr(term, atoms::label())?,
-        prompt: component_string_attr(term, atoms::prompt())?,
-        max_bytes: component_positive_integer_attr(term, atoms::max_bytes())?
-            .unwrap_or(26214400),
-        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
-        change: component_string_attr(term, atoms::phx_change())?,
     })
 }
 #[derive(Clone, Debug)]
@@ -3533,7 +3510,6 @@ pub(crate) enum ElementNode {
     SplitComponent(SplitComponentNode),
     ButtonComponent(ButtonComponentNode),
     ProgressComponent(ProgressComponentNode),
-    FilePickerComponent(FilePickerComponentNode),
     PopoverComponent(PopoverComponentNode),
     PopoverTriggerComponent(PopoverTriggerComponentNode),
     PopoverContentComponent(PopoverContentComponentNode),
@@ -3580,7 +3556,6 @@ pub enum GeneratedElementTag {
     UiSplit,
     UiButton,
     UiProgress,
-    UiFilePicker,
     UiPopover,
     UiPopoverTrigger,
     UiPopoverContent,
@@ -3618,9 +3593,8 @@ pub enum GeneratedElementTag {
     Scroll,
     List,
     Item,
-    Icon,
     TextSurface,
-    Input,
+    TextInput,
     Img,
     Text,
     Unknown,
@@ -3635,7 +3609,6 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_split" => GeneratedElementTag::UiSplit,
         "ui_button" => GeneratedElementTag::UiButton,
         "ui_progress" => GeneratedElementTag::UiProgress,
-        "ui_file_picker" => GeneratedElementTag::UiFilePicker,
         "ui_popover" => GeneratedElementTag::UiPopover,
         "ui_popover_trigger" => GeneratedElementTag::UiPopoverTrigger,
         "ui_popover_content" => GeneratedElementTag::UiPopoverContent,
@@ -3673,9 +3646,8 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "scroll" => GeneratedElementTag::Scroll,
         "list" => GeneratedElementTag::List,
         "item" => GeneratedElementTag::Item,
-        "icon" => GeneratedElementTag::Icon,
         "text_surface" => GeneratedElementTag::TextSurface,
-        "input" => GeneratedElementTag::Input,
+        "text_input" => GeneratedElementTag::TextInput,
         "img" => GeneratedElementTag::Img,
         "text" => GeneratedElementTag::Text,
         _ => GeneratedElementTag::Unknown,
@@ -3691,7 +3663,6 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::UiSplit => GeneratedComponentKind::SplitComponent,
         GeneratedElementTag::UiButton => GeneratedComponentKind::ButtonComponent,
         GeneratedElementTag::UiProgress => GeneratedComponentKind::ProgressComponent,
-        GeneratedElementTag::UiFilePicker => GeneratedComponentKind::FilePickerComponent,
         GeneratedElementTag::UiPopover => GeneratedComponentKind::PopoverComponent,
         GeneratedElementTag::UiPopoverTrigger => {
             GeneratedComponentKind::PopoverTriggerComponent
@@ -3757,9 +3728,8 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::Scroll => GeneratedComponentKind::Container,
         GeneratedElementTag::List => GeneratedComponentKind::Container,
         GeneratedElementTag::Item => GeneratedComponentKind::Container,
-        GeneratedElementTag::Icon => GeneratedComponentKind::Text,
         GeneratedElementTag::TextSurface => GeneratedComponentKind::TextSurface,
-        GeneratedElementTag::Input => GeneratedComponentKind::Input,
+        GeneratedElementTag::TextInput => GeneratedComponentKind::Input,
         GeneratedElementTag::Img => GeneratedComponentKind::Image,
         GeneratedElementTag::Text => GeneratedComponentKind::Text,
         GeneratedElementTag::Unknown => GeneratedComponentKind::Unknown,
@@ -3790,10 +3760,6 @@ pub(crate) fn decode_generated_element_node<'a>(
         GeneratedComponentKind::ProgressComponent => {
             decode_generated_progress_component(term)
                 .map(|node| ElementNode::ProgressComponent(node))
-        }
-        GeneratedComponentKind::FilePickerComponent => {
-            decode_generated_file_picker_component(term)
-                .map(|node| ElementNode::FilePickerComponent(node))
         }
         GeneratedComponentKind::PopoverComponent => {
             decode_generated_popover_component(term)
@@ -3927,10 +3893,10 @@ pub(crate) fn decode_generated_element_node<'a>(
             decode_generated_slider_component(term)
                 .map(|node| ElementNode::SliderComponent(node))
         }
-        GeneratedComponentKind::Text => decode_text_node(term, tag),
         GeneratedComponentKind::TextSurface => decode_text_surface_node(term, tag),
         GeneratedComponentKind::Input => decode_input_node(term, tag),
         GeneratedComponentKind::Image => decode_image_node(term, tag),
+        GeneratedComponentKind::Text => decode_text_node(term, tag),
         GeneratedComponentKind::Unknown => Err(rustler::Error::BadArg),
     }
 }
@@ -3952,9 +3918,6 @@ pub(crate) fn render_generated_component_node(
         }
         ElementNode::ProgressComponent(node) => {
             element::component::display::render_progress(node, context)
-        }
-        ElementNode::FilePickerComponent(node) => {
-            element::component::display::render_file_picker(node, context)
         }
         ElementNode::PopoverComponent(node) => {
             element::component::overlay::render(node, context)

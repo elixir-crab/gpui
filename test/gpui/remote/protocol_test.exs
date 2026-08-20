@@ -16,6 +16,7 @@ defmodule GPUI.Remote.ProtocolTest do
 
     assert :external_path_transfer_v1 in capabilities
     assert :clipboard_text_v1 in capabilities
+    assert :file_read_v1 in capabilities
 
     assert %{op: :mount, payload: %{args: []}} = Protocol.mount(%{args: []})
 
@@ -40,6 +41,21 @@ defmodule GPUI.Remote.ProtocolTest do
              })
   end
 
+  test "validates bounded file-read events" do
+    event = %{
+      type: :file_read,
+      value: %{operation_id: 1, status: :selected, name: "a.txt", size: 3, data: "abc"}
+    }
+
+    assert {:ok, ^event} = Protocol.validate_file_read_event(event)
+
+    assert {:error, {:invalid_file_read_event, :value}} =
+             Protocol.validate_file_read_event(%{
+               type: :file_read,
+               value: %{operation_id: 1, status: :selected, name: "a", size: 2, data: "abc"}
+             })
+  end
+
   test "negotiates protocol version and capabilities" do
     assert {:ok, %{version: 2, capabilities: capabilities}} =
              Protocol.negotiate(%{version: 2, capabilities: [:display_v1]})
@@ -48,6 +64,7 @@ defmodule GPUI.Remote.ProtocolTest do
     assert :window_topology_v1 in capabilities
     assert :external_path_transfer_v1 in capabilities
     assert :clipboard_text_v1 in capabilities
+    assert :file_read_v1 in capabilities
 
     assert {:error, {:incompatible_version, %{expected: 2, got: 1}}} =
              Protocol.negotiate(%{version: 1, capabilities: [:display_v1]})
