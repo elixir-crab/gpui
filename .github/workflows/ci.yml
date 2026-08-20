@@ -19,7 +19,7 @@ jobs:
     with:
       latest-elixir: "1.20.2"
       latest-otp: "29.0.2"
-      latest-command: mix ci_fast
+      latest-command: mix ci.checks
       run-min: false
       rust-toolchain: "1.95.0"
       rust-components: ""

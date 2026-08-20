@@ -50,7 +50,7 @@ jobs:
     with:
       latest-elixir: "1.20.2"
       latest-otp: "29.0.2"
-      latest-command: mix ci_native
+      latest-command: mix ci.native
       run-min: false
       rust-toolchain: "1.95.0"
       apt-packages: libxkbcommon-dev libxkbcommon-x11-dev

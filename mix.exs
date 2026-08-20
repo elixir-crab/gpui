@@ -33,8 +33,8 @@ defmodule GPUI.MixProject do
     [
       preferred_envs: [
         ci: :test,
-        ci_fast: :test,
-        ci_native: :test,
+        "ci.checks": :test,
+        "ci.native": :test,
         test_unit: :test,
         test_integration: :test,
         test_all: :test,
@@ -243,7 +243,7 @@ defmodule GPUI.MixProject do
       test_unit: ["test test/gpui test/gpui_test.exs"],
       test_integration: ["test test/integration"],
       test_all: ["test"],
-      ci_fast: [
+      "ci.checks": [
         "compile --warnings-as-errors",
         "format --check-formatted",
         "test_all",
@@ -251,7 +251,7 @@ defmodule GPUI.MixProject do
         "ex_dna --max-clones 0",
         "reach.check --arch --smells"
       ],
-      ci_native: [
+      "ci.native": [
         "compile --warnings-as-errors",
         "rust.fmt --check",
         "rust.check",
