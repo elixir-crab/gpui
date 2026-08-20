@@ -1,5 +1,5 @@
 defmodule GPUI.Native.Generated do
-  @moduledoc false
+  @moduledoc "Generated Rustler NIF declarations used by GPUI.Native."
   defmacro __using__(_opts) do
     quote do
       def start_runtime do

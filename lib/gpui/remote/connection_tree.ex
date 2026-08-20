@@ -1,5 +1,5 @@
 defmodule GPUI.Remote.ConnectionTree do
-  @moduledoc false
+  @moduledoc "Supervisor tree for one accepted SafeRPC connection and its request tasks."
 
   use Supervisor
 

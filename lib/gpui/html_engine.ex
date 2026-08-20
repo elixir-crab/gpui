@@ -1,5 +1,5 @@
 defmodule GPUI.HTMLEngine do
-  @moduledoc false
+  @moduledoc "Phoenix HTML engine that lowers HEEx nodes into GPUI element values."
 
   @behaviour Phoenix.LiveView.TagEngine
 

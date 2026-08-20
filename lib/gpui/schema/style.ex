@@ -1,5 +1,5 @@
 defmodule GPUI.Schema.Style do
-  @moduledoc false
+  @moduledoc "Declarative schema for one renderer-independent style property."
 
   @enforce_keys [:name, :field, :type]
   defstruct [:name, :field, :type, :render]

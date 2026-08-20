@@ -1,5 +1,5 @@
 defmodule GPUI.Remote.Connection do
-  @moduledoc false
+  @moduledoc "Owns accepted remote sockets, request delegates, and connection limits."
 
   use GenServer
 

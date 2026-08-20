@@ -1,5 +1,5 @@
 defmodule GPUI.Remote.SessionSupervisor do
-  @moduledoc false
+  @moduledoc "Dynamic supervisor for isolated remote GPUI session trees."
 
   use DynamicSupervisor
 

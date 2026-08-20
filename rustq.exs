@@ -66,5 +66,13 @@ rust "native/gpui/src/generated/nifs.rs" do
 end
 
 generate "native-stubs", "lib/gpui/native/generated.ex" do
-  content(Nif.stubs_from_source("native/gpui/src/nif.rs", nifs, GPUI.Native.Generated))
+  generated = Nif.stubs_from_source("native/gpui/src/nif.rs", nifs, GPUI.Native.Generated)
+
+  content(
+    String.replace(
+      generated,
+      "@moduledoc false",
+      "@moduledoc \"Generated Rustler NIF declarations used by GPUI.Native.\""
+    )
+  )
 end

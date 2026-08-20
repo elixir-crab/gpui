@@ -1,5 +1,5 @@
 defmodule GPUI.UI.CollectionValidation do
-  @moduledoc false
+  @moduledoc "Validation and normalization shared by virtualized collection builders."
 
   alias GPUI.Element
 

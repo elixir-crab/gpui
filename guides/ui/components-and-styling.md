@@ -827,6 +827,9 @@ Supported groups include:
 </div>
 ```
 
+`<list>` and `<item>` carry no hidden flex, gap, or padding policy; declare
+layout explicitly with classes. `<span>` is likewise a neutral container.
+
 Use the semantic `<scroll>` element for scrolling. An overflow utility is not
 accepted as a substitute because GPUI scrolling requires native scroll state and
 behavior. Unsupported variants and CSS expressions, such as `hover:*`,

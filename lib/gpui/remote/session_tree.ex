@@ -1,5 +1,5 @@
 defmodule GPUI.Remote.SessionTree do
-  @moduledoc false
+  @moduledoc "Supervisor tree that owns one remote GPUI session and request route."
 
   use Supervisor
 

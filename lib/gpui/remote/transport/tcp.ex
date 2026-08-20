@@ -6,12 +6,12 @@ defmodule GPUI.Remote.Transport.TCP do
   @behaviour SafeRPC.Transport
 
   defmodule Listener do
-    @moduledoc false
+    @moduledoc "Opaque listening socket used by the GPUI SafeRPC transport."
     defstruct [:socket, :mode]
   end
 
   defmodule Connection do
-    @moduledoc false
+    @moduledoc "Opaque connected socket used by the GPUI SafeRPC transport."
     defstruct [:socket, :mode]
   end
 

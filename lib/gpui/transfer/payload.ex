@@ -33,7 +33,7 @@ defmodule GPUI.Transfer.Payload do
     payload
   end
 
-  @doc false
+  @doc "Validates that a transfer payload is already canonical and bounded."
   @spec validate!(t()) :: :ok
   def validate!(%__MODULE__{text: text, external_paths: paths}) do
     validate_text!(text)
@@ -45,7 +45,7 @@ defmodule GPUI.Transfer.Payload do
     :ok
   end
 
-  @doc false
+  @doc "Converts a canonical transfer payload into a serializable map."
   @spec to_payload(t()) :: map()
   def to_payload(%__MODULE__{} = payload) do
     validate!(payload)

@@ -1,5 +1,5 @@
 defmodule GPUI.Remote.Acceptor do
-  @moduledoc false
+  @moduledoc "Accept loop that transfers remote sockets into supervised connection trees."
 
   use GenServer
 

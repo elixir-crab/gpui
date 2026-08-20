@@ -55,7 +55,7 @@ defmodule GPUI.Raster do
     end
   end
 
-  @doc false
+  @doc "Converts a validated raster into its renderer-independent payload."
   @spec to_payload(t()) :: map()
   def to_payload(%__MODULE__{} = raster) do
     raster = validate!(raster)

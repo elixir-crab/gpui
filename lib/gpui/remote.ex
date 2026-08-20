@@ -1,7 +1,7 @@
 defmodule GPUI.Remote do
-  @moduledoc false
+  @moduledoc "Shared child-spec construction for remote GPUI supervision trees."
 
-  @doc false
+  @doc "Builds a standard child specification for an internal remote process."
   @spec child_spec(module(), keyword()) :: Supervisor.child_spec()
   def child_spec(module, opts) do
     %{

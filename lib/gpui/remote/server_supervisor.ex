@@ -1,5 +1,5 @@
 defmodule GPUI.Remote.ServerSupervisor do
-  @moduledoc false
+  @moduledoc "Top-level supervisor for the remote server coordinator and dynamic children."
 
   use Supervisor
 

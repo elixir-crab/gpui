@@ -1,5 +1,5 @@
 defmodule GPUI.Schema.Resource do
-  @moduledoc false
+  @moduledoc "Declarative schema for one renderer resource kind."
 
   @enforce_keys [:name, :fields]
   defstruct [:name, :fields]

@@ -1,5 +1,5 @@
 defmodule GPUI.Remote.Request do
-  @moduledoc false
+  @moduledoc "Normalizes and bounds incoming SafeRPC request envelopes."
 
   defstruct [:kind, :op, :payload, :cap]
 

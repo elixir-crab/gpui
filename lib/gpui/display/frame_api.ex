@@ -1,5 +1,5 @@
 defmodule GPUI.Display.FrameAPI do
-  @moduledoc false
+  @moduledoc "Macro that adds the common rendered-frame API to display processes."
 
   defmacro __using__(_opts) do
     quote do

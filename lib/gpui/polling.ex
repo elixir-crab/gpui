@@ -1,5 +1,5 @@
 defmodule GPUI.Polling do
-  @moduledoc false
+  @moduledoc "Validation for optional runtime and remote display polling intervals."
 
   @spec interval(keyword(), pos_integer()) ::
           {:ok, pos_integer() | nil} | {:error, {:invalid_option, :poll_interval}}

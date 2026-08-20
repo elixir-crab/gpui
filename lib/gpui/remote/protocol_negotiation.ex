@@ -1,5 +1,5 @@
 defmodule GPUI.Remote.ProtocolNegotiation do
-  @moduledoc false
+  @moduledoc "Exact-version and additive-capability negotiation for remote GPUI peers."
 
   @spec negotiate(map(), pos_integer(), [atom()], [atom()]) ::
           {:ok, map()}

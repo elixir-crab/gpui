@@ -1,5 +1,5 @@
 defmodule GPUI.Dev.ExampleLoader do
-  @moduledoc false
+  @moduledoc "Development loader for compiling and running standalone GPUI examples."
 
   @root Path.expand("../..", __DIR__)
 

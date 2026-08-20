@@ -1,5 +1,5 @@
 defmodule GPUI.Dev.Visual.Scenario do
-  @moduledoc false
+  @moduledoc "Value describing one development visual-capture scenario."
 
   @type action ::
           {:dispatch, map()}

@@ -28,7 +28,7 @@ defmodule GPUI.Display do
 
   @optional_callbacks await_frame: 3, frame_token: 2, await_frame_after: 4
 
-  @doc false
+  @doc "Starts a display module and normalizes its startup result."
   @spec start(module(), keyword()) :: {:ok, pid()} | {:error, term()}
   def start(display_module, opts) do
     case invoke(display_module, :start_link, [opts]) do
@@ -38,7 +38,7 @@ defmodule GPUI.Display do
     end
   end
 
-  @doc false
+  @doc "Synchronizes a renderer-independent snapshot through a display module."
   @spec sync_snapshot(module(), GenServer.server(), snapshot()) :: :ok | {:error, term()}
   def sync_snapshot(display_module, display, snapshot) do
     case invoke(display_module, :sync, [display, snapshot]) do
@@ -48,7 +48,7 @@ defmodule GPUI.Display do
     end
   end
 
-  @doc false
+  @doc "Drains pending native or test events from a display module."
   @spec drain(module(), GenServer.server()) :: {:ok, [event()]} | {:error, term()}
   def drain(display_module, display) do
     case invoke(display_module, :drain_events, [display]) do
@@ -58,7 +58,7 @@ defmodule GPUI.Display do
     end
   end
 
-  @doc false
+  @doc "Injects one event into a display's pending event queue."
   @spec inject(module(), GenServer.server(), event()) :: {:ok, term()} | {:error, term()}
   def inject(display_module, display, event) do
     case invoke(display_module, :inject_event, [display, event]) do
@@ -68,7 +68,7 @@ defmodule GPUI.Display do
     end
   end
 
-  @doc false
+  @doc "Waits until a display has rendered the requested window frame."
   @spec call_await_frame(GenServer.server(), pos_integer(), pos_integer()) ::
           :ok | {:error, term()}
   def call_await_frame(server, window_id, timeout)
@@ -76,14 +76,14 @@ defmodule GPUI.Display do
     GenServer.call(server, {:await_frame, window_id, timeout}, timeout + 2_000)
   end
 
-  @doc false
+  @doc "Returns the current rendered-frame generation for a display window."
   @spec call_frame_token(GenServer.server(), pos_integer()) ::
           {:ok, non_neg_integer()} | {:error, term()}
   def call_frame_token(server, window_id) when is_integer(window_id) and window_id > 0 do
     GenServer.call(server, {:frame_token, window_id}, 7_000)
   end
 
-  @doc false
+  @doc "Waits for a frame generation newer than the supplied token."
   @spec call_await_frame_after(
           GenServer.server(),
           pos_integer(),
@@ -100,7 +100,7 @@ defmodule GPUI.Display do
     )
   end
 
-  @doc false
+  @doc "Replies to a caller after the selected display frame completes."
   @spec reply_after_frame(
           module(),
           GenServer.server(),
@@ -112,7 +112,7 @@ defmodule GPUI.Display do
   def reply_after_frame(display_module, display, window_id, timeout, from),
     do: reply_from_display(display_module, display, :await_frame, [window_id, timeout], from)
 
-  @doc false
+  @doc "Delegates a frame API call to a display and replies asynchronously."
   @spec reply_from_display(module(), GenServer.server(), atom(), [term()], GenServer.from()) ::
           :ok
   def reply_from_display(display_module, display, callback, args, from) do
@@ -125,7 +125,7 @@ defmodule GPUI.Display do
     end)
   end
 
-  @doc false
+  @doc "Runs work asynchronously and replies to the original GenServer caller."
   @spec async_reply(GenServer.from(), (-> term()), (term() -> term())) :: :ok
   def async_reply(from, callback, normalize \\ &Function.identity/1) do
     {:ok, _pid} =

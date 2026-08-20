@@ -1,5 +1,5 @@
 defmodule GPUI.Schema.Component do
-  @moduledoc false
+  @moduledoc "Declarative schema for one renderer-native element or UI component."
 
   @enforce_keys [:tag, :kind]
   defstruct [
@@ -59,7 +59,7 @@ defmodule GPUI.Schema.Component do
           public_slots: [{atom(), :required | :optional | :one_or_more}]
         }
 
-  @doc false
+  @doc "Returns whether a schema component exists only for renderer orchestration."
   @spec renderer_internal?(t()) :: boolean()
   def renderer_internal?(%__MODULE__{kind: :viewport}), do: true
   def renderer_internal?(%__MODULE__{}), do: false

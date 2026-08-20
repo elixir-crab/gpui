@@ -88,6 +88,7 @@ defmodule GPUI.MixProject do
     [
       main: "readme",
       source_ref: "v#{@version}",
+      filter_modules: &documented_module?/2,
       extras: [
         "README.md",
         "CHANGELOG.md",
@@ -160,6 +161,62 @@ defmodule GPUI.MixProject do
         ],
         Testing: [GPUI.Test, GPUI.Test.Display]
       ]
+    ]
+  end
+
+  defp documented_module?(module, _metadata) do
+    module in documented_modules()
+  end
+
+  defp documented_modules do
+    [
+      GPUI,
+      GPUI.Accessibility,
+      GPUI.Application,
+      GPUI.Schema.Component,
+      GPUI.Command,
+      GPUI.Session,
+      GPUI.Snapshot,
+      GPUI.Runtime,
+      GPUI.Runtime.Update,
+      GPUI.View,
+      GPUI.Text.Buffer,
+      GPUI.Text.Position,
+      GPUI.Text.Range,
+      GPUI.Text.Edit,
+      GPUI.Text.Selection,
+      GPUI.Text.Transaction,
+      GPUI.Text.Snapshot,
+      GPUI.Text.Viewport,
+      GPUI.Text.CaretGeometry,
+      GPUI.Text.RangeGeometry,
+      GPUI.Text.Rectangle,
+      GPUI.Text.Decoration,
+      GPUI.Text.InlineProjection,
+      GPUI.Text.BlockProjection,
+      GPUI.Text.StyleRun,
+      GPUI.Text.RichRun,
+      GPUI.Transfer.Payload,
+      GPUI.Transfer.Event,
+      GPUI.Display,
+      GPUI.Display.Native,
+      GPUI.UI,
+      GPUI.UI.Overlay,
+      GPUI.Element,
+      GPUI.Event,
+      GPUI.Image,
+      GPUI.Raster,
+      GPUI.ResourceRef,
+      GPUI.Tailwind,
+      GPUI.Template,
+      GPUI.WindowSpec,
+      GPUI.Remote.Server,
+      GPUI.Remote.Client,
+      GPUI.Remote.Protocol,
+      GPUI.Remote.Transport.TCP,
+      GPUI.Test,
+      GPUI.Test.Display,
+      Mix.Tasks.Gpui.Release.Check
     ]
   end
 

@@ -22,7 +22,7 @@ defmodule GPUI.Command do
   @spec new(String.t(), String.t()) :: t()
   def new(id, shortcut), do: validate!(%__MODULE__{id: id, shortcut: shortcut})
 
-  @doc false
+  @doc "Validates command count, IDs, shortcuts, and uniqueness."
   @spec validate_all!([t()]) :: [t()]
   def validate_all!(commands) when is_list(commands) and length(commands) <= @max_commands do
     commands = Enum.map(commands, &validate!/1)
@@ -39,7 +39,7 @@ defmodule GPUI.Command do
     raise ArgumentError, "window commands must be a list; got: #{inspect(commands)}"
   end
 
-  @doc false
+  @doc "Converts a command into its renderer-independent protocol tuple."
   @spec to_payload(t()) :: {String.t(), String.t()}
   def to_payload(%__MODULE__{} = command), do: {command.id, command.shortcut}
 

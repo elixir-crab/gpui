@@ -62,23 +62,23 @@ defmodule GPUI.Accessibility do
   @type interaction :: :structural | :activate | :composite | :value
   @type state_rule :: {atom(), [String.t()]}
 
-  @doc false
+  @doc "Returns the closed generic accessibility role vocabulary."
   @spec roles() :: [String.t()]
   def roles, do: @roles
 
-  @doc false
+  @doc "Returns role specifications used by validation and native code generation."
   @spec role_specs() :: [role_spec()]
   def role_specs, do: @role_specs
 
-  @doc false
+  @doc "Returns accessibility state-to-role validation rules."
   @spec state_roles() :: [state_rule()]
   def state_roles, do: @state_roles
 
-  @doc false
+  @doc "Returns generic accessibility attributes accepted by schema containers."
   @spec attrs() :: keyword(GPUI.Schema.Component.attr_type())
   def attrs, do: @attrs
 
-  @doc false
+  @doc "Returns whether an attribute map contains generic accessibility metadata."
   @spec metadata?(map()) :: boolean()
   def metadata?(attrs) when is_map(attrs) do
     Enum.any?(
@@ -97,7 +97,7 @@ defmodule GPUI.Accessibility do
     )
   end
 
-  @doc false
+  @doc "Validates generic accessibility metadata for one supported element tag."
   @spec validate_generic!(atom(), map()) :: map()
   def validate_generic!(tag, attrs) when tag in @generic_tags and is_map(attrs) do
     if metadata?(attrs) do

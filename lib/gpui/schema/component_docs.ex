@@ -1,9 +1,9 @@
 defmodule GPUI.Schema.ComponentDocs do
-  @moduledoc false
+  @moduledoc "Schema-driven generation of component option tables and typespecs."
 
   alias GPUI.Schema.Component
 
-  @doc false
+  @doc "Renders the generated options table for one component schema."
   @spec options_doc(Component.t()) :: String.t()
   def options_doc(%Component{} = component) do
     rows =
@@ -23,7 +23,7 @@ defmodule GPUI.Schema.ComponentDocs do
     """
   end
 
-  @doc false
+  @doc "Builds the public options typespec AST for one component schema."
   @spec option_type_ast(Component.t()) :: Macro.t()
   def option_type_ast(%Component{} = component) do
     entries =

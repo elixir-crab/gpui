@@ -11,13 +11,13 @@ defmodule GPUI.Element do
 
   @identified_tags MapSet.new(GPUI.Schema.identified_tags())
 
-  @doc false
+  @doc "Appends one child to an immutable element value."
   @spec append_child(t(), child()) :: t()
   def append_child(%__MODULE__{} = element, child) do
     %{element | children: element.children ++ [child]}
   end
 
-  @doc false
+  @doc "Adds or replaces one explicit style value on an immutable element."
   @spec put_style(t(), atom(), term()) :: t()
   def put_style(%__MODULE__{} = element, key, value) when is_atom(key) do
     styles = Keyword.get(element.attrs, :style, [])

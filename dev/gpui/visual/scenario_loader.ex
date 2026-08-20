@@ -1,5 +1,5 @@
 defmodule GPUI.Dev.Visual.ScenarioLoader do
-  @moduledoc false
+  @moduledoc "Development loader for isolated visual regression scenarios."
 
   @scenario_dir Path.expand("../../../test/visual/scenarios", __DIR__)
 

@@ -1,5 +1,5 @@
 defmodule GPUI.Remote.Session do
-  @moduledoc false
+  @moduledoc "Owns one remotely hosted GPUI session, request limit, and inactivity timer."
 
   use GenServer
 

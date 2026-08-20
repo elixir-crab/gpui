@@ -18,7 +18,7 @@ defmodule GPUI.Text.Viewport do
           line_height: float()
         }
 
-  @doc false
+  @doc "Decodes a protocol text-viewport map into a typed viewport value."
   @spec from_event(map()) :: t()
   def from_event(value) when is_map(value) do
     struct!(__MODULE__, value)

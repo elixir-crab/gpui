@@ -1,5 +1,5 @@
 defmodule GPUI.Remote.Reconnect do
-  @moduledoc false
+  @moduledoc "Bounded reconnect orchestration shared by the remote display client."
 
   @spec call_with_reconnect(term(), atom(), map(), function(), function(), [term()]) ::
           {:ok, term(), term()} | {:error, term(), term()}

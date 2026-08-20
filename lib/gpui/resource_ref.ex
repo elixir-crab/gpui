@@ -11,7 +11,7 @@ defmodule GPUI.ResourceRef do
   @spec new(String.Chars.t(), :raster) :: t()
   def new(id, :raster), do: %__MODULE__{id: to_string(id), type: :raster}
 
-  @doc false
+  @doc "Converts a resource reference into its renderer-independent payload."
   def to_payload(%__MODULE__{} = ref), do: %{__type__: :resource_ref, id: ref.id, type: ref.type}
 end
 

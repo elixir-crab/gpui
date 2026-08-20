@@ -31,7 +31,7 @@ defmodule GPUI.Session do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
   end
 
-  @doc false
+  @doc "Starts a session whose application mount is completed by its supervisor."
   @spec start_link_deferred(keyword()) :: GenServer.on_start()
   def start_link_deferred(opts) do
     GenServer.start_link(__MODULE__, {:deferred, opts})
@@ -338,39 +338,41 @@ defmodule GPUI.Session do
     end
   end
 
+  @handled_event_types [
+    :click,
+    :command,
+    :change,
+    :select,
+    :release,
+    :search,
+    :submit,
+    :range,
+    :link,
+    :transaction,
+    :selection,
+    :viewport,
+    :geometry,
+    :range_geometry,
+    :hit_test,
+    :bounds,
+    :focus,
+    :blur,
+    :keydown,
+    :keyup,
+    :drag_enter,
+    :drag_move,
+    :drag_leave,
+    :drop,
+    :clipboard,
+    :clipboard_write,
+    :copy
+  ]
+
   defp handle_event(
          %{type: type, window_id: window_id, event: event} = native_event,
          state
        )
-       when type in [
-              :click,
-              :command,
-              :change,
-              :select,
-              :release,
-              :search,
-              :submit,
-              :range,
-              :link,
-              :transaction,
-              :selection,
-              :viewport,
-              :geometry,
-              :range_geometry,
-              :hit_test,
-              :bounds,
-              :focus,
-              :blur,
-              :keydown,
-              :keyup,
-              :drag_enter,
-              :drag_move,
-              :drag_leave,
-              :drop,
-              :clipboard,
-              :clipboard_write,
-              :copy
-            ] do
+       when type in @handled_event_types do
     case Enum.find(state.windows, &(&1.id == window_id)) do
       %WindowSpec{root: {module, assigns}} = window ->
         assigns = Map.new(assigns)
@@ -394,6 +396,9 @@ defmodule GPUI.Session do
         {native_event, state}
     end
   end
+
+  defp handle_event(%{type: type} = event, state) when is_atom(type),
+    do: {Map.put(event, :error, {:unsupported_event_type, type}), state}
 
   defp handle_event(event, state), do: {event, state}
 

@@ -1,5 +1,5 @@
 defmodule GPUI.UI.Form do
-  @moduledoc false
+  @moduledoc "Renderer-independent composition for labeled form fields and feedback."
 
   alias GPUI.Element
 

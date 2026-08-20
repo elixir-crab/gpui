@@ -18,7 +18,7 @@ defmodule GPUI.Text.CaretGeometry do
           height: float()
         }
 
-  @doc false
+  @doc "Decodes a protocol caret-geometry map into a typed value."
   @spec from_event(map()) :: t()
   def from_event(value) when is_map(value) do
     struct!(__MODULE__, value)

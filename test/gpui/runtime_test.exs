@@ -760,6 +760,13 @@ defmodule GPUI.RuntimeTest do
 
   defp set_display_mode(display, mode), do: Agent.update(display, fn _current -> mode end)
 
+  test "sessions report unsupported typed events explicitly" do
+    {:ok, session} = GPUI.Session.start_link(app: DemoApp)
+
+    assert {%{type: :mystery, error: {:unsupported_event_type, :mystery}}, _snapshot} =
+             GPUI.Session.dispatch_event(session, %{type: :mystery, window_id: 1})
+  end
+
   test "sessions can run without any display" do
     {:ok, session} = GPUI.Session.start_link(app: DemoApp)
 

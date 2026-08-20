@@ -17,7 +17,7 @@ defmodule GPUI.Text.RangeGeometry do
           rectangles: [Rectangle.t()]
         }
 
-  @doc false
+  @doc "Decodes a protocol range-geometry map into a typed value."
   @spec from_event(map()) :: t()
   def from_event(%{range: %{start: start_position, end: end_position}} = value) do
     range = %Range{start: struct!(Position, start_position), end: struct!(Position, end_position)}

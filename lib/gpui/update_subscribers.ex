@@ -1,5 +1,5 @@
 defmodule GPUI.UpdateSubscribers do
-  @moduledoc false
+  @moduledoc "Subscription-map helpers for publishing synchronized runtime updates."
 
   @spec subscribe(%{pid() => reference()}, pid()) :: %{pid() => reference()}
   def subscribe(subscribers, pid) do

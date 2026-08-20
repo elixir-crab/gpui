@@ -1,5 +1,5 @@
 defmodule GPUI.Remote.SessionRegistry do
-  @moduledoc false
+  @moduledoc "Tracks remote session routes, monitors, request IDs, and expiry metadata."
 
   alias GPUI.Remote.SessionSupervisor
 

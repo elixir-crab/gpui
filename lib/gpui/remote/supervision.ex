@@ -1,5 +1,5 @@
 defmodule GPUI.Remote.Supervision do
-  @moduledoc false
+  @moduledoc "Helpers for locating named children inside internal supervision trees."
 
   def child(supervisor, id, unavailable) do
     supervisor

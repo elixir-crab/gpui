@@ -1,5 +1,5 @@
 defmodule GPUI.Native do
-  @moduledoc false
+  @moduledoc "Low-level Rustler NIF facade generated and selected at compile time."
 
   build_native? =
     System.get_env("GPUI_BUILD_FROM_SOURCE") in ["1", "true"] or
@@ -8,7 +8,7 @@ defmodule GPUI.Native do
   skip_native? = System.get_env("GPUI_SKIP_NATIVE") in ["1", "true"]
   @compiled build_native? and not skip_native?
 
-  @doc false
+  @doc "Reports whether this build loaded the native NIF implementation."
   @spec compiled?() :: boolean()
   def compiled?, do: :persistent_term.get({__MODULE__, :compiled}, @compiled)
 

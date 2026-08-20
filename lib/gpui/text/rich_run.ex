@@ -48,7 +48,7 @@ defmodule GPUI.Text.RichRun do
     run
   end
 
-  @doc false
+  @doc "Validates the bounded styles, colors, range, and optional link of a rich run."
   @spec validate!(t()) :: :ok
   def validate!(%__MODULE__{} = run) do
     validate_colors!(run)

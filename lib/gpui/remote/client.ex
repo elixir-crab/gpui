@@ -27,7 +27,7 @@ defmodule GPUI.Remote.Client do
   @reconnect_errors [:closed, :timeout, :econnrefused, :enetunreach, :nxdomain]
   @pending_event_limit 1_024
 
-  @doc false
+  @doc "Builds the remote client's OTP child specification."
   @spec child_spec(keyword()) :: Supervisor.child_spec()
   def child_spec(opts), do: GPUI.Remote.child_spec(__MODULE__, opts)
 

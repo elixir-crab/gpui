@@ -1,5 +1,5 @@
 defmodule GPUI.Schema do
-  @moduledoc false
+  @moduledoc "Canonical element, component, event, resource, and style protocol schema."
 
   alias GPUI.Schema.Component
   alias GPUI.Schema.ComponentDocs
@@ -993,11 +993,11 @@ defmodule GPUI.Schema do
 
   def components, do: @components
 
-  @doc false
+  @doc "Returns generated public option documentation for a component tag."
   @spec component_options_doc(atom()) :: String.t()
   def component_options_doc(tag), do: tag |> component!() |> ComponentDocs.options_doc()
 
-  @doc false
+  @doc "Defines public component option types from schema definitions."
   defmacro define_component_option_types(definitions) do
     definitions = Macro.expand(definitions, __CALLER__)
 
@@ -1425,7 +1425,7 @@ defmodule GPUI.Schema do
     |> Enum.map(& &1.tag)
   end
 
-  @doc false
+  @doc "Returns every renderer-native schema tag in declaration order."
   def native_tags, do: Enum.map(@components, & &1.tag)
 
   def identified_tags do

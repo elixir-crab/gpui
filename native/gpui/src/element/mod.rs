@@ -396,9 +396,9 @@ pub(crate) fn apply_container_semantics(element: gpui::Div, tag: GeneratedElemen
             .px(gpui::px(10.0))
             .py(gpui::px(6.0)),
         GeneratedElementTag::Scroll => element,
-        GeneratedElementTag::List => element.flex().flex_col().gap(gpui::px(4.0)),
-        GeneratedElementTag::Item => element.p(gpui::px(4.0)),
-        GeneratedElementTag::Span => element,
+        GeneratedElementTag::List | GeneratedElementTag::Item | GeneratedElementTag::Span => {
+            element
+        }
         _ => element,
     }
 }
