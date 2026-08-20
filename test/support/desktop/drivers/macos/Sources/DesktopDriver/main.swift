@@ -273,16 +273,43 @@ func quartzFrame(_ screen: NSScreen) -> CGRect {
     return CGDisplayBounds(id)
 }
 
+func containingScreen(_ bounds: CGRect) -> NSScreen? {
+    NSScreen.screens.max { left, right in
+        quartzFrame(left).intersection(bounds).width * quartzFrame(left).intersection(bounds).height <
+            quartzFrame(right).intersection(bounds).width * quartzFrame(right).intersection(bounds).height
+    }
+}
+
+func windowInfo(windowID: String) throws {
+    let info = try window(id: windowID)
+    let content = contentBounds(info)
+    guard let screen = containingScreen(info.bounds),
+          let displayID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
+    else { throw DriverError(description: "target display not found") }
+    let display = quartzFrame(screen)
+    var values: [String] = []
+    values.append(String(info.id))
+    for value in [info.bounds.minX, info.bounds.minY, info.bounds.width, info.bounds.height] {
+        values.append(String(Double(value)))
+    }
+    for value in [content.minX, content.minY, content.width, content.height] {
+        values.append(String(Double(value)))
+    }
+    values.append(String(displayID))
+    for value in [display.minX, display.minY, display.width, display.height] {
+        values.append(String(Double(value)))
+    }
+    values.append(String(Double(screen.backingScaleFactor)))
+    print(values.joined(separator: "\t"))
+}
+
 func capture(windowID: String, path: String) async throws {
     let info = try window(id: windowID)
     let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
     guard let window = content.windows.first(where: { $0.windowID == info.id }) else {
         throw DriverError(description: "capture window not found")
     }
-    let display = NSScreen.screens.max { left, right in
-        quartzFrame(left).intersection(info.bounds).width * quartzFrame(left).intersection(info.bounds).height <
-            quartzFrame(right).intersection(info.bounds).width * quartzFrame(right).intersection(info.bounds).height
-    }
+    let display = containingScreen(info.bounds)
     let scale = display?.backingScaleFactor ?? 1
     let configuration = SCStreamConfiguration()
     configuration.width = Int(info.bounds.width * scale)
@@ -308,6 +335,7 @@ func capture(windowID: String, path: String) async throws {
 func main() async throws {
     let args = Array(CommandLine.arguments.dropFirst())
     switch args.count {
+    case 2 where args[0] == "window-info": try windowInfo(windowID: args[1])
     case 2 where args[0] == "find-window":
         let title = args[1]
         let deadline = Date().addingTimeInterval(10)

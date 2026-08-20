@@ -35,6 +35,23 @@ defmodule GPUITest.Desktop.Linux do
   def close_window!(window_id), do: driver!("close-window", [window_id])
   def capture!(window_id, path), do: driver!("capture-window", [window_id, path])
 
+  def window_info!(window_id) do
+    output = command!(["getwindowgeometry", "--shell", window_id])
+
+    values =
+      output
+      |> String.split("\n", trim: true)
+      |> Map.new(fn line ->
+        [key, value] = String.split(line, "=", parts: 2)
+        {String.downcase(key), String.to_integer(value)}
+      end)
+
+    %{
+      id: window_id,
+      frame: %{x: values["x"], y: values["y"], width: values["width"], height: values["height"]}
+    }
+  end
+
   def repeat_click!(window_id, x, y, count) do
     request_frame!(window_id, x, y)
     command!(["click", "--repeat", to_string(count), "1"])

@@ -6,6 +6,21 @@ consumers with `config :gpui, build_native: config_env() != :test` so ordinary
 test builds retain that boundary. Native interaction tests remain a separate E2E
 layer.
 
+## Local native E2E
+
+Run the same desktop E2E suite through the platform-aware local orchestrator:
+
+```sh
+mix gpui.test.e2e test/e2e/gpui/native/motion_test.exs
+mix gpui.test.e2e test/e2e/gpui/native
+```
+
+On Linux the task checks `xvfb-run`, D-Bus, and `xdotool`, then runs with
+Xvfb and Lavapipe. On macOS it checks Accessibility and Screen Recording
+permission, builds the Swift desktop driver, and uses the active WindowServer
+and real Metal renderer. Both paths execute ordinary ExUnit tests through
+`GPUITest.Desktop`; no separate test runner is involved.
+
 ## Deterministic application tests
 
 ```elixir

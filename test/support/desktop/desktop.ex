@@ -20,6 +20,10 @@ defmodule GPUITest.Desktop do
   def capture!(window_id, path), do: @backend.capture!(window_id, path)
   def repeat_click!(window_id, x, y, count), do: @backend.repeat_click!(window_id, x, y, count)
 
+  def window_info!(window_id) do
+    @backend.window_info!(window_id)
+  end
+
   def drag!(window_id, from_x, from_y, to_x, to_y),
     do: @backend.drag!(window_id, from_x, from_y, to_x, to_y)
 

@@ -22,6 +22,50 @@ defmodule GPUITest.Desktop.MacOS do
   def close_window!(window_id), do: driver_ok!("close", [window_id])
   def capture!(window_id, path), do: driver_ok!("capture", [window_id, path])
 
+  def window_info!(window_id) do
+    [
+      id,
+      x,
+      y,
+      width,
+      height,
+      content_x,
+      content_y,
+      content_width,
+      content_height,
+      display_id,
+      display_x,
+      display_y,
+      display_width,
+      display_height,
+      scale
+    ] =
+      "window-info"
+      |> driver!([window_id])
+      |> String.split("\t")
+
+    %{
+      id: id,
+      frame: rectangle(x, y, width, height),
+      content_frame: rectangle(content_x, content_y, content_width, content_height),
+      display: %{
+        id: display_id,
+        frame: rectangle(display_x, display_y, display_width, display_height),
+        scale: number(scale)
+      }
+    }
+  end
+
+  defp rectangle(x, y, width, height),
+    do: %{x: number(x), y: number(y), width: number(width), height: number(height)}
+
+  defp number(value) do
+    case Float.parse(value) do
+      {number, ""} -> number
+      :error -> flunk("invalid desktop driver number: #{inspect(value)}")
+    end
+  end
+
   def repeat_click!(window_id, x, y, count),
     do: driver_ok!("repeat-click", [window_id, to_string(x), to_string(y), to_string(count)])
 
