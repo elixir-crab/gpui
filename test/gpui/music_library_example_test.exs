@@ -32,7 +32,7 @@ defmodule GPUI.MusicLibraryExampleTest do
 
     click(runtime, "play-all")
     click(runtime, "toggle_play")
-    slide(runtime, "seek_changed", 64.0)
+    change(runtime, "seek_changed", 64.0)
 
     assert runtime
            |> tree()

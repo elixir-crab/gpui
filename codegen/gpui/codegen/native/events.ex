@@ -1,5 +1,5 @@
 defmodule GPUI.Codegen.Native.EventDefinitions do
-  @moduledoc false
+  @moduledoc "Derives Rust input-kind enums and encoders from schema event declarations."
 
   defmacro define_input_kind do
     variants = Enum.map(input_kinds(), &type_variant/1)
@@ -49,7 +49,7 @@ defmodule GPUI.Codegen.Native.EventDefinitions do
     end
   end
 
-  @doc false
+  @doc "Returns the unique non-click input kinds declared by the component schema."
   def input_kinds do
     GPUI.Schema.components()
     |> Enum.flat_map(&Keyword.keys(&1.events))
@@ -68,7 +68,7 @@ defmodule GPUI.Codegen.Native.EventDefinitions do
 end
 
 defmodule GPUI.Codegen.Native.Events do
-  @moduledoc false
+  @moduledoc "Emits generated native event-value decoding and input-kind contracts."
 
   use RustQ.Meta
 

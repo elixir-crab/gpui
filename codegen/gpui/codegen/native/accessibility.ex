@@ -1,10 +1,11 @@
 defmodule GPUI.Codegen.Native.AccessibilityDefinitions do
-  @moduledoc false
+  @moduledoc "Builds RustQ accessibility types and conversion implementations from GPUI.Accessibility policy."
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defmacro define_contracts do
     role_variants =
       Enum.map(GPUI.Accessibility.role_specs(), fn {name, _spec} -> {name, []} end)
+
     role_decode =
       decode_clauses(GPUI.Accessibility.role_specs(), :AccessibilityRole) ++
         [{:->, [], [[Macro.var(:_unknown, nil)], quote(do: {:error, badarg()})]}]
@@ -33,7 +34,7 @@ defmodule GPUI.Codegen.Native.AccessibilityDefinitions do
         case component_string_attr(term, Atoms.accessibility_role()) do
           {:ok, {:some, value}} ->
             case value.as_str() do
-              unquote_splicing(role_decode)
+              (unquote_splicing(role_decode))
             end
 
           {:ok, nil} ->
@@ -107,13 +108,17 @@ defmodule GPUI.Codegen.Native.AccessibilityDefinitions do
     enum = {:__aliases__, [], [enum]}
 
     Enum.map(specs, fn {name, _spec} ->
-      {:->, [], [[Atom.to_string(name)], quote(do: {:ok, some(enum_variant(unquote(enum), unquote(name)))})]}
+      {:->, [],
+       [
+         [Atom.to_string(name)],
+         quote(do: {:ok, some(enum_variant(unquote(enum), unquote(name)))})
+       ]}
     end)
   end
 end
 
 defmodule GPUI.Codegen.Native.Accessibility do
-  @moduledoc false
+  @moduledoc "Emits the generated Rust accessibility contracts and AccessKit conversion items."
 
   use RustQ.Meta, rust_sources: ["native/gpui/src/element/mod.rs"]
 
@@ -131,7 +136,9 @@ defmodule GPUI.Codegen.Native.Accessibility do
 
     enums =
       Enum.map([:AccessibilityRole, :AccessibilityChecked, :AccessibilityOrientation], fn name ->
-        enum = Enum.find(type_items, &match?(%AST.Enum{name: ^name}, &1)) || raise "missing #{name}"
+        enum =
+          Enum.find(type_items, &match?(%AST.Enum{name: ^name}, &1)) || raise "missing #{name}"
+
         %{
           enum
           | derive: [:Clone, :Copy, :Debug, :Eq, :PartialEq],

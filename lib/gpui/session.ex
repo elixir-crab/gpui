@@ -1,9 +1,15 @@
 defmodule GPUI.Session do
   @moduledoc """
-  Renderer-independent owner of one running `GPUI.Application`.
+  Renderer-independent state engine for one running `GPUI.Application`.
 
-  A session owns declarative windows, root-view assigns, rendered snapshots, and
-  resources. It has no knowledge of native GPUI, displays, or network transports.
+  A session owns declarative windows, root-view assigns, rendered snapshots,
+  resources, strict event dispatch, and atomic callback transitions. It has no
+  knowledge of native GPUI, displays, or network transports.
+
+  Ordinary applications should use `GPUI.Runtime`, which composes this state
+  engine with a display and synchronization lifecycle. Direct session use is an
+  advanced infrastructure boundary for remote hosting, custom runtimes, and
+  renderer-independent protocol integration.
   """
 
   use GenServer
@@ -26,6 +32,7 @@ defmodule GPUI.Session do
           next_window_id: pos_integer()
         }
 
+  @doc "Starts the renderer-independent state engine linked to the caller."
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
@@ -37,6 +44,7 @@ defmodule GPUI.Session do
     GenServer.start_link(__MODULE__, {:deferred, opts})
   end
 
+  @doc "Returns the session's declarative windows."
   @spec windows(GenServer.server()) :: [WindowSpec.t()]
   def windows(session), do: GenServer.call(session, :windows)
 
@@ -50,13 +58,16 @@ defmodule GPUI.Session do
           {:ok, snapshot()} | {:error, topology_error()}
   def close_window(session, window), do: GenServer.call(session, {:close_window, window})
 
+  @doc "Returns the current authoritative renderer-independent snapshot."
   @spec snapshot(GenServer.server()) :: snapshot()
   def snapshot(session), do: GenServer.call(session, :snapshot)
 
+  @doc "Stores one renderer-independent resource in the next snapshot."
   @spec put_resource(GenServer.server(), String.Chars.t(), map()) :: :ok
   def put_resource(session, id, resource),
     do: GenServer.call(session, {:put_resource, id, resource})
 
+  @doc "Removes one renderer-independent resource from the next snapshot."
   @spec drop_resource(GenServer.server(), String.Chars.t()) :: :ok
   def drop_resource(session, id), do: GenServer.call(session, {:drop_resource, id})
 

@@ -550,7 +550,7 @@ Down skip disabled items, while Home and End retain the source-backed endpoint
 rules. Native accessibility exposes tree and tree-item roles plus level,
 expanded, selected, position-in-set, and set-size metadata.
 
-Use `GPUI.Test.tree_toggle/4`, `GPUI.Test.select/4`, and `GPUI.Test.range/5` for
+Use `GPUI.Test.change/4`, `GPUI.Test.select/4`, and `GPUI.Test.range/5` for
 deterministic tree tests. All three event paths are forwarded unchanged by
 remote displays.
 

@@ -191,31 +191,9 @@ defmodule GPUI.Test do
   @spec toggle(GenServer.server(), String.t(), boolean(), keyword()) :: Snapshot.t()
   def toggle(runtime, event, checked, opts \\ []), do: change(runtime, event, checked, opts)
 
-  @doc "Changes the controlled open state of an overlay."
-  @spec open(GenServer.server(), String.t(), boolean(), keyword()) :: Snapshot.t()
-  def open(runtime, event, open, opts \\ []), do: change(runtime, event, open, opts)
-
-  @doc "Selects a controlled form or tree item and returns the updated snapshot."
+  @doc "Selects a controlled form value and returns the updated snapshot."
   @spec select(GenServer.server(), String.t(), String.t() | nil, keyword()) :: Snapshot.t()
   def select(runtime, event, value, opts \\ []), do: change(runtime, event, value, opts)
-
-  @doc "Requests expansion or collapse of a controlled tree branch."
-  @spec tree_toggle(GenServer.server(), String.t(), String.t(), keyword()) :: Snapshot.t()
-  def tree_toggle(runtime, event, id, opts \\ []) when is_binary(id) and id != "",
-    do: change(runtime, event, id, opts)
-
-  @doc "Selects a dropdown-menu item and returns the updated snapshot."
-  @spec menu_select(GenServer.server(), String.t(), String.t(), keyword()) :: Snapshot.t()
-  def menu_select(runtime, event, value, opts \\ []),
-    do: dispatch_value(runtime, :select, event, value, opts)
-
-  @doc "Changes the expanded IDs of a controlled accordion."
-  @spec expand(GenServer.server(), String.t(), [String.t()], keyword()) :: Snapshot.t()
-  def expand(runtime, event, ids, opts \\ []), do: change(runtime, event, ids, opts)
-
-  @doc "Changes a controlled slider value and returns the updated snapshot."
-  @spec slide(GenServer.server(), String.t(), number(), keyword()) :: Snapshot.t()
-  def slide(runtime, event, value, opts \\ []), do: change(runtime, event, value, opts)
 
   @doc "Dispatches a slider release event and returns the updated snapshot."
   @spec release(GenServer.server(), String.t(), number(), keyword()) :: Snapshot.t()

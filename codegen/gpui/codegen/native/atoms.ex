@@ -1,5 +1,5 @@
 defmodule GPUI.Codegen.Native.Atoms do
-  @moduledoc false
+  @moduledoc "Collects and names the Elixir atoms required by generated Rustler code."
 
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Walk

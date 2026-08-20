@@ -1,5 +1,5 @@
 defmodule GPUI.Codegen.Native.ComponentDefinitionMacros do
-  @moduledoc false
+  @moduledoc "Expands GPUI component schema entries into RustQ node types and decoder declarations."
 
   defmacro define_components do
     declarations =
@@ -214,7 +214,7 @@ defmodule GPUI.Codegen.Native.ComponentDefinitionMacros do
 end
 
 defmodule GPUI.Codegen.Native.ComponentDefinitions do
-  @moduledoc false
+  @moduledoc "Emits generated Rust component node definitions and decoders."
 
   use RustQ.Meta
 

@@ -1,10 +1,16 @@
 defmodule GPUI.Runtime do
   @moduledoc """
-  Local composition of a renderer-independent `GPUI.Session` and a display.
+  Primary application-facing process API for one GPUI application and display.
 
-  The runtime synchronizes session snapshots to the display and routes display
-  events back into the session. Remote application servers use `GPUI.Session`
-  directly and therefore never start a native display.
+  A runtime starts the renderer-independent `GPUI.Session`, owns the configured
+  `GPUI.Display`, synchronizes authoritative snapshots, drains strict typed
+  display events, and publishes completed updates to subscribers. Applications
+  normally supervise their `GPUI.Application`, whose child specification starts
+  this process; direct `GPUI.Session` use is reserved for remote hosting and
+  custom display infrastructure.
+
+  Use this module for application operations such as snapshots, resources,
+  dynamic windows, view messages, subscriptions, and frame barriers.
 
   ## Options
 

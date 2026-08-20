@@ -1,5 +1,5 @@
 defmodule GPUI.Codegen.Native.DispatchDefinitions do
-  @moduledoc false
+  @moduledoc "Builds schema-derived RustQ dispatch functions for element and component decoding."
 
   defmacro define_dispatch do
     components = GPUI.Schema.components()
@@ -116,7 +116,7 @@ defmodule GPUI.Codegen.Native.DispatchDefinitions do
 end
 
 defmodule GPUI.Codegen.Native.Dispatch do
-  @moduledoc false
+  @moduledoc "Emits generated native element-tag and component-kind decoder dispatch."
 
   use RustQ.Meta,
     callable_modules: [GPUI.Codegen.Native.ComponentDefinitions]

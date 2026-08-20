@@ -1,5 +1,5 @@
 defmodule GPUI.Codegen.Native.ResourceDefinitions do
-  @moduledoc false
+  @moduledoc "Expands renderer-independent resource schema entries into RustQ data and decoder types."
 
   defmacro define_resources do
     declarations =
@@ -149,7 +149,7 @@ defmodule GPUI.Codegen.Native.ResourceDefinitions do
 
   defp required(name), do: {:required, [], [name]}
 
-  @doc false
+  @doc "Returns the generated Rust data-type name for a resource schema entry."
   def type_name(%{name: name}), do: String.to_atom("#{name}_data")
 
   defp resource_struct_name(name),
@@ -162,7 +162,7 @@ defmodule GPUI.Codegen.Native.ResourceDefinitions do
 end
 
 defmodule GPUI.Codegen.Native.Resources do
-  @moduledoc false
+  @moduledoc "Emits generated native resource data types and bounded decoders."
 
   use RustQ.Meta
 

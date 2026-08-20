@@ -1,5 +1,5 @@
 defmodule GPUI.Codegen.Native.Schema do
-  @moduledoc false
+  @moduledoc "Composes generated native schema, decoder, dispatch, renderer, and registry items."
 
   alias GPUI.Codegen.Native.Accessibility
   alias GPUI.Codegen.Native.ComponentContracts

@@ -14,7 +14,7 @@ defmodule GPUI.ComponentGalleryExampleTest do
     change(runtime, "name_changed", "Grace Hopper")
     select(runtime, "language_changed", "rust")
     toggle(runtime, "notifications_changed", false)
-    slide(runtime, "volume_changed", 40.0)
+    change(runtime, "volume_changed", 40.0)
 
     assert %{
              story: "forms",

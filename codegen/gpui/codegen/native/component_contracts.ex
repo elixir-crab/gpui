@@ -1,5 +1,5 @@
 defmodule GPUI.Codegen.Native.ComponentContracts do
-  @moduledoc false
+  @moduledoc "Generates shared Rust decoders for schema-backed component attribute contracts."
 
   use RustQ.Meta
 

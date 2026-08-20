@@ -1,5 +1,5 @@
 defmodule GPUI.Codegen.Native.SchemaTypeMacros do
-  @moduledoc false
+  @moduledoc "Builds RustQ element-tag, component-kind, and element-node enums from GPUI.Schema."
 
   defmacro define_schema_types do
     components = GPUI.Schema.components()
@@ -47,7 +47,7 @@ defmodule GPUI.Codegen.Native.SchemaTypeMacros do
 end
 
 defmodule GPUI.Codegen.Native.SchemaTypes do
-  @moduledoc false
+  @moduledoc "Emits the generated native schema enums used by decoding and renderer dispatch."
 
   use RustQ.Meta
 

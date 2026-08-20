@@ -1,5 +1,5 @@
 defmodule GPUI.Codegen.Native.StyleDefinitions do
-  @moduledoc false
+  @moduledoc "Derives RustQ style data, decoding, and application logic from GPUI.Schema styles."
 
   defmacro define_style_data do
     specs = GPUI.Schema.style_specs()
@@ -197,7 +197,7 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
 end
 
 defmodule GPUI.Codegen.Native.Style do
-  @moduledoc false
+  @moduledoc "Emits generated native style contracts and schema-derived application dispatch."
 
   use RustQ.Meta
 

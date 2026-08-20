@@ -1,5 +1,5 @@
 defmodule GPUI.Codegen.Native.Renderers do
-  @moduledoc false
+  @moduledoc "Discovers and validates the handwritten Rust renderer functions used by generated dispatch."
 
   alias RustQ.Syn
   alias RustQ.Syn.Type

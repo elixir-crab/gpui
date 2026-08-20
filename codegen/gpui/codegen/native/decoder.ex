@@ -1,5 +1,5 @@
 defmodule GPUI.Codegen.Native.Decoder do
-  @moduledoc false
+  @moduledoc "Defines the RustQ decoding helpers shared by generated native schema contracts."
 
   use RustQ.Meta,
     rust_sources: ["native/gpui/src/nif.rs"]

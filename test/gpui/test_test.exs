@@ -266,7 +266,7 @@ defmodule GPUI.TestTest do
     range(runtime, "records_range", 120, 160)
     assert %{range: %{first: 120, last: 160}} = assigns(runtime)
 
-    tree_toggle(runtime, "tree_toggled", "dir:lib")
+    change(runtime, "tree_toggled", "dir:lib")
     assert %{tree_branch: "dir:lib"} = assigns(runtime)
 
     select(runtime, "language_changed", "elixir")
@@ -277,13 +277,19 @@ defmodule GPUI.TestTest do
     select(runtime, "framework_changed", "LiveView")
     toggle(runtime, "notifications_changed", true)
     select(runtime, "plan_changed", "pro")
-    expand(runtime, "details_changed", ["security"])
+    change(runtime, "details_changed", ["security"])
     select(runtime, "section_changed", "advanced")
-    slide(runtime, "volume_changed", 40.0)
+    change(runtime, "volume_changed", 40.0)
     release(runtime, "volume_released", 40.0)
-    open(runtime, "overlay_changed", true)
-    open(runtime, "menu_open_changed", true)
-    menu_select(runtime, "menu_selected", "open")
+    change(runtime, "overlay_changed", true)
+    change(runtime, "menu_open_changed", true)
+
+    dispatch(runtime, %{
+      type: :select,
+      window_id: 1,
+      event: "menu_selected",
+      value: "open"
+    })
 
     assert %{
              language: nil,

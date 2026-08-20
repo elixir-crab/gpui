@@ -1,5 +1,5 @@
 defmodule GPUI.Codegen.Native.RegistryDefinitions do
-  @moduledoc false
+  @moduledoc "Derives typed native component-registry accessors from stateful schema entries."
 
   defmacro define_registry do
     components = GPUI.Schema.stateful_components()
@@ -97,7 +97,7 @@ defmodule GPUI.Codegen.Native.RegistryDefinitions do
 end
 
 defmodule GPUI.Codegen.Native.Registry do
-  @moduledoc false
+  @moduledoc "Emits the generated native component registry type and implementation items."
 
   use RustQ.Meta
 

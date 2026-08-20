@@ -1,5 +1,5 @@
 defmodule GPUI.Codegen.Native.Boundary do
-  @moduledoc false
+  @moduledoc "Defines generated Rustler NIF exports and disabled-native fallback implementations."
 
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A

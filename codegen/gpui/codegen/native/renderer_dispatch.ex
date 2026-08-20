@@ -1,5 +1,5 @@
 defmodule GPUI.Codegen.Native.RendererDispatchDefinitions do
-  @moduledoc false
+  @moduledoc "Builds renderer calls from schema entries and discovered handwritten Rust functions."
 
   defmacro define_renderer_dispatch do
     components =
@@ -70,7 +70,7 @@ defmodule GPUI.Codegen.Native.RendererDispatchDefinitions do
 end
 
 defmodule GPUI.Codegen.Native.RendererDispatch do
-  @moduledoc false
+  @moduledoc "Emits schema-derived dispatch from decoded element nodes to native renderers."
 
   use RustQ.Meta
 

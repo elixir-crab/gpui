@@ -1,5 +1,5 @@
 defmodule GPUI.Codegen.Native.Elements do
-  @moduledoc false
+  @moduledoc "Defines and emits RustQ types and decoders for renderer-independent element trees."
 
   use RustQ.Meta,
     rust_sources: [

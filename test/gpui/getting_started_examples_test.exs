@@ -66,7 +66,7 @@ defmodule GPUI.GettingStartedExamplesTest do
     select(runtime, "preview_changed", "paper")
     toggle(runtime, "notifications_changed", false)
     select(runtime, "density_changed", "compact")
-    slide(runtime, "volume_changed", 40.0)
+    change(runtime, "volume_changed", 40.0)
 
     assert %{
              name: "Grace Hopper",
