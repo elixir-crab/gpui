@@ -79,7 +79,7 @@ defmodule GPUI.Runtime do
   def drop_resource(runtime, id),
     do: GenServer.call(runtime, {:drop_resource, id}, @call_timeout)
 
-  @doc "Dispatches one normalized event and synchronizes the resulting snapshot."
+  @doc "Validates and dispatches one explicit typed event and synchronizes the resulting snapshot."
   @spec dispatch_event(GenServer.server(), map()) ::
           {map(), GPUI.Snapshot.t()} | {:error, term()}
   def dispatch_event(runtime, event),

@@ -4,17 +4,21 @@ defmodule GPUI.Transfer.PayloadTest do
   alias GPUI.Transfer.Payload
 
   test "normalizes clipboard values into the public payload type" do
-    assert %{value: %Payload{text: "paste", external_paths: []}} =
+    assert {:ok, %{value: %Payload{text: "paste", external_paths: []}}} =
              GPUI.Event.normalize(%{
                type: :clipboard,
+               window_id: 1,
+               event: "clipboard-read",
                value: %{text: "paste", external_paths: []}
              })
   end
 
   test "normalizes transfer event payloads into the public value type" do
-    event =
+    {:ok, event} =
       GPUI.Event.normalize(%{
         type: :drop,
+        window_id: 1,
+        event: "files-dropped",
         value: %{
           session_id: 17,
           target_id: "drop-zone",

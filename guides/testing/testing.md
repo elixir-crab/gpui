@@ -74,7 +74,10 @@ range(runtime, "records_range", 1_000, 1_048)
 ```
 
 All helpers return the resulting snapshot. `dispatch/2` is available for custom
-normalized events. `send_view/3` delivers an OTP message through
+explicit typed events. Every routed event must include a positive `window_id`,
+a non-empty `event` name, and the value shape required by its `type`; missing
+`type` never defaults to `:click`. The convenience helpers construct those
+fields for tests. `send_view/3` delivers an OTP message through
 `GPUI.Runtime.send_view/3`, making background-process behavior deterministic
 without running timers in a test.
 

@@ -399,10 +399,15 @@ defmodule GPUI.Remote.Client do
   defp display_event_payload(_event, _session_id, _capabilities), do: nil
 
   defp normalize_display_event(event, session_id) do
-    event
-    |> GPUI.Event.normalize()
-    |> Map.put(:session_id, session_id)
-    |> Map.put(:request_id, new_request_id())
+    case GPUI.Event.normalize(event) do
+      {:ok, event} ->
+        event
+        |> Map.put(:session_id, session_id)
+        |> Map.put(:request_id, new_request_id())
+
+      {:error, _reason} ->
+        nil
+    end
   end
 
   defp flush_pending_events(%{pending_events: []} = state), do: state

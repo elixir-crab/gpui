@@ -760,8 +760,13 @@ defmodule GPUI.RuntimeTest do
 
   defp set_display_mode(display, mode), do: Agent.update(display, fn _current -> mode end)
 
-  test "sessions report unsupported typed events explicitly" do
+  test "sessions report malformed and unsupported events explicitly without dispatching them" do
     {:ok, session} = GPUI.Session.start_link(app: DemoApp)
+
+    assert {%{window_id: 1, event: "rename", error: {:invalid_event, :type}}, snapshot} =
+             GPUI.Session.dispatch_event(session, %{window_id: 1, event: "rename"})
+
+    assert snapshot.windows |> hd() |> get_in([:root, :assigns, :name]) == "OTP"
 
     assert {%{type: :mystery, error: {:unsupported_event_type, :mystery}}, _snapshot} =
              GPUI.Session.dispatch_event(session, %{type: :mystery, window_id: 1})

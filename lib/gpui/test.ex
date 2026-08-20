@@ -95,7 +95,11 @@ defmodule GPUI.Test do
   @doc "Dispatches a normalized display event and returns handled events plus the new snapshot."
   @spec dispatch(GenServer.server(), Event.t() | map() | keyword()) :: {[map()], Snapshot.t()}
   def dispatch(runtime, event) do
-    event = Event.normalize(event)
+    event =
+      case Event.normalize(event) do
+        {:ok, event} -> event
+        {:error, reason} -> raise ArgumentError, "invalid GPUI test event: #{inspect(reason)}"
+      end
 
     with {:ok, :ok} <- Runtime.inject_event(runtime, event),
          handled when is_list(handled) <- Runtime.drain_events(runtime) do

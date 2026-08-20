@@ -796,7 +796,7 @@ defmodule GPUI.Remote.ServerTest do
 
     assert {:ok, :ok} =
              GPUI.Test.Display.inject_event(display_name, %{
-               type: :change,
+               type: :file_read,
                window_id: 1,
                event: "file_selected",
                value: selection

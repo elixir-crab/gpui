@@ -60,9 +60,11 @@ defmodule GPUI.Session do
   @spec drop_resource(GenServer.server(), String.Chars.t()) :: :ok
   def drop_resource(session, id), do: GenServer.call(session, {:drop_resource, id})
 
+  @doc "Validates and dispatches one display event, returning the handled fact and current snapshot."
   @spec dispatch_event(GenServer.server(), map()) :: {map(), snapshot()}
   def dispatch_event(session, event), do: GenServer.call(session, {:dispatch_event, event})
 
+  @doc "Validates and dispatches display events in order, returning handled facts and current snapshot."
   @spec dispatch_events(GenServer.server(), [map()]) :: {[map()], snapshot()}
   def dispatch_events(session, events), do: GenServer.call(session, {:dispatch_events, events})
 
@@ -169,16 +171,12 @@ defmodule GPUI.Session do
   end
 
   def handle_call({:dispatch_event, event}, _from, state) do
-    {handled, state} = event |> GPUI.Event.normalize() |> handle_event(state)
+    {handled, state} = normalize_and_handle_event(event, state)
     {:reply, {handled, snapshot_from_state(state)}, state}
   end
 
   def handle_call({:dispatch_events, events}, _from, state) do
-    {handled, state} =
-      Enum.map_reduce(events, state, fn event, state ->
-        event |> GPUI.Event.normalize() |> handle_event(state)
-      end)
-
+    {handled, state} = Enum.map_reduce(events, state, &normalize_and_handle_event/2)
     {:reply, {handled, snapshot_from_state(state)}, state}
   end
 
@@ -311,6 +309,16 @@ defmodule GPUI.Session do
     |> GPUI.Element.to_payload()
   end
 
+  defp normalize_and_handle_event(event, state) do
+    case GPUI.Event.normalize(event) do
+      {:ok, event} -> handle_event(event, state)
+      {:error, reason} -> {invalid_event(event, reason), state}
+    end
+  end
+
+  defp invalid_event(event, reason) when is_map(event), do: Map.put(event, :error, reason)
+  defp invalid_event(event, reason), do: %{event: event, error: reason}
+
   defp handle_event(%{type: :window_closed, window_id: window_id} = native_event, state) do
     windows = Enum.reject(state.windows, &(&1.id == window_id))
     {native_event, %{state | windows: windows}}
@@ -397,9 +405,6 @@ defmodule GPUI.Session do
         {native_event, state}
     end
   end
-
-  defp handle_event(%{type: type} = event, state) when is_atom(type),
-    do: {Map.put(event, :error, {:unsupported_event_type, type}), state}
 
   defp handle_event(event, state), do: {event, state}
 
