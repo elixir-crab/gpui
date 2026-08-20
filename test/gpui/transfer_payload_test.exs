@@ -29,9 +29,13 @@ defmodule GPUI.Transfer.PayloadTest do
         }
       })
 
-    assert %Payload{external_paths: ["/display/tmp/a"]} = event.value.payload
-    assert event.value.session_id == 17
-    assert event.value.target_id == "drop-zone"
+    assert %GPUI.Transfer.Event{
+             session_id: 17,
+             target_id: "drop-zone",
+             position: {10.0, 20.0},
+             coordinate_space: :window_native_pixels,
+             payload: %Payload{external_paths: ["/display/tmp/a"]}
+           } = event.value
   end
 
   test "builds bounded text and display-machine path facts" do

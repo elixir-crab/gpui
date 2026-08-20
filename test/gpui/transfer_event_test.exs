@@ -12,15 +12,51 @@ defmodule GPUI.Transfer.EventTest do
     coordinate_space: "window_native_pixels"
   }
 
-  test "normalizes bounded payload events" do
+  test "normalizes native wire maps into public values" do
     assert {:ok, value} =
              Event.normalize(
                :drag_enter,
                Map.put(@base, :payload, %{text: nil, external_paths: ["/display/tmp/a"]})
              )
 
-    assert %Payload{external_paths: ["/display/tmp/a"]} = value.payload
-    assert value.session_id == 7
+    assert %Event{
+             session_id: 7,
+             target_id: "drop-zone",
+             position: {12.5, 24},
+             coordinate_space: :window_native_pixels,
+             payload: %Payload{external_paths: ["/display/tmp/a"]}
+           } = value
+  end
+
+  test "accepts and validates canonical public values" do
+    value = %Event{
+      session_id: 7,
+      target_id: "drop-zone",
+      position: {12.5, 24},
+      coordinate_space: :window_native_pixels,
+      payload: nil
+    }
+
+    assert {:ok, ^value} = Event.normalize(:drag_move, value)
+  end
+
+  test "serializes public values for native and remote transport" do
+    value = %Event{
+      session_id: 7,
+      target_id: "drop-zone",
+      position: {12.5, 24},
+      coordinate_space: :window_native_pixels,
+      payload: %Payload{external_paths: ["/display/tmp/a"]}
+    }
+
+    assert Event.to_payload(value) == %{
+             session_id: 7,
+             target_id: "drop-zone",
+             x: 12.5,
+             y: 24,
+             coordinate_space: "window_native_pixels",
+             payload: %{text: nil, external_paths: ["/display/tmp/a"]}
+           }
   end
 
   test "enforces payload presence by event phase" do
@@ -33,7 +69,8 @@ defmodule GPUI.Transfer.EventTest do
                Map.put(@base, :payload, %{text: nil, external_paths: ["/tmp/a"]})
              )
 
-    assert {:ok, %{payload: nil}} = Event.normalize(:drag_leave, Map.put(@base, :payload, nil))
+    assert {:ok, %Event{payload: nil}} =
+             Event.normalize(:drag_leave, Map.put(@base, :payload, nil))
   end
 
   test "rejects malformed identity and coordinates" do

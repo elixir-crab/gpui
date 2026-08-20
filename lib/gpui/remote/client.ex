@@ -402,6 +402,7 @@ defmodule GPUI.Remote.Client do
     case GPUI.Event.normalize(event) do
       {:ok, event} ->
         event
+        |> encode_display_event()
         |> Map.put(:session_id, session_id)
         |> Map.put(:request_id, new_request_id())
 
@@ -409,6 +410,12 @@ defmodule GPUI.Remote.Client do
         nil
     end
   end
+
+  defp encode_display_event(%{type: type, value: %GPUI.Transfer.Event{} = value} = event)
+       when type in [:drag_enter, :drag_move, :drag_leave, :drop],
+       do: Map.put(event, :value, GPUI.Transfer.Event.to_payload(value))
+
+  defp encode_display_event(event), do: event
 
   defp flush_pending_events(%{pending_events: []} = state), do: state
 

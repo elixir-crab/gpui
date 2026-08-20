@@ -1110,8 +1110,12 @@ defmodule GPUI.Remote.ServerTest do
                })
              )
 
-    assert %GPUI.Transfer.Payload{external_paths: ["/display/tmp/a"]} = assigns.file.payload
-    assert assigns.file.target_id == "drop-zone"
+    assert %GPUI.Transfer.Event{
+             target_id: "drop-zone",
+             position: {10.0, 20.0},
+             coordinate_space: :window_native_pixels,
+             payload: %GPUI.Transfer.Payload{external_paths: ["/display/tmp/a"]}
+           } = assigns.file
   end
 
   test "rejects unauthorized clients" do

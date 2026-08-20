@@ -31,12 +31,16 @@ defmodule GPUI.Remote.ProtocolTest do
     assert {:ok, %{value: %GPUI.Transfer.Payload{text: "paste"}}} =
              Protocol.validate_clipboard_event(%{
                type: :clipboard,
+               window_id: 1,
+               event: "clipboard-read",
                value: %{text: "paste", external_paths: []}
              })
 
     assert {:error, {:invalid_clipboard_event, _reason}} =
              Protocol.validate_clipboard_event(%{
                type: :clipboard,
+               window_id: 1,
+               event: "clipboard-read",
                value: %{text: :binary.copy("x", 1_048_577), external_paths: []}
              })
   end
@@ -44,14 +48,18 @@ defmodule GPUI.Remote.ProtocolTest do
   test "validates bounded file-read events" do
     event = %{
       type: :file_read,
+      window_id: 1,
+      event: "file-read",
       value: %{operation_id: 1, status: :selected, name: "a.txt", size: 3, data: "abc"}
     }
 
     assert {:ok, ^event} = Protocol.validate_file_read_event(event)
 
-    assert {:error, {:invalid_file_read_event, :value}} =
+    assert {:error, {:invalid_file_read_event, {:invalid_event, :value}}} =
              Protocol.validate_file_read_event(%{
                type: :file_read,
+               window_id: 1,
+               event: "file-read",
                value: %{operation_id: 1, status: :selected, name: "a", size: 2, data: "abc"}
              })
   end

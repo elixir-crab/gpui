@@ -78,8 +78,22 @@ A drop target opts into fixed typed phases:
 :drop
 ```
 
-Each event includes a window-native-pixel position. `:drag_enter` and `:drop`
-include the bounded payload. `:drag_move` is coalesced and carries only the
+Each `handle_event/3` callback receives a public value:
+
+```elixir
+%GPUI.Transfer.Event{
+  session_id: 42,
+  target_id: "attachments",
+  position: {320.0, 180.0},
+  coordinate_space: :window_native_pixels,
+  payload: %GPUI.Transfer.Payload{
+    text: nil,
+    external_paths: ["/display/tmp/document.pdf"]
+  }
+}
+```
+
+`:drag_enter` and `:drop` include the bounded payload. `:drag_move` is coalesced and carries only the
 session identity and latest position. `:drag_leave` terminates the session.
 A monotonically increasing renderer-owned session ID prevents stale movement
 or leave events from being associated with a later drag.
