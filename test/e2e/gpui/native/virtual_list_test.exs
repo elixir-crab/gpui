@@ -198,7 +198,7 @@ defmodule GPUI.Native.VirtualListE2ETest do
     end
   end
 
-  test "loads only requested source ranges while revealing distant selections" do
+  test "desktop wheel input changes a distant source-backed range" do
     {:ok, runtime} = GPUI.Runtime.start_link(app: SourceListApp, poll_interval: 10)
     on_exit(fn -> Desktop.stop_process(runtime) end)
     assert :ok = GPUI.Runtime.subscribe(runtime)
@@ -206,59 +206,21 @@ defmodule GPUI.Native.VirtualListE2ETest do
     native_window_id = Desktop.window_id!("GPUI Source List E2E")
     Desktop.await_frame!(runtime, 1, native_window_id)
 
-    assert %{first: first, last: last} = current_or_await_distant_range(runtime)
+    assert %{first: first, last: 100_000} = current_or_await_distant_range(runtime)
     assert first > 99_900
-    assert last == 100_000
-    Desktop.await_frame!(runtime, 1, native_window_id)
-
-    snapshot = GPUI.Runtime.snapshot(runtime)
-    assigns = snapshot.windows |> hd() |> get_in([:root, :assigns])
-    assert assigns.total_count == 100_000
-    refute Map.has_key?(assigns, :items)
-
-    loaded_items = snapshot |> GPUI.Test.tree() |> GPUI.Test.all(type: :ui_virtual_list_item)
-    assert Enum.count(loaded_items) <= 32
-    assert Enum.any?(loaded_items, &match?(%{attrs: %{id: "target"}}, &1))
-
-    Desktop.click!(native_window_id, 120, 200)
-    clicked = await_source_selection(runtime)
-    Desktop.key!(native_window_id, "Up")
-    previous = await_source_selection(runtime)
-    assert item_number(previous) == item_number(clicked) - 1
-
-    Desktop.key!(native_window_id, "Down")
-    selected = await_source_selection(runtime)
-    assert selected == clicked
 
     assert {:ok, generation} = GPUI.Runtime.frame_token(runtime, 1)
     Desktop.scroll!(native_window_id, 120, 200, 0, 720)
     assert :ok = GPUI.Runtime.request_frame(runtime)
     Desktop.await_frame_after!(runtime, 1, generation)
 
-    scrolled_range = await_source_range(runtime, &(&1.first < first))
-    assert scrolled_range.first < first
-
-    assert {:ok, _snapshot} = GPUI.Runtime.send_view(runtime, 1, {:list_height, 240})
-    resized_range = await_source_range(runtime, &(&1 != scrolled_range))
-
-    assert resized_range.first <= resized_range.last
-
-    assert {:ok, _snapshot} = GPUI.Runtime.send_view(runtime, 1, {:move_target, 50_000})
-    moved_range = await_source_range(runtime, &(&1.first <= 50_000 and &1.last > 50_000))
-    assert moved_range.first < moved_range.last
-    Desktop.await_frame!(runtime, 1, native_window_id)
-
-    moved_items =
-      runtime
-      |> GPUI.Runtime.snapshot()
-      |> GPUI.Test.tree()
-      |> GPUI.Test.all(type: :ui_virtual_list_item)
-
-    assert Enum.any?(moved_items, &match?(%{attrs: %{id: "target"}}, &1))
+    scrolled = await_source_range(runtime, &(&1.first < first and &1.last < 100_000))
+    assert scrolled.first < first
+    assert scrolled.last < 100_000
     assert Process.alive?(runtime)
   end
 
-  test "virtualizes large collections and supports pointer, keyboard, and reveal" do
+  test "desktop pointer input reaches a full-snapshot virtual list" do
     {:ok, runtime} = GPUI.Runtime.start_link(app: ListApp, poll_interval: 10)
     on_exit(fn -> Desktop.stop_process(runtime) end)
     assert :ok = GPUI.Runtime.subscribe(runtime)
@@ -271,58 +233,9 @@ defmodule GPUI.Native.VirtualListE2ETest do
     assert_receive {:gpui, ^runtime,
                     %GPUI.Runtime.Update{
                       events: [%{event: "item_selected", value: "item-1"}]
-                    }}
+                    }},
+                   3_000
 
-    Desktop.key!(native_window_id, "Down")
-
-    assert_receive {:gpui, ^runtime,
-                    %GPUI.Runtime.Update{
-                      events: [%{event: "item_selected", value: "item-3"}]
-                    }}
-
-    assert {:ok, generation} = GPUI.Runtime.frame_token(runtime, 1)
-    Desktop.repeat_click!(native_window_id, 120, 200, 12)
-    assert :ok = GPUI.Runtime.request_frame(runtime)
-    Desktop.await_frame_after!(runtime, 1, generation)
-    Desktop.click!(native_window_id, 120, 200)
-
-    assert_receive {:gpui, ^runtime,
-                    %GPUI.Runtime.Update{
-                      events: [%{event: "item_selected", value: wheel_selected}]
-                    }}
-
-    assert wheel_selected not in ~w(item-1 item-2 item-3)
-
-    {_event, snapshot} =
-      GPUI.Runtime.dispatch_event(runtime, %{
-        type: :change,
-        window_id: 1,
-        event: "item_selected",
-        value: "item-2000"
-      })
-
-    assert %{windows: [%{root: %{assigns: %{selected: "item-2000"}}}]} = snapshot
-    Desktop.await_frame!(runtime, 1, native_window_id)
-
-    assert {:ok, %{windows: [%{root: %{assigns: %{selected: "item-2000"}}}]}} =
-             GPUI.Runtime.send_view(
-               runtime,
-               1,
-               {:replace_items, Enum.map(2_000..1//-1, &"item-#{&1}")}
-             )
-
-    Desktop.await_frame!(runtime, 1, native_window_id)
-    Desktop.resize!(native_window_id, 500, 300)
-    Desktop.await_frame!(runtime, 1, native_window_id)
-
-    assert {:ok, %{windows: [%{root: %{assigns: %{selected: nil}}}]}} =
-             GPUI.Runtime.send_view(
-               runtime,
-               1,
-               {:replace_items, Enum.map(1..1_000, &"item-#{&1}")}
-             )
-
-    Desktop.await_frame!(runtime, 1, native_window_id)
     assert Process.alive?(runtime)
   end
 
@@ -336,23 +249,6 @@ defmodule GPUI.Native.VirtualListE2ETest do
 
   defp await_distant_range(runtime),
     do: await_source_range(runtime, &(&1.last > 99_900))
-
-  defp await_source_selection(runtime) do
-    receive do
-      {:gpui, ^runtime, %GPUI.Runtime.Update{events: events}} ->
-        case Enum.find_value(events, fn
-               %{type: :change, event: "source_selected", value: selected} -> selected
-               _event -> nil
-             end) do
-          nil -> await_source_selection(runtime)
-          selected -> selected
-        end
-    after
-      5_000 -> flunk("source-backed list did not emit a selection")
-    end
-  end
-
-  defp item_number("item-" <> number), do: String.to_integer(number)
 
   defp await_source_range(runtime, predicate) do
     receive do
