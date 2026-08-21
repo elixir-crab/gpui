@@ -1,4 +1,4 @@
-defmodule GPUI.Test.NativeTest do
+defmodule GPUI.Test.Native.ControlsTest do
   use GPUI.Test, native: [size: {320, 160}]
 
   defmodule FormView do

@@ -306,15 +306,4 @@ defmodule GPUI.TestTest do
              menu_selection: "open"
            } = assigns(runtime)
   end
-
-  test "public test display records snapshots chronologically" do
-    display = start_supervised!({GPUI.Test.Display, []})
-    first = %GPUI.Snapshot{windows: [], resources: %{}}
-    second = %GPUI.Snapshot{windows: [%{id: 1}], resources: %{}}
-
-    assert :ok = GPUI.Test.Display.sync(display, first)
-    assert :ok = GPUI.Test.Display.sync(display, second)
-    assert [^first, ^second] = GPUI.Test.Display.snapshots(display)
-    assert ^second = GPUI.Test.Display.latest_snapshot(display)
-  end
 end

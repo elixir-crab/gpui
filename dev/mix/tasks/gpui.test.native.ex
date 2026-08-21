@@ -8,7 +8,7 @@ defmodule Mix.Tasks.Gpui.Test.Native do
   def run(args) do
     test_args =
       case args do
-        [] -> ["test/gpui/native_renderer_test.exs"]
+        [] -> ["test/gpui/test/native"]
         args -> args
       end
 

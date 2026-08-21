@@ -45,13 +45,13 @@ defmodule GPUI.MixProject do
   defp load_test_file?(path) do
     String.ends_with?(path, "_test.exs") and
       (Mix.env() == :e2e or not String.contains?(path, "e2e/")) and
-      (Mix.target() == :native_test or not String.ends_with?(path, "native_renderer_test.exs"))
+      (Mix.target() == :native_test or not String.contains?(path, "test/gpui/test/native/"))
   end
 
   defp ignore_test_file?(path) do
     String.contains?(path, "support/") or
       String.contains?(path, "test/visual/scenarios/") or
-      (Mix.target() != :native_test and String.ends_with?(path, "native_renderer_test.exs")) or
+      (Mix.target() != :native_test and String.contains?(path, "test/gpui/test/native/")) or
       (Mix.env() != :e2e and String.contains?(path, "e2e/"))
   end
 

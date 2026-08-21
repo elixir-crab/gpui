@@ -90,7 +90,7 @@ Run the isolated Mix-target build with:
 
 ```sh
 mix gpui.test.native
-mix gpui.test.native test/gpui/native_renderer_test.exs
+mix gpui.test.native test/gpui/test/native/controls_test.exs
 mix gpui.test.native test/gpui/my_settings_native_test.exs
 ```
 
