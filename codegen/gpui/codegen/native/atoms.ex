@@ -4,7 +4,7 @@ defmodule GPUI.Codegen.Native.Atoms do
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Walk
 
-  @renamed_atoms [{:type_atom, "type"}]
+  @renamed_atoms [{:type_atom, "type"}, {:content, "content"}]
 
   @spec all() :: [{atom(), String.t()}]
   def all do
@@ -34,7 +34,8 @@ defmodule GPUI.Codegen.Native.Atoms do
       GPUI.Codegen.Native.Decoder.asts(),
       GPUI.Codegen.Native.Elements.asts(),
       GPUI.Codegen.Native.Events.items(),
-      GPUI.Codegen.Native.Style.items(GPUI.Schema.style_specs())
+      GPUI.Codegen.Native.Style.items(GPUI.Schema.style_specs()),
+      RustQ.Native.items(GPUI.Codegen.Native.Window)
     ]
     |> Walk.reduce(MapSet.new(), fn
       %AST.PathCall{path: %AST.Path{parts: [:atoms, name]}}, atoms ->

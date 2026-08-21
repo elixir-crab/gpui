@@ -21,6 +21,7 @@ require_file("codegen/gpui/codegen/native/dispatch.ex")
 require_file("codegen/gpui/codegen/native/elements.ex")
 require_file("codegen/gpui/codegen/native/events.ex")
 require_file("codegen/gpui/codegen/native/style.ex")
+require_file("codegen/gpui/codegen/native/window.ex")
 require_file("codegen/gpui/codegen/native/atoms.ex")
 require_file("codegen/gpui/codegen/native/resources.ex")
 require_file("codegen/gpui/codegen/native/rusty.ex")
@@ -32,6 +33,10 @@ require_file("codegen/gpui/codegen/native/schema.ex")
 
 rust "native/gpui/src/generated/atoms.rs" do
   RustlerAtom.declaration(GPUI.Codegen.Native.Atoms.all())
+end
+
+rust "native/gpui/src/generated/window.rs" do
+  RustQ.Native.items(GPUI.Codegen.Native.Window)
 end
 
 rust "native/gpui/src/generated/resources.rs" do

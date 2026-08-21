@@ -15,19 +15,19 @@ mod atoms {
         = "border_radius", border_width = "border_width", bordered = "bordered", bottom =
         "bottom", bounds = "bounds", branch = "branch", buffer = "buffer", cancelled =
         "cancelled", cell_change = "cell_change", change = "change", checked = "checked",
-        children = "children", chrome = "chrome", cleanable = "cleanable", click =
-        "click", clipboard = "clipboard", clipboard_text = "clipboard_text",
-        clipboard_write = "clipboard_write", closable = "closable", close_button =
-        "close_button", color = "color", command = "command", commands = "commands",
-        compact = "compact", copy = "copy", cursor = "cursor", dark = "dark", data =
-        "data", decorations = "decorations", delay = "delay", disabled = "disabled",
-        display = "display", drag_enter = "drag_enter", drag_leave = "drag_leave",
-        drag_move = "drag_move", drop = "drop", error = "error", event = "event",
-        expanded = "expanded", file_max_bytes = "file_max_bytes", file_prompt =
-        "file_prompt", file_read = "file_read", first = "first", fit = "fit", flex =
-        "flex", flex_basis = "flex_basis", flex_direction = "flex_direction", flex_grow =
-        "flex_grow", flex_shrink = "flex_shrink", flex_wrap = "flex_wrap", focus =
-        "focus", focus_request = "focus_request", follow = "follow", follow_request =
+        children = "children", cleanable = "cleanable", click = "click", clipboard =
+        "clipboard", clipboard_text = "clipboard_text", clipboard_write =
+        "clipboard_write", closable = "closable", close_button = "close_button", color =
+        "color", command = "command", compact = "compact", content = "content", copy =
+        "copy", cursor = "cursor", dark = "dark", data = "data", decorations =
+        "decorations", delay = "delay", disabled = "disabled", display = "display",
+        drag_enter = "drag_enter", drag_leave = "drag_leave", drag_move = "drag_move",
+        drop = "drop", error = "error", event = "event", expanded = "expanded",
+        file_max_bytes = "file_max_bytes", file_prompt = "file_prompt", file_read =
+        "file_read", first = "first", fit = "fit", flex = "flex", flex_basis =
+        "flex_basis", flex_direction = "flex_direction", flex_grow = "flex_grow",
+        flex_shrink = "flex_shrink", flex_wrap = "flex_wrap", focus = "focus",
+        focus_request = "focus_request", follow = "follow", follow_request =
         "follow_request", font_size = "font_size", font_weight = "font_weight", format =
         "format", gap = "gap", geometry = "geometry", geometry_ranges =
         "geometry_ranges", hard_tabs = "hard_tabs", header_height = "header_height",
@@ -38,51 +38,50 @@ mod atoms {
         "invalid_selection", item_height = "item_height", justify_content =
         "justify_content", keyboard = "keyboard", keydown = "keydown", keyup = "keyup",
         kind = "kind", label = "label", last = "last", left = "left", level = "level",
-        lifecycle = "lifecycle", light = "light", line_height = "line_height", link =
-        "link", loading = "loading", margin = "margin", margin_bottom = "margin_bottom",
-        margin_left = "margin_left", margin_right = "margin_right", margin_top =
-        "margin_top", margin_x = "margin_x", margin_y = "margin_y", masked = "masked",
-        max = "max", max_columns = "max_columns", max_height = "max_height", max_lines =
-        "max_lines", max_sizes = "max_sizes", max_width = "max_width", menu = "menu", min
-        = "min", min_height = "min_height", min_lines = "min_lines", min_size =
-        "min_size", min_sizes = "min_sizes", min_width = "min_width", missing_resource =
-        "missing_resource", mode = "mode", motion_delay = "motion_delay", motion_duration
-        = "motion_duration", motion_easing = "motion_easing", motion_from_opacity =
-        "motion_from_opacity", motion_from_x = "motion_from_x", motion_from_y =
-        "motion_from_y", motion_policy = "motion_policy", motion_request =
-        "motion_request", multiple = "multiple", name = "name", nil = "nil",
-        nothing_to_redo = "nothing_to_redo", nothing_to_undo = "nothing_to_undo", number
-        = "number", offset = "offset", offset_x = "offset_x", offset_y = "offset_y", ok =
-        "ok", opacity = "opacity", open = "open", operation_id = "operation_id", options
-        = "options", orientation = "orientation", outline = "outline", overdraw =
-        "overdraw", overflow = "overflow", overlapping_edits = "overlapping_edits",
-        overlay = "overlay", overscan = "overscan", padding = "padding", padding_bottom =
-        "padding_bottom", padding_left = "padding_left", padding_right = "padding_right",
-        padding_top = "padding_top", padding_x = "padding_x", padding_y = "padding_y",
-        parent_id = "parent_id", phx_blur = "phx-blur", phx_bounds_change =
-        "phx-bounds-change", phx_cell_change = "phx-cell-change", phx_change =
-        "phx-change", phx_click = "phx-click", phx_clipboard_read = "phx-clipboard-read",
-        phx_clipboard_write = "phx-clipboard-write", phx_copy = "phx-copy",
-        phx_drag_enter = "phx-drag-enter", phx_drag_leave = "phx-drag-leave",
-        phx_drag_move = "phx-drag-move", phx_drop = "phx-drop", phx_file_read =
-        "phx-file-read", phx_focus = "phx-focus", phx_geometry_change =
-        "phx-geometry-change", phx_hit_test = "phx-hit-test", phx_keydown =
-        "phx-keydown", phx_keyup = "phx-keyup", phx_link = "phx-link", phx_range =
-        "phx-range", phx_range_geometry_change = "phx-range-geometry-change", phx_release
-        = "phx-release", phx_search = "phx-search", phx_select = "phx-select",
-        phx_selection_change = "phx-selection-change", phx_sort = "phx-sort", phx_submit
-        = "phx-submit", phx_toggle = "phx-toggle", phx_transaction = "phx-transaction",
-        phx_viewport_change = "phx-viewport-change", placeholder = "placeholder",
-        position = "position", position_mode = "position_mode", position_x =
-        "position_x", position_y = "position_y", priority = "priority", range = "range",
-        range_geometry = "range_geometry", raster = "raster", reason = "reason", release
-        = "release", resizable = "resizable", resize_request = "resize_request",
-        resource_ref = "resource_ref", resource_type = "resource_type", reveal =
-        "reveal", reveal_index = "reveal_index", reveal_request = "reveal_request",
-        reveal_strategy = "reveal_strategy", reverse = "reverse", revision = "revision",
-        right = "right", root = "root", runs = "runs", scale = "scale", scroll_request =
-        "scroll_request", scroll_to = "scroll_to", search = "search", search_placeholder
-        = "search_placeholder", select = "select", selectable = "selectable", selected =
+        light = "light", line_height = "line_height", link = "link", loading = "loading",
+        margin = "margin", margin_bottom = "margin_bottom", margin_left = "margin_left",
+        margin_right = "margin_right", margin_top = "margin_top", margin_x = "margin_x",
+        margin_y = "margin_y", masked = "masked", max = "max", max_columns =
+        "max_columns", max_height = "max_height", max_lines = "max_lines", max_sizes =
+        "max_sizes", max_width = "max_width", menu = "menu", min = "min", min_height =
+        "min_height", min_lines = "min_lines", min_sizes = "min_sizes", min_width =
+        "min_width", missing_resource = "missing_resource", mode = "mode", motion_delay =
+        "motion_delay", motion_duration = "motion_duration", motion_easing =
+        "motion_easing", motion_from_opacity = "motion_from_opacity", motion_from_x =
+        "motion_from_x", motion_from_y = "motion_from_y", motion_policy =
+        "motion_policy", motion_request = "motion_request", multiple = "multiple", name =
+        "name", nil = "nil", nothing_to_redo = "nothing_to_redo", nothing_to_undo =
+        "nothing_to_undo", number = "number", offset = "offset", offset_x = "offset_x",
+        offset_y = "offset_y", ok = "ok", opacity = "opacity", open = "open",
+        operation_id = "operation_id", options = "options", orientation = "orientation",
+        outline = "outline", overdraw = "overdraw", overflow = "overflow",
+        overlapping_edits = "overlapping_edits", overlay = "overlay", overscan =
+        "overscan", padding = "padding", padding_bottom = "padding_bottom", padding_left
+        = "padding_left", padding_right = "padding_right", padding_top = "padding_top",
+        padding_x = "padding_x", padding_y = "padding_y", parent_id = "parent_id",
+        phx_blur = "phx-blur", phx_bounds_change = "phx-bounds-change", phx_cell_change =
+        "phx-cell-change", phx_change = "phx-change", phx_click = "phx-click",
+        phx_clipboard_read = "phx-clipboard-read", phx_clipboard_write =
+        "phx-clipboard-write", phx_copy = "phx-copy", phx_drag_enter = "phx-drag-enter",
+        phx_drag_leave = "phx-drag-leave", phx_drag_move = "phx-drag-move", phx_drop =
+        "phx-drop", phx_file_read = "phx-file-read", phx_focus = "phx-focus",
+        phx_geometry_change = "phx-geometry-change", phx_hit_test = "phx-hit-test",
+        phx_keydown = "phx-keydown", phx_keyup = "phx-keyup", phx_link = "phx-link",
+        phx_range = "phx-range", phx_range_geometry_change = "phx-range-geometry-change",
+        phx_release = "phx-release", phx_search = "phx-search", phx_select =
+        "phx-select", phx_selection_change = "phx-selection-change", phx_sort =
+        "phx-sort", phx_submit = "phx-submit", phx_toggle = "phx-toggle", phx_transaction
+        = "phx-transaction", phx_viewport_change = "phx-viewport-change", placeholder =
+        "placeholder", position = "position", position_mode = "position_mode", position_x
+        = "position_x", position_y = "position_y", priority = "priority", range =
+        "range", range_geometry = "range_geometry", raster = "raster", reason = "reason",
+        release = "release", resize_request = "resize_request", resource_ref =
+        "resource_ref", resource_type = "resource_type", reveal = "reveal", reveal_index
+        = "reveal_index", reveal_request = "reveal_request", reveal_strategy =
+        "reveal_strategy", reverse = "reverse", revision = "revision", right = "right",
+        root = "root", runs = "runs", scale = "scale", scroll_request = "scroll_request",
+        scroll_to = "scroll_to", search = "search", search_placeholder =
+        "search_placeholder", select = "select", selectable = "selectable", selected =
         "selected", selected_column = "selected_column", selected_index =
         "selected_index", selection = "selection", set_size = "set_size",
         show_line_numbers = "show_line_numbers", show_whitespaces = "show_whitespaces",

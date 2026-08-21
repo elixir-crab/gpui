@@ -25,6 +25,7 @@ mod native_test;
 mod resource;
 mod runtime;
 mod text_buffer;
+mod window_codec;
 #[cfg(any(feature = "components", feature = "real-gpui"))]
 use event::EventValue;
 use event::{decode_event_value, encode_native_event, push_event, InputKind, NativeEvent};
@@ -50,6 +51,7 @@ use text_buffer::{TextBufferError, TextBufferResource, TextSelection, TextTransa
 
 include!("generated/atoms.rs");
 include!("generated/rusty.rs");
+include!("generated/window.rs");
 include!("generated/schema.rs");
 include!("generated/disabled_nifs.rs");
 include!("generated/nifs.rs");
@@ -65,5 +67,6 @@ use element::*;
 use nif::*;
 #[cfg(feature = "real-gpui")]
 use window::*;
+use window_codec::*;
 
 rustler::init!("Elixir.GPUI.Native");

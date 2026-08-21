@@ -102,22 +102,25 @@ pub(crate) fn open_window_impl<'a>(
     runtime: ResourceArc<RuntimeResource>,
     window: Term<'a>,
 ) -> NifResult<Term<'a>> {
-    let title = window_title(window)?;
-    let window_id = window_id(window)?;
-    let (width, height) = window_size(window)?;
-    let min_size = window_optional_size(window, atoms::min_size())?;
-    let resizable = window_bool(window, atoms::resizable(), true)?;
-    let chrome = window_atom_string(window, atoms::chrome(), "system".to_string())?;
-    let content_chrome = match chrome.as_str() {
-        "system" => false,
-        "content" => true,
-        _unsupported => return Err(rustler::Error::BadArg),
-    };
-    let close_request = window_lifecycle(window, "close_request")?;
-    let focus = window_lifecycle(window, "focus")?;
-    let blur = window_lifecycle(window, "blur")?;
+    let decoded = window.decode::<Decoded>()?;
     let tree = window_tree(window)?;
-    let commands = decode_window_commands(window)?;
+    let config = normalize(decoded)?;
+    let Config {
+        id: window_id,
+        title,
+        width,
+        height,
+        min_width,
+        min_height,
+        resizable,
+        content_chrome,
+        close_request,
+        focus,
+        blur,
+        commands,
+    } = config;
+    let min_size = min_width.zip(min_height);
+    let commands = validate_window_commands(commands)?;
     let shared_window = Arc::new(WindowState::new(tree, commands));
     let (reply, receiver) = std::sync::mpsc::sync_channel(1);
 
@@ -145,8 +148,7 @@ pub(crate) fn open_window_impl<'a>(
 }
 
 #[cfg(feature = "real-gpui")]
-fn decode_window_commands(window: Term) -> NifResult<Vec<CommandBinding>> {
-    let commands = window_commands(window)?;
+fn validate_window_commands(commands: Vec<(String, String)>) -> NifResult<Vec<CommandBinding>> {
     if commands.len() > 64 {
         return Err(rustler::Error::BadArg);
     }

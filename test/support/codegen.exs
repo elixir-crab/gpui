@@ -11,6 +11,7 @@ for file <- ~w(
   elements.ex
   events.ex
   style.ex
+  window.ex
   atoms.ex
   resources.ex
   rusty.ex
