@@ -144,43 +144,48 @@ pub(crate) fn render(
             .position(|(_id, _disabled, index)| *index == selected_index)
     });
 
-    let element = apply_generated_render_styles(gpui::div(), node.style)
-        .id(node.id.clone())
-        .role(Role::ListBox)
-        .aria_label(node.label.unwrap_or_else(|| "Items".to_string()))
-        .track_focus(&focus_handle.tab_stop(!disabled))
-        .on_key_down(move |event, window, cx| {
-            if disabled {
-                return;
-            }
-            let target = key_target(
-                event.keystroke.key.as_str(),
-                &key_items,
-                selected_for_keys,
-                total_count,
-            );
-            let Some(target) = target else {
-                return;
-            };
-            super::uniform_collection::emit_change(
-                &runtime,
-                window_id,
-                change_event.as_deref(),
-                &key_items[target].0,
-            );
-            key_scroll.scroll_to_item(key_items[target].2, gpui::ScrollStrategy::Nearest);
-            window.refresh();
-            cx.stop_propagation();
-        })
-        .child(
-            uniform_list(
-                format!("gpui-elixir-virtual-list-{window_id}-{}", node.id),
-                total_count,
-                processor,
-            )
-            .track_scroll(&scroll_handle)
-            .size_full(),
+    let element = apply_generated_render_styles(gpui::div(), node.style).id(node.id.clone());
+    let element = crate::element::register_test_target(
+        element,
+        node.id.clone(),
+        Some(focus_handle.clone()),
+        context,
+    )
+    .role(Role::ListBox)
+    .aria_label(node.label.unwrap_or_else(|| "Items".to_string()))
+    .track_focus(&focus_handle.tab_stop(!disabled))
+    .on_key_down(move |event, window, cx| {
+        if disabled {
+            return;
+        }
+        let target = key_target(
+            event.keystroke.key.as_str(),
+            &key_items,
+            selected_for_keys,
+            total_count,
         );
+        let Some(target) = target else {
+            return;
+        };
+        super::uniform_collection::emit_change(
+            &runtime,
+            window_id,
+            change_event.as_deref(),
+            &key_items[target].0,
+        );
+        key_scroll.scroll_to_item(key_items[target].2, gpui::ScrollStrategy::Nearest);
+        window.refresh();
+        cx.stop_propagation();
+    })
+    .child(
+        uniform_list(
+            format!("gpui-elixir-virtual-list-{window_id}-{}", node.id),
+            total_count,
+            processor,
+        )
+        .track_scroll(&scroll_handle)
+        .size_full(),
+    );
 
     element.into_any_element()
 }

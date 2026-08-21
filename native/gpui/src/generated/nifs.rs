@@ -185,6 +185,16 @@ fn native_test_click_at<'a>(
     native_test_click_at_impl(env, test_id, x, y)
 }
 #[rustler::nif(schedule = "DirtyIo")]
+fn native_test_scroll<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    element_id: String,
+    delta_x: f64,
+    delta_y: f64,
+) -> NifResult<Term<'a>> {
+    native_test_scroll_impl(env, test_id, element_id, delta_x, delta_y)
+}
+#[rustler::nif(schedule = "DirtyIo")]
 fn native_test_input<'a>(
     env: Env<'a>,
     test_id: u64,

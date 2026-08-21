@@ -197,8 +197,8 @@ pub(crate) fn render(
         render_variable_item(root, &collection_id, &items[index], window, cx)
     });
 
-    apply_generated_render_styles(gpui::div(), node.style)
-        .id(node.id)
+    let element = apply_generated_render_styles(gpui::div(), node.style).id(node.id.clone());
+    crate::element::register_test_target(element, node.id, None, context)
         .role(Role::List)
         .aria_label(node.label.unwrap_or_else(|| "Items".to_string()))
         .child(list(list_state, processor).size_full())

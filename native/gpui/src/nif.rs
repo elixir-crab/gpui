@@ -448,6 +448,22 @@ pub(crate) fn native_test_click_at_impl<'a>(
     encode_command_result(env, result.map(|()| atoms::ok()))
 }
 
+pub(crate) fn native_test_scroll_impl<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    element_id: String,
+    delta_x: f64,
+    delta_y: f64,
+) -> NifResult<Term<'a>> {
+    #[cfg(feature = "native-test")]
+    let result = native_test::scroll(test_id, element_id, delta_x as f32, delta_y as f32);
+    #[cfg(not(feature = "native-test"))]
+    let _ = (test_id, element_id, delta_x, delta_y);
+    #[cfg(not(feature = "native-test"))]
+    let result: Result<(), String> = Err("native_test_disabled".to_string());
+    encode_command_result(env, result.map(|()| atoms::ok()))
+}
+
 pub(crate) fn native_test_input_impl<'a>(
     env: Env<'a>,
     test_id: u64,

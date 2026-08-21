@@ -61,6 +61,7 @@ focus(ui, "plan")
 press(ui, :space)
 click(ui, "notifications")
 click(ui, {24, 48})
+scroll(ui, "records", delta: {0, -240})
 type(ui, "Ada")
 resize(ui, {800, 600})
 advance(ui, 250)
@@ -70,8 +71,9 @@ settle(ui)
 
 Stable IDs come from declarative `id` attributes. `click/2` targets the center
 of the corresponding rendered bounds or an explicit `{x, y}` logical point;
-`bounds/2` returns `%{x:, y:, width:, height:}` in logical pixels. `type/2`
-dispatches platform text input to the focused control, while `resize/2` changes
+`bounds/2` returns `%{x:, y:, width:, height:}` in logical pixels. `scroll/3`
+dispatches a bounded logical-pixel wheel delta at a stable target's center.
+`type/2` dispatches platform text input to the focused control, while `resize/2` changes
 the deterministic viewport. `advance/2` moves GPUI's test clock by a bounded
 number of milliseconds and then settles pending work. `press/2` accepts semantic keys such as
 `:arrow_left`, `:arrow_right`, `:arrow_up`, `:arrow_down`, `:space`, `:enter`,
@@ -104,6 +106,13 @@ mix gpui.test.native test/gpui/my_settings_native_test.exs
 The task selects `MIX_TARGET=native_test`, leaving ordinary `MIX_ENV=test`
 renderer-independent. RustQ generates the NIF exports and Elixir stubs for the
 closed native-test command boundary.
+
+Deterministic collection tests live under
+`test/gpui/test/native/collections_test.exs`. They cover native keyboard
+selection, disabled-item skipping, source-backed range requests after scrolling,
+and full-snapshot variable collections across empty, populated, remeasured,
+tail-following, and empty states. Desktop collection E2E should therefore focus
+on actual OS wheel delivery, compositor behavior, and real-window stability.
 
 The current GPUI test platform cannot instantiate `gpui-component`'s input
 state because that implementation requests a real raw platform window handle.

@@ -43,6 +43,13 @@ enum TestCommand {
         y: f32,
         reply: TestCommandReply<()>,
     },
+    Scroll {
+        id: u64,
+        element_id: String,
+        delta_x: f32,
+        delta_y: f32,
+        reply: TestCommandReply<()>,
+    },
     Input {
         id: u64,
         text: String,
@@ -239,6 +246,32 @@ fn run(receiver: std::sync::mpsc::Receiver<TestCommand>) {
                     });
                 let _ = reply.send(result);
             }
+            TestCommand::Scroll {
+                id,
+                element_id,
+                delta_x,
+                delta_y,
+                reply,
+            } => {
+                let result = sessions
+                    .get_mut(&id)
+                    .ok_or_else(|| "unknown_native_test".to_string())
+                    .and_then(|session| {
+                        target_bounds(&mut session.context, &element_id).map(|bounds| {
+                            session.context.simulate_event(gpui::ScrollWheelEvent {
+                                position: bounds.center(),
+                                delta: gpui::ScrollDelta::Pixels(gpui::point(
+                                    gpui::px(delta_x),
+                                    gpui::px(delta_y),
+                                )),
+                                modifiers: gpui::Modifiers::default(),
+                                touch_phase: gpui::TouchPhase::Moved,
+                            });
+                            session.context.run_until_parked();
+                        })
+                    });
+                let _ = reply.send(result);
+            }
             TestCommand::Input { id, text, reply } => {
                 let result = sessions
                     .get_mut(&id)
@@ -383,6 +416,22 @@ pub(crate) fn click(id: u64, element_id: String) -> Result<(), String> {
 #[cfg(feature = "native-test")]
 pub(crate) fn click_at(id: u64, x: f32, y: f32) -> Result<(), String> {
     execute(|reply| TestCommand::ClickAt { id, x, y, reply })
+}
+
+#[cfg(feature = "native-test")]
+pub(crate) fn scroll(
+    id: u64,
+    element_id: String,
+    delta_x: f32,
+    delta_y: f32,
+) -> Result<(), String> {
+    execute(|reply| TestCommand::Scroll {
+        id,
+        element_id,
+        delta_x,
+        delta_y,
+        reply,
+    })
 }
 
 #[cfg(feature = "native-test")]

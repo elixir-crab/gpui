@@ -98,6 +98,10 @@ defmodule GPUI.Native.Generated do
         :erlang.nif_error(:nif_not_loaded)
       end
 
+      def native_test_scroll(_test_id, _element_id, _delta_x, _delta_y) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
       def native_test_input(_test_id, _text) do
         :erlang.nif_error(:nif_not_loaded)
       end

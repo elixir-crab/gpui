@@ -23,6 +23,9 @@ defmodule GPUI.Test.Native do
   @spec click(UI.t(), String.t() | {number(), number()}) :: UI.t()
   def click(%UI{} = ui, target), do: call(ui, {:click, target})
 
+  @spec scroll(UI.t(), String.t(), keyword()) :: UI.t()
+  def scroll(%UI{} = ui, target, opts), do: call(ui, {:scroll, target, opts})
+
   @spec type(UI.t(), String.t()) :: UI.t()
   def type(%UI{} = ui, text), do: call(ui, {:type, text})
 
@@ -75,6 +78,24 @@ defmodule GPUI.Test.Native do
 
   def handle_call({:click, ref, target}, _from, %{ref: ref} = state) do
     native!(GPUI.Native.native_test_click(state.id, target), :click, target)
+    {:reply, handle(state), deliver_events(state)}
+  end
+
+  def handle_call({:scroll, ref, target, opts}, _from, %{ref: ref} = state) do
+    {delta_x, delta_y} = Keyword.fetch!(opts, :delta)
+
+    if not (is_number(delta_x) and is_number(delta_y) and
+              abs(delta_x) <= 100_000 and abs(delta_y) <= 100_000) do
+      raise ArgumentError,
+            "expected bounded numeric scroll delta, got: #{inspect({delta_x, delta_y})}"
+    end
+
+    native!(
+      GPUI.Native.native_test_scroll(state.id, target, delta_x, delta_y),
+      :scroll,
+      {target, {delta_x, delta_y}}
+    )
+
     {:reply, handle(state), deliver_events(state)}
   end
 

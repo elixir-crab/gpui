@@ -32,6 +32,7 @@ defmodule GPUI.Codegen.Native.Boundary do
       native_test_focus: [schedule: :dirty_io],
       native_test_click: [schedule: :dirty_io],
       native_test_click_at: [schedule: :dirty_io],
+      native_test_scroll: [schedule: :dirty_io],
       native_test_input: [schedule: :dirty_io],
       native_test_resize: [schedule: :dirty_io],
       native_test_bounds: [schedule: :dirty_io],

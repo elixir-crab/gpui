@@ -184,6 +184,11 @@ defmodule GPUI.Test do
   @spec click(GPUI.Test.UI.t(), String.t() | {number(), number()}) :: GPUI.Test.UI.t()
   def click(%GPUI.Test.UI{} = ui, target), do: GPUI.Test.Native.click(ui, target)
 
+  @doc "Scrolls a stable target by a bounded logical-pixel delta."
+  @spec scroll(GPUI.Test.UI.t(), String.t(), keyword()) :: GPUI.Test.UI.t()
+  def scroll(%GPUI.Test.UI{} = ui, target, opts),
+    do: GPUI.Test.Native.scroll(ui, target, opts)
+
   @doc "Types text into the focused native input."
   @spec type(GPUI.Test.UI.t(), String.t()) :: GPUI.Test.UI.t()
   def type(%GPUI.Test.UI{} = ui, text), do: GPUI.Test.Native.type(ui, text)
