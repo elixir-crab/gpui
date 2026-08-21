@@ -180,9 +180,17 @@ defmodule GPUI.Test do
   def command(runtime, event, opts \\ []),
     do: dispatch_named(runtime, :command, event, opts)
 
-  @doc "Clicks a stable element ID in an interactive deterministic UI."
-  @spec click(GPUI.Test.UI.t(), String.t()) :: GPUI.Test.UI.t()
+  @doc "Clicks a stable element ID or logical point in an interactive deterministic UI."
+  @spec click(GPUI.Test.UI.t(), String.t() | {number(), number()}) :: GPUI.Test.UI.t()
   def click(%GPUI.Test.UI{} = ui, target), do: GPUI.Test.Native.click(ui, target)
+
+  @doc "Types text into the focused native input."
+  @spec type(GPUI.Test.UI.t(), String.t()) :: GPUI.Test.UI.t()
+  def type(%GPUI.Test.UI{} = ui, text), do: GPUI.Test.Native.type(ui, text)
+
+  @doc "Resizes the deterministic native viewport."
+  @spec resize(GPUI.Test.UI.t(), {number(), number()}) :: GPUI.Test.UI.t()
+  def resize(%GPUI.Test.UI{} = ui, size), do: GPUI.Test.Native.resize(ui, size)
 
   @doc "Moves native keyboard focus to a stable element ID."
   @spec focus(GPUI.Test.UI.t(), String.t()) :: GPUI.Test.UI.t()

@@ -264,27 +264,24 @@ pub(crate) fn apply_focus_contract(
     element
 }
 
-#[cfg(feature = "native-test")]
-pub(crate) fn register_test_focus(
+#[cfg(all(feature = "real-gpui", feature = "components"))]
+pub(crate) fn register_test_target(
     element: gpui::Stateful<gpui::Div>,
     id: String,
+    focus: Option<gpui::FocusHandle>,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::Stateful<gpui::Div> {
     use gpui::InteractiveElement;
 
-    let focus = context
-        .runtime
-        .focus_handles
-        .lock()
-        .ok()
-        .map(|mut handles| {
-            handles
-                .entry((context.window_id, id))
-                .or_insert_with(|| context.cx.focus_handle())
-                .clone()
-        })
-        .unwrap_or_else(|| context.cx.focus_handle());
-    element.track_focus(&focus)
+    let element = element.debug_selector(|| id.clone());
+    if let Some(focus) = focus {
+        if let Ok(mut handles) = context.runtime.focus_handles.lock() {
+            handles.insert((context.window_id, id), focus.clone());
+        }
+        element.track_focus(&focus)
+    } else {
+        element
+    }
 }
 
 #[cfg(feature = "real-gpui")]

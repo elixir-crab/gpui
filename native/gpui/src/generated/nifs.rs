@@ -176,6 +176,32 @@ fn native_test_click<'a>(
     native_test_click_impl(env, test_id, element_id)
 }
 #[rustler::nif(schedule = "DirtyIo")]
+fn native_test_click_at<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    x: f64,
+    y: f64,
+) -> NifResult<Term<'a>> {
+    native_test_click_at_impl(env, test_id, x, y)
+}
+#[rustler::nif(schedule = "DirtyIo")]
+fn native_test_input<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    text: String,
+) -> NifResult<Term<'a>> {
+    native_test_input_impl(env, test_id, text)
+}
+#[rustler::nif(schedule = "DirtyIo")]
+fn native_test_resize<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    width: f64,
+    height: f64,
+) -> NifResult<Term<'a>> {
+    native_test_resize_impl(env, test_id, width, height)
+}
+#[rustler::nif(schedule = "DirtyIo")]
 fn native_test_bounds<'a>(
     env: Env<'a>,
     test_id: u64,

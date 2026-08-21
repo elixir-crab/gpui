@@ -168,56 +168,61 @@ pub(crate) fn render(
     let selected_for_keys = selected_index
         .and_then(|selected_index| keys.iter().position(|key| key.index == selected_index));
 
-    apply_generated_render_styles(gpui::div(), node.style)
-        .id(node.id.clone())
-        .role(Role::Tree)
-        .aria_label(node.label.unwrap_or_else(|| "Tree".to_string()))
-        .track_focus(&focus_handle.tab_stop(!disabled))
-        .on_key_down(move |event, window, cx| {
-            if disabled {
-                return;
+    let container = apply_generated_render_styles(gpui::div(), node.style).id(node.id.clone());
+    crate::element::register_test_target(
+        container,
+        node.id.clone(),
+        Some(focus_handle.clone()),
+        context,
+    )
+    .role(Role::Tree)
+    .aria_label(node.label.unwrap_or_else(|| "Tree".to_string()))
+    .track_focus(&focus_handle.tab_stop(!disabled))
+    .on_key_down(move |event, window, cx| {
+        if disabled {
+            return;
+        }
+        let Some(action) = key_action(
+            event.keystroke.key.as_str(),
+            &key_items,
+            selected_for_keys,
+            total_count,
+        ) else {
+            return;
+        };
+        match action {
+            TreeAction::Select(position) => {
+                let item = &key_items[position];
+                super::uniform_collection::emit_change(
+                    &runtime,
+                    window_id,
+                    Some(change_event.as_str()),
+                    &item.id,
+                );
+                key_scroll.scroll_to_item(item.index, gpui::ScrollStrategy::Nearest);
             }
-            let Some(action) = key_action(
-                event.keystroke.key.as_str(),
-                &key_items,
-                selected_for_keys,
-                total_count,
-            ) else {
-                return;
-            };
-            match action {
-                TreeAction::Select(position) => {
-                    let item = &key_items[position];
-                    super::uniform_collection::emit_change(
-                        &runtime,
-                        window_id,
-                        Some(change_event.as_str()),
-                        &item.id,
-                    );
-                    key_scroll.scroll_to_item(item.index, gpui::ScrollStrategy::Nearest);
-                }
-                TreeAction::Toggle(position) => {
-                    super::uniform_collection::emit_change(
-                        &runtime,
-                        window_id,
-                        Some(toggle_event.as_str()),
-                        &key_items[position].id,
-                    );
-                }
+            TreeAction::Toggle(position) => {
+                super::uniform_collection::emit_change(
+                    &runtime,
+                    window_id,
+                    Some(toggle_event.as_str()),
+                    &key_items[position].id,
+                );
             }
-            window.refresh();
-            cx.stop_propagation();
-        })
-        .child(
-            uniform_list(
-                format!("gpui-elixir-tree-{window_id}-{}", node.id),
-                total_count,
-                processor,
-            )
-            .track_scroll(&scroll_handle)
-            .size_full(),
+        }
+        window.refresh();
+        cx.stop_propagation();
+    })
+    .child(
+        uniform_list(
+            format!("gpui-elixir-tree-{window_id}-{}", node.id),
+            total_count,
+            processor,
         )
-        .into_any_element()
+        .track_scroll(&scroll_handle)
+        .size_full(),
+    )
+    .into_any_element()
 }
 
 #[cfg(feature = "components")]

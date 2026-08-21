@@ -20,8 +20,14 @@ defmodule GPUI.Test.Native do
   @spec press(UI.t(), atom() | String.t()) :: UI.t()
   def press(%UI{} = ui, key), do: call(ui, {:press, key})
 
-  @spec click(UI.t(), String.t()) :: UI.t()
+  @spec click(UI.t(), String.t() | {number(), number()}) :: UI.t()
   def click(%UI{} = ui, target), do: call(ui, {:click, target})
+
+  @spec type(UI.t(), String.t()) :: UI.t()
+  def type(%UI{} = ui, text), do: call(ui, {:type, text})
+
+  @spec resize(UI.t(), {number(), number()}) :: UI.t()
+  def resize(%UI{} = ui, size), do: call(ui, {:resize, size})
 
   @spec bounds(UI.t(), String.t()) :: map()
   def bounds(%UI{} = ui, target), do: GenServer.call(ui.pid, {:bounds, ui.ref, target})
@@ -58,8 +64,25 @@ defmodule GPUI.Test.Native do
     {:reply, handle(state), deliver_events(state)}
   end
 
+  def handle_call({:click, ref, {x, y}}, _from, %{ref: ref} = state)
+      when is_number(x) and is_number(y) do
+    native!(GPUI.Native.native_test_click_at(state.id, x, y), :click, {x, y})
+    {:reply, handle(state), deliver_events(state)}
+  end
+
   def handle_call({:click, ref, target}, _from, %{ref: ref} = state) do
-    {:ok, :ok} = GPUI.Native.native_test_click(state.id, target)
+    native!(GPUI.Native.native_test_click(state.id, target), :click, target)
+    {:reply, handle(state), deliver_events(state)}
+  end
+
+  def handle_call({:type, ref, text}, _from, %{ref: ref} = state) do
+    native!(GPUI.Native.native_test_input(state.id, text), :type, text)
+    {:reply, handle(state), deliver_events(state)}
+  end
+
+  def handle_call({:resize, ref, {width, height}}, _from, %{ref: ref} = state)
+      when is_number(width) and is_number(height) and width > 0 and height > 0 do
+    native!(GPUI.Native.native_test_resize(state.id, width, height), :resize, {width, height})
     {:reply, handle(state), deliver_events(state)}
   end
 
@@ -95,6 +118,12 @@ defmodule GPUI.Test.Native do
     ui = handle(state)
     Enum.each(events, &send(state.owner, {:gpui, ui, {:event, &1}}))
     state
+  end
+
+  defp native!({:ok, :ok}, _operation, _subject), do: :ok
+
+  defp native!({:error, reason}, operation, subject) do
+    raise "GPUI native test #{operation} failed for #{inspect(subject)}: #{reason}"
   end
 
   defp viewport(tree), do: Map.new(type: :viewport, attrs: %{}, children: [tree])

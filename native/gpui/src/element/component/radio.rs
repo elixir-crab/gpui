@@ -109,13 +109,13 @@ pub(crate) fn render(
     let key_runtime = runtime.clone();
     let key_event = change_event.clone();
     let key_focus_handles = focus_handles.clone();
-    #[cfg(feature = "native-test")]
-    let test_focus_id = group_id.clone();
-    let element = crate::apply_generated_render_styles(gpui::div(), node.style)
-        .id(node.id)
-        .debug_selector(|| group_id.clone());
-    #[cfg(feature = "native-test")]
-    let element = crate::element::register_test_focus(element, test_focus_id, context);
+    let element = crate::apply_generated_render_styles(gpui::div(), node.style).id(node.id);
+    let element = crate::element::register_test_target(
+        element,
+        group_id,
+        tab_index.and_then(|index| focus_handles.get(index).cloned()),
+        context,
+    );
     let element = element
         .role(Role::RadioGroup)
         .aria_label(accessibility.label)

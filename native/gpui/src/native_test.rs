@@ -37,6 +37,23 @@ enum TestCommand {
         element_id: String,
         reply: TestCommandReply<()>,
     },
+    ClickAt {
+        id: u64,
+        x: f32,
+        y: f32,
+        reply: TestCommandReply<()>,
+    },
+    Input {
+        id: u64,
+        text: String,
+        reply: TestCommandReply<()>,
+    },
+    Resize {
+        id: u64,
+        width: f32,
+        height: f32,
+        reply: TestCommandReply<()>,
+    },
     Bounds {
         id: u64,
         element_id: String,
@@ -205,6 +222,42 @@ fn run(receiver: std::sync::mpsc::Receiver<TestCommand>) {
                     });
                 let _ = reply.send(result);
             }
+            TestCommand::ClickAt { id, x, y, reply } => {
+                let result = sessions
+                    .get_mut(&id)
+                    .ok_or_else(|| "unknown_native_test".to_string())
+                    .map(|session| {
+                        session.context.simulate_click(
+                            gpui::point(gpui::px(x), gpui::px(y)),
+                            gpui::Modifiers::default(),
+                        );
+                    });
+                let _ = reply.send(result);
+            }
+            TestCommand::Input { id, text, reply } => {
+                let result = sessions
+                    .get_mut(&id)
+                    .ok_or_else(|| "unknown_native_test".to_string())
+                    .map(|session| session.context.simulate_input(&text));
+                let _ = reply.send(result);
+            }
+            TestCommand::Resize {
+                id,
+                width,
+                height,
+                reply,
+            } => {
+                let result = sessions
+                    .get_mut(&id)
+                    .ok_or_else(|| "unknown_native_test".to_string())
+                    .map(|session| {
+                        session
+                            .context
+                            .simulate_resize(gpui::size(gpui::px(width), gpui::px(height)));
+                        session.context.run_until_parked();
+                    });
+                let _ = reply.send(result);
+            }
             TestCommand::Bounds {
                 id,
                 element_id,
@@ -300,6 +353,26 @@ pub(crate) fn click(id: u64, element_id: String) -> Result<(), String> {
     execute(|reply| TestCommand::Click {
         id,
         element_id,
+        reply,
+    })
+}
+
+#[cfg(feature = "native-test")]
+pub(crate) fn click_at(id: u64, x: f32, y: f32) -> Result<(), String> {
+    execute(|reply| TestCommand::ClickAt { id, x, y, reply })
+}
+
+#[cfg(feature = "native-test")]
+pub(crate) fn input(id: u64, text: String) -> Result<(), String> {
+    execute(|reply| TestCommand::Input { id, text, reply })
+}
+
+#[cfg(feature = "native-test")]
+pub(crate) fn resize(id: u64, width: f32, height: f32) -> Result<(), String> {
+    execute(|reply| TestCommand::Resize {
+        id,
+        width,
+        height,
         reply,
     })
 }

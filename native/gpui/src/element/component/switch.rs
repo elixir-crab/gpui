@@ -44,7 +44,6 @@ pub(crate) fn render(
     let unavailable = node.disabled || node.loading;
     let accessibility = switch_accessibility(node.label.clone(), checked);
     let switch_id = node.id.clone();
-    let test_selector = switch_id.clone();
     let focus_handle = context
         .window
         .use_keyed_state(format!("{}-focus", node.id), context.cx, |_, cx| {
@@ -53,7 +52,7 @@ pub(crate) fn render(
         .read(context.cx)
         .clone();
     let mouse_focus = focus_handle.clone();
-    let mut element = Switch::new(switch_id)
+    let mut element = Switch::new(switch_id.clone())
         .checked(checked)
         .disabled(unavailable)
         .on_click(move |checked, window, cx| {
@@ -78,9 +77,8 @@ pub(crate) fn render(
         content = content.child(spinner);
     }
 
-    gpui::div()
-        .id(node.id)
-        .debug_selector(|| test_selector)
+    let container = gpui::div().id(node.id);
+    crate::element::register_test_target(container, switch_id, Some(focus_handle.clone()), context)
         .role(Role::Switch)
         .aria_label(accessibility.label)
         .aria_toggled(accessibility.toggled)

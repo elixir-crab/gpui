@@ -60,13 +60,18 @@ render(ui, SettingsView, plan: "free")
 focus(ui, "plan")
 press(ui, :space)
 click(ui, "notifications")
+click(ui, {24, 48})
+type(ui, "Ada")
+resize(ui, {800, 600})
 assert %{width: width, height: height} = bounds(ui, "notifications")
 settle(ui)
 ```
 
 Stable IDs come from declarative `id` attributes. `click/2` targets the center
-of the corresponding rendered bounds; `bounds/2` returns `%{x:, y:, width:,
-height:}` in logical pixels. `press/2` accepts semantic keys such as
+of the corresponding rendered bounds or an explicit `{x, y}` logical point;
+`bounds/2` returns `%{x:, y:, width:, height:}` in logical pixels. `type/2`
+dispatches platform text input to the focused control, while `resize/2` changes
+the deterministic viewport. `press/2` accepts semantic keys such as
 `:arrow_left`, `:arrow_right`, `:arrow_up`, `:arrow_down`, `:space`, `:enter`,
 `:escape`, and `:tab`, or a GPUI keystroke string.
 
@@ -177,6 +182,22 @@ a non-empty `event` name, and the value shape required by its `type`; missing
 fields for tests. `send_view/3` delivers an OTP message through
 `GPUI.Runtime.send_view/3`, making background-process behavior deterministic
 without running timers in a test.
+
+## Coverage ownership
+
+Choose the lowest layer that can prove the behavior:
+
+| Test layer | Primary responsibility | Examples |
+| --- | --- | --- |
+| Renderer-independent `use GPUI.Test` | Elixir application state, callbacks, validation, snapshots, topology, protocol policy | `handle_event/3`, controlled assigns, window reconciliation, schema errors |
+| Deterministic `use GPUI.Test, native: ...` | GPUI layout, bounds, hit testing, native focus, keyboard dispatch, component mechanics | disabled-option skipping, tree navigation, pointer activation, controlled native rerenders |
+| Desktop E2E | Facts owned by the OS, window server, accessibility adapter, or compositor | native chrome, OS close, clipboard, external drops, IME, target-window capture |
+| Visual capture | Pixel-level appearance rather than behavior | spacing, clipping, contrast, popup placement, theme variants |
+
+Do not duplicate deterministic component assertions in desktop E2E. Once
+native interaction coverage exists, retain only the platform-specific smoke
+assertions in the E2E test. Conversely, a renderer-independent event injection
+test does not prove GPUI focus, hit testing, or keyboard behavior.
 
 ## Test layout
 

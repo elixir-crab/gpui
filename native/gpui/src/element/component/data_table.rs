@@ -258,8 +258,8 @@ pub(crate) fn render(
         .min(columns.len().saturating_sub(1));
     let disabled = node.disabled;
 
-    apply_generated_render_styles(gpui::div(), node.style)
-        .id(table_id)
+    let container = apply_generated_render_styles(gpui::div(), node.style).id(table_id.clone());
+    crate::element::register_test_target(container, table_id, Some(focus_handle.clone()), context)
         .role(Role::Grid)
         .aria_label(node.label.unwrap_or_else(|| "Data table".to_string()))
         .aria_row_count(total_count.saturating_add(1))

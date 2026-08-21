@@ -433,6 +433,50 @@ pub(crate) fn native_test_click_impl<'a>(
     encode_command_result(env, result.map(|()| atoms::ok()))
 }
 
+pub(crate) fn native_test_click_at_impl<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    x: f64,
+    y: f64,
+) -> NifResult<Term<'a>> {
+    #[cfg(feature = "native-test")]
+    let result = native_test::click_at(test_id, x as f32, y as f32);
+    #[cfg(not(feature = "native-test"))]
+    let _ = (test_id, x, y);
+    #[cfg(not(feature = "native-test"))]
+    let result: Result<(), String> = Err("native_test_disabled".to_string());
+    encode_command_result(env, result.map(|()| atoms::ok()))
+}
+
+pub(crate) fn native_test_input_impl<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    text: String,
+) -> NifResult<Term<'a>> {
+    #[cfg(feature = "native-test")]
+    let result = native_test::input(test_id, text);
+    #[cfg(not(feature = "native-test"))]
+    let _ = (test_id, text);
+    #[cfg(not(feature = "native-test"))]
+    let result: Result<(), String> = Err("native_test_disabled".to_string());
+    encode_command_result(env, result.map(|()| atoms::ok()))
+}
+
+pub(crate) fn native_test_resize_impl<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    width: f64,
+    height: f64,
+) -> NifResult<Term<'a>> {
+    #[cfg(feature = "native-test")]
+    let result = native_test::resize(test_id, width as f32, height as f32);
+    #[cfg(not(feature = "native-test"))]
+    let _ = (test_id, width, height);
+    #[cfg(not(feature = "native-test"))]
+    let result: Result<(), String> = Err("native_test_disabled".to_string());
+    encode_command_result(env, result.map(|()| atoms::ok()))
+}
+
 pub(crate) fn native_test_bounds_impl<'a>(
     env: Env<'a>,
     test_id: u64,
