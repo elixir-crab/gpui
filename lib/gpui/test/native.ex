@@ -4,7 +4,7 @@ defmodule GPUI.Test.Native do
   use GenServer
 
   alias GPUI.Native.Test, as: NativeTest
-  alias GPUI.Test.UI
+  alias GPUI.Test.{Error, UI}
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts)
@@ -34,7 +34,7 @@ defmodule GPUI.Test.Native do
   def resize(%UI{} = ui, size), do: call(ui, {:resize, size})
 
   @spec bounds(UI.t(), String.t()) :: map()
-  def bounds(%UI{} = ui, target), do: GenServer.call(ui.pid, {:bounds, ui.ref, target})
+  def bounds(%UI{} = ui, target), do: call(ui, {:bounds, target})
 
   @spec settle(UI.t()) :: UI.t()
   def settle(%UI{} = ui), do: call(ui, :settle)
@@ -46,7 +46,7 @@ defmodule GPUI.Test.Native do
   def init(opts) do
     owner = Keyword.fetch!(opts, :owner)
     {width, height} = Keyword.get(opts, :size, {640, 480})
-    {:ok, id} = NativeTest.start(width, height)
+    id = native!(nil, :start, {width, height}, NativeTest.start(width, height))
     ref = make_ref()
     Process.monitor(owner)
     {:ok, %{id: id, owner: owner, ref: ref}}
@@ -57,30 +57,21 @@ defmodule GPUI.Test.Native do
 
   def handle_call({:render, ref, view, assigns}, _from, %{ref: ref} = state) do
     tree = view |> GPUI.Test.render(assigns) |> GPUI.Element.to_payload()
-    {:ok, :ok} = NativeTest.render(state.id, viewport(tree))
-    {:reply, handle(state), deliver_events(state)}
+    reply(state, :render, view, NativeTest.render(state.id, viewport(tree)))
   end
 
-  def handle_call({:focus, ref, target}, _from, %{ref: ref} = state) do
-    {:ok, :ok} = NativeTest.focus(state.id, target)
-    {:reply, handle(state), deliver_events(state)}
-  end
+  def handle_call({:focus, ref, target}, _from, %{ref: ref} = state),
+    do: reply(state, :focus, target, NativeTest.focus(state.id, target))
 
-  def handle_call({:press, ref, key}, _from, %{ref: ref} = state) do
-    {:ok, :ok} = NativeTest.press(state.id, keystroke(key))
-    {:reply, handle(state), deliver_events(state)}
-  end
+  def handle_call({:press, ref, key}, _from, %{ref: ref} = state),
+    do: reply(state, :press, key, NativeTest.press(state.id, keystroke(key)))
 
   def handle_call({:click, ref, {x, y}}, _from, %{ref: ref} = state)
-      when is_number(x) and is_number(y) do
-    native!(NativeTest.click_at(state.id, x, y), :click, {x, y})
-    {:reply, handle(state), deliver_events(state)}
-  end
+      when is_number(x) and is_number(y),
+      do: reply(state, :click, {x, y}, NativeTest.click_at(state.id, x, y))
 
-  def handle_call({:click, ref, target}, _from, %{ref: ref} = state) do
-    native!(NativeTest.click(state.id, target), :click, target)
-    {:reply, handle(state), deliver_events(state)}
-  end
+  def handle_call({:click, ref, target}, _from, %{ref: ref} = state),
+    do: reply(state, :click, target, NativeTest.click(state.id, target))
 
   def handle_call({:scroll, ref, target, opts}, _from, %{ref: ref} = state) do
     {delta_x, delta_y} = Keyword.fetch!(opts, :delta)
@@ -91,41 +82,37 @@ defmodule GPUI.Test.Native do
             "expected bounded numeric scroll delta, got: #{inspect({delta_x, delta_y})}"
     end
 
-    native!(
-      NativeTest.scroll(state.id, target, delta_x, delta_y),
+    reply(
+      state,
       :scroll,
-      {target, {delta_x, delta_y}}
+      {target, {delta_x, delta_y}},
+      NativeTest.scroll(state.id, target, delta_x, delta_y)
     )
-
-    {:reply, handle(state), deliver_events(state)}
   end
 
-  def handle_call({:type, ref, text}, _from, %{ref: ref} = state) do
-    native!(NativeTest.input(state.id, text), :type, text)
-    {:reply, handle(state), deliver_events(state)}
-  end
+  def handle_call({:type, ref, text}, _from, %{ref: ref} = state),
+    do: reply(state, :type, text, NativeTest.input(state.id, text))
 
   def handle_call({:resize, ref, {width, height}}, _from, %{ref: ref} = state)
-      when is_number(width) and is_number(height) and width > 0 and height > 0 do
-    native!(NativeTest.resize(state.id, width, height), :resize, {width, height})
-    {:reply, handle(state), deliver_events(state)}
-  end
+      when is_number(width) and is_number(height) and width > 0 and height > 0,
+      do: reply(state, :resize, {width, height}, NativeTest.resize(state.id, width, height))
 
   def handle_call({:bounds, ref, target}, _from, %{ref: ref} = state) do
-    {:ok, x, y, width, height} = NativeTest.bounds(state.id, target)
-    {:reply, %{x: x, y: y, width: width, height: height}, state}
+    case native_result(state, :bounds, target, NativeTest.bounds(state.id, target)) do
+      {:ok, {x, y, width, height}} ->
+        {:reply, %{x: x, y: y, width: width, height: height}, state}
+
+      {:error, error} ->
+        {:reply, {:error, error}, state}
+    end
   end
 
-  def handle_call({:settle, ref}, _from, %{ref: ref} = state) do
-    {:ok, :ok} = NativeTest.settle(state.id)
-    {:reply, handle(state), deliver_events(state)}
-  end
+  def handle_call({:settle, ref}, _from, %{ref: ref} = state),
+    do: reply(state, :settle, nil, NativeTest.settle(state.id))
 
   def handle_call({:advance, ref, milliseconds}, _from, %{ref: ref} = state)
-      when is_integer(milliseconds) and milliseconds >= 0 do
-    native!(NativeTest.advance(state.id, milliseconds), :advance, milliseconds)
-    {:reply, handle(state), deliver_events(state)}
-  end
+      when is_integer(milliseconds) and milliseconds >= 0,
+      do: reply(state, :advance, milliseconds, NativeTest.advance(state.id, milliseconds))
 
   @impl GenServer
   def handle_info({:DOWN, _monitor, :process, owner, _reason}, %{owner: owner} = state),
@@ -133,28 +120,60 @@ defmodule GPUI.Test.Native do
 
   @impl GenServer
   def terminate(_reason, state) do
-    _ = NativeTest.stop(state.id)
+    _ = native!(state, :stop, nil, NativeTest.stop(state.id))
     :ok
   end
 
   defp call(%UI{} = ui, command) do
-    GenServer.call(ui.pid, Tuple.insert_at(command_tuple(command), 1, ui.ref))
+    case GenServer.call(ui.pid, Tuple.insert_at(command_tuple(command), 1, ui.ref)) do
+      {:error, %Error{} = error} -> raise error
+      value -> value
+    end
+  end
+
+  defp reply(state, operation, subject, result) do
+    case native_result(state, operation, subject, result) do
+      {:ok, _value} -> {:reply, handle(state), deliver_events(state)}
+      {:error, error} -> {:reply, {:error, error}, state}
+    end
   end
 
   defp command_tuple(command) when is_tuple(command), do: command
   defp command_tuple(command), do: {command}
 
   defp deliver_events(state) do
-    {:ok, events} = NativeTest.events(state.id)
+    events = native!(state, :events, nil, NativeTest.events(state.id))
     ui = handle(state)
     Enum.each(events, &send(state.owner, {:gpui, ui, {:event, &1}}))
     state
   end
 
-  defp native!({:ok, :ok}, _operation, _subject), do: :ok
+  defp native!(_state, _operation, _subject, {:ok, :ok}), do: :ok
+  defp native!(_state, _operation, _subject, {:ok, value}), do: value
 
-  defp native!({:error, reason}, operation, subject) do
-    raise "GPUI native test #{operation} failed for #{inspect(subject)}: #{reason}"
+  defp native!(_state, _operation, _subject, {:ok, x, y, width, height}),
+    do: {x, y, width, height}
+
+  defp native!(state, operation, subject, {:error, reason}) do
+    raise error(state, operation, subject, reason)
+  end
+
+  defp native_result(_state, _operation, _subject, {:ok, :ok}), do: {:ok, :ok}
+  defp native_result(_state, _operation, _subject, {:ok, value}), do: {:ok, value}
+
+  defp native_result(_state, _operation, _subject, {:ok, x, y, width, height}),
+    do: {:ok, {x, y, width, height}}
+
+  defp native_result(state, operation, subject, {:error, reason}),
+    do: {:error, error(state, operation, subject, reason)}
+
+  defp error(state, operation, subject, reason) do
+    Error.exception(
+      operation: operation,
+      subject: subject,
+      reason: reason,
+      ui: state && handle(state)
+    )
   end
 
   defp viewport(tree), do: Map.new(type: :viewport, attrs: %{}, children: [tree])
