@@ -31,6 +31,64 @@ defmodule GPUI.Test.Native.LifecycleTest do
     assert error.ui == ui
   end
 
+  defp start_ui(owner \\ self()) do
+    child_spec =
+      Supervisor.child_spec(
+        {GPUI.Test.Native, owner: owner, size: {240, 120}},
+        id: {GPUI.Test.Native, make_ref()},
+        restart: :temporary
+      )
+
+    pid = start_supervised!(child_spec)
+    GPUI.Test.Native.ui(pid)
+  end
+
+  test "simultaneous sessions isolate events and lifecycle", %{ui: ui} do
+    other = start_ui()
+    refute other == ui
+
+    render(ui, ControlsView, %{})
+    render(other, ControlsView, %{})
+    focus(ui, "enabled-switch")
+    press(ui, :space)
+
+    assert_receive {:gpui, ^ui, {:event, %{event: "changed", value: true}}}
+    refute_receive {:gpui, ^other, {:event, _event}}
+
+    GPUI.Test.Native.stop(ui)
+    refute Process.alive?(ui.pid)
+
+    focus(other, "enabled-switch")
+    press(other, :space)
+    assert_receive {:gpui, ^other, {:event, %{event: "changed", value: true}}}
+  end
+
+  test "stale handles raise a native test session error", %{ui: ui} do
+    GPUI.Test.Native.stop(ui)
+    assert :ok = GPUI.Test.Native.stop(ui)
+
+    error = assert_raise GPUI.Test.Error, fn -> focus(ui, "enabled-switch") end
+    assert error.operation == :session
+    assert error.reason == :session_stopped
+    assert error.ui == ui
+  end
+
+  test "an owner exit terminates its temporary UI session" do
+    parent = self()
+
+    owner =
+      spawn(fn ->
+        {:ok, pid} = GPUI.Test.Native.start_link(owner: self(), size: {240, 120})
+        send(parent, {:owned_ui, GPUI.Test.Native.ui(pid)})
+        receive do: (:stop -> :ok)
+      end)
+
+    assert_receive {:owned_ui, ui}
+    monitor = Process.monitor(ui.pid)
+    send(owner, :stop)
+    assert_receive {:DOWN, ^monitor, :process, _pid, :normal}
+  end
+
   test "invalid public arguments are rejected without killing the session", %{ui: ui} do
     render(ui, ControlsView, %{})
 

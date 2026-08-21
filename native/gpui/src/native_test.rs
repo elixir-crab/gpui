@@ -32,7 +32,7 @@ enum TestCommand {
         reply: TestCommandReply<()>,
     },
     Click {
-        element_id: String,
+        element_id: &'static str,
         reply: TestCommandReply<()>,
     },
     ClickAt {
@@ -41,7 +41,7 @@ enum TestCommand {
         reply: TestCommandReply<()>,
     },
     Scroll {
-        element_id: String,
+        element_id: &'static str,
         delta_x: f32,
         delta_y: f32,
         reply: TestCommandReply<()>,
@@ -56,7 +56,7 @@ enum TestCommand {
         reply: TestCommandReply<()>,
     },
     Bounds {
-        element_id: String,
+        element_id: &'static str,
         reply: TestCommandReply<TestBounds>,
     },
     Idle {
@@ -82,6 +82,8 @@ pub(crate) struct NativeTestSessionResource {
     #[cfg(feature = "native-test")]
     commands: std::sync::mpsc::SyncSender<TestCommand>,
     stopped: AtomicBool,
+    #[cfg(feature = "native-test")]
+    selector_names: std::sync::Mutex<std::collections::HashMap<String, &'static str>>,
 }
 
 #[rustler::resource_impl]
@@ -142,6 +144,20 @@ fn execute<T>(
 }
 
 #[cfg(feature = "native-test")]
+fn selector(
+    session: &rustler::ResourceArc<NativeTestSessionResource>,
+    element_id: String,
+) -> Result<&'static str, String> {
+    let mut names = session
+        .selector_names
+        .lock()
+        .map_err(|_| "native_test_lock_failed".to_string())?;
+    Ok(*names
+        .entry(element_id.clone())
+        .or_insert_with(|| Box::leak(element_id.into_boxed_str())))
+}
+
+#[cfg(feature = "native-test")]
 fn initialize(width: f32, height: f32) -> TestSession {
     use gpui::IntoElement as _;
 
@@ -172,10 +188,10 @@ fn initialize(width: f32, height: f32) -> TestSession {
 #[cfg(feature = "native-test")]
 fn target_bounds(
     context: &mut gpui::VisualTestContext,
-    element_id: &str,
+    element_id: &'static str,
 ) -> Result<gpui::Bounds<gpui::Pixels>, String> {
     context
-        .debug_bounds(Box::leak(element_id.to_string().into_boxed_str()))
+        .debug_bounds(element_id)
         .ok_or_else(|| "unknown_native_test_target".to_string())
 }
 
@@ -206,6 +222,7 @@ pub(crate) fn start(width: f32, height: f32) -> Result<NativeTestSessionResource
     Ok(NativeTestSessionResource {
         commands,
         stopped: AtomicBool::new(false),
+        selector_names: std::sync::Mutex::new(std::collections::HashMap::new()),
     })
 }
 
@@ -384,6 +401,7 @@ pub(crate) fn click(
     session: &rustler::ResourceArc<NativeTestSessionResource>,
     element_id: String,
 ) -> Result<(), String> {
+    let element_id = selector(session, element_id)?;
     execute(session, |reply| TestCommand::Click { element_id, reply })
 }
 #[cfg(feature = "native-test")]
@@ -401,6 +419,7 @@ pub(crate) fn scroll(
     delta_x: f32,
     delta_y: f32,
 ) -> Result<(), String> {
+    let element_id = selector(session, element_id)?;
     execute(session, |reply| TestCommand::Scroll {
         element_id,
         delta_x,
@@ -432,6 +451,7 @@ pub(crate) fn bounds(
     session: &rustler::ResourceArc<NativeTestSessionResource>,
     element_id: String,
 ) -> Result<TestBounds, String> {
+    let element_id = selector(session, element_id)?;
     execute(session, |reply| TestCommand::Bounds { element_id, reply })
 }
 #[cfg(feature = "native-test")]

@@ -16,6 +16,13 @@ defmodule GPUI.Test.Native do
 
   @semantic_keys ~w(arrow_left arrow_right arrow_up arrow_down space enter escape tab)a
 
+  def stop(%UI{} = ui) do
+    if Process.alive?(ui.pid), do: GenServer.stop(ui.pid, :normal)
+    :ok
+  catch
+    :exit, _reason -> :ok
+  end
+
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts)
 
@@ -135,7 +142,18 @@ defmodule GPUI.Test.Native do
       {:error, %Error{} = error} -> raise error
       value -> value
     end
+  catch
+    :exit, reason ->
+      raise Error,
+        operation: :session,
+        subject: command,
+        reason: session_reason(reason),
+        ui: ui
   end
+
+  defp session_reason({:noproc, _call}), do: :session_stopped
+  defp session_reason({:normal, _call}), do: :session_stopped
+  defp session_reason(reason), do: reason
 
   defp reply(state, operation, subject, result) do
     case native_result(state, operation, subject, result) do
