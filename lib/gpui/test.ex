@@ -17,6 +17,9 @@ defmodule GPUI.Test do
 
       use GPUI.Test, native: [size: {640, 480}]
 
+  Native UI cases are skipped by ordinary `mix test`; run them through
+  `mix gpui.test.native` so the package is compiled for `MIX_TARGET=native_test`.
+
   Both modes import one concise helper vocabulary; the first argument identifies
   whether an interaction targets a runtime or an interactive UI.
 
@@ -73,6 +76,10 @@ defmodule GPUI.Test do
 
       if unquote(native_opts != nil) do
         @moduletag :native
+
+        if unquote(Mix.target() != :native_test) do
+          @moduletag skip: "run with mix gpui.test.native"
+        end
 
         setup context do
           GPUI.Test.__setup_native__(context, unquote(Macro.escape(native_opts)))

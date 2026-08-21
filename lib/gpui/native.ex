@@ -3,7 +3,7 @@ defmodule GPUI.Native do
 
   build_native? =
     System.get_env("GPUI_BUILD_FROM_SOURCE") in ["1", "true"] or
-      Application.compile_env(:gpui, :build_native, false)
+      Application.compile_env(:gpui, :build_native, true)
 
   skip_native? = System.get_env("GPUI_SKIP_NATIVE") in ["1", "true"]
   @compiled build_native? and not skip_native?
@@ -29,9 +29,16 @@ defmodule GPUI.Native do
 
     source_variant =
       cond do
-        Mix.env() == :e2e -> "desktop"
-        Mix.env() == :test and Mix.target() == :native_test -> "native_test"
+        System.get_env("MIX_TARGET") == "native_test" -> "native_test"
+        System.get_env("MIX_ENV") == "e2e" -> "desktop"
         true -> "core"
+      end
+
+    {default_features, features} =
+      case source_variant do
+        "native_test" -> {false, ["native-test"]}
+        "core" -> {false, []}
+        "desktop" -> {true, []}
       end
 
     # Rustler always copies a source build to `gpui_nif`, so copy that result
@@ -48,7 +55,9 @@ defmodule GPUI.Native do
       version: version,
       targets: ["x86_64-unknown-linux-gnu"],
       nif_versions: ["2.15"],
-      force_build: force_build?
+      force_build: force_build?,
+      default_features: default_features,
+      features: features
     ]
 
     rustler_opts =
