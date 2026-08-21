@@ -31,6 +31,30 @@ defmodule GPUI.Test.Native.LifecycleTest do
     assert error.ui == ui
   end
 
+  test "invalid public arguments are rejected without killing the session", %{ui: ui} do
+    render(ui, ControlsView, %{})
+
+    invalid_calls = [
+      fn -> focus(ui, "") end,
+      fn -> bounds(ui, String.duplicate("x", 1_025)) end,
+      fn -> click(ui, {1_000_001, 0}) end,
+      fn -> scroll(ui, "enabled-switch", delta: {0, 100_001}) end,
+      fn -> scroll(ui, "enabled-switch", delta: {0, 1}, extra: true) end,
+      fn -> resize(ui, {0, 100}) end,
+      fn -> advance(ui, -1) end,
+      fn -> advance(ui, 86_400_001) end,
+      fn -> press(ui, :unsupported) end,
+      fn -> press(ui, "") end,
+      fn -> type(ui, String.duplicate("x", 1_048_577)) end
+    ]
+
+    Enum.each(invalid_calls, fn call -> assert_raise ArgumentError, call end)
+
+    focus(ui, "enabled-switch")
+    press(ui, :space)
+    assert_receive {:gpui, ^ui, {:event, %{event: "changed", value: true}}}
+  end
+
   test "a failed command does not break the session or a later session", %{ui: ui} do
     render(ui, ControlsView, %{})
 
