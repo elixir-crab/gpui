@@ -28,6 +28,7 @@ defmodule GPUI.Runtime do
 
   @call_timeout 5_000
   @event_history_limit 1_000
+  @sync_retry_interval 50
 
   @type state :: %{
           session: pid(),
@@ -317,6 +318,12 @@ defmodule GPUI.Runtime do
     {:noreply, %{state | subscribers: subscribers}}
   end
 
+  def handle_info(:retry_display_sync, state) do
+    state = retry_unsynchronized(state)
+    if state.unsynchronized?, do: schedule_sync_retry()
+    {:noreply, state}
+  end
+
   def handle_info(:poll_display, state) do
     state = retry_unsynchronized(state)
 
@@ -451,8 +458,17 @@ defmodule GPUI.Runtime do
     end
   end
 
-  defp mark_unsynchronized(state), do: %{state | unsynchronized?: true}
+  defp mark_unsynchronized(state) do
+    schedule_sync_retry()
+    %{state | unsynchronized?: true}
+  end
+
   defp mark_synchronized(state, _snapshot), do: %{state | unsynchronized?: false}
+
+  defp schedule_sync_retry do
+    Process.send_after(self(), :retry_display_sync, @sync_retry_interval)
+    :ok
+  end
 
   defp sync_display(state, snapshot) do
     case GPUI.Display.sync_snapshot(state.display_module, state.display, snapshot) do
