@@ -5,6 +5,51 @@ defmodule GPUI.Codegen.Native.Boundary do
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Rustler.Nif
 
+  @native_test_facade [
+    start: {:native_test_start, [:width, :height]},
+    render: {:native_test_render, [:id, :tree]},
+    focus: {:native_test_focus, [:id, :target]},
+    click: {:native_test_click, [:id, :target]},
+    click_at: {:native_test_click_at, [:id, :x, :y]},
+    scroll: {:native_test_scroll, [:id, :target, :delta_x, :delta_y]},
+    input: {:native_test_input, [:id, :text]},
+    resize: {:native_test_resize, [:id, :width, :height]},
+    bounds: {:native_test_bounds, [:id, :target]},
+    settle: {:native_test_idle, [:id]},
+    advance: {:native_test_advance, [:id, :milliseconds]},
+    press: {:native_test_key, [:id, :key]},
+    events: {:native_test_events, [:id]},
+    stop: {:native_test_stop, [:id]}
+  ]
+
+  @spec native_test_facade() :: keyword({atom(), [atom()]})
+  def native_test_facade, do: @native_test_facade
+
+  @spec native_test_facade_source() :: String.t()
+  def native_test_facade_source do
+    definitions =
+      Enum.map(@native_test_facade, fn {public_name, {nif_name, arg_names}} ->
+        args = Enum.map(arg_names, &Macro.var(&1, nil))
+        call = {{:., [], [GPUI.Native, nif_name]}, [], args}
+        head = {public_name, [], args}
+
+        quote do
+          def unquote(head), do: unquote(call)
+        end
+      end)
+
+    quote do
+      defmodule GPUI.Native.Test do
+        @moduledoc false
+        unquote_splicing(definitions)
+      end
+    end
+    |> Macro.to_string()
+    |> Code.format_string!()
+    |> IO.iodata_to_binary()
+    |> Kernel.<>("\n")
+  end
+
   @spec nifs() :: keyword(keyword())
   def nifs do
     [

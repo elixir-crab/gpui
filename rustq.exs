@@ -65,6 +65,10 @@ rust "native/gpui/src/generated/nifs.rs" do
   Nif.wrappers_from_source("native/gpui/src/nif.rs", nifs)
 end
 
+generate "native-test-facade", "lib/gpui/native/test.ex" do
+  content(GPUI.Codegen.Native.Boundary.native_test_facade_source())
+end
+
 generate "native-stubs", "lib/gpui/native/generated.ex" do
   generated = Nif.stubs_from_source("native/gpui/src/nif.rs", nifs, GPUI.Native.Generated)
 
