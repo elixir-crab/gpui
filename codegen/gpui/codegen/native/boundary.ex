@@ -26,7 +26,13 @@ defmodule GPUI.Codegen.Native.Boundary do
       put_resource: [schedule: :dirty_cpu, real_only: true],
       drop_resource: [real_only: true],
       drain_events: [],
-      inject_event: []
+      inject_event: [],
+      native_test_start: [schedule: :dirty_io],
+      native_test_render: [schedule: :dirty_io],
+      native_test_focus: [schedule: :dirty_io],
+      native_test_key: [schedule: :dirty_io],
+      native_test_events: [schedule: :dirty_io],
+      native_test_stop: [schedule: :dirty_io]
     ]
   end
 

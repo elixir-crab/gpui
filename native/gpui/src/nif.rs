@@ -372,7 +372,96 @@ pub(crate) fn set_theme_impl<'a>(
     )
 }
 
-#[cfg(feature = "real-gpui")]
+pub(crate) fn native_test_start_impl<'a>(
+    env: Env<'a>,
+    width: f64,
+    height: f64,
+) -> NifResult<Term<'a>> {
+    #[cfg(feature = "native-test")]
+    let result = native_test::start(width as f32, height as f32);
+    #[cfg(not(feature = "native-test"))]
+    let _ = (width, height);
+    #[cfg(not(feature = "native-test"))]
+    let result: Result<u64, String> = Err("native_test_disabled".to_string());
+    encode_command_result(env, result)
+}
+
+pub(crate) fn native_test_render_impl<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    tree: Term<'a>,
+) -> NifResult<Term<'a>> {
+    #[cfg(feature = "native-test")]
+    let result = decode_element_node(tree).and_then(|tree| {
+        native_test::render(test_id, tree).map_err(|reason| rustler::Error::Term(Box::new(reason)))
+    });
+    #[cfg(not(feature = "native-test"))]
+    let _ = (test_id, tree);
+    #[cfg(not(feature = "native-test"))]
+    let result: NifResult<()> = Err(rustler::Error::Term(Box::new("native_test_disabled")));
+    match result {
+        Ok(()) => Ok((atoms::ok(), atoms::ok()).encode(env)),
+        Err(error) => Err(error),
+    }
+}
+
+pub(crate) fn native_test_focus_impl<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    component_id: String,
+) -> NifResult<Term<'a>> {
+    #[cfg(feature = "native-test")]
+    let result = native_test::focus(test_id, component_id);
+    #[cfg(not(feature = "native-test"))]
+    let _ = (test_id, component_id);
+    #[cfg(not(feature = "native-test"))]
+    let result: Result<(), String> = Err("native_test_disabled".to_string());
+    encode_command_result(env, result.map(|()| atoms::ok()))
+}
+
+pub(crate) fn native_test_key_impl<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    key: String,
+) -> NifResult<Term<'a>> {
+    #[cfg(feature = "native-test")]
+    let result = native_test::key(test_id, key);
+    #[cfg(not(feature = "native-test"))]
+    let _ = (test_id, key);
+    #[cfg(not(feature = "native-test"))]
+    let result: Result<(), String> = Err("native_test_disabled".to_string());
+    encode_command_result(env, result.map(|()| atoms::ok()))
+}
+
+pub(crate) fn native_test_events_impl<'a>(env: Env<'a>, test_id: u64) -> NifResult<Term<'a>> {
+    #[cfg(feature = "native-test")]
+    let result = native_test::events(test_id);
+    #[cfg(not(feature = "native-test"))]
+    let _ = test_id;
+    #[cfg(not(feature = "native-test"))]
+    let result: Result<Vec<NativeEvent>, String> = Err("native_test_disabled".to_string());
+    match result {
+        Ok(events) => {
+            let encoded = events
+                .into_iter()
+                .map(|event| encode_native_event(env, event))
+                .collect::<NifResult<Vec<Term>>>()?;
+            Ok((atoms::ok(), encoded).encode(env))
+        }
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+    }
+}
+
+pub(crate) fn native_test_stop_impl<'a>(env: Env<'a>, test_id: u64) -> NifResult<Term<'a>> {
+    #[cfg(feature = "native-test")]
+    let result = native_test::stop(test_id);
+    #[cfg(not(feature = "native-test"))]
+    let _ = test_id;
+    #[cfg(not(feature = "native-test"))]
+    let result: Result<(), String> = Err("native_test_disabled".to_string());
+    encode_command_result(env, result.map(|()| atoms::ok()))
+}
+
 fn encode_command_result<T: Encoder>(env: Env, result: Result<T, String>) -> NifResult<Term> {
     match result {
         Ok(value) => Ok((atoms::ok(), value).encode(env)),

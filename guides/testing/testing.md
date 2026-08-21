@@ -21,6 +21,43 @@ permission, builds the Swift desktop driver, and uses the active WindowServer
 and real Metal renderer. Both paths execute ordinary ExUnit tests through
 `GPUITest.Desktop`; no separate test runner is involved.
 
+## Deterministic native renderer tests
+
+Renderer behavior can be tested from ExUnit through `GPUI.Test.Native`. The
+Elixir test owns the view fixture, assigns, actions, and assertions; the native
+side is a generic interpreter around GPUI's `TestAppContext`, not a collection
+of component-specific Rust tests.
+
+```elixir
+test "radio navigation skips disabled choices" do
+  native = GPUI.Test.Native.start!(width: 320, height: 120)
+  on_exit(fn -> GPUI.Test.Native.stop(native) end)
+
+  native
+  |> GPUI.Test.Native.render_view!(SettingsView, plan: "free")
+  |> GPUI.Test.Native.focus!("plan")
+  |> GPUI.Test.Native.key!("right")
+
+  assert [%{event: "plan_changed", value: "team"}] =
+           GPUI.Test.Native.events!(native)
+end
+```
+
+Run this isolated native-test build with:
+
+```sh
+mix gpui.test.native
+mix gpui.test.native test/gpui/native_renderer_test.exs
+```
+
+The task uses the standard Mix target dimension (`MIX_TARGET=native_test`) so
+ordinary `MIX_ENV=test` remains renderer-independent. RustQ generates the NIF
+exports and Elixir stubs for the closed native-test command boundary.
+
+Real desktop E2E remains necessary for platform facts such as native window
+creation, application-owned chrome, OS close requests, clipboard integration,
+external file drops, IME behavior, and accessibility adapters.
+
 ## Deterministic application tests
 
 ```elixir

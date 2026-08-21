@@ -8,6 +8,11 @@ cond do
       default_features: true,
       features: []
 
+  config_env() == :test and config_target() == :native_test ->
+    config :gpui, GPUI.Native,
+      default_features: false,
+      features: ["native-test"]
+
   config_env() == :test ->
     config :gpui, GPUI.Native,
       default_features: false,

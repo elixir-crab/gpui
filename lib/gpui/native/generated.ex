@@ -77,6 +77,30 @@ defmodule GPUI.Native.Generated do
       def inject_event(_runtime, _event) do
         :erlang.nif_error(:nif_not_loaded)
       end
+
+      def native_test_start(_width, _height) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_render(_test_id, _tree) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_focus(_test_id, _component_id) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_key(_test_id, _key) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_events(_test_id) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_stop(_test_id) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
     end
   end
 end

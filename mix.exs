@@ -44,12 +44,14 @@ defmodule GPUI.MixProject do
 
   defp load_test_file?(path) do
     String.ends_with?(path, "_test.exs") and
-      (Mix.env() == :e2e or not String.contains?(path, "e2e/"))
+      (Mix.env() == :e2e or not String.contains?(path, "e2e/")) and
+      (Mix.target() == :native_test or not String.ends_with?(path, "native_renderer_test.exs"))
   end
 
   defp ignore_test_file?(path) do
     String.contains?(path, "support/") or
       String.contains?(path, "test/visual/scenarios/") or
+      (Mix.target() != :native_test and String.ends_with?(path, "native_renderer_test.exs")) or
       (Mix.env() != :e2e and String.contains?(path, "e2e/"))
   end
 
@@ -260,7 +262,8 @@ defmodule GPUI.MixProject do
         "rust.e2e.clippy",
         "rust.test",
         "test --only native",
-        "dialyzer"
+        "dialyzer",
+        "gpui.test.native"
       ],
       ci: [
         "compile --warnings-as-errors",
@@ -278,7 +281,8 @@ defmodule GPUI.MixProject do
         "credo --strict",
         "dialyzer",
         "ex_dna --max-clones 0",
-        "reach.check --arch --smells"
+        "reach.check --arch --smells",
+        "gpui.test.native"
       ],
       "rustq.check": &rustq_check/1,
       "rust.fmt": &rust_fmt/1,

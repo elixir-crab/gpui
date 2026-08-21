@@ -147,3 +147,35 @@ fn inject_event<'a>(
 ) -> NifResult<Term<'a>> {
     inject_event_impl(env, runtime, event)
 }
+#[rustler::nif(schedule = "DirtyIo")]
+fn native_test_start<'a>(env: Env<'a>, width: f64, height: f64) -> NifResult<Term<'a>> {
+    native_test_start_impl(env, width, height)
+}
+#[rustler::nif(schedule = "DirtyIo")]
+fn native_test_render<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    tree: Term<'a>,
+) -> NifResult<Term<'a>> {
+    native_test_render_impl(env, test_id, tree)
+}
+#[rustler::nif(schedule = "DirtyIo")]
+fn native_test_focus<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    component_id: String,
+) -> NifResult<Term<'a>> {
+    native_test_focus_impl(env, test_id, component_id)
+}
+#[rustler::nif(schedule = "DirtyIo")]
+fn native_test_key<'a>(env: Env<'a>, test_id: u64, key: String) -> NifResult<Term<'a>> {
+    native_test_key_impl(env, test_id, key)
+}
+#[rustler::nif(schedule = "DirtyIo")]
+fn native_test_events<'a>(env: Env<'a>, test_id: u64) -> NifResult<Term<'a>> {
+    native_test_events_impl(env, test_id)
+}
+#[rustler::nif(schedule = "DirtyIo")]
+fn native_test_stop<'a>(env: Env<'a>, test_id: u64) -> NifResult<Term<'a>> {
+    native_test_stop_impl(env, test_id)
+}

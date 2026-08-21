@@ -149,7 +149,7 @@ type DialogKeyHandler = Arc<dyn Fn(&gpui::KeyDownEvent, &mut gpui::Window, &mut 
 
 #[cfg(feature = "real-gpui")]
 pub(crate) struct ElixirRoot {
-    window_state: SharedWindow,
+    pub(crate) window_state: SharedWindow,
     pub(crate) runtime: SharedRuntime,
     pub(crate) window_id: u64,
     input_entities: HashMap<String, gpui::Entity<NativeTextInput>>,
