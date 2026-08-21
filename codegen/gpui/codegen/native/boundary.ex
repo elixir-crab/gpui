@@ -56,44 +56,66 @@ defmodule GPUI.Codegen.Native.Boundary do
     |> Kernel.<>("\n")
   end
 
-  @spec nifs() :: keyword(keyword())
-  def nifs do
-    [
-      start_runtime: [schedule: :dirty_io],
-      text_buffer_new: [schedule: :dirty_cpu],
-      text_buffer_snapshot: [schedule: :dirty_cpu],
-      text_buffer_transact: [schedule: :dirty_cpu],
-      text_buffer_undo: [schedule: :dirty_cpu],
-      text_buffer_redo: [schedule: :dirty_cpu],
-      decode_image: [schedule: :dirty_cpu],
-      open_window: [schedule: :dirty_io, real_only: true],
-      update_window: [schedule: :dirty_io, real_only: true],
-      close_window: [schedule: :dirty_io, real_only: true],
-      await_frame: [schedule: :dirty_io, real_only: true],
-      frame_token: [schedule: :dirty_io, real_only: true],
-      await_frame_after: [schedule: :dirty_io, real_only: true],
-      stop_runtime: [schedule: :dirty_io],
-      set_theme: [schedule: :dirty_io, real_only: true],
-      put_resource: [schedule: :dirty_cpu, real_only: true],
-      drop_resource: [real_only: true],
-      drain_events: [],
-      inject_event: [],
-      native_test_start: [schedule: :dirty_io],
-      native_test_render: [schedule: :dirty_io],
-      native_test_focus: [schedule: :dirty_io],
-      native_test_click: [schedule: :dirty_io],
-      native_test_click_at: [schedule: :dirty_io],
-      native_test_scroll: [schedule: :dirty_io],
-      native_test_input: [schedule: :dirty_io],
-      native_test_resize: [schedule: :dirty_io],
-      native_test_bounds: [schedule: :dirty_io],
-      native_test_idle: [schedule: :dirty_io],
-      native_test_advance: [schedule: :dirty_io],
-      native_test_key: [schedule: :dirty_io],
-      native_test_events: [schedule: :dirty_io],
-      native_test_stop: [schedule: :dirty_io]
-    ]
+  @boundary_nifs [
+    start_runtime: [schedule: :dirty_io],
+    text_buffer_new: [schedule: :dirty_cpu],
+    text_buffer_snapshot: [schedule: :dirty_cpu],
+    text_buffer_transact: [schedule: :dirty_cpu],
+    text_buffer_undo: [schedule: :dirty_cpu],
+    text_buffer_redo: [schedule: :dirty_cpu],
+    open_window: [schedule: :dirty_io, real_only: true],
+    update_window: [schedule: :dirty_io, real_only: true],
+    close_window: [schedule: :dirty_io, real_only: true],
+    await_frame: [schedule: :dirty_io, real_only: true],
+    frame_token: [schedule: :dirty_io, real_only: true],
+    await_frame_after: [schedule: :dirty_io, real_only: true],
+    stop_runtime: [schedule: :dirty_io],
+    set_theme: [schedule: :dirty_io, real_only: true],
+    put_resource: [schedule: :dirty_cpu, real_only: true],
+    drop_resource: [real_only: true],
+    drain_events: [],
+    inject_event: [],
+    native_test_start: [schedule: :dirty_io],
+    native_test_render: [schedule: :dirty_io],
+    native_test_focus: [schedule: :dirty_io],
+    native_test_click: [schedule: :dirty_io],
+    native_test_click_at: [schedule: :dirty_io],
+    native_test_scroll: [schedule: :dirty_io],
+    native_test_input: [schedule: :dirty_io],
+    native_test_resize: [schedule: :dirty_io],
+    native_test_bounds: [schedule: :dirty_io],
+    native_test_idle: [schedule: :dirty_io],
+    native_test_advance: [schedule: :dirty_io],
+    native_test_key: [schedule: :dirty_io],
+    native_test_events: [schedule: :dirty_io],
+    native_test_stop: [schedule: :dirty_io]
+  ]
+
+  @rusty_nifs [decode_image: [schedule: :dirty_cpu]]
+
+  @doc "Adds public source documentation to a generated Elixir module structurally."
+  @spec document_generated_module(String.t(), String.t()) :: String.t()
+  def document_generated_module(source, documentation) do
+    source
+    |> Code.string_to_quoted!()
+    |> Macro.prewalk(fn
+      {:@, metadata, [{:moduledoc, attribute_metadata, [false]}]} ->
+        {:@, metadata, [{:moduledoc, attribute_metadata, [documentation]}]}
+
+      node ->
+        node
+    end)
+    |> Macro.to_string()
+    |> Code.format_string!()
+    |> IO.iodata_to_binary()
+    |> Kernel.<>("\n")
   end
+
+  @spec nifs() :: keyword(keyword())
+  def nifs, do: @boundary_nifs
+
+  @spec rusty_nifs() :: keyword(keyword())
+  def rusty_nifs, do: @rusty_nifs
 
   @spec disabled_items() :: [AST.item()]
   def disabled_items do

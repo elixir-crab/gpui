@@ -26,10 +26,6 @@ defmodule GPUI.Native.Generated do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def decode_image(_bytes) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
       def open_window(_runtime, _window) do
         :erlang.nif_error(:nif_not_loaded)
       end
@@ -131,6 +127,10 @@ defmodule GPUI.Native.Generated do
       end
 
       def native_test_stop(_test_id) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def decode_image(_bytes) do
         :erlang.nif_error(:nif_not_loaded)
       end
     end

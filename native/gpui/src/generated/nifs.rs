@@ -44,10 +44,6 @@ fn text_buffer_redo<'a>(
 ) -> NifResult<Term<'a>> {
     text_buffer_redo_impl(env, buffer, base_revision)
 }
-#[rustler::nif(schedule = "DirtyCpu")]
-fn decode_image<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
-    decode_image_impl(env, bytes)
-}
 #[rustler::nif(schedule = "DirtyIo")]
 fn open_window<'a>(
     env: Env<'a>,

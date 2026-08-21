@@ -49,6 +49,7 @@ use text_buffer::{
 use text_buffer::{TextBufferError, TextBufferResource, TextSelection, TextTransaction};
 
 include!("generated/atoms.rs");
+include!("generated/rusty.rs");
 include!("generated/schema.rs");
 include!("generated/disabled_nifs.rs");
 include!("generated/nifs.rs");

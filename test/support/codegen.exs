@@ -13,6 +13,7 @@ for file <- ~w(
   style.ex
   atoms.ex
   resources.ex
+  rusty.ex
   renderers.ex
   renderer_dispatch.ex
   registry.ex

@@ -23,6 +23,7 @@ require_file("codegen/gpui/codegen/native/events.ex")
 require_file("codegen/gpui/codegen/native/style.ex")
 require_file("codegen/gpui/codegen/native/atoms.ex")
 require_file("codegen/gpui/codegen/native/resources.ex")
+require_file("codegen/gpui/codegen/native/rusty.ex")
 require_file("codegen/gpui/codegen/native/renderers.ex")
 require_file("codegen/gpui/codegen/native/renderer_dispatch.ex")
 require_file("codegen/gpui/codegen/native/registry.ex")
@@ -39,6 +40,10 @@ end
 
 rust "native/gpui/src/generated/events.rs" do
   GPUI.Codegen.Native.Events.items()
+end
+
+rust "native/gpui/src/generated/rusty.rs" do
+  RustQ.Native.items(GPUI.Codegen.Native.Rusty)
 end
 
 rust "native-schema", "native/gpui/src/generated/schema.rs" do
@@ -70,13 +75,25 @@ generate "native-test-facade", "lib/gpui/native/test.ex" do
 end
 
 generate "native-stubs", "lib/gpui/native/generated.ex" do
-  generated = Nif.stubs_from_source("native/gpui/src/nif.rs", nifs, GPUI.Native.Generated)
+  rusty_functions =
+    GPUI.Codegen.Native.Rusty
+    |> RustQ.Native.items()
+    |> Enum.flat_map(fn
+      %RustQ.Rust.AST.Function{name: :decode_image} = function -> [function]
+      _item -> []
+    end)
+
+  generated =
+    Nif.stubs_from_functions(
+      Nif.functions_from_source("native/gpui/src/nif.rs", nifs) ++
+        Enum.map(rusty_functions, &{:decode_image, &1}),
+      GPUI.Native.Generated
+    )
 
   content(
-    String.replace(
+    GPUI.Codegen.Native.Boundary.document_generated_module(
       generated,
-      "@moduledoc false",
-      "@moduledoc \"Generated Rustler NIF declarations used by GPUI.Native.\""
+      "Generated Rustler NIF declarations used by GPUI.Native."
     )
   )
 end
