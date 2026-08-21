@@ -40,7 +40,13 @@ defmodule GPUI.Codegen.Native.Boundary do
 
     quote do
       defmodule GPUI.Native.Test do
-        @moduledoc false
+        @moduledoc """
+        Generated low-level façade for deterministic native-test NIF commands.
+
+        `GPUI.Test` owns the public ExUnit workflow. This module keeps the
+        generated boundary scoped and is intended for GPUI's supervised native
+        test adapter rather than direct application use.
+        """
         unquote_splicing(definitions)
       end
     end

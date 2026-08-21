@@ -122,12 +122,12 @@ defmodule GPUI.MixProject do
           GPUI,
           GPUI.Application,
           GPUI.Command,
-          GPUI.Session,
           GPUI.Snapshot,
           GPUI.Runtime,
           GPUI.Runtime.Update,
           GPUI.View
         ],
+        "Advanced infrastructure": [GPUI.Session],
         Text: [
           GPUI.Text.Buffer,
           GPUI.Text.Position,

@@ -1,5 +1,5 @@
 defmodule GPUI.Native.Test do
-  @moduledoc false
+  @moduledoc "Generated low-level façade for deterministic native-test NIF commands.\n\n`GPUI.Test` owns the public ExUnit workflow. This module keeps the\ngenerated boundary scoped and is intended for GPUI's supervised native\ntest adapter rather than direct application use.\n"
   def start(width, height) do
     GPUI.Native.native_test_start(width, height)
   end

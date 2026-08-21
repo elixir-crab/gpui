@@ -275,7 +275,7 @@ defmodule GPUI.TestTest do
     select(runtime, "language_changed", nil)
     search(runtime, "framework_searched", "live")
     select(runtime, "framework_changed", "LiveView")
-    toggle(runtime, "notifications_changed", true)
+    change(runtime, "notifications_changed", true)
     select(runtime, "plan_changed", "pro")
     change(runtime, "details_changed", ["security"])
     select(runtime, "section_changed", "advanced")

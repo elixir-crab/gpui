@@ -40,6 +40,26 @@ defmodule GPUI.RuntimeTest do
     end
   end
 
+  defmodule TransferView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(assigns), do: %GPUI.Element{type: :text, children: [inspect(assigns.status)]}
+
+    @impl GPUI.View
+    def handle_event("files-dropped", %{value: %GPUI.Transfer.Event{} = value}, assigns),
+      do: {:noreply, %{assigns | status: value}}
+  end
+
+  defmodule TransferApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(_args) do
+      {:ok, [window("Transfer", do: root(TransferView, status: :waiting))]}
+    end
+  end
+
   defmodule SecondaryView do
     use GPUI.View
 
@@ -302,6 +322,37 @@ defmodule GPUI.RuntimeTest do
         :release_frame -> :ok
       end
     end
+  end
+
+  test "local view callbacks receive canonical public transfer events" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(app: TransferApp, display: RecordingDisplay, poll_interval: nil)
+
+    {_handled, snapshot} =
+      GPUI.Runtime.dispatch_event(runtime, %{
+        type: :drop,
+        window_id: 1,
+        event: "files-dropped",
+        value: %{
+          session_id: 17,
+          target_id: "attachments",
+          x: 320.0,
+          y: 180.0,
+          coordinate_space: "window_native_pixels",
+          payload: %{text: nil, external_paths: ["/display/tmp/document.pdf"]}
+        }
+      })
+
+    assert %GPUI.Transfer.Event{
+             session_id: 17,
+             target_id: "attachments",
+             position: {320.0, 180.0},
+             coordinate_space: :window_native_pixels,
+             payload: %GPUI.Transfer.Payload{
+               text: nil,
+               external_paths: ["/display/tmp/document.pdf"]
+             }
+           } = snapshot.windows |> hd() |> get_in([:root, :assigns, :status])
   end
 
   test "dispatches typed rich link events through the ordinary view callback" do

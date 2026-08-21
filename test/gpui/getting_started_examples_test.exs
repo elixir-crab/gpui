@@ -64,7 +64,7 @@ defmodule GPUI.GettingStartedExamplesTest do
 
     submit(runtime, "review_submitted", "Grace Hopper")
     select(runtime, "preview_changed", "paper")
-    toggle(runtime, "notifications_changed", false)
+    change(runtime, "notifications_changed", false)
     select(runtime, "density_changed", "compact")
     change(runtime, "volume_changed", 40.0)
 
