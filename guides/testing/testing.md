@@ -25,6 +25,19 @@ permission, builds the Swift desktop driver, and uses the active WindowServer
 and real Metal renderer. Both paths execute ordinary ExUnit tests through
 `GPUITest.Desktop`; no separate test runner is involved.
 
+The source-built native artifacts for ordinary, deterministic-native, and
+real-desktop modes are isolated. Verify the complete transition sequence without
+cleaning build directories or deleting a NIF artifact:
+
+```sh
+mix gpui.test.mode_switch
+mix gpui.test.mode_switch test/e2e/gpui/native/form_controls_test.exs
+```
+
+This runs ordinary ExUnit, deterministic native ExUnit, one focused desktop E2E,
+ordinary ExUnit again, and deterministic native ExUnit again. It is intentionally
+serial because the desktop step owns process-global pointer and focus state.
+
 ## Deterministic native interaction tests
 
 Use the same test case with a `:native` option when behavior depends on GPUI

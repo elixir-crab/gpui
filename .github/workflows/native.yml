@@ -12,6 +12,8 @@ on:
       - "lib/gpui/display/native.ex"
       - "lib/gpui/runtime.ex"
       - "lib/gpui/session.ex"
+      - "dev/mix/tasks/gpui.test.native.ex"
+      - "dev/mix/tasks/gpui.test.mode_switch.ex"
       - "rust-toolchain.toml"
       - "rustq.exs"
       - "mix.exs"
@@ -27,6 +29,8 @@ on:
       - "lib/gpui/display/native.ex"
       - "lib/gpui/runtime.ex"
       - "lib/gpui/session.ex"
+      - "dev/mix/tasks/gpui.test.native.ex"
+      - "dev/mix/tasks/gpui.test.mode_switch.ex"
       - "rust-toolchain.toml"
       - "rustq.exs"
       - "mix.exs"
@@ -48,6 +52,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  mode-switch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      RUST_FONTCONFIG_DLOPEN: "1"
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      GALLIUM_DRIVER: "llvmpipe"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.95.0
+      - uses: elixir-vibe/actions/setup-elixir@v1
+        with:
+          otp-version: "29.0.2"
+          elixir-version: "1.20.2"
+          cache-prefix: mode-switch-linux
+      - name: Restore native dependency cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: native-linux
+          workspaces: native/gpui -> target
+          save-if: false
+      - name: Install native desktop dependencies
+        run: >-
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends
+          dbus-x11 libgl1-mesa-dri libxkbcommon-dev libxkbcommon-x11-dev
+          mesa-vulkan-drivers xdotool xvfb
+      - run: mix deps.get
+      - run: mix gpui.test.mode_switch
+
   quality:
     runs-on: ubuntu-24.04
     timeout-minutes: 30

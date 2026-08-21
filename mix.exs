@@ -37,6 +37,7 @@ defmodule GPUI.MixProject do
         "ci.native": :test,
         "gpui.release.check": :release,
         "gpui.test.e2e": :e2e,
+        "gpui.test.mode_switch": :dev,
         "gpui.visual.capture": :e2e
       ]
     ]
