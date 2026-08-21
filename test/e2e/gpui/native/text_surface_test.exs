@@ -71,16 +71,6 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
     def handle_event("selection-changed", %{revision: revision}, assigns),
       do: {:noreply, %{assigns | revision: revision, selections: assigns.selections + 1}}
 
-    @impl GPUI.View
-    def handle_window_event(:close_request, _event, assigns),
-      do: {:noreply, %{assigns | close_requests: assigns.close_requests + 1}}
-
-    def handle_window_event(:focus, _event, assigns),
-      do: {:noreply, %{assigns | window_focuses: assigns.window_focuses + 1}}
-
-    def handle_window_event(:blur, _event, assigns),
-      do: {:noreply, %{assigns | window_blurs: assigns.window_blurs + 1}}
-
     def handle_event("viewport-changed", %{revision: revision, value: viewport}, assigns) do
       true = viewport.first_visible_row <= viewport.last_visible_row
       {:noreply, %{assigns | revision: revision, viewports: assigns.viewports + 1}}
@@ -101,6 +91,16 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
       true = position.line >= 0 and position.utf16_offset >= 0
       {:noreply, %{assigns | revision: revision, hit_tests: assigns.hit_tests + 1}}
     end
+
+    @impl GPUI.View
+    def handle_window_event(:close_request, _event, assigns),
+      do: {:noreply, %{assigns | close_requests: assigns.close_requests + 1}}
+
+    def handle_window_event(:focus, _event, assigns),
+      do: {:noreply, %{assigns | window_focuses: assigns.window_focuses + 1}}
+
+    def handle_window_event(:blur, _event, assigns),
+      do: {:noreply, %{assigns | window_blurs: assigns.window_blurs + 1}}
   end
 
   defmodule SharedSurfaceApp do
