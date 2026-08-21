@@ -11,6 +11,10 @@ defmodule GPUI.Codegen.Native.Window do
   @type chrome :: :system | :content
   @type lifecycle :: :close_request | :focus | :blur
 
+  @type root :: %{
+          required(:tree) => term()
+        }
+
   @type decoded :: %{
           required(:id) => R.u64(),
           required(:title) => String.t(),
@@ -19,7 +23,8 @@ defmodule GPUI.Codegen.Native.Window do
           required(:resizable) => boolean(),
           required(:chrome) => chrome(),
           required(:lifecycle) => [R.path(:Lifecycle)],
-          required(:commands) => [{String.t(), String.t()}]
+          required(:commands) => [{String.t(), String.t()}],
+          required(:root) => root()
         }
 
   @type config :: %{
@@ -34,7 +39,8 @@ defmodule GPUI.Codegen.Native.Window do
           required(:close_request) => boolean(),
           required(:focus) => boolean(),
           required(:blur) => boolean(),
-          required(:commands) => [{String.t(), String.t()}]
+          required(:commands) => [{String.t(), String.t()}],
+          required(:tree) => term()
         }
 
   @allow :dead_code
@@ -65,7 +71,8 @@ defmodule GPUI.Codegen.Native.Window do
            close_request: close_request,
            focus: focus,
            blur: blur,
-           commands: decoded.commands
+           commands: decoded.commands,
+           tree: decoded.root.tree
          }}
 
       _other ->

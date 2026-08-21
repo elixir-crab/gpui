@@ -553,18 +553,6 @@ pub(crate) fn decode_element_node<'a>(term: Term<'a>) -> NifResult<ElementNode> 
     }
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn window_tree<'a>(window: Term<'a>) -> NifResult<ElementNode> {
-    match window.map_get(atoms::root()) {
-        Ok(root) => {
-            match root.map_get(atoms::tree()) {
-                Ok(tree) => decode_element_node(tree),
-                Err(_missing) => Ok(ElementNode::empty_root()),
-            }
-        }
-        Err(reason) => Err(reason),
-    }
-}
-#[cfg(feature = "real-gpui")]
 pub(crate) fn string_attr<'a>(term: Term<'a>, attr: Atom) -> Option<String> {
     match term.map_get(atoms::attrs()) {
         Ok(attrs) => {

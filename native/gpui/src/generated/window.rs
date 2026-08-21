@@ -6,7 +6,7 @@ pub enum Chrome {
     Content,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
-pub struct Config {
+pub struct Config<'a> {
     pub id: u64,
     pub title: String,
     pub width: f32,
@@ -19,9 +19,10 @@ pub struct Config {
     pub focus: bool,
     pub blur: bool,
     pub commands: Vec<(String, String)>,
+    pub tree: Term<'a>,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
-pub struct Decoded {
+pub struct Decoded<'a> {
     pub id: u64,
     pub title: String,
     pub size: Vec<u32>,
@@ -30,6 +31,7 @@ pub struct Decoded {
     pub chrome: Chrome,
     pub lifecycle: Vec<Lifecycle>,
     pub commands: Vec<(String, String)>,
+    pub root: Root<'a>,
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq, rustler::NifUnitEnum)]
 pub enum Lifecycle {
@@ -37,9 +39,13 @@ pub enum Lifecycle {
     Focus,
     Blur,
 }
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct Root<'a> {
+    pub tree: Term<'a>,
+}
 #[allow(dead_code)]
 #[allow(clippy::redundant_field_names)]
-fn normalize(decoded: Decoded) -> NifResult<Config> {
+fn normalize<'a>(decoded: Decoded<'a>) -> NifResult<Config<'a>> {
     match decoded.size.as_slice() {
         [width, height] if *width > 0 && *height > 0 => {
             let (min_width, min_height) = normalize_min_size(decoded.min_size);
@@ -70,6 +76,7 @@ fn normalize(decoded: Decoded) -> NifResult<Config> {
                 focus: focus,
                 blur: blur,
                 commands: decoded.commands,
+                tree: decoded.root.tree,
             })
         }
         _other => Err(rustler::Error::BadArg),

@@ -178,20 +178,6 @@ defmodule GPUI.Codegen.Native.Elements do
     end
   end
 
-  @spec window_tree(term()) :: R.nif_result(R.path(:ElementNode))
-  defrust window_tree(window) do
-    case window.map_get(Atoms.root()) do
-      {:ok, root} ->
-        case root.map_get(Atoms.tree()) do
-          {:ok, tree} -> decode_element_node(tree)
-          {:error, _missing} -> {:ok, ElementNode.empty_root()}
-        end
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
   @spec string_attr(term(), atom()) :: R.option(String.t())
   defrust string_attr(term, attr) do
     case term.map_get(Atoms.attrs()) do

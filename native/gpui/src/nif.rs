@@ -103,7 +103,6 @@ pub(crate) fn open_window_impl<'a>(
     window: Term<'a>,
 ) -> NifResult<Term<'a>> {
     let decoded = window.decode::<Decoded>()?;
-    let tree = window_tree(window)?;
     let config = normalize(decoded)?;
     let Config {
         id: window_id,
@@ -118,7 +117,9 @@ pub(crate) fn open_window_impl<'a>(
         focus,
         blur,
         commands,
+        tree,
     } = config;
+    let tree = decode_element_node(tree)?;
     let min_size = min_width.zip(min_height);
     let commands = validate_window_commands(commands)?;
     let shared_window = Arc::new(WindowState::new(tree, commands));
