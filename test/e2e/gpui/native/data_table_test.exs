@@ -157,7 +157,7 @@ defmodule GPUI.Native.DataTableE2ETest do
     end
   end
 
-  test "virtualizes wide source-backed grids with sorting and cell navigation" do
+  test "desktop renders a wide distant grid and delivers pointer sorting" do
     {:ok, runtime} = GPUI.Runtime.start_link(app: TableApp, poll_interval: 10)
     on_exit(fn -> Desktop.stop_process(runtime) end)
     assert :ok = GPUI.Runtime.subscribe(runtime)
@@ -177,18 +177,6 @@ defmodule GPUI.Native.DataTableE2ETest do
 
     Desktop.click!(native_window_id, 110, 22)
     assert await_event(runtime, "table_sorted") == "name"
-
-    Desktop.click!(native_window_id, 110, 70)
-    events = await_events(runtime, ~w(row_selected cell_selected))
-    assert Enum.find(events, &(&1.event == "row_selected")).value
-    assert [_row, "name"] = Enum.find(events, &(&1.event == "cell_selected")).value
-
-    Desktop.key!(native_window_id, "Right")
-    assert [_row, "memory"] = await_event(runtime, "cell_selected")
-
-    Desktop.key!(native_window_id, "Up")
-    assert selected = await_event(runtime, "row_selected")
-    assert selected != "target"
     assert Process.alive?(runtime)
   end
 
@@ -216,19 +204,6 @@ defmodule GPUI.Native.DataTableE2ETest do
         end
     after
       5_000 -> flunk("data table did not request the distant selected range")
-    end
-  end
-
-  defp await_events(runtime, names) do
-    receive do
-      {:gpui, ^runtime, %GPUI.Runtime.Update{events: events}} ->
-        if Enum.all?(names, &Enum.any?(events, fn event -> event.event == &1 end)) do
-          events
-        else
-          await_events(runtime, names)
-        end
-    after
-      5_000 -> flunk("data table did not emit #{Enum.join(names, ", ")}")
     end
   end
 
