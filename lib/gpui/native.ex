@@ -27,7 +27,20 @@ defmodule GPUI.Native do
       System.get_env("GPUI_BUILD_FROM_SOURCE") in ["1", "true"] or
         not precompiled_target? or not File.exists?(checksum)
 
-    use RustlerPrecompiled,
+    source_variant =
+      cond do
+        Mix.env() == :e2e -> "desktop"
+        Mix.env() == :test and Mix.target() == :native_test -> "native_test"
+        true -> "core"
+      end
+
+    # Rustler always copies a source build to `gpui_nif`, so copy that result
+    # once to a target-specific load path before this module's on-load hook runs.
+    # Subsequent Mix targets can then compile and load independently without
+    # replacing the library already selected by another build directory.
+    source_artifact = "gpui_nif_#{source_variant}"
+
+    rustler_opts = [
       otp_app: :gpui,
       crate: "gpui_nif",
       path: "native/gpui",
@@ -36,6 +49,23 @@ defmodule GPUI.Native do
       targets: ["x86_64-unknown-linux-gnu"],
       nif_versions: ["2.15"],
       force_build: force_build?
+    ]
+
+    rustler_opts =
+      if force_build? do
+        Keyword.put(rustler_opts, :load_from, {:gpui, "priv/native/#{source_artifact}"})
+      else
+        rustler_opts
+      end
+
+    use RustlerPrecompiled, rustler_opts
+
+    if force_build? do
+      extension = if match?({:win32, _}, :os.type()), do: ".dll", else: ".so"
+      source = Path.join(project_root, "priv/native/gpui_nif#{extension}")
+      destination = Path.join(project_root, "priv/native/#{source_artifact}#{extension}")
+      File.cp!(source, destination)
+    end
   end
 
   use GPUI.Native.Generated
