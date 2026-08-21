@@ -63,6 +63,7 @@ click(ui, "notifications")
 click(ui, {24, 48})
 type(ui, "Ada")
 resize(ui, {800, 600})
+advance(ui, 250)
 assert %{width: width, height: height} = bounds(ui, "notifications")
 settle(ui)
 ```
@@ -71,7 +72,8 @@ Stable IDs come from declarative `id` attributes. `click/2` targets the center
 of the corresponding rendered bounds or an explicit `{x, y}` logical point;
 `bounds/2` returns `%{x:, y:, width:, height:}` in logical pixels. `type/2`
 dispatches platform text input to the focused control, while `resize/2` changes
-the deterministic viewport. `press/2` accepts semantic keys such as
+the deterministic viewport. `advance/2` moves GPUI's test clock by a bounded
+number of milliseconds and then settles pending work. `press/2` accepts semantic keys such as
 `:arrow_left`, `:arrow_right`, `:arrow_up`, `:arrow_down`, `:space`, `:enter`,
 `:escape`, and `:tab`, or a GPUI keystroke string.
 
@@ -102,6 +104,12 @@ mix gpui.test.native test/gpui/my_settings_native_test.exs
 The task selects `MIX_TARGET=native_test`, leaving ordinary `MIX_ENV=test`
 renderer-independent. RustQ generates the NIF exports and Elixir stubs for the
 closed native-test command boundary.
+
+The current GPUI test platform cannot instantiate `gpui-component`'s input
+state because that implementation requests a real raw platform window handle.
+Keep editable-input behavior in renderer-independent and desktop E2E coverage
+until the pinned component exposes a headless-safe input constructor; `type/2`
+is already part of the neutral command vocabulary for that eventual support.
 
 These tests verify deterministic renderer behavior, not operating-system facts.
 Real desktop E2E remains necessary for native window creation,

@@ -214,6 +214,14 @@ fn native_test_idle<'a>(env: Env<'a>, test_id: u64) -> NifResult<Term<'a>> {
     native_test_idle_impl(env, test_id)
 }
 #[rustler::nif(schedule = "DirtyIo")]
+fn native_test_advance<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    milliseconds: u64,
+) -> NifResult<Term<'a>> {
+    native_test_advance_impl(env, test_id, milliseconds)
+}
+#[rustler::nif(schedule = "DirtyIo")]
 fn native_test_key<'a>(env: Env<'a>, test_id: u64, key: String) -> NifResult<Term<'a>> {
     native_test_key_impl(env, test_id, key)
 }

@@ -63,6 +63,11 @@ enum TestCommand {
         id: u64,
         reply: TestCommandReply<()>,
     },
+    Advance {
+        id: u64,
+        milliseconds: u64,
+        reply: TestCommandReply<()>,
+    },
     Key {
         id: u64,
         key: String,
@@ -282,6 +287,24 @@ fn run(receiver: std::sync::mpsc::Receiver<TestCommand>) {
                     .map(|session| session.context.run_until_parked());
                 let _ = reply.send(result);
             }
+            TestCommand::Advance {
+                id,
+                milliseconds,
+                reply,
+            } => {
+                let result = sessions
+                    .get(&id)
+                    .ok_or_else(|| "unknown_native_test".to_string())
+                    .map(|session| {
+                        session
+                            .context
+                            .cx
+                            .executor()
+                            .advance_clock(std::time::Duration::from_millis(milliseconds));
+                        session.context.run_until_parked();
+                    });
+                let _ = reply.send(result);
+            }
             TestCommand::Key { id, key, reply } => {
                 let result = sessions
                     .get_mut(&id)
@@ -389,6 +412,15 @@ pub(crate) fn bounds(id: u64, element_id: String) -> Result<TestBounds, String> 
 #[cfg(feature = "native-test")]
 pub(crate) fn idle(id: u64) -> Result<(), String> {
     execute(|reply| TestCommand::Idle { id, reply })
+}
+
+#[cfg(feature = "native-test")]
+pub(crate) fn advance(id: u64, milliseconds: u64) -> Result<(), String> {
+    execute(|reply| TestCommand::Advance {
+        id,
+        milliseconds,
+        reply,
+    })
 }
 
 #[cfg(feature = "native-test")]

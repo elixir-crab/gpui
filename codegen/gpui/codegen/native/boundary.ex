@@ -36,6 +36,7 @@ defmodule GPUI.Codegen.Native.Boundary do
       native_test_resize: [schedule: :dirty_io],
       native_test_bounds: [schedule: :dirty_io],
       native_test_idle: [schedule: :dirty_io],
+      native_test_advance: [schedule: :dirty_io],
       native_test_key: [schedule: :dirty_io],
       native_test_events: [schedule: :dirty_io],
       native_test_stop: [schedule: :dirty_io]

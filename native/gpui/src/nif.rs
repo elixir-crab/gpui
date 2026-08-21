@@ -506,6 +506,20 @@ pub(crate) fn native_test_idle_impl<'a>(env: Env<'a>, test_id: u64) -> NifResult
     encode_command_result(env, result.map(|()| atoms::ok()))
 }
 
+pub(crate) fn native_test_advance_impl<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    milliseconds: u64,
+) -> NifResult<Term<'a>> {
+    #[cfg(feature = "native-test")]
+    let result = native_test::advance(test_id, milliseconds);
+    #[cfg(not(feature = "native-test"))]
+    let _ = (test_id, milliseconds);
+    #[cfg(not(feature = "native-test"))]
+    let result: Result<(), String> = Err("native_test_disabled".to_string());
+    encode_command_result(env, result.map(|()| atoms::ok()))
+}
+
 pub(crate) fn native_test_key_impl<'a>(
     env: Env<'a>,
     test_id: u64,

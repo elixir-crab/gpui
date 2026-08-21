@@ -208,6 +208,11 @@ defmodule GPUI.Test do
   @spec settle(GPUI.Test.UI.t()) :: GPUI.Test.UI.t()
   def settle(%GPUI.Test.UI{} = ui), do: GPUI.Test.Native.settle(ui)
 
+  @doc "Advances GPUI's deterministic clock by the given milliseconds."
+  @spec advance(GPUI.Test.UI.t(), non_neg_integer()) :: GPUI.Test.UI.t()
+  def advance(%GPUI.Test.UI{} = ui, milliseconds),
+    do: GPUI.Test.Native.advance(ui, milliseconds)
+
   @doc "Dispatches a click event and returns the updated snapshot."
   @spec click(GenServer.server(), String.t(), keyword()) :: Snapshot.t()
   def click(runtime, event, opts \\ []),

@@ -35,6 +35,9 @@ defmodule GPUI.Test.Native do
   @spec settle(UI.t()) :: UI.t()
   def settle(%UI{} = ui), do: call(ui, :settle)
 
+  @spec advance(UI.t(), non_neg_integer()) :: UI.t()
+  def advance(%UI{} = ui, milliseconds), do: call(ui, {:advance, milliseconds})
+
   @impl GenServer
   def init(opts) do
     owner = Keyword.fetch!(opts, :owner)
@@ -93,6 +96,12 @@ defmodule GPUI.Test.Native do
 
   def handle_call({:settle, ref}, _from, %{ref: ref} = state) do
     {:ok, :ok} = GPUI.Native.native_test_idle(state.id)
+    {:reply, handle(state), deliver_events(state)}
+  end
+
+  def handle_call({:advance, ref, milliseconds}, _from, %{ref: ref} = state)
+      when is_integer(milliseconds) and milliseconds >= 0 do
+    native!(GPUI.Native.native_test_advance(state.id, milliseconds), :advance, milliseconds)
     {:reply, handle(state), deliver_events(state)}
   end
 
