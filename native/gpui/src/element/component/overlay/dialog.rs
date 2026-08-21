@@ -258,6 +258,7 @@ pub(crate) fn render_dialog(
         });
     }
 
+    let dialog_id = node.id.clone();
     let mut element = gpui::div().id(node.id);
     if let Some(trigger) = trigger {
         let trigger_runtime = runtime.clone();
@@ -274,7 +275,7 @@ pub(crate) fn render_dialog(
                 .role(Role::Button)
                 .aria_label(accessibility.label)
                 .aria_expanded(accessibility.expanded)
-                .track_focus(&trigger_focus.tab_stop(true))
+                .track_focus(&trigger_focus.clone().tab_stop(true))
                 .on_mouse_down(MouseButton::Left, move |_event, window, cx| {
                     mouse_focus.focus(window, cx);
                     request_open(
@@ -304,7 +305,8 @@ pub(crate) fn render_dialog(
         );
     }
 
-    element.into_any_element()
+    crate::element::register_test_target(element, dialog_id, Some(trigger_focus), context)
+        .into_any_element()
 }
 
 #[cfg(feature = "components")]

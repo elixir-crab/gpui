@@ -19,6 +19,32 @@ defmodule GPUI.Test.Native.NavigationTest do
     end
   end
 
+  defmodule DialogView do
+    use GPUI.View
+
+    alias GPUI.UI.Overlay
+
+    @impl GPUI.View
+    def render(assigns) do
+      ~GPUI"""
+      <Overlay.dialog
+        id="settings-dialog"
+        open={assigns.open}
+        title="Settings"
+        width={280}
+        phx-change="dialog_changed"
+      >
+        <:trigger>
+          <button id="dialog-trigger"><text>Open settings</text></button>
+        </:trigger>
+        <:content>
+          <button id="dialog-action" phx-click="dialog_action"><text>Apply</text></button>
+        </:content>
+      </Overlay.dialog>
+      """
+    end
+  end
+
   defmodule AccordionView do
     use GPUI.View
 
@@ -61,6 +87,20 @@ defmodule GPUI.Test.Native.NavigationTest do
     defaults = [expanded: [], disabled: false]
     render(ui, AccordionView, Keyword.merge(defaults, opts))
     settle(ui)
+  end
+
+  test "dialog trigger has stable bounds and requests a controlled open state", %{ui: ui} do
+    render(ui, DialogView, open: false)
+    settle(ui)
+
+    assert %{width: width, height: height} = bounds(ui, "settings-dialog")
+    assert width > 0
+    assert height > 0
+
+    focus(ui, "settings-dialog")
+    press(ui, :enter)
+
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "dialog_changed", value: true}}}
   end
 
   test "accordion items expose stable targets and controlled pointer changes", %{ui: ui} do

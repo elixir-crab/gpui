@@ -10,7 +10,7 @@ GPUI behavior is divided by what each layer can truthfully prove.
 | Accordion | Controlled expanded IDs and validation | Stable bounds, pointer toggles, controlled multiple expansion, disabled-group suppression | Real window rendering |
 | Tree and data table navigation | Source/state policy | Focus, keyboard, disabled skipping, emitted IDs | Virtualized real window and pointer delivery |
 | Uniform and variable collections | Range/source policy | Selection, ranges, scrolling, transitions | Compositor range and wheel delivery |
-| Dialog and overlays | Controlled open/close policy | Escape policy has Rust unit coverage; headless top-layer focus remains pending | Window/top-layer smoke |
+| Dialog and overlays | Controlled open/close policy | Stable dialog-trigger bounds and keyboard open request; Escape policy has Rust unit coverage; headless top-layer focus remains blocked by `gpui-component::Root` | Window/top-layer focus containment, closure, and restoration |
 | Rich text | Runs, ranges, links, controlled events | Shaping and link-navigation Rust unit coverage; stable public target pending | Real shaped rendering |
 | Persistent editable text | Buffer, revisions, transactions | Blocked by `InputState` requiring a platform window handle | Native typing, IME, selection and clipboard |
 | Clipboard and external transfer | Bounded payload and event policy | Boundary/routing unit coverage | OS clipboard and external transfer facts |
