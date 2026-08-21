@@ -8,7 +8,7 @@ defmodule GPUI.RichTranscriptExampleTest do
   alias GPUI.Text.{Edit, Position, Range, Selection, Transaction}
 
   test "composes variable collection items with neutral rich text runs" do
-    runtime = start_gpui!(Features.RichTranscript.App)
+    runtime = start_runtime!(Features.RichTranscript.App)
 
     assert %{messages: messages, status: status, draft_buffer: draft_buffer} = assigns(runtime)
     assert Enum.count(messages) == 18
@@ -41,7 +41,7 @@ defmodule GPUI.RichTranscriptExampleTest do
   end
 
   test "appends, streams height revisions, prepends history, and handles links" do
-    runtime = start_gpui!(Features.RichTranscript.App)
+    runtime = start_runtime!(Features.RichTranscript.App)
 
     click(runtime, "append")
     assert %{messages: messages} = assigns(runtime)
@@ -69,7 +69,7 @@ defmodule GPUI.RichTranscriptExampleTest do
   end
 
   test "submits the persistent draft, clears it, appends a message, and requests tail follow" do
-    runtime = start_gpui!(Features.RichTranscript.App)
+    runtime = start_runtime!(Features.RichTranscript.App)
     %{draft_buffer: buffer, follow_request: initial_follow} = assigns(runtime)
 
     assert {:ok, %{revision: draft_revision}} = replace_text(buffer, "A composed message")

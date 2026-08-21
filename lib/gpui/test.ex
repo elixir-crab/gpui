@@ -7,8 +7,13 @@ defmodule GPUI.Test do
 
       use GPUI.Test, async: true
 
-  Tests that need GPUI layout, focus, hit testing, or keyboard dispatch opt in
-  to a supervised deterministic native UI:
+  Tests that exercise real operating-system windows opt in to an owned desktop
+  session:
+
+      use GPUI.Test, desktop: true
+
+  Deterministic tests that need GPUI layout, focus, hit testing, or keyboard
+  dispatch opt in to a supervised native UI:
 
       use GPUI.Test, native: [size: {640, 480}]
 
@@ -19,7 +24,7 @@ defmodule GPUI.Test do
         use GPUI.Test, async: true
 
         test "advances from an OTP message" do
-          runtime = start_gpui!(FocusTimerApp, args: %{seconds: 2})
+          runtime = start_runtime!(FocusTimerApp, args: %{seconds: 2})
 
           click(runtime, "start")
           send_view(runtime, :tick)
@@ -39,36 +44,46 @@ defmodule GPUI.Test do
 
   defmacro __using__(opts) do
     {native_opts, case_opts} = Keyword.pop(opts, :native)
+    {desktop_opts, case_opts} = Keyword.pop(case_opts, :desktop)
 
-    if native_opts && Keyword.get(case_opts, :async, false) do
-      raise ArgumentError, "native GPUI tests cannot run asynchronously"
+    if native_opts && desktop_opts do
+      raise ArgumentError, "GPUI tests cannot use native and desktop sessions together"
     end
 
-    native_opts =
-      case native_opts do
-        true ->
-          []
+    if (native_opts || desktop_opts) && Keyword.get(case_opts, :async, false) do
+      raise ArgumentError, "native and desktop GPUI tests cannot run asynchronously"
+    end
 
-        opts when is_list(opts) ->
-          opts
-
-        nil ->
-          nil
-
-        other ->
-          raise ArgumentError,
-                "expected :native to be true or a keyword list, got: #{inspect(other)}"
-      end
+    native_opts = session_opts!(:native, native_opts)
+    desktop_opts = session_opts!(:desktop, desktop_opts)
 
     quote do
       use ExUnit.Case, unquote(case_opts)
-      import GPUI.Test
+
+      unquote(
+        if desktop_opts != nil do
+          quote do
+            alias GPUITest.Desktop
+            import GPUITest.Desktop, only: [start_runtime!: 2]
+          end
+        else
+          quote do: import(GPUI.Test)
+        end
+      )
 
       if unquote(native_opts != nil) do
         @moduletag :native
 
         setup context do
           GPUI.Test.__setup_native__(context, unquote(Macro.escape(native_opts)))
+        end
+      end
+
+      if unquote(desktop_opts != nil) do
+        @moduletag :e2e
+
+        setup context do
+          GPUITest.Desktop.setup(context, unquote(Macro.escape(desktop_opts)))
         end
       end
     end
@@ -88,8 +103,8 @@ defmodule GPUI.Test do
   end
 
   @doc "Starts a supervised runtime backed by `GPUI.Test.Display`."
-  @spec start_gpui!(module(), keyword()) :: pid()
-  def start_gpui!(app, opts \\ []) do
+  @spec start_runtime!(module(), keyword()) :: pid()
+  def start_runtime!(app, opts \\ []) do
     runtime_opts =
       opts
       |> Keyword.put(:app, app)
@@ -318,6 +333,15 @@ defmodule GPUI.Test do
   def find!(tree, selector) when is_list(selector) do
     find(tree, selector) ||
       raise ArgumentError, "no GPUI element matches #{inspect(selector)}"
+  end
+
+  defp session_opts!(_name, true), do: []
+  defp session_opts!(_name, opts) when is_list(opts), do: opts
+  defp session_opts!(_name, nil), do: nil
+
+  defp session_opts!(name, other) do
+    raise ArgumentError,
+          "expected #{inspect(name)} to be true or a keyword list, got: #{inspect(other)}"
   end
 
   defp dispatch_named(runtime, type, event, opts) do

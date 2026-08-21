@@ -108,7 +108,7 @@ defmodule GPUI.ElixirWorkbenchRepositorySourceTest do
     preview = preview("lib/core/worker.ex", :modified, :diff, 2_000)
 
     runtime =
-      start_gpui!(App,
+      start_runtime!(App,
         args: %{
           repository: repository,
           selected_path: "lib/core/worker.ex",
@@ -201,7 +201,7 @@ defmodule GPUI.ElixirWorkbenchRepositorySourceTest do
       "lib/core/worker.ex" => preview("lib/core/worker.ex", :modified, :diff, 3)
     }
 
-    runtime = start_gpui!(App, args: %{path: "/server/repository"})
+    runtime = start_runtime!(App, args: %{path: "/server/repository"})
     task_supervisor = start_task_supervisor!()
 
     start_supervised!(

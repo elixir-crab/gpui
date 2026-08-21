@@ -4,7 +4,7 @@ defmodule GPUI.ComponentGalleryExampleTest do
   use GPUI.Test, async: true
 
   test "navigates searchable stories and keeps form controls controlled" do
-    runtime = start_gpui!(Examples.ComponentGallery.App)
+    runtime = start_runtime!(Examples.ComponentGallery.App)
 
     assert %{title: "GPUI Component Gallery", size: [1280, 820]} = window_snapshot(runtime)
     assert %{story: "actions", query: ""} = assigns(runtime)
@@ -30,7 +30,7 @@ defmodule GPUI.ComponentGalleryExampleTest do
   end
 
   test "replays declarative motion with application-owned controls" do
-    runtime = start_gpui!(Examples.ComponentGallery.App, args: %{story: "motion"})
+    runtime = start_runtime!(Examples.ComponentGallery.App, args: %{story: "motion"})
 
     assert %{motion_request: 1, motion_policy: "respect_system", motion_easing: "ease_out"} =
              assigns(runtime)
@@ -59,7 +59,7 @@ defmodule GPUI.ComponentGalleryExampleTest do
   end
 
   test "covers overlays, navigation, and collection selection" do
-    runtime = start_gpui!(Examples.ComponentGallery.App, args: %{story: "overlays"})
+    runtime = start_runtime!(Examples.ComponentGallery.App, args: %{story: "overlays"})
 
     click(runtime, "show-dialog")
     assert %{overlay: "dialog"} = assigns(runtime)

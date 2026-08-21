@@ -4,7 +4,7 @@ defmodule GPUI.MusicLibraryExampleTest do
   use GPUI.Test, async: true
 
   test "searches, selects, and controls playback from Elixir state" do
-    runtime = start_gpui!(Examples.MusicLibrary.App)
+    runtime = start_runtime!(Examples.MusicLibrary.App)
 
     assert %{title: "Afterglow Music", size: [1240, 820]} = window_snapshot(runtime)
 
@@ -58,7 +58,7 @@ defmodule GPUI.MusicLibraryExampleTest do
   end
 
   test "switches library sections and handles an empty search" do
-    runtime = start_gpui!(Examples.MusicLibrary.App)
+    runtime = start_runtime!(Examples.MusicLibrary.App)
 
     click(runtime, "nav-focus")
     assert %{section: "focus"} = assigns(runtime)

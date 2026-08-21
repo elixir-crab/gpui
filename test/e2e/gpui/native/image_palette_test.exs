@@ -1,15 +1,16 @@
 GPUITest.Examples.load!(:image_palette)
 
 defmodule GPUI.Native.ImagePaletteE2ETest do
-  use ExUnit.Case, async: false
+  use GPUI.Test, desktop: true
 
   alias Examples.ImagePalette.App
   alias Examples.ImagePalette.Coordinator
-  alias GPUITest.Desktop
 
   @moduletag :e2e
 
-  test "decodes, analyzes, installs, and exports an image through native GPUI" do
+  test "decodes, analyzes, installs, and exports an image through native GPUI", %{
+    desktop: desktop
+  } do
     fixture =
       Path.join(System.tmp_dir!(), "gpui-image-palette-#{System.unique_integer([:positive])}.bmp")
 
@@ -21,10 +22,7 @@ defmodule GPUI.Native.ImagePaletteE2ETest do
       File.rm(export)
     end)
 
-    {:ok, runtime} =
-      GPUI.Runtime.start_link(app: App, args: %{path: fixture, export_path: export})
-
-    on_exit(fn -> Desktop.stop_process(runtime) end)
+    runtime = start_runtime!(desktop, app: App, args: %{path: fixture, export_path: export})
 
     task_supervisor = start_supervised!({Task.Supervisor, []})
 
@@ -35,8 +33,8 @@ defmodule GPUI.Native.ImagePaletteE2ETest do
       )
     )
 
-    native_window_id = Desktop.window_id!("Image Palette")
-    Desktop.await_frame!(runtime, 1, native_window_id)
+    native_window_id = Desktop.window!(desktop, "Image Palette")
+    Desktop.await_frame!(desktop, runtime, 1, native_window_id)
 
     GPUI.Runtime.dispatch_event(runtime, %{
       type: :click,
@@ -45,7 +43,7 @@ defmodule GPUI.Native.ImagePaletteE2ETest do
     })
 
     assert_receive {:image_palette, :loaded, 1}, 5_000
-    Desktop.await_frame!(runtime, 1, native_window_id)
+    Desktop.await_frame!(desktop, runtime, 1, native_window_id)
 
     assert %{
              status: :ready,

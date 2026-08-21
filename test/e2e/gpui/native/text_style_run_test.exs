@@ -1,11 +1,10 @@
 defmodule GPUI.Native.TextStyleRunE2ETest do
-  use ExUnit.Case, async: false
+  use GPUI.Test, desktop: true
 
   alias GPUI.Text.Buffer
   alias GPUI.Text.Position
   alias GPUI.Text.Range
   alias GPUI.Text.StyleRun
-  alias GPUITest.Desktop
 
   @moduletag :e2e
 
@@ -40,21 +39,22 @@ defmodule GPUI.Native.TextStyleRunE2ETest do
     end
   end
 
-  test "foreground style runs render through the editable native shaping path" do
+  test "foreground style runs render through the editable native shaping path", %{
+    desktop: desktop
+  } do
     {:ok, buffer} = Buffer.new("orange weighted text\nplain text")
     range = Range.new(Position.new(0, 0), Position.new(0, 15))
     run = StyleRun.new(range, color: 0xF97316, font_weight: :bold, font_style: :italic)
     title = "GPUI Style Run E2E #{System.unique_integer([:positive])}"
 
-    {:ok, runtime} =
-      GPUI.Runtime.start_link(
+    runtime =
+      start_runtime!(desktop,
         app: App,
         args: %{title: title, buffer: buffer, style_runs: [run]}
       )
 
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-    native_window = Desktop.window_id!(title)
-    Desktop.await_frame!(runtime, 1, native_window)
+    native_window = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, runtime, 1, native_window)
 
     assert %{windows: [%{root: %{assigns: %{style_runs: [^run]}}}]} =
              GPUI.Runtime.snapshot(runtime)

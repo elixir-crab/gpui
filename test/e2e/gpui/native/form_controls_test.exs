@@ -1,7 +1,5 @@
 defmodule GPUI.Native.FormControlsE2ETest do
-  use ExUnit.Case, async: false
-
-  alias GPUITest.Desktop
+  use GPUI.Test, desktop: true
 
   @moduletag :e2e
   @moduletag timeout: 30_000
@@ -12,7 +10,7 @@ defmodule GPUI.Native.FormControlsE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="flex flex-col w-[360px] h-[180px] p-4 gap-4 bg-slate-900">
+      <div class="flex flex-col w-[360px] h-[180px] p-4 gap-4 bg-white text-slate-900">
         <GPUI.UI.switch
           id="form-notifications"
           label="Notifications"
@@ -75,13 +73,12 @@ defmodule GPUI.Native.FormControlsE2ETest do
     end
   end
 
-  test "desktop renders controlled form controls and remains responsive" do
+  test "desktop renders controlled form controls", %{desktop: desktop} do
     title = "GPUI Form Controls E2E #{System.unique_integer([:positive])}"
-    {:ok, runtime} = GPUI.Runtime.start_link(app: FormApp, args: %{title: title})
-    on_exit(fn -> Desktop.stop_process(runtime) end)
+    runtime = start_runtime!(desktop, app: FormApp, args: %{title: title})
 
-    window_id = Desktop.window_id!(title)
-    Desktop.await_frame!(runtime, 1, window_id)
+    window = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, runtime, 1, window)
 
     assert %{notifications: false, plan: "free"} = assigns(runtime)
     assert Process.alive?(runtime)

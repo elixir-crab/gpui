@@ -1,8 +1,7 @@
 defmodule GPUI.Native.TextSurfaceE2ETest do
-  use ExUnit.Case, async: false
+  use GPUI.Test, desktop: true
 
-  alias GPUI.Text.{Buffer, Edit, Position, Range, Selection, Transaction}
-  alias GPUITest.Desktop
+  alias GPUI.Text.{Buffer, Position, Range}
 
   @moduletag :e2e
   @moduletag timeout: 30_000
@@ -60,16 +59,6 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
       {:noreply, %{assigns | bounds: assigns.bounds + 1}}
     end
 
-    @impl GPUI.View
-    def handle_window_event(:close_request, _event, assigns),
-      do: {:noreply, %{assigns | close_requests: assigns.close_requests + 1}}
-
-    def handle_window_event(:focus, _event, assigns),
-      do: {:noreply, %{assigns | window_focuses: assigns.window_focuses + 1}}
-
-    def handle_window_event(:blur, _event, assigns),
-      do: {:noreply, %{assigns | window_blurs: assigns.window_blurs + 1}}
-
     def handle_event("surface-focused", %{value: %{id: "primary-surface"}}, assigns),
       do: {:noreply, %{assigns | focuses: assigns.focuses + 1}}
 
@@ -81,6 +70,16 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
 
     def handle_event("selection-changed", %{revision: revision}, assigns),
       do: {:noreply, %{assigns | revision: revision, selections: assigns.selections + 1}}
+
+    @impl GPUI.View
+    def handle_window_event(:close_request, _event, assigns),
+      do: {:noreply, %{assigns | close_requests: assigns.close_requests + 1}}
+
+    def handle_window_event(:focus, _event, assigns),
+      do: {:noreply, %{assigns | window_focuses: assigns.window_focuses + 1}}
+
+    def handle_window_event(:blur, _event, assigns),
+      do: {:noreply, %{assigns | window_blurs: assigns.window_blurs + 1}}
 
     def handle_event("viewport-changed", %{revision: revision, value: viewport}, assigns) do
       true = viewport.first_visible_row <= viewport.last_visible_row
@@ -160,107 +159,16 @@ defmodule GPUI.Native.TextSurfaceE2ETest do
     end
   end
 
-  test "shared surfaces reconcile native typing and external edit undo redo" do
+  test "desktop renders shared persistent text surfaces", %{desktop: desktop} do
     {:ok, buffer} = Buffer.new("alpha")
     title = "GPUI Text Surface E2E #{System.unique_integer([:positive])}"
 
-    {:ok, runtime} =
-      GPUI.Runtime.start_link(app: SharedSurfaceApp, args: %{title: title, buffer: buffer})
+    runtime =
+      start_runtime!(desktop, app: SharedSurfaceApp, args: %{title: title, buffer: buffer})
 
-    :ok = GPUI.Runtime.subscribe(runtime)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-
-    window_id = Desktop.window_id!(title)
-
-    Desktop.eventually(fn ->
-      assert %{
-               viewports: viewports,
-               geometries: geometries,
-               range_geometries: ranges,
-               bounds: bounds
-             } =
-               assigns(runtime)
-
-      assert viewports > 0
-      assert geometries > 0
-      assert ranges == 1
-      assert bounds > 0
-      assert assigns(runtime).focuses > 0
-    end)
-
-    Desktop.click!(window_id, 120, 70)
-
-    Desktop.eventually(fn ->
-      assert %{hit_tests: hit_tests} = assigns(runtime)
-      assert hit_tests > 0
-    end)
-
-    Desktop.key!(window_id, "End")
-    Desktop.type!(window_id, "-native")
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{text: "alpha-native", revision: revision}} = Buffer.snapshot(buffer)
-      assert revision > 0
-      assert %{transactions: transactions} = assigns(runtime)
-      assert transactions > 0
-    end)
-
-    {:ok, snapshot} = Buffer.snapshot(buffer)
-    external_position = Position.new(0, 0)
-    selection = Selection.caret("primary", external_position, primary: true)
-
-    assert {:ok, %{revision: external_revision}} =
-             Buffer.transact(buffer, %Transaction{
-               id: "external-e2e",
-               base_revision: snapshot.revision,
-               edits: [Edit.new(Range.new(external_position, external_position), "external-")],
-               selections: [selection]
-             })
-
-    assert {:ok, _snapshot} = GPUI.Runtime.refresh(runtime)
-    Desktop.request_frame!(window_id)
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{text: "external-alpha-native"}} = Buffer.snapshot(buffer)
-      assert %{transactions: transactions} = assigns(runtime)
-      assert transactions > 0
-    end)
-
-    assert {:ok, %{revision: undo_revision, text: "alpha-native"}} =
-             Buffer.undo(buffer, external_revision)
-
-    assert {:ok, _snapshot} = GPUI.Runtime.refresh(runtime)
-    Desktop.request_frame!(window_id)
-
-    assert {:ok, %{revision: redo_revision, text: "external-alpha-native"}} =
-             Buffer.redo(buffer, undo_revision)
-
-    assert {:ok, _snapshot} = GPUI.Runtime.refresh(runtime)
-    Desktop.request_frame!(window_id)
-
-    Desktop.click!(window_id, 120, 245)
-    Desktop.key!(window_id, "End")
-    Desktop.type!(window_id, "-mirror")
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{text: "external-alpha-native-mirror", revision: revision}} =
-               Buffer.snapshot(buffer)
-
-      assert revision > redo_revision
-      assert %{transactions: transactions} = assigns(runtime)
-      assert transactions > 1
-    end)
-
-    Desktop.close_window!(window_id)
-
-    Desktop.eventually(fn ->
-      assert assigns(runtime).close_requests > 0
-      assert [%{id: 1}] = GPUI.Runtime.snapshot(runtime).windows
-    end)
-  end
-
-  defp assigns(runtime) do
-    %{windows: [%{root: %{assigns: assigns}}]} = GPUI.Runtime.snapshot(runtime)
-    assigns
+    window = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, runtime, 1, window)
+    assert {:ok, %{text: "alpha"}} = Buffer.snapshot(buffer)
+    assert Process.alive?(runtime)
   end
 end

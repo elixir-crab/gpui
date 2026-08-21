@@ -53,7 +53,7 @@ defmodule GPUI.ElixirWorkbenchLogSourceTest do
 
   test "renders semantic levels, controlled details, filtering, and display-side copying" do
     raw_events = fixture_events()
-    runtime = start_gpui!(App, args: %{events: raw_events, follow: false})
+    runtime = start_runtime!(App, args: %{events: raw_events, follow: false})
 
     assert %{type: :ui_code_viewer} = runtime |> tree() |> find!(id: "log-events")
     assert runtime |> tree() |> all(type: :ui_code_line) |> length() == 4
@@ -92,7 +92,7 @@ defmodule GPUI.ElixirWorkbenchLogSourceTest do
   end
 
   test "source retains bounded history while pause, follow, filtering, and clear stay controlled" do
-    runtime = start_gpui!(App)
+    runtime = start_runtime!(App)
     task_supervisor = start_task_supervisor!()
 
     source =
@@ -148,7 +148,7 @@ defmodule GPUI.ElixirWorkbenchLogSourceTest do
   end
 
   test "filter revisions include events that arrive while asynchronous work is active" do
-    runtime = start_gpui!(App)
+    runtime = start_runtime!(App)
     task_supervisor = start_task_supervisor!()
     {:ok, counter} = Agent.start_link(fn -> 0 end)
     owner = self()
@@ -190,7 +190,7 @@ defmodule GPUI.ElixirWorkbenchLogSourceTest do
 
   test "OTP Logger handler forwards bounded events without owning source state" do
     runtime_name = GPUI.ElixirWorkbenchLogSourceRuntime
-    runtime = start_gpui!(App, name: runtime_name)
+    runtime = start_runtime!(App, name: runtime_name)
     task_supervisor = start_task_supervisor!()
     handler_id = :gpui_elixir_workbench_log_test_handler
     _result = :logger.remove_handler(handler_id)

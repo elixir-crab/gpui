@@ -1,7 +1,5 @@
 defmodule GPUI.Native.WindowChromeE2ETest do
-  use ExUnit.Case, async: false
-
-  alias GPUITest.Desktop
+  use GPUI.Test, desktop: true
 
   @moduletag :e2e
   @moduletag timeout: 30_000
@@ -54,27 +52,27 @@ defmodule GPUI.Native.WindowChromeE2ETest do
     end
   end
 
-  test "content chrome delegates dragging and close requests to native window policy" do
+  test "content chrome delegates dragging and close requests to native window policy", %{
+    desktop: desktop
+  } do
     title = "GPUI Content Chrome E2E #{System.unique_integer([:positive])}"
-    {:ok, runtime} = GPUI.Runtime.start_link(app: ChromeApp, args: %{title: title})
-    :ok = GPUI.Runtime.subscribe(runtime)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
+    runtime = start_runtime!(desktop, app: ChromeApp, args: %{title: title})
 
-    window_id = Desktop.window_id!(title)
-    before = Desktop.window_info!(window_id)
+    window_id = Desktop.window!(desktop, title)
+    before = Desktop.window_info!(desktop, window_id)
 
-    Desktop.drag!(window_id, 220, 24, 280, 64)
+    Desktop.drag!(desktop, window_id, from: {220, 24}, to: {280, 64})
 
-    Desktop.eventually(fn ->
-      after_drag = Desktop.window_info!(window_id)
+    Desktop.eventually(desktop, runtime, fn ->
+      after_drag = Desktop.window_info!(desktop, window_id)
       assert after_drag.frame.x != before.frame.x or after_drag.frame.y != before.frame.y
     end)
 
-    after_drag = Desktop.window_info!(window_id)
+    after_drag = Desktop.window_info!(desktop, window_id)
     close_x = after_drag.content_frame.width - 24
-    Desktop.click!(window_id, close_x, 24)
+    Desktop.click!(desktop, window_id, at: {close_x, 24})
 
-    Desktop.eventually(fn -> assert %{close_requests: 1} = assigns(runtime) end)
+    Desktop.eventually(desktop, runtime, fn -> assert %{close_requests: 1} = assigns(runtime) end)
     assert %{windows: [_window]} = GPUI.Runtime.snapshot(runtime)
   end
 

@@ -1,21 +1,23 @@
 defmodule GPUI.Native.LifecycleE2ETest do
-  use ExUnit.Case, async: false
+  use GPUI.Test, desktop: true
 
   alias GPUI.Snapshot
-  alias GPUITest.Desktop
 
   @moduletag :e2e
 
-  test "real windows share one application loop while retaining runtime isolation" do
+  test "real windows share one application loop while retaining runtime isolation", %{
+    desktop: desktop
+  } do
     tree_a = tree("runtime A")
     tree_b = tree("runtime B")
     window_a = window(1, "Runtime A", tree_a)
     window_b = window(1, "Runtime B", tree_b)
 
-    {:ok, display_a} = GPUI.Display.Native.start_link([])
-    {:ok, display_b} = GPUI.Display.Native.start_link([])
-    on_exit(fn -> Desktop.stop_process(display_a) end)
-    on_exit(fn -> Desktop.stop_process(display_b) end)
+    display_a =
+      Desktop.start_native_display!()
+
+    display_b =
+      Desktop.start_native_display!()
 
     assert :ok = GPUI.Display.Native.sync(display_a, snapshot([window_a]))
     assert :ok = GPUI.Display.Native.sync(display_b, snapshot([window_b]))
@@ -58,8 +60,8 @@ defmodule GPUI.Native.LifecycleE2ETest do
         Task.async(fn -> GPUI.Display.Native.await_frame(display_a, 1) end)
       end
 
-    display_a_window = Desktop.window_id!("Runtime A")
-    Desktop.request_frame!(display_a_window)
+    display_a_window = Desktop.window!(desktop, "Runtime A")
+    Desktop.request_frame!(desktop, display_a_window)
     assert [:ok, :ok, :ok] = Enum.map(frame_waiters, &Task.await(&1, 7_000))
 
     assert {:ok, generation} = GPUI.Display.Native.frame_token(display_a, 1)
@@ -72,7 +74,7 @@ defmodule GPUI.Native.LifecycleE2ETest do
       end
 
     assert :ok = GPUI.Display.Native.sync(display_a, snapshot([resource_window]))
-    Desktop.request_frame!(display_a_window, 3, 3)
+    Desktop.move!(desktop, display_a_window, at: {3, 3})
     assert [:ok, :ok, :ok] = Enum.map(next_frame_waiters, &Task.await(&1, 7_000))
 
     runtime_a = :sys.get_state(display_a).runtime
@@ -102,17 +104,16 @@ defmodule GPUI.Native.LifecycleE2ETest do
     assert {:error, "unknown_window"} = GPUI.Native.await_frame_after(runtime_b, 1, 0, 100)
   end
 
-  test "repeated window and resource reconciliation remains responsive" do
+  test "repeated window and resource reconciliation remains responsive", %{desktop: desktop} do
     title = "Lifecycle stress"
-    {:ok, display} = GPUI.Display.Native.start_link([])
-    on_exit(fn -> Desktop.stop_process(display) end)
+    display = Desktop.start_native_display!()
 
     assert :ok = GPUI.Display.Native.sync(display, snapshot([window(1, title, tree("initial"))]))
-    native_window_id = Desktop.window_id!(title)
-    Desktop.await_frame!(display, 1, native_window_id)
+    native_window_id = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, display, 1, native_window_id)
 
     final_window_id =
-      Enum.reduce(1..20, native_window_id, fn iteration, current_window_id ->
+      Enum.reduce(1..20, native_window_id, fn iteration, _current_window_id ->
         pixel = stress_pixel(iteration)
         resource_window = window(1, title, resource_tree("pixel"))
         assert {:ok, generation} = GPUI.Display.Native.frame_token(display, 1)
@@ -123,7 +124,8 @@ defmodule GPUI.Native.LifecycleE2ETest do
                    snapshot([resource_window], %{"pixel" => pixel})
                  )
 
-        Desktop.request_frame!(current_window_id, rem(iteration, 4) + 1, 2)
+        current_window_id = Desktop.window!(desktop, title)
+        Desktop.move!(desktop, current_window_id, at: {rem(iteration, 4) + 1, 2})
         assert :ok = GPUI.Display.Native.await_frame_after(display, 1, generation)
 
         if rem(iteration, 5) == 0 do
@@ -138,25 +140,24 @@ defmodule GPUI.Native.LifecycleE2ETest do
                      snapshot([resource_window], %{"pixel" => pixel})
                    )
 
-          reopened_window_id = Desktop.window_id!(title)
-          Desktop.await_frame!(display, 1, reopened_window_id)
+          reopened_window_id = Desktop.window!(desktop, title)
+          Desktop.await_frame!(desktop, display, 1, reopened_window_id)
           reopened_window_id
         else
           current_window_id
         end
       end)
 
-    assert is_binary(final_window_id)
+    assert %GPUITest.Desktop.Window{} = final_window_id
     assert Process.alive?(display)
     assert %{windows: windows, resources: resources} = :sys.get_state(display)
     assert Map.keys(windows) == [1]
     assert Map.has_key?(resources, "pixel")
   end
 
-  test "resizing a window schedules and completes a fresh frame" do
+  test "resizing a window schedules and completes a fresh frame", %{desktop: desktop} do
     title = "Lifecycle resize"
-    {:ok, display} = GPUI.Display.Native.start_link([])
-    on_exit(fn -> Desktop.stop_process(display) end)
+    display = Desktop.start_native_display!()
 
     responsive_tree = %{
       type: :div,
@@ -170,11 +171,11 @@ defmodule GPUI.Native.LifecycleE2ETest do
                snapshot([window(1, title, responsive_tree)])
              )
 
-    native_window_id = Desktop.window_id!(title)
-    Desktop.await_frame!(display, 1, native_window_id)
+    native_window_id = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, display, 1, native_window_id)
     assert {:ok, generation} = GPUI.Display.Native.frame_token(display, 1)
 
-    Desktop.resize!(native_window_id, 700, 460)
+    Desktop.resize!(desktop, native_window_id, to: {700, 460})
     Desktop.await_frame_after!(display, 1, generation)
 
     assert {:ok, resized_generation} = GPUI.Display.Native.frame_token(display, 1)
@@ -182,14 +183,13 @@ defmodule GPUI.Native.LifecycleE2ETest do
     assert Process.alive?(display)
   end
 
-  test "malformed native payloads are rejected without poisoning the runtime" do
+  test "malformed native payloads are rejected without poisoning the runtime", %{desktop: desktop} do
     title = "Malformed payloads"
-    {:ok, display} = GPUI.Display.Native.start_link([])
-    on_exit(fn -> Desktop.stop_process(display) end)
+    display = Desktop.start_native_display!()
 
     assert :ok = GPUI.Display.Native.sync(display, snapshot([window(1, title, tree("valid"))]))
-    native_window_id = Desktop.window_id!(title)
-    Desktop.await_frame!(display, 1, native_window_id)
+    native_window_id = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, display, 1, native_window_id)
     runtime = :sys.get_state(display).runtime
 
     malformed_trees = [
@@ -316,7 +316,7 @@ defmodule GPUI.Native.LifecycleE2ETest do
     assert :ok =
              GPUI.Display.Native.sync(display, snapshot([window(1, title, tree("recovered"))]))
 
-    Desktop.await_frame!(display, 1, native_window_id)
+    Desktop.await_frame!(desktop, display, 1, native_window_id)
     assert Process.alive?(display)
   end
 

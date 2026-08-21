@@ -1,7 +1,5 @@
 defmodule GPUI.Native.TreeE2ETest do
-  use ExUnit.Case, async: false
-
-  alias GPUITest.Desktop
+  use GPUI.Test, desktop: true
 
   @moduletag :e2e
 
@@ -23,7 +21,7 @@ defmodule GPUI.Native.TreeE2ETest do
         end
 
       ~GPUI"""
-      <div class="w-[420px] h-[420px] bg-slate-900">
+      <div class="w-[420px] h-[420px] bg-white text-slate-900">
         <UI.tree
           id="source-tree"
           label="Source-backed tree"
@@ -87,7 +85,7 @@ defmodule GPUI.Native.TreeE2ETest do
         set_size={item_assigns.set_size}
       >
         <div class="flex items-center h-[40px] px-3">
-          <text class="text-white">{item_assigns.id}</text>
+          <text class="text-slate-900">{item_assigns.id}</text>
         </div>
       </UI.tree_item>
       """
@@ -121,13 +119,13 @@ defmodule GPUI.Native.TreeE2ETest do
     end
   end
 
-  test "desktop renders a distant virtualized tree and delivers pointer input" do
-    {:ok, runtime} = GPUI.Runtime.start_link(app: TreeApp, poll_interval: 10)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-    assert :ok = GPUI.Runtime.subscribe(runtime)
+  test "desktop renders a distant virtualized tree and delivers pointer input", %{
+    desktop: desktop
+  } do
+    runtime = start_runtime!(desktop, app: TreeApp, poll_interval: 10)
 
-    native_window_id = Desktop.window_id!("GPUI Tree E2E")
-    Desktop.await_frame!(runtime, 1, native_window_id)
+    native_window_id = Desktop.window!(desktop, "GPUI Tree E2E")
+    Desktop.await_frame!(desktop, runtime, 1, native_window_id)
 
     current_range =
       runtime |> GPUI.Runtime.snapshot() |> GPUI.Test.assigns() |> Map.fetch!(:range)
@@ -138,7 +136,7 @@ defmodule GPUI.Native.TreeE2ETest do
         else: await_range(runtime, &(&1.last == 100_000))
 
     assert range.first > 99_900
-    Desktop.await_frame!(runtime, 1, native_window_id)
+    Desktop.await_frame!(desktop, runtime, 1, native_window_id)
 
     loaded_items =
       runtime
@@ -149,7 +147,7 @@ defmodule GPUI.Native.TreeE2ETest do
     assert Enum.count(loaded_items) <= 32
     assert Enum.any?(loaded_items, &match?(%{attrs: %{id: "target"}}, &1))
 
-    Desktop.click!(native_window_id, 120, 200)
+    Desktop.click!(desktop, native_window_id, at: {120, 200})
     assert is_binary(await_value(runtime, "tree_selected"))
     assert Process.alive?(runtime)
   end

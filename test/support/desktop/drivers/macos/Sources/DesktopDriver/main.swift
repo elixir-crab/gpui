@@ -195,7 +195,8 @@ func key(windowID: String, description: String) throws {
     }
     var flags: CGEventFlags = []
     for modifier in parts.dropLast() {
-        switch modifier {
+        let resolved = modifier == "primary" ? "command" : modifier
+        switch resolved {
         case "super", "cmd", "command": flags.insert(.maskCommand)
         case "ctrl", "control": flags.insert(.maskControl)
         case "alt", "option": flags.insert(.maskAlternate)

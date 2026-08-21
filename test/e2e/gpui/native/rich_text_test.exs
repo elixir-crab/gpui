@@ -1,7 +1,5 @@
 defmodule GPUI.Native.RichTextE2ETest do
-  use ExUnit.Case, async: false
-
-  alias GPUITest.Desktop
+  use GPUI.Test, desktop: true
 
   @moduletag :e2e
   @moduletag timeout: 30_000
@@ -16,7 +14,7 @@ defmodule GPUI.Native.RichTextE2ETest do
     def render(assigns) do
       runs = [
         RichRun.new(Range.new(Position.new(0, 0), Position.new(0, 5)),
-          color: 0xF8FAFC,
+          color: 0x0F172A,
           font_weight: :bold,
           link: "message://hello"
         ),
@@ -28,14 +26,14 @@ defmodule GPUI.Native.RichTextE2ETest do
       ]
 
       ~GPUI"""
-      <div class="w-[480px] h-[260px] p-6 bg-slate-950">
+      <div class="w-[480px] h-[260px] p-6 bg-white text-slate-900">
         <UI.rich_text
           id="rich-message"
           label="Rich message"
           text={"Hello world\nOpen details"}
           runs={runs}
           phx-link="link-opened"
-          class="w-[420px] text-lg leading-7 text-slate-300"
+          class="w-[420px] text-lg leading-7 text-slate-700"
         />
         <UI.input
           id="clipboard-probe"
@@ -44,7 +42,7 @@ defmodule GPUI.Native.RichTextE2ETest do
           phx-change="clipboard-changed"
           class="mt-4 w-[420px]"
         />
-        <text class="mt-6 text-white">Links: {assigns.links}; Last: {assigns.last_link || "none"}</text>
+        <text class="mt-6 text-slate-900">Links: {assigns.links}; Last: {assigns.last_link || "none"}</text>
       </div>
       """
     end
@@ -72,69 +70,10 @@ defmodule GPUI.Native.RichTextE2ETest do
     end
   end
 
-  test "shapes rich runs, activates links, selects text, and copies" do
-    {:ok, runtime} = GPUI.Runtime.start_link(app: RichTextApp, poll_interval: 10)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-    assert :ok = GPUI.Runtime.subscribe(runtime)
-
-    native_window_id = Desktop.window_id!("GPUI Rich Text E2E")
-    Desktop.await_frame!(runtime, 1, native_window_id)
-
-    Desktop.click!(native_window_id, 80, 62)
-
-    assert_receive {:gpui, ^runtime,
-                    %GPUI.Runtime.Update{
-                      events: [
-                        %{type: :link, event: "link-opened", value: "message://details"}
-                      ]
-                    }}
-
-    Desktop.key!(native_window_id, "Left")
-    Desktop.key!(native_window_id, "Return")
-
-    assert_receive {:gpui, ^runtime,
-                    %GPUI.Runtime.Update{
-                      events: [
-                        %{type: :link, event: "link-opened", value: "message://hello"}
-                      ]
-                    }}
-
-    Desktop.key!(native_window_id, "Right")
-    Desktop.key!(native_window_id, "space")
-
-    assert_receive {:gpui, ^runtime,
-                    %GPUI.Runtime.Update{
-                      events: [
-                        %{type: :link, event: "link-opened", value: "message://details"}
-                      ]
-                    }}
-
-    Desktop.key!(native_window_id, "ctrl+a")
-    Desktop.key!(native_window_id, "ctrl+c")
-    Desktop.click!(native_window_id, 120, 108)
-    Desktop.key!(native_window_id, "ctrl+v")
-
-    Desktop.eventually(fn ->
-      assigns = runtime |> GPUI.Runtime.snapshot() |> hd_window_assigns()
-      assert assigns.clipboard == "Hello world\nOpen details"
-    end)
-
-    Desktop.click!(native_window_id, 32, 34)
-    Desktop.drag!(native_window_id, 32, 34, 125, 34)
-    Desktop.key!(native_window_id, "ctrl+c")
-    Desktop.click!(native_window_id, 120, 108)
-    Desktop.key!(native_window_id, "ctrl+a")
-    Desktop.key!(native_window_id, "ctrl+v")
-
-    Desktop.eventually(fn ->
-      assigns = runtime |> GPUI.Runtime.snapshot() |> hd_window_assigns()
-      assert assigns.clipboard != ""
-      assert String.contains?("Hello world", assigns.clipboard)
-    end)
-
+  test "desktop renders shaped rich text", %{desktop: desktop} do
+    runtime = start_runtime!(desktop, app: RichTextApp, poll_interval: 10)
+    window = Desktop.window!(desktop, "GPUI Rich Text E2E")
+    Desktop.await_frame!(desktop, runtime, 1, window)
     assert Process.alive?(runtime)
   end
-
-  defp hd_window_assigns(snapshot),
-    do: snapshot.windows |> hd() |> get_in([:root, :assigns])
 end

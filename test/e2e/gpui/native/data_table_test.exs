@@ -1,7 +1,5 @@
 defmodule GPUI.Native.DataTableE2ETest do
-  use ExUnit.Case, async: false
-
-  alias GPUITest.Desktop
+  use GPUI.Test, desktop: true
 
   @moduletag :e2e
 
@@ -23,7 +21,7 @@ defmodule GPUI.Native.DataTableE2ETest do
         end
 
       ~GPUI"""
-      <div class="w-[640px] h-[420px] bg-slate-900 p-2">
+      <div class="w-[640px] h-[420px] bg-white text-slate-900 p-2">
         <UI.data_table
           id="source-table"
           label="Source-backed records"
@@ -157,25 +155,23 @@ defmodule GPUI.Native.DataTableE2ETest do
     end
   end
 
-  test "desktop renders a wide distant grid and delivers pointer sorting" do
-    {:ok, runtime} = GPUI.Runtime.start_link(app: TableApp, poll_interval: 10)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-    assert :ok = GPUI.Runtime.subscribe(runtime)
+  test "desktop renders a wide distant grid and delivers pointer sorting", %{desktop: desktop} do
+    runtime = start_runtime!(desktop, app: TableApp, poll_interval: 10)
 
-    native_window_id = Desktop.window_id!("GPUI Data Table E2E")
-    Desktop.await_frame!(runtime, 1, native_window_id)
+    native_window_id = Desktop.window!(desktop, "GPUI Data Table E2E")
+    Desktop.await_frame!(desktop, runtime, 1, native_window_id)
 
     range = current_or_await_distant_range(runtime)
     assert range.first > 99_900
     assert range.last == 100_000
-    Desktop.await_frame!(runtime, 1, native_window_id)
+    Desktop.await_frame!(desktop, runtime, 1, native_window_id)
 
     snapshot = GPUI.Runtime.snapshot(runtime)
     rows = snapshot |> GPUI.Test.tree() |> GPUI.Test.all(type: :ui_table_row)
     assert Enum.count_until(rows, 33) <= 32
     assert Enum.any?(rows, &match?(%{attrs: %{id: "target"}}, &1))
 
-    Desktop.click!(native_window_id, 110, 22)
+    Desktop.click!(desktop, native_window_id, at: {110, 22})
     assert await_event(runtime, "table_sorted") == "name"
     assert Process.alive?(runtime)
   end

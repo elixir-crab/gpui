@@ -37,7 +37,7 @@ defmodule GPUITest.Desktop.Linux do
   def type!(window_id, text),
     do: command!(["type", "--window", window_id, "--delay", "30", text])
 
-  def key!(window_id, key), do: command!(["key", "--window", window_id, key])
+  def key!(window_id, key), do: command!(["key", "--window", window_id, linux_key(key)])
   def close_window!(window_id), do: driver!("close-window", [window_id])
   def capture!(window_id, path), do: driver!("capture-window", [window_id, path])
 
@@ -83,6 +83,8 @@ defmodule GPUITest.Desktop.Linux do
       :window_drag
     ])
   end
+
+  defp linux_key(key), do: String.replace(key, "primary+", "ctrl+")
 
   defp wheel!(delta, negative_button, positive_button) when is_number(delta) do
     count = delta |> abs() |> Kernel./(40) |> Float.ceil() |> trunc()

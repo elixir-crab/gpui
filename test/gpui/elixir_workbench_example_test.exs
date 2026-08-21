@@ -4,7 +4,7 @@ defmodule GPUI.ElixirWorkbenchExampleTest do
   use GPUI.Test, async: true
 
   test "combines repository navigation, code, logs, and commands" do
-    runtime = start_gpui!(Examples.ElixirWorkbench.App, args: fixture())
+    runtime = start_runtime!(Examples.ElixirWorkbench.App, args: fixture())
 
     assert %{title: "Elixir Workbench", size: [1440, 900]} = window_snapshot(runtime)
     assert %{selected_id: "file:README.md", command_open: false} = assigns(runtime)
@@ -25,7 +25,7 @@ defmodule GPUI.ElixirWorkbenchExampleTest do
   end
 
   test "filters files and logs and clears the console" do
-    runtime = start_gpui!(Examples.ElixirWorkbench.App, args: fixture())
+    runtime = start_runtime!(Examples.ElixirWorkbench.App, args: fixture())
 
     change(runtime, "filter_changed", "gpui")
     select(runtime, "status_changed", "modified")

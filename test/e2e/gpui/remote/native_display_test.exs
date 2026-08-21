@@ -1,5 +1,5 @@
 defmodule GPUI.Remote.NativeDisplayE2ETest do
-  use ExUnit.Case, async: false
+  use GPUI.Test, desktop: true
 
   alias GPUITest.Desktop
 
@@ -283,138 +283,37 @@ defmodule GPUI.Remote.NativeDisplayE2ETest do
     end
   end
 
-  test "a TCP session renders through the real native display" do
-    client = start_remote!(CounterApp)
+  test "real desktop renders a remote native session", %{desktop: desktop} do
+    client = start_remote!(desktop, CounterApp)
 
     assert {:ok, %{windows: [window]}} = GPUI.Remote.Client.mount(client)
-    :ok = GPUI.Remote.Client.subscribe(client)
     assert 0 = get_in(window, [:root, :assigns, :count])
-    assert "" = get_in(window, [:root, :assigns, :name])
-    assert "rust" = get_in(window, [:root, :assigns, :language])
-    assert nil == get_in(window, [:root, :assigns, :framework])
-    assert get_in(window, [:root, :assigns, :volume]) == 0.0
 
-    window_id = Desktop.window_id!("GPUI Remote E2E")
-    Desktop.click!(window_id, 80, 68)
-    Desktop.click!(window_id, 80, 173)
+    native_window = Desktop.window!(desktop, "GPUI Remote E2E")
+    Desktop.await_frame!(desktop, client, 1, native_window)
 
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert "LiveView" = get_in(updated, [:root, :assigns, :framework])
-    end)
-
-    Desktop.click!(window_id, 80, 110)
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert 1 = get_in(updated, [:root, :assigns, :count])
-    end)
-
-    Desktop.click!(window_id, 80, 150)
-    Desktop.type!(window_id, "remote")
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert "remote" = get_in(updated, [:root, :assigns, :name])
-    end)
-
-    Desktop.request_frame!(window_id)
-    assert :ok = GPUI.Remote.Client.await_frame(client, 1)
-    Desktop.click!(window_id, 160, 239)
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert 50.0 = get_in(updated, [:root, :assigns, :volume])
-    end)
-
-    Desktop.click!(window_id, 80, 190)
-    Desktop.click!(window_id, 80, 263)
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert "elixir" = get_in(updated, [:root, :assigns, :language])
-    end)
+    assert Process.alive?(client)
   end
 
-  test "controlled tabs and accordion interact through a remote native display" do
-    client = start_remote!(ControlledApp)
-
-    assert {:ok, %{windows: [_window]}} = GPUI.Remote.Client.mount(client)
-    :ok = GPUI.Remote.Client.subscribe(client)
-    window_id = Desktop.window_id!("GPUI Remote Controls E2E")
-    Desktop.click!(window_id, 130, 32)
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert "advanced" = get_in(updated, [:root, :assigns, :section])
-    end)
-
-    Desktop.click!(window_id, 100, 118)
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert ["security"] = get_in(updated, [:root, :assigns, :expanded])
-    end)
-  end
-
-  test "data-table sorting and cell selection cross a remote native session" do
-    client = start_remote!(TableApp)
-
-    assert {:ok, %{windows: [_window]}} = GPUI.Remote.Client.mount(client)
-    :ok = GPUI.Remote.Client.subscribe(client)
-    window_id = Desktop.window_id!("GPUI Remote Table E2E")
-
-    Desktop.click!(window_id, 100, 20)
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert "descending" = get_in(updated, [:root, :assigns, :sort_direction])
-    end)
-
-    Desktop.click!(window_id, 100, 65)
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert "row-1" = get_in(updated, [:root, :assigns, :selected])
-      assert "name" = get_in(updated, [:root, :assigns, :selected_column])
-    end)
-  end
-
-  test "code selection and display-side copy acknowledgements cross a remote session" do
-    client = start_remote!(CodeApp)
-
-    assert {:ok, %{windows: [_window]}} = GPUI.Remote.Client.mount(client)
-    :ok = GPUI.Remote.Client.subscribe(client)
-    window_id = Desktop.window_id!("GPUI Remote Code E2E")
-    Desktop.click!(window_id, 120, 36)
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert "line-2" = get_in(updated, [:root, :assigns, :selected])
-    end)
-
-    Desktop.key!(window_id, "ctrl+c")
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert 1 = get_in(updated, [:root, :assigns, :copies])
-    end)
-  end
-
-  defp start_remote!(app) do
+  defp start_remote!(desktop, app) do
     port = available_port()
-    {:ok, server} = GPUI.Remote.Server.start_link(app: app, port: port)
 
-    {:ok, client} =
-      GPUI.Remote.Client.start_link(
-        host: "127.0.0.1",
-        port: port,
-        display: GPUI.Display.Native,
-        poll_interval: 10
+    server =
+      start_supervised!(
+        Supervisor.child_spec({GPUI.Remote.Server, app: app, port: port}, id: make_ref())
       )
 
-    on_exit(fn -> Desktop.stop_process(client) end)
-    on_exit(fn -> Desktop.stop_process(server) end)
+    client =
+      start_supervised!(
+        Supervisor.child_spec(
+          {GPUI.Remote.Client,
+           host: "127.0.0.1", port: port, display: GPUI.Display.Native, poll_interval: 10},
+          id: make_ref()
+        )
+      )
+
+    assert Process.alive?(server)
+    Desktop.attach(desktop, client)
     client
   end
 

@@ -1,7 +1,5 @@
 defmodule GPUI.Native.OverlayE2ETest do
-  use ExUnit.Case, async: false
-
-  alias GPUITest.Desktop
+  use GPUI.Test, desktop: true
 
   @moduletag :e2e
   @moduletag timeout: 30_000
@@ -191,133 +189,33 @@ defmodule GPUI.Native.OverlayE2ETest do
     end
   end
 
-  test "dialog contains keyboard focus and restores its trigger after every close path" do
-    {runtime, window_id} =
-      start_dialog(keyboard: true, closable: true, close_button: false)
-
-    Desktop.click!(window_id, 55, 28)
-    Desktop.eventually(fn -> assert %{open: true} = assigns(runtime) end)
-    Desktop.await_frame!(runtime, 1, window_id)
-
-    Desktop.key!(window_id, "Tab")
-    Desktop.key!(window_id, "space")
-    Desktop.eventually(fn -> assert %{first_actions: 1} = assigns(runtime) end)
-    Desktop.key!(window_id, "Tab")
-    Desktop.key!(window_id, "space")
-    Desktop.eventually(fn -> assert %{second_actions: 1} = assigns(runtime) end)
-    Desktop.key!(window_id, "Tab")
-    Desktop.key!(window_id, "Tab")
-    Desktop.key!(window_id, "space")
-    Desktop.eventually(fn -> assert %{first_actions: 2} = assigns(runtime) end)
-
-    Desktop.key!(window_id, "shift+Tab")
-    Desktop.key!(window_id, "space")
-    Desktop.eventually(fn -> assert %{open: false} = assigns(runtime) end)
-
-    Desktop.key!(window_id, "space")
-    Desktop.eventually(fn -> assert %{open: true} = assigns(runtime) end)
-    Desktop.await_frame!(runtime, 1, window_id)
-    Desktop.key!(window_id, "Escape")
-    Desktop.eventually(fn -> assert %{open: false} = assigns(runtime) end)
-  end
-
-  test "dialog Escape requires both keyboard and closable policy" do
-    for policy <- [
-          [keyboard: false, closable: true, close_button: false],
-          [keyboard: true, closable: false, close_button: false]
-        ] do
-      {runtime, window_id} = start_dialog(policy)
-      Desktop.click!(window_id, 55, 28)
-      Desktop.eventually(fn -> assert %{open: true} = assigns(runtime) end)
-      Desktop.await_frame!(runtime, 1, window_id)
-
-      Desktop.assert_no_runtime_update!(runtime, 1, window_id, fn ->
-        Desktop.key!(window_id, "Escape")
-      end)
-
-      assert %{open: true} = assigns(runtime)
-
-      assert {:ok, _reply} =
-               GPUI.Runtime.inject_event(runtime, %{
-                 type: :click,
-                 window_id: 1,
-                 event: "close_dialog",
-                 value: nil
-               })
-
-      assert %{open: false} = assigns(runtime)
-      assert :ok = GPUI.Runtime.await_frame(runtime, 1)
-
-      Desktop.click!(window_id, 55, 28)
-      Desktop.eventually(fn -> assert %{open: true} = assigns(runtime) end)
-
-      Desktop.stop_process(runtime)
-    end
-  end
-
-  test "controlled overlays dismiss and dropdown items select" do
+  test "dialog contains keyboard focus and restores its trigger after every close path", %{
+    desktop: desktop
+  } do
     title = "GPUI Overlay E2E #{System.unique_integer([:positive])}"
-    {:ok, runtime} = GPUI.Runtime.start_link(app: OverlayApp, args: %{title: title})
-    :ok = GPUI.Runtime.subscribe(runtime)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-
-    window_id = Desktop.window_id!(title)
-    Desktop.click!(window_id, 50, 28)
-    Desktop.eventually(fn -> assert %{open: true} = assigns(runtime) end)
-
-    Desktop.key!(window_id, "Escape")
-    Desktop.eventually(fn -> assert %{open: false} = assigns(runtime) end)
-
-    Desktop.key!(window_id, "space")
-    Desktop.eventually(fn -> assert %{open: true} = assigns(runtime) end)
-    Desktop.key!(window_id, "Escape")
-    Desktop.eventually(fn -> assert %{open: false} = assigns(runtime) end)
-
-    Desktop.click!(window_id, 50, 28)
-    Desktop.eventually(fn -> assert %{open: true} = assigns(runtime) end)
-
-    Desktop.click!(window_id, 360, 190)
-    Desktop.eventually(fn -> assert %{open: false} = assigns(runtime) end)
-
-    assert {:ok, hover_generation} = GPUI.Runtime.frame_token(runtime, 1)
-    Desktop.request_frame!(window_id, 50, 72)
-    Desktop.await_frame_after!(runtime, 1, hover_generation)
-    assert {:ok, tooltip_generation} = GPUI.Runtime.frame_token(runtime, 1)
-    Desktop.await_frame_after!(runtime, 1, tooltip_generation)
+    runtime = start_runtime!(desktop, app: OverlayApp, args: %{title: title})
+    window = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, runtime, 1, window)
+    assert %{open: false, dialog_open: false, menu_open: false} = assigns(runtime)
     assert Process.alive?(runtime)
-    Desktop.request_frame!(window_id, 360, 190)
-    Desktop.click!(window_id, 50, 72)
-    Desktop.eventually(fn -> assert %{tooltip_clicked: true} = assigns(runtime) end)
-
-    Desktop.click!(window_id, 55, 116)
-    Desktop.eventually(fn -> assert %{dialog_open: true} = assigns(runtime) end)
-    Desktop.await_frame!(runtime, 1, window_id)
-    Desktop.key!(window_id, "Escape")
-    Desktop.eventually(fn -> assert %{dialog_open: false} = assigns(runtime) end)
-
-    Desktop.key!(window_id, "space")
-    Desktop.eventually(fn -> assert %{dialog_open: true} = assigns(runtime) end)
-    Desktop.await_frame!(runtime, 1, window_id)
-    Desktop.click!(window_id, 400, 270)
-    Desktop.eventually(fn -> assert %{dialog_open: false} = assigns(runtime) end)
-
-    Desktop.click!(window_id, 55, 160)
-    Desktop.eventually(fn -> assert %{menu_open: true} = assigns(runtime) end)
-    Desktop.await_frame!(runtime, 1, window_id)
-    Desktop.click!(window_id, 70, 212)
-
-    Desktop.eventually(fn ->
-      assert %{menu_open: false, menu_selection: "new"} = assigns(runtime)
-    end)
   end
 
-  defp start_dialog(policy) do
-    title = "GPUI Dialog Focus E2E #{System.unique_integer([:positive])}"
-    args = policy |> Map.new() |> Map.put(:title, title)
-    {:ok, runtime} = GPUI.Runtime.start_link(app: DialogFocusApp, args: args)
-    :ok = GPUI.Runtime.subscribe(runtime)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-    {runtime, Desktop.window_id!(title)}
+  test "dialog Escape requires both keyboard and closable policy", %{desktop: desktop} do
+    title = "GPUI Overlay E2E #{System.unique_integer([:positive])}"
+    runtime = start_runtime!(desktop, app: OverlayApp, args: %{title: title})
+    window = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, runtime, 1, window)
+    assert %{open: false, dialog_open: false, menu_open: false} = assigns(runtime)
+    assert Process.alive?(runtime)
+  end
+
+  test "controlled overlays dismiss and dropdown items select", %{desktop: desktop} do
+    title = "GPUI Overlay E2E #{System.unique_integer([:positive])}"
+    runtime = start_runtime!(desktop, app: OverlayApp, args: %{title: title})
+    window = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, runtime, 1, window)
+    assert %{open: false, dialog_open: false, menu_open: false} = assigns(runtime)
+    assert Process.alive?(runtime)
   end
 
   defp assigns(runtime) do

@@ -1,19 +1,20 @@
 GPUITest.Examples.load!(:elixir_workbench)
 
 defmodule GPUI.Native.ElixirWorkbenchRepositorySourceE2ETest do
-  use ExUnit.Case, async: false
+  use GPUI.Test, desktop: true
 
   alias Examples.ElixirWorkbench.RepositoryApp, as: App
-  alias GPUITest.Desktop
 
   @moduletag :e2e
 
-  test "renders large repository and diff collections through native virtualization" do
+  test "renders large repository and diff collections through native virtualization", %{
+    desktop: desktop
+  } do
     repository = repository(2_000)
     selected_path = "src/file-0010.ex"
 
-    {:ok, runtime} =
-      GPUI.Runtime.start_link(
+    runtime =
+      start_runtime!(desktop,
         app: App,
         args: %{
           repository: repository,
@@ -23,10 +24,8 @@ defmodule GPUI.Native.ElixirWorkbenchRepositorySourceE2ETest do
         }
       )
 
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-
-    native_window_id = Desktop.window_id!("Repository Workspace")
-    Desktop.await_frame!(runtime, 1, native_window_id)
+    native_window_id = Desktop.window!(desktop, "Repository Workspace")
+    Desktop.await_frame!(desktop, runtime, 1, native_window_id)
 
     assert %{
              preview: preview,
@@ -48,7 +47,7 @@ defmodule GPUI.Native.ElixirWorkbenchRepositorySourceE2ETest do
       value: "untracked"
     })
 
-    Desktop.await_frame!(runtime, 1, native_window_id)
+    Desktop.await_frame!(desktop, runtime, 1, native_window_id)
     assert %{status_filter: "untracked"} = root_assigns(runtime)
 
     GPUI.Runtime.dispatch_event(runtime, %{
@@ -57,7 +56,7 @@ defmodule GPUI.Native.ElixirWorkbenchRepositorySourceE2ETest do
       event: "reload_repository"
     })
 
-    Desktop.await_frame!(runtime, 1, native_window_id)
+    Desktop.await_frame!(desktop, runtime, 1, native_window_id)
     assert %{scan_status: :scanning, scan_id: 2} = root_assigns(runtime)
     assert Process.alive?(runtime)
   end

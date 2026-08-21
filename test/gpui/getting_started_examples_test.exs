@@ -6,7 +6,7 @@ defmodule GPUI.GettingStartedExamplesTest do
   use GPUI.Test, async: true
 
   test "hello window renders a useful runtime status" do
-    runtime = start_gpui!(GettingStarted.HelloWindow.App)
+    runtime = start_runtime!(GettingStarted.HelloWindow.App)
 
     assert %{title: "Hello GPUI"} = window_snapshot(runtime)
     assert %{type: :viewport, children: [%{type: :div, children: children}]} = tree(runtime)
@@ -14,7 +14,7 @@ defmodule GPUI.GettingStartedExamplesTest do
   end
 
   test "focus timer handles controls and OTP ticks" do
-    runtime = start_gpui!(GettingStarted.FocusTimer.App, args: %{seconds: 2})
+    runtime = start_runtime!(GettingStarted.FocusTimer.App, args: %{seconds: 2})
 
     ticker =
       start_supervised!(
@@ -45,7 +45,7 @@ defmodule GPUI.GettingStartedExamplesTest do
   end
 
   test "settings form validates, requests focus, and confirms changes" do
-    runtime = start_gpui!(GettingStarted.SettingsForm.App)
+    runtime = start_runtime!(GettingStarted.SettingsForm.App)
 
     change(runtime, "name_changed", "")
     click(runtime, "review")

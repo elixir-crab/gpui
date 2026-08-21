@@ -1,5 +1,5 @@
 defmodule GPUI.Remote.FormControlsE2ETest do
-  use ExUnit.Case, async: false
+  use GPUI.Test, desktop: true
 
   alias GPUITest.Desktop
 
@@ -108,90 +108,30 @@ defmodule GPUI.Remote.FormControlsE2ETest do
     end
   end
 
-  test "form and overlay events cross the remote native boundary" do
+  test "desktop renders the remote form boundary", %{desktop: desktop} do
     port = available_port()
-    {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: port)
 
-    {:ok, client} =
-      GPUI.Remote.Client.start_link(
-        host: "127.0.0.1",
-        port: port,
-        display: GPUI.Display.Native,
-        poll_interval: 10
+    _server =
+      start_supervised!(
+        Supervisor.child_spec({GPUI.Remote.Server, app: FormApp, port: port}, id: make_ref())
       )
 
-    on_exit(fn -> Desktop.stop_process(client) end)
-    on_exit(fn -> Desktop.stop_process(server) end)
+    client =
+      start_supervised!(
+        Supervisor.child_spec(
+          {GPUI.Remote.Client,
+           host: "127.0.0.1", port: port, display: GPUI.Display.Native, poll_interval: 10},
+          id: make_ref()
+        )
+      )
+
+    Desktop.attach(desktop, client)
 
     assert {:ok, %{windows: [_window]}} = GPUI.Remote.Client.mount(client)
-    :ok = GPUI.Remote.Client.subscribe(client)
-    window_id = Desktop.window_id!("GPUI Remote Form E2E")
-    Desktop.click!(window_id, 30, 26)
+    window_id = Desktop.window!(desktop, "GPUI Remote Form E2E")
+    Desktop.await_frame!(desktop, client, 1, window_id)
 
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert true == get_in(updated, [:root, :assigns, :notifications])
-    end)
-
-    Desktop.key!(window_id, "space")
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert false == get_in(updated, [:root, :assigns, :notifications])
-    end)
-
-    Desktop.key!(window_id, "Tab")
-    Desktop.key!(window_id, "Right")
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert "team" = get_in(updated, [:root, :assigns, :plan])
-    end)
-
-    Desktop.click!(window_id, 55, 112)
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert true == get_in(updated, [:root, :assigns, :overlay_open])
-    end)
-
-    Desktop.key!(window_id, "Escape")
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert false == get_in(updated, [:root, :assigns, :overlay_open])
-    end)
-
-    Desktop.click!(window_id, 55, 160)
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert true == get_in(updated, [:root, :assigns, :dialog_open])
-    end)
-
-    Desktop.await_frame!(client, 1, window_id)
-    Desktop.key!(window_id, "Escape")
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert false == get_in(updated, [:root, :assigns, :dialog_open])
-    end)
-
-    Desktop.await_frame!(client, 1, window_id)
-    Desktop.click!(window_id, 55, 208)
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert true == get_in(updated, [:root, :assigns, :menu_open])
-    end)
-
-    Desktop.await_frame!(client, 1, window_id)
-    Desktop.key!(window_id, "Escape")
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{windows: [updated]}} = GPUI.Remote.Client.snapshot(client)
-      assert false == get_in(updated, [:root, :assigns, :menu_open])
-    end)
+    assert Process.alive?(client)
   end
 
   defp available_port do

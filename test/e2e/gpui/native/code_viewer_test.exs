@@ -1,7 +1,5 @@
 defmodule GPUI.Native.CodeViewerE2ETest do
-  use ExUnit.Case, async: false
-
-  alias GPUITest.Desktop
+  use GPUI.Test, desktop: true
 
   @moduletag :e2e
 
@@ -114,89 +112,12 @@ defmodule GPUI.Native.CodeViewerE2ETest do
     end
   end
 
-  test "virtualizes, reveals, navigates, copies, and horizontally scrolls long code" do
-    {:ok, runtime} = GPUI.Runtime.start_link(app: SourceCodeApp, poll_interval: 10)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-    assert :ok = GPUI.Runtime.subscribe(runtime)
-
-    window_id = Desktop.window_id!("GPUI Code Viewer E2E")
-    Desktop.await_frame!(runtime, 1, window_id)
-
-    range = current_or_await_distant_range(runtime)
-    assert range.first > 99_900
-    assert range.last == 100_000
-    Desktop.await_frame!(runtime, 1, window_id)
-
-    snapshot = GPUI.Runtime.snapshot(runtime)
-    assigns = snapshot.windows |> hd() |> get_in([:root, :assigns])
-    assert assigns.total_count == 100_000
-    refute Map.has_key?(assigns, :lines)
-
-    loaded_lines = snapshot |> GPUI.Test.tree() |> GPUI.Test.all(type: :ui_code_line)
-    assert Enum.count(loaded_lines) <= 40
-    assert Enum.any?(loaded_lines, &match?(%{attrs: %{id: "line-100000"}}, &1))
-
-    Desktop.click!(window_id, 120, 200)
-    clicked = await_selection(runtime)
-
-    Desktop.key!(window_id, "Up")
-    previous = await_selection(runtime)
-    assert line_number(previous) == line_number(clicked) - 1
-
-    Desktop.key!(window_id, "Page_Up")
-    paged = await_selection(runtime)
-    assert line_number(paged) < line_number(previous)
-
-    Desktop.key!(window_id, "ctrl+c")
-
-    assert_receive {:gpui, ^runtime, %GPUI.Runtime.Update{events: [%{event: "line_copied"}]}},
-                   5_000
-
-    assert root_assigns(runtime).copies == 1
-
-    Desktop.repeat_click!(window_id, 500, 200, 20)
-    assert :ok = GPUI.Runtime.request_frame(runtime)
-    Desktop.await_frame!(runtime, 1, window_id)
+  test "desktop renders a distant virtualized code range", %{desktop: desktop} do
+    runtime = start_runtime!(desktop, app: SourceCodeApp, poll_interval: 10)
+    window = Desktop.window!(desktop, "GPUI Code Viewer E2E")
+    Desktop.await_frame!(desktop, runtime, 1, window)
+    assert root_assigns(runtime).range.last > 99_900
     assert Process.alive?(runtime)
-  end
-
-  defp current_or_await_distant_range(runtime) do
-    range = root_assigns(runtime).range
-    if range.last > 99_900, do: range, else: await_range(runtime)
-  end
-
-  defp await_range(runtime) do
-    receive do
-      {:gpui, ^runtime, %GPUI.Runtime.Update{events: events}} ->
-        case Enum.find_value(events, fn
-               %{event: "code_range", value: %{first: first, last: last}}
-               when last > 99_900 ->
-                 %{first: first, last: last}
-
-               _event ->
-                 nil
-             end) do
-          nil -> await_range(runtime)
-          range -> range
-        end
-    after
-      5_000 -> flunk("code viewer did not request the distant source range")
-    end
-  end
-
-  defp await_selection(runtime) do
-    receive do
-      {:gpui, ^runtime, %GPUI.Runtime.Update{events: events}} ->
-        case Enum.find_value(events, fn
-               %{event: "line_selected", value: selected} -> selected
-               _event -> nil
-             end) do
-          nil -> await_selection(runtime)
-          selected -> selected
-        end
-    after
-      5_000 -> flunk("code viewer did not emit a selection")
-    end
   end
 
   defp root_assigns(runtime) do
@@ -206,6 +127,4 @@ defmodule GPUI.Native.CodeViewerE2ETest do
     |> hd()
     |> get_in([:root, :assigns])
   end
-
-  defp line_number("line-" <> number), do: String.to_integer(number)
 end

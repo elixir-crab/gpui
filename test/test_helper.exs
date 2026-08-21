@@ -7,6 +7,7 @@ if Mix.env() in [:dev, :test] do
 end
 
 if Mix.env() == :e2e do
+  Code.require_file(Path.join(project_root, "test/support/desktop/window.ex"))
   Code.require_file(Path.join(project_root, "test/support/desktop/linux.ex"))
   Code.require_file(Path.join(project_root, "test/support/desktop/macos.ex"))
   Code.require_file(Path.join(project_root, "test/support/desktop/desktop.ex"))

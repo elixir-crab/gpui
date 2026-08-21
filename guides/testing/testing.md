@@ -132,7 +132,7 @@ defmodule MyApp.FocusTimerTest do
   use GPUI.Test, async: true
 
   test "starts and receives OTP ticks" do
-    runtime = start_gpui!(GettingStarted.FocusTimer.App, args: %{seconds: 2})
+    runtime = start_runtime!(GettingStarted.FocusTimer.App, args: %{seconds: 2})
 
     click(runtime, "start")
     send_view(runtime, :tick)
@@ -142,7 +142,7 @@ defmodule MyApp.FocusTimerTest do
 end
 ```
 
-`start_gpui!/2` starts a supervised `GPUI.Runtime` backed by
+`start_runtime!/2` starts a supervised `GPUI.Runtime` backed by
 `GPUI.Test.Display`. Events pass through the same runtime polling and session
 dispatch boundaries used by a real display.
 

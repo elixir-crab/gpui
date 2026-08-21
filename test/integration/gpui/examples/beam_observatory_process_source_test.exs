@@ -7,7 +7,7 @@ defmodule GPUI.BeamObservatoryProcessSourceTest do
   alias Examples.BeamObservatory.ProcessSource, as: Collector
 
   test "filters, sorts, and inspects real process-shaped data" do
-    runtime = start_gpui!(App, args: %{processes: processes()})
+    runtime = start_runtime!(App, args: %{processes: processes()})
 
     assert %{processes: [_, _], selected_pid: nil, sort: "memory"} = assigns(runtime)
     assert %{type: :ui_data_table} = runtime |> tree() |> find!(id: "processes")
@@ -39,7 +39,7 @@ defmodule GPUI.BeamObservatoryProcessSourceTest do
   end
 
   test "pauses and resumes snapshots while reconciling terminated selections" do
-    runtime = start_gpui!(App, args: %{processes: processes()})
+    runtime = start_runtime!(App, args: %{processes: processes()})
     select(runtime, "process_selected", "<0.20.0>")
     command(runtime, "toggle_pause")
 

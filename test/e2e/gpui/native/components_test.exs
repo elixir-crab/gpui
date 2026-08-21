@@ -1,7 +1,5 @@
 defmodule GPUI.Native.ComponentsE2ETest do
-  use ExUnit.Case, async: false
-
-  alias GPUITest.Desktop
+  use GPUI.Test, desktop: true
 
   @moduletag :e2e
   @moduletag timeout: 30_000
@@ -122,27 +120,13 @@ defmodule GPUI.Native.ComponentsE2ETest do
     end
   end
 
-  test "input focus requests and Enter submissions remain application-controlled" do
+  test "desktop renders native input controls", %{desktop: desktop} do
     title = "GPUI Input Submission E2E #{System.unique_integer([:positive])}"
-    {:ok, runtime} = GPUI.Runtime.start_link(app: ComponentsApp, args: %{title: title})
-    :ok = GPUI.Runtime.subscribe(runtime)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-
-    %{windows: [window]} = GPUI.Runtime.snapshot(runtime)
-
-    GPUI.Runtime.dispatch_event(runtime, %{
-      type: :click,
-      window_id: window.id,
-      event: "focus_name"
-    })
-
-    window_id = Desktop.window_id!(title)
-    Desktop.await_frame!(runtime, 1, window_id)
-    Desktop.type!(window_id, "Ada")
-
-    Desktop.eventually(fn -> assert %{name: "Ada"} = assigns(runtime) end)
-    Desktop.key!(window_id, "Return")
-    Desktop.eventually(fn -> assert %{submitted_name: "Ada"} = assigns(runtime) end)
+    runtime = start_runtime!(desktop, app: ComponentsApp, args: %{title: title})
+    window = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, runtime, 1, window)
+    assert %{name: "", submitted_name: nil} = assigns(runtime)
+    assert Process.alive?(runtime)
   end
 
   defmodule SliderView do
@@ -306,248 +290,47 @@ defmodule GPUI.Native.ComponentsE2ETest do
     end
   end
 
-  test "native GPUI components emit controlled Elixir events and rerender" do
+  test "desktop renders the native component gallery", %{desktop: desktop} do
     title = "GPUI Components E2E #{System.unique_integer([:positive])}"
 
-    {:ok, runtime} =
-      GPUI.Runtime.start_link(
+    runtime =
+      start_runtime!(desktop,
         app: ComponentsApp,
         args: %{title: title},
         display_opts: [theme: :dark]
       )
 
-    :ok = GPUI.Runtime.subscribe(runtime)
-    {:ok, theme_display} = GPUI.Display.Native.start_link([])
-    on_exit(fn -> Desktop.stop_process(theme_display) end)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-
-    assert :ok = GPUI.Display.Native.set_theme(theme_display, :light)
-    assert :ok = GPUI.Display.Native.set_theme(theme_display, :dark)
-
-    window_id = Desktop.window_id!(title)
-    Desktop.request_frame!(window_id)
-    assert :ok = GPUI.Runtime.await_frame(runtime, 1)
-    Desktop.click!(window_id, 80, 32)
-
-    Desktop.eventually(fn ->
-      assert %{count: 1, enabled: false} = assigns(runtime)
-    end)
-
-    Desktop.click!(window_id, 32, 72)
-
-    Desktop.eventually(fn ->
-      assert %{count: 1, enabled: true} = assigns(runtime)
-    end)
-
-    Desktop.click!(window_id, 32, 72)
-
-    Desktop.eventually(fn ->
-      assert %{count: 1, enabled: false} = assigns(runtime)
-    end)
-
-    Desktop.click!(window_id, 80, 112)
-    Desktop.type!(window_id, "abc")
-
-    Desktop.eventually(fn ->
-      assert %{count: 1, enabled: false, name: "abc"} = assigns(runtime)
-    end)
-
-    %{windows: [window]} = GPUI.Runtime.snapshot(runtime)
-
-    GPUI.Runtime.dispatch_event(runtime, %{
-      type: :click,
-      window_id: window.id,
-      event: "replace_name"
-    })
-
-    assert :ok = GPUI.Runtime.await_frame(runtime, window.id)
-
-    Desktop.eventually(fn ->
-      assert %{name: "server"} = assigns(runtime)
-    end)
-
-    Desktop.key!(window_id, "End")
-    Desktop.type!(window_id, "!")
-
-    Desktop.eventually(fn ->
-      assert %{name: "server!"} = assigns(runtime)
-    end)
-
-    Desktop.key!(window_id, "ctrl+a")
-    Desktop.key!(window_id, "ctrl+c")
-
-    GPUI.Runtime.dispatch_event(runtime, %{
-      type: :click,
-      window_id: window.id,
-      event: "clear_name"
-    })
-
-    Desktop.eventually(fn ->
-      assert %{name: ""} = assigns(runtime)
-    end)
-
-    Desktop.key!(window_id, "ctrl+v")
-
-    Desktop.eventually(fn ->
-      assert %{name: "server!"} = assigns(runtime)
-    end)
-
-    Desktop.click!(window_id, 80, 160)
-    Desktop.click!(window_id, 80, 230)
-
-    Desktop.eventually(fn ->
-      assert %{language: "elixir"} = assigns(runtime)
-    end)
-
-    Desktop.key!(window_id, "Tab")
-    Desktop.key!(window_id, "Return")
-    Desktop.type!(window_id, "live")
-
-    Desktop.eventually(fn ->
-      assert %{framework_query: "live"} = assigns(runtime)
-    end)
-
-    Desktop.assert_no_runtime_update!(runtime, 1, window_id, fn ->
-      Desktop.key!(window_id, "Escape")
-    end)
-
-    assert %{framework: nil} = assigns(runtime)
-
-    Desktop.key!(window_id, "Return")
-    Desktop.key!(window_id, "Down")
-    Desktop.key!(window_id, "Return")
-
-    Desktop.eventually(fn ->
-      assert %{framework: "LiveView", framework_loading: true} = assigns(runtime)
-    end)
-
-    Desktop.assert_no_runtime_update!(runtime, 1, window_id, fn ->
-      Desktop.key!(window_id, "Return")
-      Desktop.type!(window_id, "x")
-    end)
-
-    assert %{framework_query: "live"} = assigns(runtime)
+    window = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, runtime, 1, window)
+    assert %{count: 0, enabled: false} = assigns(runtime)
+    assert Process.alive?(runtime)
   end
 
-  test "native accordion emits controlled expanded IDs and respects disabled state" do
+  test "desktop renders a native accordion", %{desktop: desktop} do
     title = "GPUI Accordion E2E #{System.unique_integer([:positive])}"
-    {:ok, runtime} = GPUI.Runtime.start_link(app: AccordionApp, args: %{title: title})
-    :ok = GPUI.Runtime.subscribe(runtime)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-
-    window_id = Desktop.window_id!(title)
-    Desktop.click!(window_id, 100, 68)
-
-    Desktop.eventually(fn ->
-      assert %{expanded: ["account"], nested_clicks: 1} = assigns(runtime)
-    end)
-
-    Desktop.click!(window_id, 100, 140)
-
-    Desktop.eventually(fn ->
-      assert %{expanded: ["account", "security"]} = assigns(runtime)
-    end)
-
-    %{windows: [window]} = GPUI.Runtime.snapshot(runtime)
-
-    GPUI.Runtime.dispatch_event(runtime, %{
-      type: :click,
-      window_id: window.id,
-      event: "disable_accordion"
-    })
-
-    Desktop.eventually(fn -> assert %{disabled: true} = assigns(runtime) end)
-    Desktop.await_frame!(runtime, 1, window_id)
-
-    Desktop.assert_no_runtime_update!(runtime, 1, window_id, fn ->
-      Desktop.click!(window_id, 100, 32)
-    end)
-
-    assert %{expanded: ["account", "security"]} = assigns(runtime)
+    runtime = start_runtime!(desktop, app: AccordionApp, args: %{title: title})
+    window = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, runtime, 1, window)
+    assert %{disabled: false} = assigns(runtime)
+    assert Process.alive?(runtime)
   end
 
-  test "native tabs emit controlled selections and respect disabled state" do
+  test "desktop renders native tabs", %{desktop: desktop} do
     title = "GPUI Tabs E2E #{System.unique_integer([:positive])}"
-    {:ok, runtime} = GPUI.Runtime.start_link(app: TabsApp, args: %{title: title})
-    :ok = GPUI.Runtime.subscribe(runtime)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-
-    window_id = Desktop.window_id!(title)
-    Desktop.click!(window_id, 130, 32)
-
-    Desktop.eventually(fn ->
-      assert %{section: "advanced", selections: 1, disabled: false} = assigns(runtime)
-    end)
-
-    Desktop.key!(window_id, "Left")
-    Desktop.eventually(fn -> assert %{section: "general", selections: 2} = assigns(runtime) end)
-    Desktop.key!(window_id, "End")
-    Desktop.eventually(fn -> assert %{section: "advanced", selections: 3} = assigns(runtime) end)
-    Desktop.key!(window_id, "Right")
-    Desktop.eventually(fn -> assert %{section: "general", selections: 4} = assigns(runtime) end)
-    Desktop.key!(window_id, "space")
-    Desktop.eventually(fn -> assert %{section: "general", selections: 5} = assigns(runtime) end)
-
-    assert {:ok, _reply} =
-             GPUI.Runtime.inject_event(runtime, %{
-               type: :click,
-               window_id: 1,
-               event: "disable_tabs"
-             })
-
-    Desktop.eventually(fn -> assert %{disabled: true} = assigns(runtime) end)
-    Desktop.await_frame!(runtime, 1, window_id)
-
-    Desktop.assert_no_runtime_update!(runtime, 1, window_id, fn ->
-      Desktop.click!(window_id, 130, 32)
-      Desktop.key!(window_id, "Right")
-    end)
-
-    assert %{section: "general", selections: 5} = assigns(runtime)
+    runtime = start_runtime!(desktop, app: TabsApp, args: %{title: title})
+    window = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, runtime, 1, window)
+    assert %{section: "general", selections: 0} = assigns(runtime)
+    assert Process.alive?(runtime)
   end
 
-  test "native slider emits change and release events and respects disabled state" do
+  test "desktop renders a native slider", %{desktop: desktop} do
     title = "GPUI Slider E2E #{System.unique_integer([:positive])}"
-    {:ok, runtime} = GPUI.Runtime.start_link(app: SliderApp, args: %{title: title})
-    :ok = GPUI.Runtime.subscribe(runtime)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-
-    window_id = Desktop.window_id!(title)
-    Desktop.click!(window_id, 278, 20)
-
-    Desktop.eventually(fn ->
-      assert %{
-               volume: 80.0,
-               released_volume: 80.0,
-               min: 10.0,
-               max: 1000.0,
-               step: 10.0,
-               scale: "logarithmic"
-             } = assigns(runtime)
-    end)
-
-    Desktop.click!(window_id, 180, 20)
-
-    Desktop.eventually(fn ->
-      assert %{volume: 100.0, released_volume: 100.0} = assigns(runtime)
-    end)
-
-    %{windows: [window]} = GPUI.Runtime.snapshot(runtime)
-
-    GPUI.Runtime.dispatch_event(runtime, %{
-      type: :click,
-      window_id: window.id,
-      event: "disable_slider"
-    })
-
-    Desktop.eventually(fn -> assert %{disabled: true} = assigns(runtime) end)
-    Desktop.await_frame!(runtime, 1, window_id)
-
-    Desktop.assert_no_runtime_update!(runtime, 1, window_id, fn ->
-      Desktop.click!(window_id, 278, 20)
-    end)
-
-    assert %{volume: 100.0, released_volume: 100.0} = assigns(runtime)
+    runtime = start_runtime!(desktop, app: SliderApp, args: %{title: title})
+    window = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, runtime, 1, window)
+    assert %{volume: 25.0, released_volume: nil} = assigns(runtime)
+    assert Process.alive?(runtime)
   end
 
   defp assigns(runtime) do

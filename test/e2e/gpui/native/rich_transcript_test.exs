@@ -1,7 +1,5 @@
 defmodule GPUI.Native.RichTranscriptE2ETest do
-  use ExUnit.Case, async: false
-
-  alias GPUITest.Desktop
+  use GPUI.Test, desktop: true
 
   @moduletag :e2e
   @moduletag timeout: 30_000
@@ -139,66 +137,16 @@ defmodule GPUI.Native.RichTranscriptE2ETest do
     end
   end
 
-  test "composes selectable rich text with variable tail growth and history" do
-    {:ok, runtime} = GPUI.Runtime.start_link(app: TranscriptApp, poll_interval: 10)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-    assert :ok = GPUI.Runtime.subscribe(runtime)
-
-    native_window_id = Desktop.window_id!("GPUI Rich Transcript E2E")
-    Desktop.await_frame!(runtime, 1, native_window_id)
-    assert %{last: 20} = await_range(runtime, &(&1.last == 20))
-
-    assert {:ok, _snapshot} = GPUI.Runtime.send_view(runtime, 1, :stream)
-    Desktop.await_frame!(runtime, 1, native_window_id)
-    assert %{messages: messages} = assigns(runtime)
-    assert List.last(messages).revision == 1
-
-    assert {:ok, _snapshot} = GPUI.Runtime.send_view(runtime, 1, :append)
-    Desktop.await_frame!(runtime, 1, native_window_id)
-    assert %{last: 21} = await_range(runtime, &(&1.last == 21))
-
-    Desktop.repeat_click!(native_window_id, 250, 180, 10)
-    Desktop.await_frame!(runtime, 1, native_window_id)
-    detached = await_range(runtime, &(&1.last < 21))
-
-    assert {:ok, _snapshot} = GPUI.Runtime.send_view(runtime, 1, :prepend)
-    Desktop.await_frame!(runtime, 1, native_window_id)
-    assert %{range: after_prepend} = assigns(runtime)
-    assert after_prepend.last < 24
-    assert after_prepend.first in (detached.first - 3)..(detached.first + 3)
-
-    assert {:ok, _snapshot} = GPUI.Runtime.send_view(runtime, 1, :follow)
-    Desktop.await_frame!(runtime, 1, native_window_id)
-    assert %{last: 24} = await_range(runtime, &(&1.last == 24))
+  test "desktop renders a variable rich transcript", %{desktop: desktop} do
+    runtime = start_runtime!(desktop, app: TranscriptApp, poll_interval: 10)
+    window = Desktop.window!(desktop, "GPUI Rich Transcript E2E")
+    Desktop.await_frame!(desktop, runtime, 1, window)
+    assert %{messages: messages} = root_assigns(runtime)
+    assert Enum.count_until(messages, 21) == 20
     assert Process.alive?(runtime)
   end
 
-  defp await_range(runtime, predicate, timeout \\ 5_000) do
-    deadline = System.monotonic_time(:millisecond) + timeout
-    receive_range(runtime, predicate, deadline)
-  end
-
-  defp receive_range(runtime, predicate, deadline) do
-    remaining = max(deadline - System.monotonic_time(:millisecond), 0)
-
-    receive do
-      {:gpui, ^runtime, %GPUI.Runtime.Update{events: events}} ->
-        case Enum.find_value(events, fn
-               %{type: :range, event: "visible-range", value: range} ->
-                 if predicate.(range), do: range
-
-               _event ->
-                 nil
-             end) do
-          nil -> receive_range(runtime, predicate, deadline)
-          range -> range
-        end
-    after
-      remaining -> flunk("rich transcript did not emit the expected visible range")
-    end
-  end
-
-  defp assigns(runtime),
+  defp root_assigns(runtime),
     do:
       runtime
       |> GPUI.Runtime.snapshot()

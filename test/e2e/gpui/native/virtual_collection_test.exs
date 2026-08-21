@@ -1,7 +1,5 @@
 defmodule GPUI.Native.VirtualCollectionE2ETest do
-  use ExUnit.Case, async: false
-
-  alias GPUITest.Desktop
+  use GPUI.Test, desktop: true
 
   @moduletag :e2e
   @moduletag timeout: 30_000
@@ -14,7 +12,7 @@ defmodule GPUI.Native.VirtualCollectionE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="w-[420px] h-[420px] p-3 bg-slate-950">
+      <div class="w-[420px] h-[420px] p-3 bg-white text-slate-900">
         <UI.virtual_collection
           id="transcript"
           label="Conversation transcript"
@@ -26,7 +24,7 @@ defmodule GPUI.Native.VirtualCollectionE2ETest do
           reveal_strategy="top"
           overdraw={120}
           phx-range="visible-range"
-          class="h-[396px] bg-slate-900"
+          class="h-[396px] bg-slate-50"
         >
           {Enum.map(assigns.messages, &message/1)}
         </UI.virtual_collection>
@@ -72,10 +70,10 @@ defmodule GPUI.Native.VirtualCollectionE2ETest do
       ~GPUI"""
       <UI.virtual_item id={assigns.id} revision={assigns.revision}>
         <div
-          class="px-3 py-2 border-b border-slate-700 bg-slate-900"
+          class="px-3 py-2 border-b border-slate-200 bg-white"
           style={[height: {:px, 20 + assigns.lines * 22}]}
         >
-          <text class="text-white">{assigns.id}: {assigns.lines} lines</text>
+          <text class="text-slate-900">{assigns.id}: {assigns.lines} lines</text>
         </div>
       </UI.virtual_item>
       """
@@ -105,19 +103,17 @@ defmodule GPUI.Native.VirtualCollectionE2ETest do
     end
   end
 
-  test "desktop wheel input moves a heterogeneous variable collection" do
-    {:ok, runtime} = GPUI.Runtime.start_link(app: TranscriptApp, poll_interval: 10)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-    assert :ok = GPUI.Runtime.subscribe(runtime)
+  test "desktop wheel input moves a heterogeneous variable collection", %{desktop: desktop} do
+    runtime = start_runtime!(desktop, app: TranscriptApp, poll_interval: 10)
 
-    native_window_id = Desktop.window_id!("GPUI Variable Collection E2E")
-    Desktop.await_frame!(runtime, 1, native_window_id)
+    native_window_id = Desktop.window!(desktop, "GPUI Variable Collection E2E")
+    Desktop.await_frame!(desktop, runtime, 1, native_window_id)
 
     initial = await_range(runtime, &(&1.last == 30))
     assert initial.first > 0
 
-    Desktop.scroll!(native_window_id, 200, 180, 0, 720)
-    Desktop.await_frame!(runtime, 1, native_window_id)
+    Desktop.scroll!(desktop, native_window_id, at: {200, 180}, delta: {0, 720})
+    Desktop.await_frame!(desktop, runtime, 1, native_window_id)
 
     scrolled = await_range(runtime, &(&1.first < initial.first and &1.last < initial.last))
     assert scrolled.first < initial.first

@@ -5,7 +5,7 @@ defmodule GPUI.BeamObservatoryExampleTest do
 
   test "presents runtime health and drills into hot processes" do
     sample = sample()
-    runtime = start_gpui!(Examples.BeamObservatory.App, args: %{snapshot: sample})
+    runtime = start_runtime!(Examples.BeamObservatory.App, args: %{snapshot: sample})
 
     assert %{title: "BEAM Observatory", size: [1440, 860]} = window_snapshot(runtime)
     assert %{run_queue: 2, schedulers: 8, paused: false} = assigns(runtime)
@@ -24,7 +24,7 @@ defmodule GPUI.BeamObservatoryExampleTest do
   end
 
   test "pauses sampling and reconciles terminated selections" do
-    runtime = start_gpui!(Examples.BeamObservatory.App, args: %{snapshot: sample()})
+    runtime = start_runtime!(Examples.BeamObservatory.App, args: %{snapshot: sample()})
 
     change(runtime, "process_selected", "<0.50.0>")
     click(runtime, "toggle-pause")

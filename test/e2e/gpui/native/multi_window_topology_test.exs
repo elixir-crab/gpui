@@ -1,7 +1,5 @@
 defmodule GPUI.Native.MultiWindowTopologyE2ETest do
-  use ExUnit.Case, async: false
-
-  alias GPUITest.Desktop
+  use GPUI.Test, desktop: true
 
   @moduletag :e2e
 
@@ -53,15 +51,13 @@ defmodule GPUI.Native.MultiWindowTopologyE2ETest do
     end
   end
 
-  test "keyed windows open, close, and reopen with monotonic native IDs" do
+  test "keyed windows open, close, and reopen with monotonic native IDs", %{desktop: desktop} do
     suffix = System.unique_integer([:positive])
     main_title = "GPUI Main #{suffix}"
-    details_title = "GPUI Details #{suffix}"
-    {:ok, runtime} = GPUI.Runtime.start_link(app: App, args: %{title: main_title})
-    on_exit(fn -> Desktop.stop_process(runtime) end)
+    runtime = start_runtime!(desktop, app: App, args: %{title: main_title})
 
-    main_native = Desktop.window_id!(main_title)
-    Desktop.await_frame!(runtime, 1, main_native)
+    main_native = Desktop.window!(desktop, main_title)
+    Desktop.await_frame!(desktop, runtime, 1, main_native)
 
     %{windows: [%{root: %{assigns: %{details_title: details_title}}}]} =
       GPUI.Runtime.snapshot(runtime)
@@ -73,8 +69,8 @@ defmodule GPUI.Native.MultiWindowTopologyE2ETest do
         event: "open-details"
       })
 
-    details_native = Desktop.window_id!(details_title)
-    Desktop.await_frame!(runtime, 2, details_native)
+    details_native = Desktop.window!(desktop, details_title)
+    Desktop.await_frame!(desktop, runtime, 2, details_native)
 
     {_event, %{windows: [%{key: "main"}]}} =
       GPUI.Runtime.dispatch_event(runtime, %{
@@ -83,7 +79,7 @@ defmodule GPUI.Native.MultiWindowTopologyE2ETest do
         event: "close-details"
       })
 
-    Desktop.eventually(fn ->
+    Desktop.eventually(desktop, runtime, fn ->
       assert {:error, :window_not_found} = GPUI.Runtime.frame_token(runtime, 2)
     end)
 
@@ -94,9 +90,9 @@ defmodule GPUI.Native.MultiWindowTopologyE2ETest do
         event: "open-details"
       })
 
-    reopened_native = Desktop.window_id!(details_title)
-    Desktop.await_frame!(runtime, 3, reopened_native)
+    reopened_native = Desktop.window!(desktop, details_title)
+    Desktop.await_frame!(desktop, runtime, 3, reopened_native)
     assert reopened_native != details_native
-    assert Desktop.window_id!(main_title) == main_native
+    assert Desktop.window!(desktop, main_title) == main_native
   end
 end

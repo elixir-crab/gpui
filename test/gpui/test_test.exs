@@ -222,7 +222,7 @@ defmodule GPUI.TestTest do
   end
 
   test "starts deterministic runtimes and dispatches user events" do
-    runtime = start_gpui!(TestApp)
+    runtime = start_runtime!(TestApp)
 
     assert %{
              count: 0,

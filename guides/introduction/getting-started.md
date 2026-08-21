@@ -179,7 +179,7 @@ defmodule MyApp.TimerTest do
   use GPUI.Test, async: true
 
   test "advances from an OTP message" do
-    runtime = start_gpui!(GettingStarted.FocusTimer.App, args: %{seconds: 2})
+    runtime = start_runtime!(GettingStarted.FocusTimer.App, args: %{seconds: 2})
 
     click(runtime, "start")
     send_view(runtime, :tick)

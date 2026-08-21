@@ -20,7 +20,7 @@ defmodule GPUI.VisualScenariosTest do
              "code"
            ]
 
-    runtime = start_gpui!(scenario.app(), args: scenario.args(:dark))
+    runtime = start_runtime!(scenario.app(), args: scenario.args(:dark))
     assert %{story: "actions", overlay: nil} = assigns(runtime)
   end
 
@@ -50,7 +50,7 @@ defmodule GPUI.VisualScenariosTest do
              "filtered-processes"
            ]
 
-    observatory_runtime = start_gpui!(observatory.app(), args: observatory.args(:dark))
+    observatory_runtime = start_runtime!(observatory.app(), args: observatory.args(:dark))
     assert %{run_queue: 2, schedulers: 8, paused: false} = assigns(observatory_runtime)
 
     assert %{type: :ui_data_table} =
@@ -64,7 +64,7 @@ defmodule GPUI.VisualScenariosTest do
              "command-palette"
            ]
 
-    workbench_runtime = start_gpui!(workbench.app(), args: workbench.args(:dark))
+    workbench_runtime = start_runtime!(workbench.app(), args: workbench.args(:dark))
     assert %{selected_id: "file:README.md", command_open: false} = assigns(workbench_runtime)
     assert %{type: :ui_tree} = workbench_runtime |> tree() |> find!(id: "workbench-tree")
 
@@ -89,7 +89,7 @@ defmodule GPUI.VisualScenariosTest do
     assert {:send_view, 1, {:image_progress, 1, 45, "Sampling pixels"}} = progress
     assert {:dispatch, %{event: "cancel_load"}} = cancel
 
-    runtime = start_gpui!(scenario.app(), args: scenario.args(:dark))
+    runtime = start_runtime!(scenario.app(), args: scenario.args(:dark))
 
     assert %{
              status: :ready,

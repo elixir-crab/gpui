@@ -1,7 +1,5 @@
 defmodule GPUI.Native.VirtualListE2ETest do
-  use ExUnit.Case, async: false
-
-  alias GPUITest.Desktop
+  use GPUI.Test, desktop: true
 
   @moduletag :e2e
 
@@ -13,7 +11,7 @@ defmodule GPUI.Native.VirtualListE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="w-[420px] h-[420px] bg-slate-900">
+      <div class="w-[420px] h-[420px] bg-white text-slate-900">
         <UI.virtual_list
           id="large-list"
           label="Large item list"
@@ -78,7 +76,7 @@ defmodule GPUI.Native.VirtualListE2ETest do
         end
 
       ~GPUI"""
-      <div class="w-[420px] h-[420px] bg-slate-900">
+      <div class="w-[420px] h-[420px] bg-white text-slate-900">
         <UI.virtual_list
           id="source-list"
           label="Source-backed items"
@@ -198,19 +196,17 @@ defmodule GPUI.Native.VirtualListE2ETest do
     end
   end
 
-  test "desktop wheel input changes a distant source-backed range" do
-    {:ok, runtime} = GPUI.Runtime.start_link(app: SourceListApp, poll_interval: 10)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-    assert :ok = GPUI.Runtime.subscribe(runtime)
+  test "desktop wheel input changes a distant source-backed range", %{desktop: desktop} do
+    runtime = start_runtime!(desktop, app: SourceListApp, poll_interval: 10)
 
-    native_window_id = Desktop.window_id!("GPUI Source List E2E")
-    Desktop.await_frame!(runtime, 1, native_window_id)
+    native_window_id = Desktop.window!(desktop, "GPUI Source List E2E")
+    Desktop.await_frame!(desktop, runtime, 1, native_window_id)
 
     assert %{first: first, last: 100_000} = current_or_await_distant_range(runtime)
     assert first > 99_900
 
     assert {:ok, generation} = GPUI.Runtime.frame_token(runtime, 1)
-    Desktop.scroll!(native_window_id, 120, 200, 0, 720)
+    Desktop.scroll!(desktop, native_window_id, at: {120, 200}, delta: {0, 720})
     assert :ok = GPUI.Runtime.request_frame(runtime)
     Desktop.await_frame_after!(runtime, 1, generation)
 
@@ -220,12 +216,11 @@ defmodule GPUI.Native.VirtualListE2ETest do
     assert Process.alive?(runtime)
   end
 
-  test "desktop renders a full-snapshot virtual list and remains responsive" do
-    {:ok, runtime} = GPUI.Runtime.start_link(app: ListApp, poll_interval: 10)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
+  test "desktop renders a full-snapshot virtual list and remains responsive", %{desktop: desktop} do
+    runtime = start_runtime!(desktop, app: ListApp, poll_interval: 10)
 
-    native_window_id = Desktop.window_id!("GPUI Virtual List E2E")
-    Desktop.await_frame!(runtime, 1, native_window_id)
+    native_window_id = Desktop.window!(desktop, "GPUI Virtual List E2E")
+    Desktop.await_frame!(desktop, runtime, 1, native_window_id)
 
     assert %{windows: [%{root: %{assigns: %{selected: nil}}}]} = GPUI.Runtime.snapshot(runtime)
     assert Process.alive?(runtime)

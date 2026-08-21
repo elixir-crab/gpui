@@ -1,7 +1,5 @@
 defmodule GPUI.Native.MotionE2ETest do
-  use ExUnit.Case, async: false
-
-  alias GPUITest.Desktop
+  use GPUI.Test, desktop: true
 
   @moduletag :e2e
   @moduletag timeout: 30_000
@@ -62,21 +60,21 @@ defmodule GPUI.Native.MotionE2ETest do
     end
   end
 
-  test "animated semantic containers keep native pointer and keyboard activation" do
+  test "animated semantic containers keep native pointer and keyboard activation", %{
+    desktop: desktop
+  } do
     title = "GPUI Motion E2E #{System.unique_integer([:positive])}"
-    {:ok, runtime} = GPUI.Runtime.start_link(app: MotionApp, args: %{title: title})
-    :ok = GPUI.Runtime.subscribe(runtime)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
+    runtime = start_runtime!(desktop, app: MotionApp, args: %{title: title})
 
-    window_id = Desktop.window_id!(title)
+    window_id = Desktop.window!(desktop, title)
 
     # Let the entrance settle, then prove the animated element retained its hitbox.
     Process.sleep(250)
-    Desktop.click!(window_id, 150, 130)
-    Desktop.eventually(fn -> assert %{activations: 1} = assigns(runtime) end)
+    Desktop.click!(desktop, window_id, at: {150, 130})
+    Desktop.eventually(desktop, runtime, fn -> assert %{activations: 1} = assigns(runtime) end)
 
-    Desktop.click!(window_id, 80, 40)
-    Desktop.eventually(fn -> assert %{motion_request: 2} = assigns(runtime) end)
+    Desktop.click!(desktop, window_id, at: {80, 40})
+    Desktop.eventually(desktop, runtime, fn -> assert %{motion_request: 2} = assigns(runtime) end)
 
     # A changed token restarts presentation without changing the destination tree.
     assert %{attrs: %{id: "motion-card", motion_request: 2}, children: children} =
@@ -85,12 +83,12 @@ defmodule GPUI.Native.MotionE2ETest do
     assert Enum.any?(children, &match?(%{children: ["Animated action"]}, &1))
 
     Process.sleep(250)
-    Desktop.click!(window_id, 150, 130)
-    Desktop.eventually(fn -> assert %{activations: 2} = assigns(runtime) end)
+    Desktop.click!(desktop, window_id, at: {150, 130})
+    Desktop.eventually(desktop, runtime, fn -> assert %{activations: 2} = assigns(runtime) end)
 
-    Desktop.click!(window_id, 150, 130)
-    Desktop.key!(window_id, "Return")
-    Desktop.eventually(fn -> assert %{activations: 3} = assigns(runtime) end)
+    Desktop.click!(desktop, window_id, at: {150, 130})
+    Desktop.press!(desktop, window_id, "Return")
+    Desktop.eventually(desktop, runtime, fn -> assert %{activations: 3} = assigns(runtime) end)
   end
 
   defp assigns(runtime) do

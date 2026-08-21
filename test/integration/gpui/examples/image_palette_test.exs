@@ -20,7 +20,7 @@ defmodule GPUI.ImagePaletteExampleTest do
   end
 
   test "loads, analyzes, installs, selects, and exports through supervised work" do
-    runtime = start_gpui!(App)
+    runtime = start_runtime!(App)
     task_supervisor = start_task_supervisor!()
     owner = self()
 
@@ -76,7 +76,7 @@ defmodule GPUI.ImagePaletteExampleTest do
     result = Analysis.analyze(source_raster(), colors: 3)
 
     runtime =
-      start_gpui!(App,
+      start_runtime!(App,
         args: %{path: "/fixtures/colors.bmp", export_path: "palette.css", result: result}
       )
 
@@ -88,7 +88,7 @@ defmodule GPUI.ImagePaletteExampleTest do
   end
 
   test "cancels active analysis and ignores its stale messages" do
-    runtime = start_gpui!(App)
+    runtime = start_runtime!(App)
     task_supervisor = start_task_supervisor!()
     owner = self()
 
@@ -124,7 +124,7 @@ defmodule GPUI.ImagePaletteExampleTest do
   end
 
   test "replaces active analysis and keeps only the newest result" do
-    runtime = start_gpui!(App)
+    runtime = start_runtime!(App)
     task_supervisor = start_task_supervisor!()
     owner = self()
     first = solid_raster(255, 0, 0)
@@ -168,13 +168,13 @@ defmodule GPUI.ImagePaletteExampleTest do
   end
 
   test "handles deterministic display-side file cancellation" do
-    runtime = start_gpui!(App)
+    runtime = start_runtime!(App)
     file_cancel(runtime, "image_file_selected")
     assert %{status: :idle, stage: "Selection cancelled"} = assigns(runtime)
   end
 
   test "reports file errors without requiring native image decoding" do
-    runtime = start_gpui!(App, args: %{path: "/missing/image.png"})
+    runtime = start_runtime!(App, args: %{path: "/missing/image.png"})
     task_supervisor = start_task_supervisor!()
 
     start_supervised!(

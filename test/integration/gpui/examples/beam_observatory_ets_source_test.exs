@@ -61,7 +61,7 @@ defmodule GPUI.BeamObservatoryEtsSourceTest do
       }
     ]
 
-    runtime = start_gpui!(App, args: %{source: @source})
+    runtime = start_runtime!(App, args: %{source: @source})
     assert :ok = GPUI.Runtime.subscribe(runtime)
     start_supervised!({Task.Supervisor, name: @task_supervisor})
 

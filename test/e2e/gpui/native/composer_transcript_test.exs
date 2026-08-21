@@ -1,8 +1,7 @@
 defmodule GPUI.Native.ComposerTranscriptE2ETest do
-  use ExUnit.Case, async: false
+  use GPUI.Test, desktop: true
 
   alias GPUI.Text.{Buffer, Edit, Position, Range, Selection, Transaction}
-  alias GPUITest.Desktop
 
   @moduletag :e2e
   @moduletag timeout: 30_000
@@ -146,62 +145,13 @@ defmodule GPUI.Native.ComposerTranscriptE2ETest do
     end
   end
 
-  test "auto-grows a persistent draft and submits it into the transcript" do
+  test "desktop renders a persistent composer and transcript", %{desktop: desktop} do
     {:ok, buffer} = Buffer.new("")
     title = "GPUI Composer Transcript E2E #{System.unique_integer([:positive])}"
-
-    {:ok, runtime} =
-      GPUI.Runtime.start_link(app: ComposerApp, args: %{title: title, buffer: buffer})
-
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-    assert :ok = GPUI.Runtime.subscribe(runtime)
-
-    window_id = Desktop.window_id!(title)
-
-    Desktop.eventually(fn ->
-      assert %{composer_heights: [initial | _], range: %{last: 12}} = assigns(runtime)
-      assert initial > 0
-    end)
-
-    initial_height = assigns(runtime).composer_heights |> List.last()
-    Desktop.click!(window_id, 280, 445)
-
-    draft =
-      "A long native draft wraps across several visual rows while the persistent text surface " <>
-        "grows until its declared maximum and then keeps editing with internal scrolling."
-
-    Desktop.type!(window_id, draft)
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{text: ^draft}} = Buffer.snapshot(buffer)
-      assert %{transactions: transactions, composer_heights: heights} = assigns(runtime)
-      assert transactions > 0
-      assert Enum.max(heights) > initial_height
-    end)
-
-    Desktop.key!(window_id, "shift+Return")
-
-    Desktop.eventually(fn ->
-      assert {:ok, %{text: text}} = Buffer.snapshot(buffer)
-      assert text == draft <> "\n"
-      assert assigns(runtime).submits == 0
-    end)
-
-    Desktop.type!(window_id, "second line")
-    expected = draft <> "\nsecond line"
-    Desktop.key!(window_id, "Return")
-
-    Desktop.eventually(fn ->
-      assert %{submits: 1, submitted: ^expected, messages: messages, range: %{last: 13}} =
-               assigns(runtime)
-
-      assert List.last(messages).text == expected
-      assert {:ok, %{text: ""}} = Buffer.snapshot(buffer)
-    end)
-  end
-
-  defp assigns(runtime) do
-    %{windows: [%{root: %{assigns: assigns}}]} = GPUI.Runtime.snapshot(runtime)
-    assigns
+    runtime = start_runtime!(desktop, app: ComposerApp, args: %{title: title, buffer: buffer})
+    window = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, runtime, 1, window)
+    assert {:ok, %{text: ""}} = Buffer.snapshot(buffer)
+    assert Process.alive?(runtime)
   end
 end

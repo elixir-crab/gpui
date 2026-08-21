@@ -7,7 +7,7 @@ defmodule GPUI.ResourceRefImageExampleTest do
     raster = Examples.ResourceRefImage.raster()
     assert %GPUI.Raster{width: 160, height: 160} = raster
 
-    runtime = start_gpui!(Examples.ResourceRefImage.App)
+    runtime = start_runtime!(Examples.ResourceRefImage.App)
     :ok = GPUI.Runtime.put_resource(runtime, "preview", GPUI.Raster.to_payload(raster))
 
     assert %{

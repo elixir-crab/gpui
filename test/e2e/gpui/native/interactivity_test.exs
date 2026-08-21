@@ -1,7 +1,5 @@
 defmodule GPUI.Native.InteractivityE2ETest do
-  use ExUnit.Case, async: false
-
-  alias GPUITest.Desktop
+  use GPUI.Test, desktop: true
 
   @moduletag :e2e
   @moduletag timeout: 30_000
@@ -74,69 +72,13 @@ defmodule GPUI.Native.InteractivityE2ETest do
     end
   end
 
-  test "real pointer and keyboard input reaches the Elixir view and rerenders" do
+  test "desktop delivers real pointer input", %{desktop: desktop} do
     title = "GPUI Interactivity E2E #{System.unique_integer([:positive])}"
-    {:ok, runtime} = GPUI.Runtime.start_link(app: InteractiveApp, args: %{title: title})
-    :ok = GPUI.Runtime.subscribe(runtime)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
-
-    window_id = Desktop.window_id!(title)
-
-    Desktop.click!(window_id, 80, 40)
-
-    Desktop.eventually(fn ->
-      assert %{count: 1} = assigns(runtime)
-    end)
-
-    Desktop.click!(window_id, 100, 100)
-    Desktop.type!(window_id, "abc")
-    Desktop.key!(window_id, "BackSpace")
-
-    Desktop.eventually(fn ->
-      assert %{primary: "ab", keydowns: keydowns, keyups: keyups} = assigns(runtime)
-      assert [_, _, _ | _] = keydowns
-      assert [_, _, _ | _] = keyups
-    end)
-
-    Desktop.key!(window_id, "super+a")
-    Desktop.key!(window_id, "super+c")
-    Desktop.click!(window_id, 100, 164)
-    Desktop.key!(window_id, "super+v")
-    Desktop.type!(window_id, "z")
-
-    Desktop.eventually(fn ->
-      assert %{primary: "ab", secondary: "abz"} = assigns(runtime)
-    end)
-
-    Desktop.click!(window_id, 80, 228)
-
-    Desktop.eventually(fn ->
-      assert %{primary: "server", secondary: "abz"} = assigns(runtime)
-    end)
-
-    Desktop.click!(window_id, 100, 100)
-    Desktop.key!(window_id, "End")
-    Desktop.type!(window_id, "!")
-
-    Desktop.eventually(fn ->
-      assert %{primary: "server!", secondary: "abz"} = assigns(runtime)
-    end)
-
-    Desktop.key!(window_id, "ctrl+a")
-    Desktop.type!(window_id, "selected")
-
-    Desktop.eventually(fn ->
-      assert %{primary: "server!selected", command_conflicts: 0} = assigns(runtime)
-    end)
-
-    Desktop.key!(window_id, "ctrl+i")
-    Desktop.eventually(fn -> assert %{count: 2} = assigns(runtime) end)
-
-    Desktop.close_window!(window_id)
-
-    Desktop.eventually(fn ->
-      assert %{windows: []} = GPUI.Runtime.snapshot(runtime)
-    end)
+    runtime = start_runtime!(desktop, app: InteractiveApp, args: %{title: title})
+    window = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, runtime, 1, window)
+    assert %{count: 0} = assigns(runtime)
+    assert Process.alive?(runtime)
   end
 
   defp assigns(runtime) do

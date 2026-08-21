@@ -1,8 +1,7 @@
 defmodule GPUI.Native.SplitE2ETest do
-  use ExUnit.Case, async: false
+  use GPUI.Test, desktop: true
 
   alias GPUI.UI
-  alias GPUITest.Desktop
 
   @moduletag :e2e
 
@@ -46,19 +45,19 @@ defmodule GPUI.Native.SplitE2ETest do
     end
   end
 
-  test "native divider drag emits bounded pane sizes without resetting on rerender" do
+  test "native divider drag emits bounded pane sizes without resetting on rerender", %{
+    desktop: desktop
+  } do
     title = "GPUI Split E2E #{System.unique_integer([:positive])}"
-    {:ok, runtime} = GPUI.Runtime.start_link(app: App, args: %{title: title})
-    :ok = GPUI.Runtime.subscribe(runtime)
-    on_exit(fn -> Desktop.stop_process(runtime) end)
+    runtime = start_runtime!(desktop, app: App, args: %{title: title})
 
-    native_window = Desktop.window_id!(title)
-    Desktop.await_frame!(runtime, 1, native_window)
+    native_window = Desktop.window!(desktop, title)
+    Desktop.await_frame!(desktop, runtime, 1, native_window)
 
-    Desktop.drag!(native_window, 260, 200, 360, 200)
+    Desktop.drag!(desktop, native_window, from: {260, 200}, to: {360, 200})
 
     resized =
-      Desktop.eventually(fn ->
+      Desktop.eventually(desktop, runtime, fn ->
         %{windows: [%{root: %{assigns: %{sizes: [first, second] = sizes}}}]} =
           GPUI.Runtime.snapshot(runtime)
 
