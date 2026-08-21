@@ -7,7 +7,7 @@ GPUI behavior is divided by what each layer can truthfully prove.
 | Controlled application state and rerenders | Primary | Exercises real payload rerenders | Smoke only |
 | Switch and radio activation | Event policy | Pointer, focus, keyboard, disabled/loading | Real window rendering |
 | Tabs | Controlled event handling | Stable bounds, focus, keyboard, disabled | Real window rendering |
-| Accordion | Controlled expanded IDs and validation | Not yet target-addressable | Real window rendering |
+| Accordion | Controlled expanded IDs and validation | Stable bounds, pointer toggles, controlled multiple expansion, disabled-group suppression | Real window rendering |
 | Tree and data table navigation | Source/state policy | Focus, keyboard, disabled skipping, emitted IDs | Virtualized real window and pointer delivery |
 | Uniform and variable collections | Range/source policy | Selection, ranges, scrolling, transitions | Compositor range and wheel delivery |
 | Dialog and overlays | Controlled open/close policy | Escape policy has Rust unit coverage; headless top-layer focus remains pending | Window/top-layer smoke |

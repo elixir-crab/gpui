@@ -19,6 +19,30 @@ defmodule GPUI.Test.Native.NavigationTest do
     end
   end
 
+  defmodule AccordionView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(assigns) do
+      ~GPUI"""
+      <GPUI.UI.accordion
+        id="settings-sections"
+        expanded={assigns.expanded}
+        multiple={true}
+        disabled={assigns.disabled}
+        phx-change="sections_changed"
+      >
+        <GPUI.UI.accordion_item id="account" title="Account">
+          <text>Account settings</text>
+        </GPUI.UI.accordion_item>
+        <GPUI.UI.accordion_item id="security" title="Security">
+          <text>Security settings</text>
+        </GPUI.UI.accordion_item>
+      </GPUI.UI.accordion>
+      """
+    end
+  end
+
   defp render_tabs(ui, opts \\ []) do
     defaults = [
       section: "general",
@@ -31,6 +55,44 @@ defmodule GPUI.Test.Native.NavigationTest do
     ]
 
     render(ui, TabsView, Keyword.merge(defaults, opts))
+  end
+
+  defp render_accordion(ui, opts \\ []) do
+    defaults = [expanded: [], disabled: false]
+    render(ui, AccordionView, Keyword.merge(defaults, opts))
+    settle(ui)
+  end
+
+  test "accordion items expose stable targets and controlled pointer changes", %{ui: ui} do
+    render_accordion(ui)
+
+    assert %{width: width, height: height} = bounds(ui, "settings-sections")
+    assert width > 0
+    assert height > 0
+    assert %{height: item_height} = bounds(ui, "account")
+    assert item_height > 0
+
+    click(ui, "account")
+
+    assert_receive {:gpui, ^ui,
+                    {:event, %{type: :change, event: "sections_changed", value: ["account"]}}}
+
+    render_accordion(ui, expanded: ["account"])
+    click(ui, "security")
+
+    assert_receive {:gpui, ^ui,
+                    {:event,
+                     %{
+                       type: :change,
+                       event: "sections_changed",
+                       value: ["account", "security"]
+                     }}}
+  end
+
+  test "disabled accordion groups suppress pointer changes", %{ui: ui} do
+    render_accordion(ui, disabled: true)
+    click(ui, "account")
+    refute_receive {:gpui, ^ui, {:event, _event}}
   end
 
   test "tabs expose stable bounds and deterministic keyboard navigation", %{ui: ui} do
