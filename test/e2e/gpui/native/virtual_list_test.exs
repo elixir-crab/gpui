@@ -231,7 +231,7 @@ defmodule GPUI.Native.VirtualListE2ETest do
     assert selected == clicked
 
     assert {:ok, generation} = GPUI.Runtime.frame_token(runtime, 1)
-    Desktop.repeat_click!(native_window_id, 120, 200, 12)
+    Desktop.scroll!(native_window_id, 120, 200, 0, 720)
     assert :ok = GPUI.Runtime.request_frame(runtime)
     Desktop.await_frame_after!(runtime, 1, generation)
 

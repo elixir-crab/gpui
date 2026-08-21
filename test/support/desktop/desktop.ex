@@ -14,6 +14,10 @@ defmodule GPUITest.Desktop do
   def window_id!(title), do: @backend.window_id!(title)
   def request_frame!(window_id, x \\ 1, y \\ 1), do: @backend.request_frame!(window_id, x, y)
   def click!(window_id, x, y), do: @backend.click!(window_id, x, y)
+
+  def scroll!(window_id, x, y, delta_x, delta_y),
+    do: @backend.scroll!(window_id, x, y, delta_x, delta_y)
+
   def type!(window_id, text), do: @backend.type!(window_id, text)
   def key!(window_id, key), do: @backend.key!(window_id, key)
   def close_window!(window_id), do: @backend.close_window!(window_id)

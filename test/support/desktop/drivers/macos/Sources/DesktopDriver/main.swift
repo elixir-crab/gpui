@@ -144,6 +144,28 @@ func move(windowID: String, x: String, y: String) throws {
     try postMouse(.mouseMoved, point: screenPoint(info, x: x, y: y))
 }
 
+func scroll(windowID: String, x: String, y: String, deltaX: String, deltaY: String) throws {
+    let info = try window(id: windowID)
+    activate(info)
+    let point = try screenPoint(info, x: x, y: y)
+    guard let deltaX = Int32(deltaX), let deltaY = Int32(deltaY),
+          abs(Int64(deltaX)) <= 100_000, abs(Int64(deltaY)) <= 100_000,
+          let source = CGEventSource(stateID: .hidSystemState),
+          let event = CGEvent(
+              scrollWheelEvent2Source: source,
+              units: .pixel,
+              wheelCount: 2,
+              wheel1: deltaY,
+              wheel2: deltaX,
+              wheel3: 0
+          )
+    else { throw DriverError(description: "invalid scroll delta") }
+    try postMouse(.mouseMoved, point: point)
+    event.location = point
+    event.post(tap: .cghidEventTap)
+    Thread.sleep(forTimeInterval: 0.08)
+}
+
 func click(windowID: String, x: String, y: String) throws {
     let info = try window(id: windowID)
     activate(info)
@@ -349,6 +371,7 @@ func main() async throws {
         throw DriverError(description: "window lookup timed out: \(title)")
     case 4 where args[0] == "move": try move(windowID: args[1], x: args[2], y: args[3])
     case 4 where args[0] == "click": try click(windowID: args[1], x: args[2], y: args[3])
+    case 6 where args[0] == "scroll": try scroll(windowID: args[1], x: args[2], y: args[3], deltaX: args[4], deltaY: args[5])
     case 3 where args[0] == "key": try key(windowID: args[1], description: args[2])
     case 3 where args[0] == "type": try typeText(windowID: args[1], text: args[2])
     case 6 where args[0] == "drag": try drag(windowID: args[1], fromX: args[2], fromY: args[3], toX: args[4], toY: args[5])
@@ -357,7 +380,7 @@ func main() async throws {
     case 3 where args[0] == "capture": try await capture(windowID: args[1], path: args[2])
     case 2 where args[0] == "close": try close(windowID: args[1])
     default:
-        throw DriverError(description: "usage: gpui-desktop-driver find-window TITLE | move WINDOW X Y | click WINDOW X Y | key WINDOW KEY | type WINDOW TEXT | capture WINDOW PATH | close WINDOW")
+        throw DriverError(description: "usage: gpui-desktop-driver find-window TITLE | move WINDOW X Y | click WINDOW X Y | scroll WINDOW X Y DELTA_X DELTA_Y | key WINDOW KEY | type WINDOW TEXT | capture WINDOW PATH | close WINDOW")
     }
 }
 

@@ -121,7 +121,7 @@ defmodule GPUI.Native.VirtualCollectionE2ETest do
     following = await_range(runtime, &(&1.last == 33))
     assert following.first >= initial.first
 
-    Desktop.repeat_click!(native_window_id, 200, 180, 12)
+    Desktop.scroll!(native_window_id, 200, 180, 0, 720)
     Desktop.await_frame!(runtime, 1, native_window_id)
     detached = await_range(runtime, &(&1.last < 33))
     flush_updates(runtime)

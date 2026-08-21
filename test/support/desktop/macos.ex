@@ -17,6 +17,16 @@ defmodule GPUITest.Desktop.MacOS do
   def click!(window_id, x, y),
     do: driver_ok!("click", [window_id, to_string(x), to_string(y)])
 
+  def scroll!(window_id, x, y, delta_x, delta_y),
+    do:
+      driver_ok!("scroll", [
+        window_id,
+        to_string(x),
+        to_string(y),
+        to_string(delta_x),
+        to_string(delta_y)
+      ])
+
   def type!(window_id, text), do: driver_ok!("type", [window_id, text])
   def key!(window_id, key), do: driver_ok!("key", [window_id, key])
   def close_window!(window_id), do: driver_ok!("close", [window_id])
@@ -87,7 +97,7 @@ defmodule GPUITest.Desktop.MacOS do
 
     capabilities =
       if accessibility_trusted?(),
-        do: MapSet.put(capabilities, :synthetic_input),
+        do: MapSet.put(capabilities, :synthetic_input) |> MapSet.put(:scroll_wheel),
         else: capabilities
 
     capabilities =

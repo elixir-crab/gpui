@@ -28,6 +28,12 @@ defmodule GPUITest.Desktop.Linux do
     command!(["click", "1"])
   end
 
+  def scroll!(window_id, x, y, delta_x, delta_y) do
+    request_frame!(window_id, x, y)
+    wheel!(delta_y, 4, 5)
+    wheel!(delta_x, 6, 7)
+  end
+
   def type!(window_id, text),
     do: command!(["type", "--window", window_id, "--delay", "30", text])
 
@@ -68,7 +74,23 @@ defmodule GPUITest.Desktop.Linux do
     do: command!(["windowsize", window_id, to_string(width), to_string(height)])
 
   def capabilities do
-    MapSet.new([:window_system, :synthetic_input, :window_capture, :native_close, :window_drag])
+    MapSet.new([
+      :window_system,
+      :synthetic_input,
+      :scroll_wheel,
+      :window_capture,
+      :native_close,
+      :window_drag
+    ])
+  end
+
+  defp wheel!(delta, negative_button, positive_button) when is_number(delta) do
+    count = delta |> abs() |> Kernel./(40) |> Float.ceil() |> trunc()
+
+    if count > 0 do
+      button = if delta < 0, do: negative_button, else: positive_button
+      command!(["click", "--repeat", to_string(count), to_string(button)])
+    end
   end
 
   defp command!(arguments) do
