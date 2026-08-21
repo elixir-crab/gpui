@@ -15,7 +15,6 @@ defmodule Mix.Tasks.Gpui.Test.Native do
     command = ["test" | test_args] ++ ["--include", "native"]
 
     env = [{"MIX_ENV", "test"}, {"MIX_TARGET", "native_test"}]
-    run!("mix", ["clean"], env)
     run!("mix", command, env)
   end
 

@@ -214,12 +214,13 @@ defmodule GPUI.Display.Native do
   end
 
   defp sync_windows(state, windows) do
-    desired = Map.new(windows, &{&1.id, window_open_config(&1)})
+    desired = Map.new(windows, &{&1.id, {window_open_config(&1), &1}})
     removed = Map.keys(state.windows) -- Map.keys(desired)
 
     with :ok <- each_ok(removed, &close_window(state.runtime, &1)),
-         :ok <- each_ok(windows, &sync_window(state, &1)) do
-      {:ok, %{state | windows: desired}}
+         :ok <-
+           each_ok(desired, fn {_id, {config, window}} -> sync_window(state, window, config) end) do
+      {:ok, %{state | windows: Map.new(desired, fn {id, {config, _window}} -> {id, config} end)}}
     end
   end
 
@@ -231,9 +232,7 @@ defmodule GPUI.Display.Native do
     end
   end
 
-  defp sync_window(state, %{id: id} = window) do
-    config = window_open_config(window)
-
+  defp sync_window(state, %{id: id} = window, config) do
     result =
       case Map.fetch(state.windows, id) do
         {:ok, ^config} ->

@@ -67,6 +67,7 @@ defmodule GPUI.Remote.ServerTest do
       do: {:noreply, %{assigns | count: assigns.count + 1}}
 
     def handle_event("crash", _event, _assigns), do: raise("view failed")
+    def handle_event("invalid", %{value: result}, _assigns), do: result
   end
 
   defmodule FormApp do
@@ -219,6 +220,24 @@ defmodule GPUI.Remote.ServerTest do
     assert server_state(server).session_registry.sessions["stable-mount"].pid == session
   end
 
+  test "replacing a mounted session stops the previous session tree" do
+    {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
+    {:ok, port} = GPUI.Remote.Server.port(server)
+    {:ok, client} = start_client(port)
+
+    assert {:ok, _reply} =
+             SafeRPC.call(client, :mount, %{session_id: "replaced", request_id: "first"})
+
+    previous = server_state(server).session_registry.sessions["replaced"].pid
+    monitor = Process.monitor(previous)
+
+    assert {:ok, _reply} =
+             SafeRPC.call(client, :mount, %{session_id: "replaced", request_id: "second"})
+
+    assert_receive {:DOWN, ^monitor, :process, ^previous, _reason}
+    refute server_state(server).session_registry.sessions["replaced"].pid == previous
+  end
+
   test "deduplicates retried events within a session" do
     {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
     {:ok, port} = GPUI.Remote.Server.port(server)
@@ -241,24 +260,25 @@ defmodule GPUI.Remote.ServerTest do
              SafeRPC.call(client, :event, event)
   end
 
-  test "contains a crashing session without terminating the remote server" do
+  test "contains a failing view callback without terminating its session or server" do
     {:ok, server} = GPUI.Remote.Server.start_link(app: FormApp, port: 0)
     {:ok, port} = GPUI.Remote.Server.port(server)
     {:ok, client} = start_client(port)
     assert {:ok, _reply} = SafeRPC.call(client, :mount, %{session_id: "crashing"})
 
-    ExUnit.CaptureLog.capture_log(fn ->
-      assert {:error, {:session_unavailable, _reason}} =
-               SafeRPC.call(client, :event, %{
-                 session_id: "crashing",
-                 type: :click,
-                 window_id: 1,
-                 event: "crash"
-               })
-    end)
+    assert {:ok, %{snapshot: %GPUI.Snapshot{}}} =
+             SafeRPC.call(client, :event, %{
+               session_id: "crashing",
+               type: :click,
+               window_id: 1,
+               event: "crash"
+             })
 
     assert Process.alive?(server)
-    assert {:error, :unknown_session} = SafeRPC.call(client, :snapshot, %{session_id: "crashing"})
+
+    assert {:ok, %{snapshot: %GPUI.Snapshot{}}} =
+             SafeRPC.call(client, :snapshot, %{session_id: "crashing"})
+
     assert {:ok, _reply} = SafeRPC.call(client, :mount, %{session_id: "healthy"})
   end
 

@@ -6,6 +6,8 @@ defmodule GPUI.Tailwind do
   Unknown classes are preserved under `:class` by callers for future handling.
   """
 
+  @cache_table __MODULE__.Cache
+  @cache_limit 4_096
   @spacing_unit 4.0
 
   @colors %{
@@ -57,11 +59,46 @@ defmodule GPUI.Tailwind do
   end
 
   def normalize(classes) when is_binary(classes) do
+    case cached(classes) do
+      {:ok, result} -> result
+      :error -> cache(classes, normalize_binary(classes))
+    end
+  end
+
+  defp normalize_binary(classes) do
     classes
     |> String.split(~r/\s+/, trim: true)
     |> Enum.reduce(%{style: [], unknown: []}, &normalize_class/2)
     |> Map.update!(:style, &Enum.reverse/1)
     |> Map.update!(:unknown, &Enum.reverse/1)
+  end
+
+  defp cached(classes) do
+    table = ensure_cache()
+
+    case :ets.lookup(table, classes) do
+      [{^classes, result}] -> {:ok, result}
+      [] -> :error
+    end
+  end
+
+  defp cache(classes, result) do
+    table = ensure_cache()
+    if :ets.info(table, :size) < @cache_limit, do: :ets.insert(table, {classes, result})
+    result
+  end
+
+  defp ensure_cache do
+    case :ets.whereis(@cache_table) do
+      :undefined -> new_cache()
+      table -> table
+    end
+  end
+
+  defp new_cache do
+    :ets.new(@cache_table, [:named_table, :set, :public, read_concurrency: true])
+  rescue
+    ArgumentError -> :ets.whereis(@cache_table)
   end
 
   defp normalize_class("relative", acc), do: put_style(acc, :position, :relative)

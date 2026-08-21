@@ -229,6 +229,32 @@ defmodule GPUI.RuntimeTest do
     end
   end
 
+  defmodule RecoveringDisplay do
+    @behaviour GPUI.Display
+
+    use Agent
+
+    @impl GPUI.Display
+    def start_link(_opts), do: Agent.start_link(fn -> %{failures: 0, snapshots: []} end)
+
+    @impl GPUI.Display
+    def sync(display, snapshot) do
+      Agent.get_and_update(display, fn
+        %{failures: failures} = state when failures > 0 ->
+          {{:error, :temporary}, %{state | failures: failures - 1}}
+
+        state ->
+          {:ok, %{state | snapshots: [snapshot | state.snapshots]}}
+      end)
+    end
+
+    @impl GPUI.Display
+    def drain_events(_display), do: {:ok, []}
+
+    @impl GPUI.Display
+    def inject_event(_display, _event), do: {:ok, :ok}
+  end
+
   defmodule RaisingFrameDisplay do
     @behaviour GPUI.Display
 
@@ -517,6 +543,37 @@ defmodule GPUI.RuntimeTest do
     assert Process.alive?(runtime)
   end
 
+  test "runtime retries authoritative snapshots after a display sync failure" do
+    {:ok, runtime} =
+      GPUI.Runtime.start_link(
+        app: DemoApp,
+        display: RecoveringDisplay,
+        poll_interval: 10
+      )
+
+    %{display: display} = :sys.get_state(runtime)
+    Agent.update(display, &%{&1 | failures: 1})
+
+    assert {:error, {:display_sync_failed, :temporary}} =
+             GPUI.Runtime.dispatch_event(runtime, %{
+               type: :change,
+               window_id: 1,
+               event: "rename",
+               value: "Recovered"
+             })
+
+    assert %{windows: [%{root: %{assigns: %{name: "Recovered"}}}]} =
+             GPUI.Runtime.snapshot(runtime)
+
+    Process.sleep(30)
+
+    assert [
+             %{windows: [%{root: %{assigns: %{name: "Recovered"}}}]} | _
+           ] = Agent.get(display, & &1.snapshots)
+
+    refute :sys.get_state(runtime).unsynchronized?
+  end
+
   test "display boundary normalizes event callback failures" do
     {:ok, invalid_drain} = ContractDisplay.start_link(mode: :invalid_drain)
     {:ok, raising_drain} = ContractDisplay.start_link(mode: :raise_drain)
@@ -763,12 +820,12 @@ defmodule GPUI.RuntimeTest do
   test "sessions report malformed and unsupported events explicitly without dispatching them" do
     {:ok, session} = GPUI.Session.start_link(app: DemoApp)
 
-    assert {%{window_id: 1, event: "rename", error: {:invalid_event, :type}}, snapshot} =
+    assert {:ok, %{window_id: 1, event: "rename", error: {:invalid_event, :type}}, snapshot} =
              GPUI.Session.dispatch_event(session, %{window_id: 1, event: "rename"})
 
     assert snapshot.windows |> hd() |> get_in([:root, :assigns, :name]) == "OTP"
 
-    assert {%{type: :mystery, error: {:unsupported_event_type, :mystery}}, _snapshot} =
+    assert {:ok, %{type: :mystery, error: {:unsupported_event_type, :mystery}}, _snapshot} =
              GPUI.Session.dispatch_event(session, %{type: :mystery, window_id: 1})
   end
 

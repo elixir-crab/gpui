@@ -36,7 +36,8 @@ defmodule GPUI.Runtime do
           events: [map()],
           poll_interval: pos_integer() | nil,
           revision: non_neg_integer(),
-          subscribers: %{pid() => reference()}
+          subscribers: %{pid() => reference()},
+          unsynchronized?: boolean()
         }
 
   @doc "Starts a runtime linked to the caller."
@@ -138,7 +139,8 @@ defmodule GPUI.Runtime do
         events: [],
         poll_interval: poll_interval,
         revision: 0,
-        subscribers: %{}
+        subscribers: %{},
+        unsynchronized?: false
       }
 
       schedule_poll(state)
@@ -178,11 +180,15 @@ defmodule GPUI.Runtime do
       {:ok, id, snapshot} ->
         case sync_display(state, snapshot) do
           :ok ->
-            state = GPUI.UpdateSubscribers.publish_update(state, self(), [], snapshot)
+            state =
+              state
+              |> GPUI.UpdateSubscribers.publish_update(self(), [], snapshot)
+              |> mark_synchronized(snapshot)
+
             {:reply, {:ok, id, snapshot}, state}
 
           {:error, reason} ->
-            {:reply, {:error, reason}, state}
+            {:reply, {:error, reason}, mark_unsynchronized(state)}
         end
 
       {:error, reason} ->
@@ -209,19 +215,24 @@ defmodule GPUI.Runtime do
   end
 
   def handle_call({:dispatch_event, event}, _from, state) do
-    {handled, snapshot} = GPUI.Session.dispatch_event(state.session, event)
+    case GPUI.Session.dispatch_event(state.session, event) do
+      {:ok, handled, snapshot} ->
+        case sync_display(state, snapshot) do
+          :ok ->
+            state =
+              state
+              |> GPUI.UpdateSubscribers.publish_update(self(), [handled], snapshot)
+              |> record_events([handled])
+              |> mark_synchronized(snapshot)
 
-    case sync_display(state, snapshot) do
-      :ok ->
-        state =
-          state
-          |> GPUI.UpdateSubscribers.publish_update(self(), [handled], snapshot)
-          |> record_events([handled])
+            {:reply, {handled, snapshot}, state}
 
-        {:reply, {handled, snapshot}, state}
+          {:error, reason} ->
+            {:reply, {:error, reason}, mark_unsynchronized(state)}
+        end
 
       {:error, reason} ->
-        {:reply, {:error, reason}, record_events(state, [handled])}
+        {:reply, {:error, reason}, state}
     end
   end
 
@@ -255,8 +266,10 @@ defmodule GPUI.Runtime do
   end
 
   def handle_call(:request_frame, _from, state) do
-    snapshot = GPUI.Session.snapshot(state.session)
-    {:reply, sync_display(state, snapshot), state}
+    case GPUI.Session.snapshot(state.session) do
+      %GPUI.Snapshot{} = snapshot -> {:reply, sync_display(state, snapshot), state}
+      {:error, reason} -> {:reply, {:error, reason}, state}
+    end
   end
 
   def handle_call({:await_frame, window_id, timeout}, from, state) do
@@ -305,6 +318,8 @@ defmodule GPUI.Runtime do
   end
 
   def handle_info(:poll_display, state) do
+    state = retry_unsynchronized(state)
+
     state =
       case drain_display_events(state) do
         {:ok, _handled, state} -> state
@@ -339,11 +354,15 @@ defmodule GPUI.Runtime do
   defp synchronized_snapshot_reply({:ok, snapshot}, state) do
     case sync_display(state, snapshot) do
       :ok ->
-        state = GPUI.UpdateSubscribers.publish_update(state, self(), [], snapshot)
+        state =
+          state
+          |> GPUI.UpdateSubscribers.publish_update(self(), [], snapshot)
+          |> mark_synchronized(snapshot)
+
         {:reply, {:ok, snapshot}, state}
 
       {:error, reason} ->
-        {:reply, {:error, reason}, state}
+        {:reply, {:error, reason}, mark_unsynchronized(state)}
     end
   end
 
@@ -358,20 +377,29 @@ defmodule GPUI.Runtime do
   end
 
   defp apply_display_events(state, events) do
-    {handled, snapshot} = GPUI.Session.dispatch_events(state.session, events)
+    case GPUI.Session.dispatch_events(state.session, events) do
+      {:ok, handled, snapshot} -> synchronize_display_events(state, events, handled, snapshot)
+      {:error, reason} -> {:error, reason, state}
+    end
+  end
+
+  defp synchronize_display_events(state, [], handled, _snapshot),
+    do: {:ok, handled, record_events(state, handled)}
+
+  defp synchronize_display_events(state, _events, handled, snapshot) do
     state = record_events(state, handled)
 
-    if events == [] do
-      {:ok, handled, state}
-    else
-      case sync_display(state, snapshot) do
-        :ok ->
-          state = GPUI.UpdateSubscribers.publish_update(state, self(), handled, snapshot)
-          {:ok, handled, state}
+    case sync_display(state, snapshot) do
+      :ok ->
+        state =
+          state
+          |> GPUI.UpdateSubscribers.publish_update(self(), handled, snapshot)
+          |> mark_synchronized(snapshot)
 
-        {:error, reason} ->
-          {:error, reason, state}
-      end
+        {:ok, handled, state}
+
+      {:error, reason} ->
+        {:error, reason, mark_unsynchronized(state)}
     end
   end
 
@@ -383,13 +411,48 @@ defmodule GPUI.Runtime do
   end
 
   defp sync_and_publish(state) do
-    snapshot = GPUI.Session.snapshot(state.session)
+    case GPUI.Session.snapshot(state.session) do
+      %GPUI.Snapshot{} = snapshot ->
+        case sync_display(state, snapshot) do
+          :ok ->
+            state =
+              state
+              |> GPUI.UpdateSubscribers.publish_update(self(), [], snapshot)
+              |> mark_synchronized(snapshot)
 
-    case sync_display(state, snapshot) do
-      :ok -> {:ok, GPUI.UpdateSubscribers.publish_update(state, self(), [], snapshot)}
-      {:error, _reason} = error -> {error, state}
+            {:ok, state}
+
+          {:error, _reason} = error ->
+            {error, mark_unsynchronized(state)}
+        end
+
+      {:error, reason} ->
+        {{:error, reason}, state}
     end
   end
+
+  defp retry_unsynchronized(%{unsynchronized?: false} = state), do: state
+
+  defp retry_unsynchronized(state) do
+    case GPUI.Session.snapshot(state.session) do
+      %GPUI.Snapshot{} = snapshot ->
+        case sync_display(state, snapshot) do
+          :ok ->
+            state
+            |> GPUI.UpdateSubscribers.publish_update(self(), [], snapshot)
+            |> mark_synchronized(snapshot)
+
+          {:error, _reason} ->
+            state
+        end
+
+      {:error, _reason} ->
+        state
+    end
+  end
+
+  defp mark_unsynchronized(state), do: %{state | unsynchronized?: true}
+  defp mark_synchronized(state, _snapshot), do: %{state | unsynchronized?: false}
 
   defp sync_display(state, snapshot) do
     case GPUI.Display.sync_snapshot(state.display_module, state.display, snapshot) do

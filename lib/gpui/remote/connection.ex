@@ -7,6 +7,9 @@ defmodule GPUI.Remote.Connection do
   alias GPUI.Remote.Supervision
   alias GPUI.Remote.Transport.TCP
 
+  @coordinator_timeout 5_000
+  @delegate_completion_timeout 5_000
+
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts)
 
   def port(%{listener: listener}), do: TCP.port(listener)
@@ -100,7 +103,11 @@ defmodule GPUI.Remote.Connection do
     if map_size(state.delegates) >= state.request_limit do
       {:reply, {:error, :overloaded}, state}
     else
-      case GenServer.call(state.server, {:dispatch, state.connection_id, request}, :infinity) do
+      case GenServer.call(
+             state.server,
+             {:dispatch, state.connection_id, request},
+             @coordinator_timeout
+           ) do
         {:delegate, route, session_request} ->
           delegate_request(state, from, route, session_request)
 
@@ -130,7 +137,8 @@ defmodule GPUI.Remote.Connection do
 
     case Task.Supervisor.start_child(state.task_supervisor, fn ->
            reply = GPUI.Remote.Session.call(route, request)
-           GenServer.call(owner, {:delegate_complete, token, reply}, :infinity)
+
+           GenServer.call(owner, {:delegate_complete, token, reply}, @delegate_completion_timeout)
          end) do
       {:ok, task} ->
         task_monitor = Process.monitor(task)

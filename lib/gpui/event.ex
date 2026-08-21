@@ -83,6 +83,12 @@ defmodule GPUI.Event do
   @max_event_name_bytes 512
   @max_file_read_bytes 25 * 1_024 * 1_024
 
+  @doc "Returns the renderer-independent event types routed to root view callbacks."
+  @spec routed_types() :: [type()]
+  def routed_types, do: @routed_types
+
+  defguard is_routed_type(type) when type in @routed_types
+
   @doc "Validates and normalizes a display event into its canonical renderer-independent map."
   @spec normalize(t() | map() | keyword()) :: {:ok, map()} | {:error, term()}
   def normalize(%__MODULE__{} = event), do: event |> to_map() |> normalize()

@@ -232,21 +232,21 @@ defmodule GPUI.CommandTest do
   test "routes fixed lifecycle atoms through the optional view callback" do
     {:ok, session} = Session.start_link(app: App)
 
-    {focus, snapshot} =
+    {:ok, focus, snapshot} =
       Session.dispatch_event(session, %{type: :window_focus, window_id: 1})
 
     assert focus.type == :window_focus
     refute Map.has_key?(focus, :event)
     assert [%{id: 1}] = snapshot.windows
 
-    {close, snapshot} =
+    {:ok, close, snapshot} =
       Session.dispatch_event(session, %{type: :window_close_request, window_id: 1})
 
     assert close.type == :window_close_request
     refute Map.has_key?(close, :event)
     assert snapshot.windows == []
 
-    {closed, snapshot} =
+    {:ok, closed, snapshot} =
       Session.dispatch_event(session, %{type: :window_closed, window_id: 1})
 
     assert closed.type == :window_closed
@@ -256,14 +256,14 @@ defmodule GPUI.CommandTest do
   test "a declarative confirmation can cancel or approve window closure" do
     {:ok, session} = Session.start_link(app: CloseConfirmationApp)
 
-    {_event, snapshot} =
+    {:ok, _event, snapshot} =
       Session.dispatch_event(session, %{type: :window_close_request, window_id: 1})
 
     assert [window] = snapshot.windows
     assert window.root.assigns.close_dialog_open
     assert component(window.root.tree, :ui_dialog).attrs.open
 
-    {_event, snapshot} =
+    {:ok, _event, snapshot} =
       Session.dispatch_event(session, %{
         type: :click,
         window_id: 1,
@@ -276,7 +276,7 @@ defmodule GPUI.CommandTest do
 
     Session.dispatch_event(session, %{type: :window_close_request, window_id: 1})
 
-    {_event, snapshot} =
+    {:ok, _event, snapshot} =
       Session.dispatch_event(session, %{
         type: :click,
         window_id: 1,
@@ -286,16 +286,15 @@ defmodule GPUI.CommandTest do
     assert snapshot.windows == []
   end
 
-  test "close approval is only valid for close requests" do
-    Process.flag(:trap_exit, true)
+  test "invalid lifecycle callback results return errors without terminating the session" do
     {:ok, session} = Session.start_link(app: InvalidLifecycleApp)
 
-    log =
-      ExUnit.CaptureLog.capture_log(fn ->
-        assert catch_exit(Session.dispatch_event(session, %{type: :window_focus, window_id: 1}))
-      end)
+    assert {:error,
+            {:invalid_callback_return, InvalidLifecycleView, :handle_window_event, {:close, %{}}}} =
+             Session.dispatch_event(session, %{type: :window_focus, window_id: 1})
 
-    assert log =~ "expected {:noreply, assigns}"
+    assert Process.alive?(session)
+    assert %GPUI.Snapshot{} = Session.snapshot(session)
   end
 
   test "rejects malformed window lifecycle contracts" do

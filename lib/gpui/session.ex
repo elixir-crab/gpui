@@ -14,10 +14,17 @@ defmodule GPUI.Session do
 
   use GenServer
 
+  import GPUI.Event, only: [is_routed_type: 1]
+
   alias GPUI.Snapshot
   alias GPUI.WindowSpec
 
   @max_windows 32
+
+  @type operation_error ::
+          {:render_failed, term(), Exception.stacktrace()}
+          | {:callback_failed, module(), atom(), term(), Exception.stacktrace()}
+          | {:invalid_callback_return, module(), atom(), term()}
 
   @type snapshot :: Snapshot.t()
   @type topology_error ::
@@ -59,7 +66,7 @@ defmodule GPUI.Session do
   def close_window(session, window), do: GenServer.call(session, {:close_window, window})
 
   @doc "Returns the current authoritative renderer-independent snapshot."
-  @spec snapshot(GenServer.server()) :: snapshot()
+  @spec snapshot(GenServer.server()) :: snapshot() | {:error, operation_error()}
   def snapshot(session), do: GenServer.call(session, :snapshot)
 
   @doc "Stores one renderer-independent resource in the next snapshot."
@@ -72,16 +79,18 @@ defmodule GPUI.Session do
   def drop_resource(session, id), do: GenServer.call(session, {:drop_resource, id})
 
   @doc "Validates and dispatches one display event, returning the handled fact and current snapshot."
-  @spec dispatch_event(GenServer.server(), map()) :: {map(), snapshot()}
+  @spec dispatch_event(GenServer.server(), map()) ::
+          {:ok, map(), snapshot()} | {:error, operation_error()}
   def dispatch_event(session, event), do: GenServer.call(session, {:dispatch_event, event})
 
   @doc "Validates and dispatches display events in order, returning handled facts and current snapshot."
-  @spec dispatch_events(GenServer.server(), [map()]) :: {[map()], snapshot()}
+  @spec dispatch_events(GenServer.server(), [map()]) ::
+          {:ok, [map()], snapshot()} | {:error, operation_error()}
   def dispatch_events(session, events), do: GenServer.call(session, {:dispatch_events, events})
 
   @doc "Delivers an OTP message to a window's root view."
   @spec send_view(GenServer.server(), pos_integer(), term()) ::
-          {:ok, snapshot()} | {:error, :window_not_found}
+          {:ok, snapshot()} | {:error, :window_not_found | topology_error() | operation_error()}
   def send_view(session, window_id, message),
     do: GenServer.call(session, {:send_view, window_id, message})
 
@@ -109,7 +118,7 @@ defmodule GPUI.Session do
   defp window_lifecycle(nil), do: []
 
   defp window_lifecycle({module, _assigns}) do
-    if Code.ensure_loaded?(module) and function_exported?(module, :handle_window_event, 3),
+    if function_exported?(module, :handle_window_event, 3),
       do: [:close_request, :focus, :blur],
       else: []
   end
@@ -139,12 +148,23 @@ defmodule GPUI.Session do
   @impl GenServer
   def handle_call(:windows, _from, state), do: {:reply, state.windows, state}
 
-  def handle_call(:snapshot, _from, state), do: {:reply, snapshot_from_state(state), state}
+  def handle_call(:snapshot, _from, state) do
+    case safe_snapshot(state) do
+      {:ok, snapshot} -> {:reply, snapshot, state}
+      {:error, reason} -> {:reply, {:error, reason}, state}
+    end
+  end
 
   def handle_call({:open_window, %WindowSpec{} = window}, _from, state) do
     case add_window(state, window) do
-      {:ok, state, id} -> {:reply, {:ok, id, snapshot_from_state(state)}, state}
-      {:error, reason} -> {:reply, {:error, reason}, state}
+      {:ok, next_state, id} ->
+        case safe_snapshot(next_state) do
+          {:ok, snapshot} -> {:reply, {:ok, id, snapshot}, next_state}
+          {:error, reason} -> {:reply, {:error, reason}, state}
+        end
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
     end
   end
 
@@ -154,24 +174,17 @@ defmodule GPUI.Session do
         {:reply, {:error, :window_not_found}, state}
 
       {_window, windows} ->
-        state = %{state | windows: windows}
-        {:reply, {:ok, snapshot_from_state(state)}, state}
+        next_state = %{state | windows: windows}
+
+        case safe_snapshot(next_state) do
+          {:ok, snapshot} -> {:reply, {:ok, snapshot}, next_state}
+          {:error, reason} -> {:reply, {:error, reason}, state}
+        end
     end
   end
 
   def handle_call(:refresh, _from, state) do
-    reply =
-      try do
-        {:ok, snapshot_from_state(state)}
-      catch
-        :error, reason when is_exception(reason) ->
-          {:error, {:render_failed, reason, __STACKTRACE__}}
-
-        kind, reason ->
-          {:error, {:render_failed, {kind, reason}, __STACKTRACE__}}
-      end
-
-    {:reply, reply, state}
+    {:reply, safe_snapshot(state), state}
   end
 
   def handle_call({:put_resource, id, resource}, _from, state) do
@@ -183,13 +196,13 @@ defmodule GPUI.Session do
   end
 
   def handle_call({:dispatch_event, event}, _from, state) do
-    {handled, state} = normalize_and_handle_event(event, state)
-    {:reply, {handled, snapshot_from_state(state)}, state}
+    {handled, next_state} = normalize_and_handle_event(event, state)
+    reply_transition(handled, state, next_state)
   end
 
   def handle_call({:dispatch_events, events}, _from, state) do
-    {handled, state} = Enum.map_reduce(events, state, &normalize_and_handle_event/2)
-    {:reply, {handled, snapshot_from_state(state)}, state}
+    {handled, next_state} = Enum.map_reduce(events, state, &normalize_and_handle_event/2)
+    reply_transition(handled, state, next_state)
   end
 
   def handle_call({:send_view, window_id, message}, _from, state) do
@@ -197,22 +210,14 @@ defmodule GPUI.Session do
       %WindowSpec{root: {module, assigns}} = window ->
         assigns = Map.new(assigns)
 
-        result =
-          if function_exported?(module, :handle_info, 2),
-            do: module.handle_info(message, assigns),
-            else: {:noreply, assigns}
-
-        case apply_view_result(result, message, state, window, module) do
-          {:ok, state} ->
-            {:reply, {:ok, snapshot_from_state(state)}, state}
-
-          {:error, reason} ->
-            {:reply, {:error, reason}, state}
-
-          :invalid ->
-            raise ArgumentError,
-                  "#{inspect(module)}.handle_info/2 returned #{inspect(result)}; " <>
-                    "expected a supported GPUI.View callback result"
+        with {:ok, result} <-
+               safe_callback(module, :handle_info, [message, assigns], {:noreply, assigns}),
+             {:ok, next_state} <-
+               apply_view_result(result, message, state, window, module, :handle_info),
+             {:ok, snapshot} <- safe_snapshot(next_state) do
+          {:reply, {:ok, snapshot}, next_state}
+        else
+          {:error, reason} -> {:reply, {:error, reason}, state}
         end
 
       nil ->
@@ -288,6 +293,49 @@ defmodule GPUI.Session do
     {List.first(matched), remaining}
   end
 
+  defp safe_snapshot(state) do
+    {:ok, snapshot_from_state(state)}
+  catch
+    kind, reason -> {:error, {:render_failed, normalize_exception(kind, reason), __STACKTRACE__}}
+  end
+
+  defp safe_callback(module, callback, arguments, default) do
+    if function_exported?(module, callback, length(arguments)) do
+      {:ok, apply(module, callback, arguments)}
+    else
+      {:ok, default}
+    end
+  catch
+    kind, reason ->
+      {:error,
+       {:callback_failed, module, callback, normalize_exception(kind, reason), __STACKTRACE__}}
+  end
+
+  defp normalize_exception(:error, reason), do: reason
+  defp normalize_exception(kind, reason), do: {kind, reason}
+
+  defp reply_transition(handled, state, next_state) do
+    case transition_error(handled) do
+      nil ->
+        case safe_snapshot(next_state) do
+          {:ok, snapshot} -> {:reply, {:ok, handled, snapshot}, next_state}
+          {:error, reason} -> {:reply, {:error, reason}, state}
+        end
+
+      reason ->
+        {:reply, {:error, reason}, state}
+    end
+  end
+
+  defp transition_error(events) when is_list(events),
+    do: Enum.find_value(events, &transition_error/1)
+
+  defp transition_error(%{error: {kind, _, _, _} = reason})
+       when kind in [:callback_failed, :invalid_callback_return],
+       do: reason
+
+  defp transition_error(_handled), do: nil
+
   defp snapshot_from_state(state) do
     %Snapshot{windows: Enum.map(state.windows, &window_payload/1), resources: state.resources}
   end
@@ -358,59 +406,22 @@ defmodule GPUI.Session do
     end
   end
 
-  @handled_event_types [
-    :click,
-    :command,
-    :change,
-    :select,
-    :release,
-    :search,
-    :submit,
-    :range,
-    :link,
-    :transaction,
-    :selection,
-    :viewport,
-    :geometry,
-    :range_geometry,
-    :hit_test,
-    :bounds,
-    :focus,
-    :blur,
-    :keydown,
-    :keyup,
-    :drag_enter,
-    :drag_move,
-    :drag_leave,
-    :drop,
-    :clipboard,
-    :clipboard_write,
-    :copy,
-    :file_read
-  ]
-
   defp handle_event(
          %{type: type, window_id: window_id, event: event} = native_event,
          state
        )
-       when type in @handled_event_types do
+       when is_routed_type(type) do
     case Enum.find(state.windows, &(&1.id == window_id)) do
       %WindowSpec{root: {module, assigns}} = window ->
         assigns = Map.new(assigns)
 
-        result = module.handle_event(event, native_event, assigns)
-
-        case apply_view_result(result, native_event, state, window, module) do
-          {:ok, state} ->
-            {native_event, state}
-
-          {:error, reason} ->
-            {Map.put(native_event, :error, reason), state}
-
-          :invalid ->
-            raise ArgumentError,
-                  "#{inspect(module)}.handle_event/3 returned #{inspect(result)}; " <>
-                    "expected a supported GPUI.View callback result"
+        with {:ok, result} <-
+               safe_callback(module, :handle_event, [event, native_event, assigns], nil),
+             {:ok, next_state} <-
+               apply_view_result(result, native_event, state, window, module, :handle_event) do
+          {native_event, next_state}
+        else
+          {:error, reason} -> {Map.put(native_event, :error, reason), state}
         end
 
       nil ->
@@ -439,20 +450,18 @@ defmodule GPUI.Session do
        when is_map(assigns),
        do: close_window(event, state, window, module, assigns)
 
-  defp handle_window_result(result, _event, _state, _window, module, lifecycle) do
-    raise ArgumentError,
-          "#{inspect(module)}.handle_window_event/3 returned #{inspect(result)} for " <>
-            "#{inspect(lifecycle)}; expected {:noreply, assigns}" <>
-            if(lifecycle == :close_request, do: " or {:close, assigns}", else: "")
+  defp handle_window_result(result, event, state, _window, module, _lifecycle) do
+    {Map.put(event, :error, {:invalid_callback_return, module, :handle_window_event, result}),
+     state}
   end
 
-  defp apply_view_result({:noreply, assigns}, event, state, window, module)
+  defp apply_view_result({:noreply, assigns}, event, state, window, module, _callback)
        when is_map(assigns) do
     {_event, state} = update_window(event, state, window, module, assigns)
     {:ok, state}
   end
 
-  defp apply_view_result({:close, assigns}, event, state, window, module)
+  defp apply_view_result({:close, assigns}, event, state, window, module, _callback)
        when is_map(assigns) do
     {_event, state} = close_window(event, state, window, module, assigns)
     {:ok, state}
@@ -463,7 +472,8 @@ defmodule GPUI.Session do
          event,
          state,
          window,
-         module
+         module,
+         _callback
        )
        when is_map(assigns) do
     case add_window(state, opened) do
@@ -476,7 +486,14 @@ defmodule GPUI.Session do
     end
   end
 
-  defp apply_view_result({:close_window, identifier, assigns}, event, state, window, module)
+  defp apply_view_result(
+         {:close_window, identifier, assigns},
+         event,
+         state,
+         window,
+         module,
+         _callback
+       )
        when is_map(assigns) and (is_integer(identifier) or is_binary(identifier)) do
     case pop_window(state.windows, identifier) do
       {nil, _windows} ->
@@ -489,10 +506,10 @@ defmodule GPUI.Session do
     end
   end
 
-  defp apply_view_result(_result, _event, _state, _window, _module), do: :invalid
+  defp apply_view_result(result, _event, _state, _window, module, callback),
+    do: {:error, {:invalid_callback_return, module, callback, result}}
 
-  defp close_window(event, state, window, module, assigns) do
-    _updated = %{window | root: {module, assigns}}
+  defp close_window(event, state, window, _module, _assigns) do
     windows = Enum.reject(state.windows, &(&1.id == window.id))
     {event, %{state | windows: windows}}
   end

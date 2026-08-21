@@ -6,6 +6,7 @@ defmodule GPUI.Remote.Session do
   alias GPUI.Remote.SessionTree
   alias GPUI.Remote.Supervision
 
+  @callback_timeout 5_000
   @event_request_limit 1_024
 
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts)
@@ -98,7 +99,7 @@ defmodule GPUI.Remote.Session do
   def handle_info({:expire, _stale_token}, state), do: {:noreply, state}
 
   defp safe_call(session, request) do
-    GenServer.call(session, request, :infinity)
+    GenServer.call(session, request, @callback_timeout)
   catch
     :exit, reason -> {:error, {:session_unavailable, reason}}
   end
@@ -122,9 +123,15 @@ defmodule GPUI.Remote.Session do
 
   defp apply_event(state, request_id, event) do
     event = Map.drop(event, [:session_id, :request_id])
-    {_event, snapshot} = GPUI.Session.dispatch_event(state.session, event)
-    state = state |> remember_event(request_id) |> touch()
-    {:reply, {:ok, %{snapshot: snapshot}}, state}
+
+    case GPUI.Session.dispatch_event(state.session, event) do
+      {:ok, _event, snapshot} ->
+        state = state |> remember_event(request_id) |> touch()
+        {:reply, {:ok, %{snapshot: snapshot}}, state}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, touch(state)}
+    end
   end
 
   defp mount_snapshot(state) do

@@ -339,6 +339,20 @@ defmodule GPUI.Remote.Client do
     %{state | pending_events: pending}
   end
 
+  @ungated_event_types [
+    :window_closed
+    | GPUI.Event.routed_types() --
+        [
+          :drag_enter,
+          :drag_move,
+          :drag_leave,
+          :drop,
+          :clipboard,
+          :clipboard_write,
+          :file_read
+        ]
+  ]
+
   defp display_event_payload(
          %{type: type} = event,
          session_id,
@@ -372,27 +386,7 @@ defmodule GPUI.Remote.Client do
   end
 
   defp display_event_payload(%{type: type} = event, session_id, _capabilities)
-       when type in [
-              :click,
-              :command,
-              :change,
-              :select,
-              :release,
-              :search,
-              :submit,
-              :range,
-              :link,
-              :keydown,
-              :keyup,
-              :drag_enter,
-              :drag_move,
-              :drag_leave,
-              :drop,
-              :clipboard,
-              :clipboard_write,
-              :copy,
-              :window_closed
-            ] do
+       when type in @ungated_event_types do
     normalize_display_event(event, session_id)
   end
 

@@ -138,9 +138,8 @@ defmodule GPUI.Element do
   defp put_attr(attrs, key, value, true), do: Keyword.put(attrs, key, value)
 
   defp validate_component_ids!(element) do
-    element
-    |> collect_component_ids(MapSet.new())
-    |> then(fn _ids -> :ok end)
+    _ids = collect_component_ids(element, MapSet.new())
+    :ok
   end
 
   defp collect_component_ids(%__MODULE__{} = element, ids) do
