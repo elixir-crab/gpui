@@ -105,6 +105,7 @@ defmodule GPUI.MixProject do
         "guides/ui/overlays-and-menus.md",
         "guides/remote/remote-displays.md",
         "guides/testing/testing.md",
+        "guides/testing/coverage-ownership.md",
         "guides/deployment/native-builds.md"
       ],
       groups_for_extras: [

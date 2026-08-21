@@ -121,6 +121,7 @@ pub(crate) fn render(
     let group_key_runtime = runtime.clone();
     let group_key_event = change_event.clone();
     let group_focus_for_tabs = group_focus.clone();
+    let tabs_id = node.id.clone();
     let mut element = TabBar::new(node.id.clone())
         .children(tabs)
         .menu(node.menu)
@@ -153,7 +154,7 @@ pub(crate) fn render(
 
     let element = gpui::div()
         .id(format!("{}-keyboard", node.id))
-        .track_focus(&group_focus.tab_stop(!disabled))
+        .track_focus(&group_focus.clone().tab_stop(!disabled))
         .on_key_down(move |event, window, cx| {
             if disabled {
                 return;
@@ -183,7 +184,8 @@ pub(crate) fn render(
             cx.stop_propagation();
         })
         .child(apply_component_styles(element, node.style));
-    element.into_any_element()
+    crate::element::register_test_target(element, tabs_id, Some(group_focus), context)
+        .into_any_element()
 }
 
 #[cfg(feature = "components")]
