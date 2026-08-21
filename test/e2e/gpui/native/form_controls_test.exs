@@ -10,7 +10,7 @@ defmodule GPUI.Native.FormControlsE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="flex flex-col w-[360px] h-[180px] p-4 gap-4 bg-white text-slate-900">
+      <div class="flex flex-col w-[360px] h-[180px] p-4 gap-4 bg-slate-900 text-white">
         <GPUI.UI.switch
           id="form-notifications"
           label="Notifications"
@@ -75,10 +75,17 @@ defmodule GPUI.Native.FormControlsE2ETest do
 
   test "desktop renders controlled form controls", %{desktop: desktop} do
     title = "GPUI Form Controls E2E #{System.unique_integer([:positive])}"
-    runtime = start_runtime!(desktop, app: FormApp, args: %{title: title})
+
+    runtime =
+      start_runtime!(desktop,
+        app: FormApp,
+        args: %{title: title},
+        display_opts: [theme: :dark]
+      )
 
     window = Desktop.window!(desktop, title)
     Desktop.await_frame!(desktop, runtime, 1, window)
+    Desktop.capture_fixture!(desktop, window, "form-controls")
 
     assert %{notifications: false, plan: "free"} = assigns(runtime)
     assert Process.alive?(runtime)

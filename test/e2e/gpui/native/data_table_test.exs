@@ -21,7 +21,7 @@ defmodule GPUI.Native.DataTableE2ETest do
         end
 
       ~GPUI"""
-      <div class="w-[640px] h-[420px] bg-white text-slate-900 p-2">
+      <div class="w-[640px] h-[420px] bg-slate-900 text-white p-2">
         <UI.data_table
           id="source-table"
           label="Source-backed records"
@@ -156,7 +156,12 @@ defmodule GPUI.Native.DataTableE2ETest do
   end
 
   test "desktop renders a wide distant grid and delivers pointer sorting", %{desktop: desktop} do
-    runtime = start_runtime!(desktop, app: TableApp, poll_interval: 10)
+    runtime =
+      start_runtime!(desktop,
+        app: TableApp,
+        poll_interval: 10,
+        display_opts: [theme: :dark]
+      )
 
     native_window_id = Desktop.window!(desktop, "GPUI Data Table E2E")
     Desktop.await_frame!(desktop, runtime, 1, native_window_id)
@@ -165,6 +170,7 @@ defmodule GPUI.Native.DataTableE2ETest do
     assert range.first > 99_900
     assert range.last == 100_000
     Desktop.await_frame!(desktop, runtime, 1, native_window_id)
+    Desktop.capture_fixture!(desktop, native_window_id, "data-table")
 
     snapshot = GPUI.Runtime.snapshot(runtime)
     rows = snapshot |> GPUI.Test.tree() |> GPUI.Test.all(type: :ui_table_row)

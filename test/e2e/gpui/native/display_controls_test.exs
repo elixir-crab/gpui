@@ -11,7 +11,7 @@ defmodule GPUI.Native.DisplayControlsE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="flex flex-col w-[420px] h-[220px] gap-4 p-4 bg-white text-slate-900">
+      <div class="flex flex-col w-[420px] h-[220px] gap-4 p-4 bg-slate-900 text-white">
         <UI.button
           id="copy-value"
           label="Copy value"
@@ -49,9 +49,17 @@ defmodule GPUI.Native.DisplayControlsE2ETest do
 
   test "desktop renders native display controls", %{desktop: desktop} do
     title = "GPUI Display Controls E2E #{System.unique_integer([:positive])}"
-    runtime = start_runtime!(desktop, app: ControlsApp, args: %{title: title})
+
+    runtime =
+      start_runtime!(desktop,
+        app: ControlsApp,
+        args: %{title: title},
+        display_opts: [theme: :dark]
+      )
+
     window = Desktop.window!(desktop, title)
     Desktop.await_frame!(desktop, runtime, 1, window)
+    Desktop.capture_fixture!(desktop, window, "display-controls")
     assert %{windows: [%{root: %{assigns: %{copied: false}}}]} = GPUI.Runtime.snapshot(runtime)
     assert Process.alive?(runtime)
   end

@@ -14,7 +14,7 @@ defmodule GPUI.Native.RichTextE2ETest do
     def render(assigns) do
       runs = [
         RichRun.new(Range.new(Position.new(0, 0), Position.new(0, 5)),
-          color: 0x0F172A,
+          color: 0xF8FAFC,
           font_weight: :bold,
           link: "message://hello"
         ),
@@ -26,14 +26,14 @@ defmodule GPUI.Native.RichTextE2ETest do
       ]
 
       ~GPUI"""
-      <div class="w-[480px] h-[260px] p-6 bg-white text-slate-900">
+      <div class="w-[480px] h-[260px] p-6 bg-slate-950 text-white">
         <UI.rich_text
           id="rich-message"
           label="Rich message"
           text={"Hello world\nOpen details"}
           runs={runs}
           phx-link="link-opened"
-          class="w-[420px] text-lg leading-7 text-slate-700"
+          class="w-[420px] text-lg leading-7 text-slate-300"
         />
         <UI.input
           id="clipboard-probe"
@@ -42,7 +42,7 @@ defmodule GPUI.Native.RichTextE2ETest do
           phx-change="clipboard-changed"
           class="mt-4 w-[420px]"
         />
-        <text class="mt-6 text-slate-900">Links: {assigns.links}; Last: {assigns.last_link || "none"}</text>
+        <text class="mt-6 text-white">Links: {assigns.links}; Last: {assigns.last_link || "none"}</text>
       </div>
       """
     end
@@ -71,9 +71,16 @@ defmodule GPUI.Native.RichTextE2ETest do
   end
 
   test "desktop renders shaped rich text", %{desktop: desktop} do
-    runtime = start_runtime!(desktop, app: RichTextApp, poll_interval: 10)
+    runtime =
+      start_runtime!(desktop,
+        app: RichTextApp,
+        poll_interval: 10,
+        display_opts: [theme: :dark]
+      )
+
     window = Desktop.window!(desktop, "GPUI Rich Text E2E")
     Desktop.await_frame!(desktop, runtime, 1, window)
+    Desktop.capture_fixture!(desktop, window, "rich-text")
     assert Process.alive?(runtime)
   end
 end

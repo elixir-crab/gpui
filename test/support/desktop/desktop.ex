@@ -107,6 +107,17 @@ defmodule GPUITest.Desktop do
   def capture!(%__MODULE__{} = desktop, %Window{} = window, path),
     do: call(desktop, {:capture, window, path})
 
+  def capture_fixture!(%__MODULE__{} = desktop, %Window{} = window, name) do
+    case System.get_env("GPUI_E2E_CAPTURE_DIR") do
+      nil ->
+        :ok
+
+      directory ->
+        File.mkdir_p!(directory)
+        capture!(desktop, window, Path.join(directory, name <> ".png"))
+    end
+  end
+
   def repeat_click!(%__MODULE__{} = desktop, %Window{} = window, opts) do
     {x, y} = point!(opts)
     count = Keyword.fetch!(opts, :count)

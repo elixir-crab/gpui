@@ -12,7 +12,7 @@ defmodule GPUI.Native.VirtualCollectionE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="w-[420px] h-[420px] p-3 bg-white text-slate-900">
+      <div class="w-[420px] h-[420px] p-3 bg-slate-950 text-white">
         <UI.virtual_collection
           id="transcript"
           label="Conversation transcript"
@@ -24,7 +24,7 @@ defmodule GPUI.Native.VirtualCollectionE2ETest do
           reveal_strategy="top"
           overdraw={120}
           phx-range="visible-range"
-          class="h-[396px] bg-slate-50"
+          class="h-[396px] bg-slate-900"
         >
           {Enum.map(assigns.messages, &message/1)}
         </UI.virtual_collection>
@@ -70,10 +70,10 @@ defmodule GPUI.Native.VirtualCollectionE2ETest do
       ~GPUI"""
       <UI.virtual_item id={assigns.id} revision={assigns.revision}>
         <div
-          class="px-3 py-2 border-b border-slate-200 bg-white"
+          class="px-3 py-2 border-b border-slate-700 bg-slate-900"
           style={[height: {:px, 20 + assigns.lines * 22}]}
         >
-          <text class="text-slate-900">{assigns.id}: {assigns.lines} lines</text>
+          <text class="text-white">{assigns.id}: {assigns.lines} lines</text>
         </div>
       </UI.virtual_item>
       """
@@ -104,13 +104,19 @@ defmodule GPUI.Native.VirtualCollectionE2ETest do
   end
 
   test "desktop wheel input moves a heterogeneous variable collection", %{desktop: desktop} do
-    runtime = start_runtime!(desktop, app: TranscriptApp, poll_interval: 10)
+    runtime =
+      start_runtime!(desktop,
+        app: TranscriptApp,
+        poll_interval: 10,
+        display_opts: [theme: :dark]
+      )
 
     native_window_id = Desktop.window!(desktop, "GPUI Variable Collection E2E")
     Desktop.await_frame!(desktop, runtime, 1, native_window_id)
 
     initial = await_range(runtime, &(&1.last == 30))
     assert initial.first > 0
+    Desktop.capture_fixture!(desktop, native_window_id, "virtual-collection")
 
     Desktop.scroll!(desktop, native_window_id, at: {200, 180}, delta: {0, 720})
     Desktop.await_frame!(desktop, runtime, 1, native_window_id)

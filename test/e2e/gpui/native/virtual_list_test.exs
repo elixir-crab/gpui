@@ -11,7 +11,7 @@ defmodule GPUI.Native.VirtualListE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="w-[420px] h-[420px] bg-white text-slate-900">
+      <div class="w-[420px] h-[420px] bg-slate-900 text-white">
         <UI.virtual_list
           id="large-list"
           label="Large item list"
@@ -76,7 +76,7 @@ defmodule GPUI.Native.VirtualListE2ETest do
         end
 
       ~GPUI"""
-      <div class="w-[420px] h-[420px] bg-white text-slate-900">
+      <div class="w-[420px] h-[420px] bg-slate-900 text-white">
         <UI.virtual_list
           id="source-list"
           label="Source-backed items"
@@ -217,10 +217,16 @@ defmodule GPUI.Native.VirtualListE2ETest do
   end
 
   test "desktop renders a full-snapshot virtual list and remains responsive", %{desktop: desktop} do
-    runtime = start_runtime!(desktop, app: ListApp, poll_interval: 10)
+    runtime =
+      start_runtime!(desktop,
+        app: ListApp,
+        poll_interval: 10,
+        display_opts: [theme: :dark]
+      )
 
     native_window_id = Desktop.window!(desktop, "GPUI Virtual List E2E")
     Desktop.await_frame!(desktop, runtime, 1, native_window_id)
+    Desktop.capture_fixture!(desktop, native_window_id, "virtual-list")
 
     assert %{windows: [%{root: %{assigns: %{selected: nil}}}]} = GPUI.Runtime.snapshot(runtime)
     assert Process.alive?(runtime)

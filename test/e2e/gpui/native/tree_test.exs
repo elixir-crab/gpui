@@ -21,7 +21,7 @@ defmodule GPUI.Native.TreeE2ETest do
         end
 
       ~GPUI"""
-      <div class="w-[420px] h-[420px] bg-white text-slate-900">
+      <div class="w-[420px] h-[420px] bg-slate-900 text-white">
         <UI.tree
           id="source-tree"
           label="Source-backed tree"
@@ -85,7 +85,7 @@ defmodule GPUI.Native.TreeE2ETest do
         set_size={item_assigns.set_size}
       >
         <div class="flex items-center h-[40px] px-3">
-          <text class="text-slate-900">{item_assigns.id}</text>
+          <text class="text-white">{item_assigns.id}</text>
         </div>
       </UI.tree_item>
       """
@@ -122,7 +122,12 @@ defmodule GPUI.Native.TreeE2ETest do
   test "desktop renders a distant virtualized tree and delivers pointer input", %{
     desktop: desktop
   } do
-    runtime = start_runtime!(desktop, app: TreeApp, poll_interval: 10)
+    runtime =
+      start_runtime!(desktop,
+        app: TreeApp,
+        poll_interval: 10,
+        display_opts: [theme: :dark]
+      )
 
     native_window_id = Desktop.window!(desktop, "GPUI Tree E2E")
     Desktop.await_frame!(desktop, runtime, 1, native_window_id)
@@ -137,6 +142,7 @@ defmodule GPUI.Native.TreeE2ETest do
 
     assert range.first > 99_900
     Desktop.await_frame!(desktop, runtime, 1, native_window_id)
+    Desktop.capture_fixture!(desktop, native_window_id, "tree")
 
     loaded_items =
       runtime
