@@ -64,8 +64,6 @@ defmodule GPUI.Codegen.Native.Boundary do
     text_buffer_undo: [schedule: :dirty_cpu],
     text_buffer_redo: [schedule: :dirty_cpu],
     open_window: [schedule: :dirty_io, real_only: true],
-    update_window: [schedule: :dirty_io, real_only: true],
-    close_window: [schedule: :dirty_io, real_only: true],
     await_frame: [schedule: :dirty_io, real_only: true],
     frame_token: [schedule: :dirty_io, real_only: true],
     await_frame_after: [schedule: :dirty_io, real_only: true],

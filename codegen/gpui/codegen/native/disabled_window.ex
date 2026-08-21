@@ -1,0 +1,25 @@
+defmodule GPUI.Codegen.Native.DisabledWindow do
+  @moduledoc "Defines RustQ-owned fallbacks for window NIFs without real GPUI."
+
+  use RustQ.Native,
+    build: false,
+    load: false,
+    rust_sources: ["native/gpui/src/disabled.rs"]
+
+  alias RustQ.Type, as: R
+
+  @nif schedule: :dirty_io
+  @spec update_window(
+          R.resource(R.path(:RuntimeResource)),
+          R.u64(),
+          term()
+        ) :: R.nif_result(term())
+  defnif update_window(_runtime, _window_id, _tree), do: real_gpui_disabled()
+
+  @nif schedule: :dirty_io
+  @spec close_window(
+          R.resource(R.path(:RuntimeResource)),
+          R.u64()
+        ) :: R.nif_result(term())
+  defnif close_window(_runtime, _window_id), do: real_gpui_disabled()
+end

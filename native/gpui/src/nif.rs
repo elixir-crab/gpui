@@ -189,10 +189,9 @@ pub(crate) fn drain_events_impl<'a>(
 pub(crate) fn update_window_impl<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,
-    window_id: u64,
-    tree: Term<'a>,
+    request: UpdateRequest<'a>,
 ) -> NifResult<Term<'a>> {
-    let tree = decode_element_node(tree)?;
+    let (window_id, tree) = decode_update(request)?;
     let (reply, receiver) = std::sync::mpsc::sync_channel(1);
     let command = WindowCommand::Update {
         runtime_id: runtime.id,
@@ -211,8 +210,9 @@ pub(crate) fn update_window_impl<'a>(
 pub(crate) fn close_window_impl<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,
-    window_id: u64,
+    request: CloseRequest,
 ) -> NifResult<Term<'a>> {
+    let window_id = decode_close(request);
     let (reply, receiver) = std::sync::mpsc::sync_channel(1);
     let command = WindowCommand::Close {
         runtime_id: runtime.id,

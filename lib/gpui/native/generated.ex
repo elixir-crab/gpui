@@ -30,14 +30,6 @@ defmodule GPUI.Native.Generated do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def update_window(_runtime, _window_id, _tree) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def close_window(_runtime, _window_id) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
       def await_frame(_runtime, _window_id, _timeout_ms) do
         :erlang.nif_error(:nif_not_loaded)
       end
@@ -131,6 +123,14 @@ defmodule GPUI.Native.Generated do
       end
 
       def decode_image(_bytes) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def update_window(_runtime, _window_id, _tree) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def close_window(_runtime, _window_id) do
         :erlang.nif_error(:nif_not_loaded)
       end
     end

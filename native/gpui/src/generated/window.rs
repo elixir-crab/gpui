@@ -6,6 +6,10 @@ pub enum Chrome {
     Content,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
+pub struct CloseRequest {
+    pub window_id: u64,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
 pub struct Config<'a> {
     pub id: u64,
     pub title: String,
@@ -42,6 +46,53 @@ pub enum Lifecycle {
 #[derive(Clone, Debug, rustler::NifMap)]
 pub struct Root<'a> {
     pub tree: Term<'a>,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct UpdateRequest<'a> {
+    pub window_id: u64,
+    pub tree: Term<'a>,
+}
+#[allow(clippy::redundant_field_names)]
+fn update_request<'a>(window_id: u64, tree: Term<'a>) -> UpdateRequest<'a> {
+    UpdateRequest {
+        window_id: window_id,
+        tree: tree,
+    }
+}
+#[allow(clippy::redundant_field_names)]
+fn close_request(window_id: u64) -> CloseRequest {
+    CloseRequest {
+        window_id: window_id,
+    }
+}
+fn decode_close(request: CloseRequest) -> u64 {
+    request.window_id
+}
+#[rustler::nif(schedule = "DirtyIo")]
+#[allow(unused_variables)]
+fn update_window<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+    tree: Term<'a>,
+) -> NifResult<Term<'a>> {
+    let request = update_request(window_id, tree);
+    update_window_impl(env, runtime, request)
+}
+#[rustler::nif(schedule = "DirtyIo")]
+#[allow(unused_variables)]
+fn close_window<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+) -> NifResult<Term<'a>> {
+    close_window_impl(env, runtime, close_request(window_id))
+}
+fn decode_update<'a>(request: UpdateRequest<'a>) -> NifResult<(u64, ElementNode)> {
+    match decode_element_node(request.tree) {
+        Ok(tree) => Ok((request.window_id, tree)),
+        Err(reason) => Err(reason),
+    }
 }
 #[allow(dead_code)]
 #[allow(clippy::redundant_field_names)]

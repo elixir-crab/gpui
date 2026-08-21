@@ -14,6 +14,8 @@ use std::{
 #[cfg(feature = "real-gpui")]
 use zed_gpui as gpui;
 
+#[cfg(not(feature = "real-gpui"))]
+mod disabled;
 mod event;
 #[cfg(feature = "real-gpui")]
 mod host;
@@ -25,7 +27,10 @@ mod native_test;
 mod resource;
 mod runtime;
 mod text_buffer;
+#[cfg(feature = "real-gpui")]
 mod window_codec;
+#[cfg(not(feature = "real-gpui"))]
+use disabled::*;
 #[cfg(any(feature = "components", feature = "real-gpui"))]
 use event::EventValue;
 use event::{decode_event_value, encode_native_event, push_event, InputKind, NativeEvent};
@@ -51,6 +56,9 @@ use text_buffer::{TextBufferError, TextBufferResource, TextSelection, TextTransa
 
 include!("generated/atoms.rs");
 include!("generated/rusty.rs");
+#[cfg(not(feature = "real-gpui"))]
+include!("generated/disabled_window.rs");
+#[cfg(feature = "real-gpui")]
 include!("generated/window.rs");
 include!("generated/schema.rs");
 include!("generated/disabled_nifs.rs");
@@ -67,6 +75,7 @@ use element::*;
 use nif::*;
 #[cfg(feature = "real-gpui")]
 use window::*;
+#[cfg(feature = "real-gpui")]
 use window_codec::*;
 
 rustler::init!("Elixir.GPUI.Native");

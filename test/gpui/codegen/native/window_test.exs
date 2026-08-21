@@ -1,16 +1,16 @@
 defmodule GPUI.Codegen.Native.WindowTest do
-  use ExUnit.Case, async: true
+  use RustQ.Test, async: true
 
   alias GPUI.Codegen.Native.Window
+  alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust
   alias RustQ.Rust.AST
 
   test "derives the native window payload and normalization from one typed contract" do
-    items = RustQ.Native.items(Window)
-    source = Rust.render_all(items)
+    source = Window |> RustQ.Native.items() |> Rust.render_all()
 
-    assert Enum.any?(items, &match?(%AST.Struct{name: :Decoded}, &1))
-    assert Enum.any?(items, &match?(%AST.Struct{name: :Config}, &1))
+    assert %AST.Struct{name: :Decoded} = MetaAST.type_item!(Window, :Decoded)
+    assert %AST.Struct{name: :Config} = MetaAST.type_item!(Window, :Config)
     assert source =~ "#[derive(Clone, Debug, rustler::NifMap)]"
     assert source =~ ~r/fn normalize<'a>\(decoded: Decoded<'a>\) -> NifResult<Config<'a>>/
     assert source =~ "pub root: Root<'a>"
@@ -22,8 +22,24 @@ defmodule GPUI.Codegen.Native.WindowTest do
     assert RustQ.valid?(source, "generated_window.rs")
   end
 
+  test "generates typed update and close requests for the handwritten orchestration boundary" do
+    source = rust_source!(Window)
+
+    assert %AST.Struct{name: :UpdateRequest} = MetaAST.type_item!(Window, :UpdateRequest)
+    assert %AST.Struct{name: :CloseRequest} = MetaAST.type_item!(Window, :CloseRequest)
+    assert nif_exported?(Window, :update_window, 3)
+    assert nif_exported?(Window, :close_window, 2)
+    assert source =~ ~r/#\[rustler::nif\(schedule = "DirtyIo"\)\]\s+.*fn update_window/s
+    assert source =~ "fn update_request<'a>(window_id: u64, tree: Term<'a>) -> UpdateRequest<'a>"
+    assert source =~ "fn close_request(window_id: u64) -> CloseRequest"
+    assert source =~ "fn decode_close(request: CloseRequest) -> u64"
+    assert source =~ "update_window_impl(env, runtime, request)"
+    assert source =~ "close_window_impl(env, runtime, close_request(window_id))"
+    assert source =~ "decode_element_node(request.tree)"
+  end
+
   test "keeps malformed tree rejection in the generated element decoder" do
-    window_source = Window |> RustQ.Native.items() |> Rust.render_all()
+    window_source = rust_source!(Window)
     element_source = GPUI.Codegen.Native.Schema.items() |> Rust.render_all()
 
     assert window_source =~ "pub root: Root<'a>"

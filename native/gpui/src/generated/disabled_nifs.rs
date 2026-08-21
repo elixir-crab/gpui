@@ -8,21 +8,6 @@ mod disabled_nifs {
     ) -> NifResult<Term<'a>> {
         Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
     }
-    pub(crate) fn update_window_impl<'a>(
-        _env: Env<'a>,
-        _runtime: ResourceArc<RuntimeResource>,
-        _window_id: u64,
-        _tree: Term<'a>,
-    ) -> NifResult<Term<'a>> {
-        Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
-    }
-    pub(crate) fn close_window_impl<'a>(
-        _env: Env<'a>,
-        _runtime: ResourceArc<RuntimeResource>,
-        _window_id: u64,
-    ) -> NifResult<Term<'a>> {
-        Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
-    }
     pub(crate) fn await_frame_impl<'a>(
         _env: Env<'a>,
         _runtime: ResourceArc<RuntimeResource>,

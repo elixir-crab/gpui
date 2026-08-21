@@ -53,23 +53,6 @@ fn open_window<'a>(
     open_window_impl(env, runtime, window)
 }
 #[rustler::nif(schedule = "DirtyIo")]
-fn update_window<'a>(
-    env: Env<'a>,
-    runtime: ResourceArc<RuntimeResource>,
-    window_id: u64,
-    tree: Term<'a>,
-) -> NifResult<Term<'a>> {
-    update_window_impl(env, runtime, window_id, tree)
-}
-#[rustler::nif(schedule = "DirtyIo")]
-fn close_window<'a>(
-    env: Env<'a>,
-    runtime: ResourceArc<RuntimeResource>,
-    window_id: u64,
-) -> NifResult<Term<'a>> {
-    close_window_impl(env, runtime, window_id)
-}
-#[rustler::nif(schedule = "DirtyIo")]
 fn await_frame<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,

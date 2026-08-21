@@ -1,5 +1,6 @@
 use RustQ.Config
 
+alias RustQ.Meta.AST, as: MetaAST
 alias RustQ.Rustler.Atom, as: RustlerAtom
 alias RustQ.Rustler.Nif
 
@@ -17,6 +18,7 @@ require_file("codegen/gpui/codegen/native/boundary.ex")
 require_file("codegen/gpui/codegen/native/component_contracts.ex")
 require_file("codegen/gpui/codegen/native/components.ex")
 require_file("codegen/gpui/codegen/native/decoder.ex")
+require_file("codegen/gpui/codegen/native/disabled_window.ex")
 require_file("codegen/gpui/codegen/native/dispatch.ex")
 require_file("codegen/gpui/codegen/native/elements.ex")
 require_file("codegen/gpui/codegen/native/events.ex")
@@ -33,6 +35,10 @@ require_file("codegen/gpui/codegen/native/schema.ex")
 
 rust "native/gpui/src/generated/atoms.rs" do
   RustlerAtom.declaration(GPUI.Codegen.Native.Atoms.all())
+end
+
+rust "native/gpui/src/generated/disabled_window.rs" do
+  RustQ.Native.items(GPUI.Codegen.Native.DisabledWindow)
 end
 
 rust "native/gpui/src/generated/window.rs" do
@@ -91,7 +97,11 @@ generate "native-stubs", "lib/gpui/native/generated.ex" do
   generated =
     Nif.stubs_from_functions(
       Nif.functions_from_source("native/gpui/src/nif.rs", nifs) ++
-        Enum.map(rusty_functions, &{:decode_image, &1}),
+        Enum.map(rusty_functions, &{:decode_image, &1}) ++
+        [
+          update_window: MetaAST.function!(GPUI.Codegen.Native.Window, :update_window),
+          close_window: MetaAST.function!(GPUI.Codegen.Native.Window, :close_window)
+        ],
       GPUI.Native.Generated
     )
 

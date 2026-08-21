@@ -11,6 +11,44 @@ defmodule GPUI.Codegen.Native.Window do
   @type chrome :: :system | :content
   @type lifecycle :: :close_request | :focus | :blur
 
+  @type close_request :: %{
+          required(:window_id) => R.u64()
+        }
+
+  @type update_request :: %{
+          required(:window_id) => R.u64(),
+          required(:tree) => term()
+        }
+
+  @spec update_request(R.u64(), term()) :: update_request()
+  defrust update_request(window_id, tree), do: %{window_id: window_id, tree: tree}
+
+  @spec close_request(R.u64()) :: close_request()
+  defrust close_request(window_id), do: %{window_id: window_id}
+
+  @spec decode_close(close_request()) :: R.u64()
+  defrust decode_close(request), do: request.window_id
+
+  @nif schedule: :dirty_io
+  @spec update_window(
+          R.resource(R.path(:RuntimeResource)),
+          R.u64(),
+          term()
+        ) :: R.nif_result(term())
+  defnif update_window(runtime, window_id, tree) do
+    request = update_request(window_id, tree)
+    update_window_impl(nif_env(), runtime, request)
+  end
+
+  @nif schedule: :dirty_io
+  @spec close_window(
+          R.resource(R.path(:RuntimeResource)),
+          R.u64()
+        ) :: R.nif_result(term())
+  defnif close_window(runtime, window_id) do
+    close_window_impl(nif_env(), runtime, close_request(window_id))
+  end
+
   @type root :: %{
           required(:tree) => term()
         }
@@ -42,6 +80,14 @@ defmodule GPUI.Codegen.Native.Window do
           required(:commands) => [{String.t(), String.t()}],
           required(:tree) => term()
         }
+
+  @spec decode_update(update_request()) :: R.nif_result({R.u64(), R.path(:ElementNode)})
+  defrust decode_update(request) do
+    case decode_element_node(request.tree) do
+      {:ok, tree} -> {:ok, {request.window_id, tree}}
+      {:error, reason} -> {:error, reason}
+    end
+  end
 
   @allow :dead_code
   @spec normalize(decoded()) :: R.nif_result(config())

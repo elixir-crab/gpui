@@ -7,6 +7,7 @@ for file <- ~w(
   component_contracts.ex
   components.ex
   decoder.ex
+  disabled_window.ex
   dispatch.ex
   elements.ex
   events.ex
