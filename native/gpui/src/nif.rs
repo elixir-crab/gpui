@@ -378,22 +378,23 @@ pub(crate) fn native_test_start_impl<'a>(
     height: f64,
 ) -> NifResult<Term<'a>> {
     #[cfg(feature = "native-test")]
-    let result = native_test::start(width as f32, height as f32);
+    let result = native_test::start(width as f32, height as f32).map(ResourceArc::new);
     #[cfg(not(feature = "native-test"))]
     let _ = (width, height);
     #[cfg(not(feature = "native-test"))]
-    let result: Result<u64, String> = Err("native_test_disabled".to_string());
+    let result: Result<ResourceArc<native_test::NativeTestSessionResource>, String> =
+        Err("native_test_disabled".to_string());
     encode_command_result(env, result)
 }
 
 pub(crate) fn native_test_render_impl<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     tree: Term<'a>,
 ) -> NifResult<Term<'a>> {
     #[cfg(feature = "native-test")]
     let result = decode_element_node(tree).and_then(|tree| {
-        native_test::render(test_id, tree).map_err(|reason| rustler::Error::Term(Box::new(reason)))
+        native_test::render(&test_id, tree).map_err(|reason| rustler::Error::Term(Box::new(reason)))
     });
     #[cfg(not(feature = "native-test"))]
     let _ = (test_id, tree);
@@ -407,11 +408,11 @@ pub(crate) fn native_test_render_impl<'a>(
 
 pub(crate) fn native_test_focus_impl<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     component_id: String,
 ) -> NifResult<Term<'a>> {
     #[cfg(feature = "native-test")]
-    let result = native_test::focus(test_id, component_id);
+    let result = native_test::focus(&test_id, component_id);
     #[cfg(not(feature = "native-test"))]
     let _ = (test_id, component_id);
     #[cfg(not(feature = "native-test"))]
@@ -421,11 +422,11 @@ pub(crate) fn native_test_focus_impl<'a>(
 
 pub(crate) fn native_test_click_impl<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     element_id: String,
 ) -> NifResult<Term<'a>> {
     #[cfg(feature = "native-test")]
-    let result = native_test::click(test_id, element_id);
+    let result = native_test::click(&test_id, element_id);
     #[cfg(not(feature = "native-test"))]
     let _ = (test_id, element_id);
     #[cfg(not(feature = "native-test"))]
@@ -435,12 +436,12 @@ pub(crate) fn native_test_click_impl<'a>(
 
 pub(crate) fn native_test_click_at_impl<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     x: f64,
     y: f64,
 ) -> NifResult<Term<'a>> {
     #[cfg(feature = "native-test")]
-    let result = native_test::click_at(test_id, x as f32, y as f32);
+    let result = native_test::click_at(&test_id, x as f32, y as f32);
     #[cfg(not(feature = "native-test"))]
     let _ = (test_id, x, y);
     #[cfg(not(feature = "native-test"))]
@@ -450,13 +451,13 @@ pub(crate) fn native_test_click_at_impl<'a>(
 
 pub(crate) fn native_test_scroll_impl<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     element_id: String,
     delta_x: f64,
     delta_y: f64,
 ) -> NifResult<Term<'a>> {
     #[cfg(feature = "native-test")]
-    let result = native_test::scroll(test_id, element_id, delta_x as f32, delta_y as f32);
+    let result = native_test::scroll(&test_id, element_id, delta_x as f32, delta_y as f32);
     #[cfg(not(feature = "native-test"))]
     let _ = (test_id, element_id, delta_x, delta_y);
     #[cfg(not(feature = "native-test"))]
@@ -466,11 +467,11 @@ pub(crate) fn native_test_scroll_impl<'a>(
 
 pub(crate) fn native_test_input_impl<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     text: String,
 ) -> NifResult<Term<'a>> {
     #[cfg(feature = "native-test")]
-    let result = native_test::input(test_id, text);
+    let result = native_test::input(&test_id, text);
     #[cfg(not(feature = "native-test"))]
     let _ = (test_id, text);
     #[cfg(not(feature = "native-test"))]
@@ -480,12 +481,12 @@ pub(crate) fn native_test_input_impl<'a>(
 
 pub(crate) fn native_test_resize_impl<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     width: f64,
     height: f64,
 ) -> NifResult<Term<'a>> {
     #[cfg(feature = "native-test")]
-    let result = native_test::resize(test_id, width as f32, height as f32);
+    let result = native_test::resize(&test_id, width as f32, height as f32);
     #[cfg(not(feature = "native-test"))]
     let _ = (test_id, width, height);
     #[cfg(not(feature = "native-test"))]
@@ -495,11 +496,11 @@ pub(crate) fn native_test_resize_impl<'a>(
 
 pub(crate) fn native_test_bounds_impl<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     element_id: String,
 ) -> NifResult<Term<'a>> {
     #[cfg(feature = "native-test")]
-    let result = native_test::bounds(test_id, element_id);
+    let result = native_test::bounds(&test_id, element_id);
     #[cfg(not(feature = "native-test"))]
     let _ = (test_id, element_id);
     #[cfg(not(feature = "native-test"))]
@@ -512,9 +513,12 @@ pub(crate) fn native_test_bounds_impl<'a>(
     }
 }
 
-pub(crate) fn native_test_idle_impl<'a>(env: Env<'a>, test_id: u64) -> NifResult<Term<'a>> {
+pub(crate) fn native_test_idle_impl<'a>(
+    env: Env<'a>,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
+) -> NifResult<Term<'a>> {
     #[cfg(feature = "native-test")]
-    let result = native_test::idle(test_id);
+    let result = native_test::idle(&test_id);
     #[cfg(not(feature = "native-test"))]
     let _ = test_id;
     #[cfg(not(feature = "native-test"))]
@@ -524,11 +528,11 @@ pub(crate) fn native_test_idle_impl<'a>(env: Env<'a>, test_id: u64) -> NifResult
 
 pub(crate) fn native_test_advance_impl<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     milliseconds: u64,
 ) -> NifResult<Term<'a>> {
     #[cfg(feature = "native-test")]
-    let result = native_test::advance(test_id, milliseconds);
+    let result = native_test::advance(&test_id, milliseconds);
     #[cfg(not(feature = "native-test"))]
     let _ = (test_id, milliseconds);
     #[cfg(not(feature = "native-test"))]
@@ -538,11 +542,11 @@ pub(crate) fn native_test_advance_impl<'a>(
 
 pub(crate) fn native_test_key_impl<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     key: String,
 ) -> NifResult<Term<'a>> {
     #[cfg(feature = "native-test")]
-    let result = native_test::key(test_id, key);
+    let result = native_test::key(&test_id, key);
     #[cfg(not(feature = "native-test"))]
     let _ = (test_id, key);
     #[cfg(not(feature = "native-test"))]
@@ -550,9 +554,12 @@ pub(crate) fn native_test_key_impl<'a>(
     encode_command_result(env, result.map(|()| atoms::ok()))
 }
 
-pub(crate) fn native_test_events_impl<'a>(env: Env<'a>, test_id: u64) -> NifResult<Term<'a>> {
+pub(crate) fn native_test_events_impl<'a>(
+    env: Env<'a>,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
+) -> NifResult<Term<'a>> {
     #[cfg(feature = "native-test")]
-    let result = native_test::events(test_id);
+    let result = native_test::events(&test_id);
     #[cfg(not(feature = "native-test"))]
     let _ = test_id;
     #[cfg(not(feature = "native-test"))]
@@ -569,9 +576,12 @@ pub(crate) fn native_test_events_impl<'a>(env: Env<'a>, test_id: u64) -> NifResu
     }
 }
 
-pub(crate) fn native_test_stop_impl<'a>(env: Env<'a>, test_id: u64) -> NifResult<Term<'a>> {
+pub(crate) fn native_test_stop_impl<'a>(
+    env: Env<'a>,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
+) -> NifResult<Term<'a>> {
     #[cfg(feature = "native-test")]
-    let result = native_test::stop(test_id);
+    let result = native_test::stop(&test_id);
     #[cfg(not(feature = "native-test"))]
     let _ = test_id;
     #[cfg(not(feature = "native-test"))]

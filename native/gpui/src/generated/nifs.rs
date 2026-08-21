@@ -154,7 +154,7 @@ fn native_test_start<'a>(env: Env<'a>, width: f64, height: f64) -> NifResult<Ter
 #[rustler::nif(schedule = "DirtyIo")]
 fn native_test_render<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     tree: Term<'a>,
 ) -> NifResult<Term<'a>> {
     native_test_render_impl(env, test_id, tree)
@@ -162,7 +162,7 @@ fn native_test_render<'a>(
 #[rustler::nif(schedule = "DirtyIo")]
 fn native_test_focus<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     component_id: String,
 ) -> NifResult<Term<'a>> {
     native_test_focus_impl(env, test_id, component_id)
@@ -170,7 +170,7 @@ fn native_test_focus<'a>(
 #[rustler::nif(schedule = "DirtyIo")]
 fn native_test_click<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     element_id: String,
 ) -> NifResult<Term<'a>> {
     native_test_click_impl(env, test_id, element_id)
@@ -178,7 +178,7 @@ fn native_test_click<'a>(
 #[rustler::nif(schedule = "DirtyIo")]
 fn native_test_click_at<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     x: f64,
     y: f64,
 ) -> NifResult<Term<'a>> {
@@ -187,7 +187,7 @@ fn native_test_click_at<'a>(
 #[rustler::nif(schedule = "DirtyIo")]
 fn native_test_scroll<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     element_id: String,
     delta_x: f64,
     delta_y: f64,
@@ -197,7 +197,7 @@ fn native_test_scroll<'a>(
 #[rustler::nif(schedule = "DirtyIo")]
 fn native_test_input<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     text: String,
 ) -> NifResult<Term<'a>> {
     native_test_input_impl(env, test_id, text)
@@ -205,7 +205,7 @@ fn native_test_input<'a>(
 #[rustler::nif(schedule = "DirtyIo")]
 fn native_test_resize<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     width: f64,
     height: f64,
 ) -> NifResult<Term<'a>> {
@@ -214,32 +214,45 @@ fn native_test_resize<'a>(
 #[rustler::nif(schedule = "DirtyIo")]
 fn native_test_bounds<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     element_id: String,
 ) -> NifResult<Term<'a>> {
     native_test_bounds_impl(env, test_id, element_id)
 }
 #[rustler::nif(schedule = "DirtyIo")]
-fn native_test_idle<'a>(env: Env<'a>, test_id: u64) -> NifResult<Term<'a>> {
+fn native_test_idle<'a>(
+    env: Env<'a>,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
+) -> NifResult<Term<'a>> {
     native_test_idle_impl(env, test_id)
 }
 #[rustler::nif(schedule = "DirtyIo")]
 fn native_test_advance<'a>(
     env: Env<'a>,
-    test_id: u64,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
     milliseconds: u64,
 ) -> NifResult<Term<'a>> {
     native_test_advance_impl(env, test_id, milliseconds)
 }
 #[rustler::nif(schedule = "DirtyIo")]
-fn native_test_key<'a>(env: Env<'a>, test_id: u64, key: String) -> NifResult<Term<'a>> {
+fn native_test_key<'a>(
+    env: Env<'a>,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
+    key: String,
+) -> NifResult<Term<'a>> {
     native_test_key_impl(env, test_id, key)
 }
 #[rustler::nif(schedule = "DirtyIo")]
-fn native_test_events<'a>(env: Env<'a>, test_id: u64) -> NifResult<Term<'a>> {
+fn native_test_events<'a>(
+    env: Env<'a>,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
+) -> NifResult<Term<'a>> {
     native_test_events_impl(env, test_id)
 }
 #[rustler::nif(schedule = "DirtyIo")]
-fn native_test_stop<'a>(env: Env<'a>, test_id: u64) -> NifResult<Term<'a>> {
+fn native_test_stop<'a>(
+    env: Env<'a>,
+    test_id: ResourceArc<native_test::NativeTestSessionResource>,
+) -> NifResult<Term<'a>> {
     native_test_stop_impl(env, test_id)
 }
