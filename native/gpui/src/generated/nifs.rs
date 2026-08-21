@@ -168,6 +168,26 @@ fn native_test_focus<'a>(
     native_test_focus_impl(env, test_id, component_id)
 }
 #[rustler::nif(schedule = "DirtyIo")]
+fn native_test_click<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    element_id: String,
+) -> NifResult<Term<'a>> {
+    native_test_click_impl(env, test_id, element_id)
+}
+#[rustler::nif(schedule = "DirtyIo")]
+fn native_test_bounds<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    element_id: String,
+) -> NifResult<Term<'a>> {
+    native_test_bounds_impl(env, test_id, element_id)
+}
+#[rustler::nif(schedule = "DirtyIo")]
+fn native_test_idle<'a>(env: Env<'a>, test_id: u64) -> NifResult<Term<'a>> {
+    native_test_idle_impl(env, test_id)
+}
+#[rustler::nif(schedule = "DirtyIo")]
 fn native_test_key<'a>(env: Env<'a>, test_id: u64, key: String) -> NifResult<Term<'a>> {
     native_test_key_impl(env, test_id, key)
 }

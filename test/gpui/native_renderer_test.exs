@@ -1,7 +1,5 @@
 defmodule GPUI.Test.NativeTest do
-  use GPUI.Test, async: false
-
-  @moduletag :native
+  use GPUI.Test, native: [size: {320, 160}]
 
   defmodule FormView do
     use GPUI.View
@@ -9,7 +7,13 @@ defmodule GPUI.Test.NativeTest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="flex flex-col w-[320px] h-[120px] gap-4">
+      <div class="flex flex-col w-[320px] h-[160px] gap-4">
+        <GPUI.UI.switch
+          id="notifications"
+          label="Notifications"
+          checked={assigns.notifications}
+          phx-change="notifications_changed"
+        />
         <GPUI.UI.radio_group
           id="plan"
           label="Plan"
@@ -27,16 +31,22 @@ defmodule GPUI.Test.NativeTest do
     end
   end
 
-  test "drives the native renderer from ExUnit through stable IDs" do
-    test = GPUI.Test.Native.start!(width: 320, height: 120)
-    on_exit(fn -> GPUI.Test.Native.stop(test) end)
+  test "drives native controls through an ExUnit-owned UI", %{ui: ui} do
+    render(ui, FormView, notifications: false, plan: "free")
 
-    test
-    |> GPUI.Test.Native.render_view!(FormView, plan: "free")
-    |> GPUI.Test.Native.focus!("plan")
-    |> GPUI.Test.Native.key!("right")
+    assert %{width: width, height: height} = bounds(ui, "notifications")
+    assert width > 0
+    assert height > 0
 
-    assert [%{type: :change, event: "plan_changed", value: "team"}] =
-             GPUI.Test.Native.events!(test)
+    click(ui, "notifications")
+
+    assert_receive {:gpui, ^ui,
+                    {:event, %{type: :change, event: "notifications_changed", value: true}}}
+
+    render(ui, FormView, notifications: true, plan: "free")
+    focus(ui, "plan")
+    press(ui, :arrow_right)
+
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "plan_changed", value: "team"}}}
   end
 end

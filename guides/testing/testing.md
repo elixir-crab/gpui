@@ -1,10 +1,14 @@
 # Testing GPUI applications
 
-`GPUI.Test` provides deterministic ExUnit helpers without compiling or loading
-the native NIF and without requiring Rust or a display server. Configure desktop
-consumers with `config :gpui, build_native: config_env() != :test` so ordinary
-test builds retain that boundary. Native interaction tests remain a separate E2E
-layer.
+`GPUI.Test` supports three complementary ExUnit layers:
+
+1. renderer-independent application and view tests, which do not compile or
+   load GPUI;
+2. deterministic native interaction tests backed by GPUI's `TestAppContext`;
+3. real desktop E2E for operating-system and compositor behavior.
+
+Configure desktop consumers with `config :gpui, build_native: config_env() !=
+test` so ordinary test builds retain the fast renderer-independent boundary.
 
 ## Local native E2E
 
@@ -21,42 +25,83 @@ permission, builds the Swift desktop driver, and uses the active WindowServer
 and real Metal renderer. Both paths execute ordinary ExUnit tests through
 `GPUITest.Desktop`; no separate test runner is involved.
 
-## Deterministic native renderer tests
+## Deterministic native interaction tests
 
-Renderer behavior can be tested from ExUnit through `GPUI.Test.Native`. The
-Elixir test owns the view fixture, assigns, actions, and assertions; the native
-side is a generic interpreter around GPUI's `TestAppContext`, not a collection
-of component-specific Rust tests.
+Use the same test case with a `:native` option when behavior depends on GPUI
+layout, focus, hit testing, or keyboard dispatch:
 
 ```elixir
-test "radio navigation skips disabled choices" do
-  native = GPUI.Test.Native.start!(width: 320, height: 120)
-  on_exit(fn -> GPUI.Test.Native.stop(native) end)
+defmodule MyApp.SettingsNativeTest do
+  use GPUI.Test, native: [size: {320, 160}]
 
-  native
-  |> GPUI.Test.Native.render_view!(SettingsView, plan: "free")
-  |> GPUI.Test.Native.focus!("plan")
-  |> GPUI.Test.Native.key!("right")
+  test "radio navigation skips disabled choices", %{ui: ui} do
+    render(ui, SettingsView, plan: "free", notifications: false)
 
-  assert [%{event: "plan_changed", value: "team"}] =
-           GPUI.Test.Native.events!(native)
+    focus(ui, "plan")
+    press(ui, :arrow_right)
+
+    assert_receive {:gpui, ^ui,
+                    {:event,
+                     %{type: :change, event: "plan_changed", value: "team"}}}
+
+    # Controlled state remains in Elixir: render the acknowledged value.
+    render(ui, SettingsView, plan: "team", notifications: false)
+  end
 end
 ```
 
-Run this isolated native-test build with:
+`use GPUI.Test, native: ...` marks the module `:native`, requires synchronous
+ExUnit execution, starts a supervised UI for each test, and supplies its opaque
+handle as `%{ui: ui}`. The imported interaction vocabulary is deliberately
+small:
+
+```elixir
+render(ui, SettingsView, plan: "free")
+focus(ui, "plan")
+press(ui, :space)
+click(ui, "notifications")
+assert %{width: width, height: height} = bounds(ui, "notifications")
+settle(ui)
+```
+
+Stable IDs come from declarative `id` attributes. `click/2` targets the center
+of the corresponding rendered bounds; `bounds/2` returns `%{x:, y:, width:,
+height:}` in logical pixels. `press/2` accepts semantic keys such as
+`:arrow_left`, `:arrow_right`, `:arrow_up`, `:arrow_down`, `:space`, `:enter`,
+`:escape`, and `:tab`, or a GPUI keystroke string.
+
+Native events use ordinary ExUnit mailbox assertions rather than a custom
+assertion language:
+
+```elixir
+click(ui, "notifications")
+
+assert_receive {:gpui, ^ui,
+                {:event,
+                 %{type: :change, event: "notifications_changed", value: true}}}
+```
+
+The Elixir test owns fixtures, assigns, actions, controlled rerenders, and
+assertions. The native side is a generic interpreter around GPUI's
+`TestAppContext`; component-specific fixtures and assertions do not belong in
+Rust.
+
+Run the isolated Mix-target build with:
 
 ```sh
 mix gpui.test.native
 mix gpui.test.native test/gpui/native_renderer_test.exs
+mix gpui.test.native test/gpui/my_settings_native_test.exs
 ```
 
-The task uses the standard Mix target dimension (`MIX_TARGET=native_test`) so
-ordinary `MIX_ENV=test` remains renderer-independent. RustQ generates the NIF
-exports and Elixir stubs for the closed native-test command boundary.
+The task selects `MIX_TARGET=native_test`, leaving ordinary `MIX_ENV=test`
+renderer-independent. RustQ generates the NIF exports and Elixir stubs for the
+closed native-test command boundary.
 
-Real desktop E2E remains necessary for platform facts such as native window
-creation, application-owned chrome, OS close requests, clipboard integration,
-external file drops, IME behavior, and accessibility adapters.
+These tests verify deterministic renderer behavior, not operating-system facts.
+Real desktop E2E remains necessary for native window creation,
+application-owned chrome, OS close requests, clipboard integration, external
+file drops, IME behavior, accessibility adapters, and compositor output.
 
 ## Deterministic application tests
 
@@ -137,8 +182,8 @@ without running timers in a test.
 
 The repository separates tests by purpose:
 
-- `test/gpui/` contains focused unit, deterministic view-state, and
-  schema/template tests;
+- `test/gpui/` contains focused unit, deterministic view-state, schema/template,
+  and deterministic native interaction tests;
 - `test/integration/gpui/examples/` contains example source processes,
   Logger/ETS/filesystem work, cancellation, and other cross-process flows;
 - `test/integration/` contains remaining runtime, transport, and remote-flow
@@ -151,6 +196,12 @@ Run focused renderer-independent layers with:
 ```bash
 mix test test/gpui test/gpui_test.exs
 mix test test/integration
+```
+
+Run deterministic GPUI interaction tests separately:
+
+```bash
+mix gpui.test.native
 ```
 
 Run native-window tests as standard ExUnit in the desktop build environment:

@@ -419,6 +419,49 @@ pub(crate) fn native_test_focus_impl<'a>(
     encode_command_result(env, result.map(|()| atoms::ok()))
 }
 
+pub(crate) fn native_test_click_impl<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    element_id: String,
+) -> NifResult<Term<'a>> {
+    #[cfg(feature = "native-test")]
+    let result = native_test::click(test_id, element_id);
+    #[cfg(not(feature = "native-test"))]
+    let _ = (test_id, element_id);
+    #[cfg(not(feature = "native-test"))]
+    let result: Result<(), String> = Err("native_test_disabled".to_string());
+    encode_command_result(env, result.map(|()| atoms::ok()))
+}
+
+pub(crate) fn native_test_bounds_impl<'a>(
+    env: Env<'a>,
+    test_id: u64,
+    element_id: String,
+) -> NifResult<Term<'a>> {
+    #[cfg(feature = "native-test")]
+    let result = native_test::bounds(test_id, element_id);
+    #[cfg(not(feature = "native-test"))]
+    let _ = (test_id, element_id);
+    #[cfg(not(feature = "native-test"))]
+    let result: Result<native_test::TestBounds, String> = Err("native_test_disabled".to_string());
+    match result {
+        Ok(bounds) => {
+            Ok((atoms::ok(), bounds.x, bounds.y, bounds.width, bounds.height).encode(env))
+        }
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+    }
+}
+
+pub(crate) fn native_test_idle_impl<'a>(env: Env<'a>, test_id: u64) -> NifResult<Term<'a>> {
+    #[cfg(feature = "native-test")]
+    let result = native_test::idle(test_id);
+    #[cfg(not(feature = "native-test"))]
+    let _ = test_id;
+    #[cfg(not(feature = "native-test"))]
+    let result: Result<(), String> = Err("native_test_disabled".to_string());
+    encode_command_result(env, result.map(|()| atoms::ok()))
+}
+
 pub(crate) fn native_test_key_impl<'a>(
     env: Env<'a>,
     test_id: u64,

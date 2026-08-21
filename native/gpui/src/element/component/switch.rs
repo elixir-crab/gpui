@@ -44,6 +44,7 @@ pub(crate) fn render(
     let unavailable = node.disabled || node.loading;
     let accessibility = switch_accessibility(node.label.clone(), checked);
     let switch_id = node.id.clone();
+    let test_selector = switch_id.clone();
     let focus_handle = context
         .window
         .use_keyed_state(format!("{}-focus", node.id), context.cx, |_, cx| {
@@ -79,6 +80,7 @@ pub(crate) fn render(
 
     gpui::div()
         .id(node.id)
+        .debug_selector(|| test_selector)
         .role(Role::Switch)
         .aria_label(accessibility.label)
         .aria_toggled(accessibility.toggled)

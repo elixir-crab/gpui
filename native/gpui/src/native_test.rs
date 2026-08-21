@@ -1,3 +1,11 @@
+#[cfg(not(feature = "native-test"))]
+pub(crate) struct TestBounds {
+    pub(crate) x: f64,
+    pub(crate) y: f64,
+    pub(crate) width: f64,
+    pub(crate) height: f64,
+}
+
 #[cfg(feature = "native-test")]
 use crate::*;
 
@@ -24,6 +32,20 @@ enum TestCommand {
         component_id: String,
         reply: TestCommandReply<()>,
     },
+    Click {
+        id: u64,
+        element_id: String,
+        reply: TestCommandReply<()>,
+    },
+    Bounds {
+        id: u64,
+        element_id: String,
+        reply: TestCommandReply<TestBounds>,
+    },
+    Idle {
+        id: u64,
+        reply: TestCommandReply<()>,
+    },
     Key {
         id: u64,
         key: String,
@@ -44,6 +66,15 @@ struct TestSession {
     runtime: SharedRuntime,
     view: gpui::Entity<ElixirRoot>,
     context: gpui::VisualTestContext,
+}
+
+#[cfg(feature = "native-test")]
+#[derive(Clone, Copy)]
+pub(crate) struct TestBounds {
+    pub(crate) x: f64,
+    pub(crate) y: f64,
+    pub(crate) width: f64,
+    pub(crate) height: f64,
 }
 
 #[cfg(feature = "native-test")]
@@ -157,6 +188,47 @@ fn run(receiver: std::sync::mpsc::Receiver<TestCommand>) {
                     });
                 let _ = reply.send(result);
             }
+            TestCommand::Click {
+                id,
+                element_id,
+                reply,
+            } => {
+                let result = sessions
+                    .get_mut(&id)
+                    .ok_or_else(|| "unknown_native_test".to_string())
+                    .and_then(|session| {
+                        target_bounds(&mut session.context, &element_id).map(|bounds| {
+                            session
+                                .context
+                                .simulate_click(bounds.center(), gpui::Modifiers::default());
+                        })
+                    });
+                let _ = reply.send(result);
+            }
+            TestCommand::Bounds {
+                id,
+                element_id,
+                reply,
+            } => {
+                let result = sessions
+                    .get_mut(&id)
+                    .ok_or_else(|| "unknown_native_test".to_string())
+                    .and_then(|session| target_bounds(&mut session.context, &element_id))
+                    .map(|bounds| TestBounds {
+                        x: f32::from(bounds.origin.x) as f64,
+                        y: f32::from(bounds.origin.y) as f64,
+                        width: f32::from(bounds.size.width) as f64,
+                        height: f32::from(bounds.size.height) as f64,
+                    });
+                let _ = reply.send(result);
+            }
+            TestCommand::Idle { id, reply } => {
+                let result = sessions
+                    .get(&id)
+                    .ok_or_else(|| "unknown_native_test".to_string())
+                    .map(|session| session.context.run_until_parked());
+                let _ = reply.send(result);
+            }
             TestCommand::Key { id, key, reply } => {
                 let result = sessions
                     .get_mut(&id)
@@ -187,6 +259,16 @@ fn run(receiver: std::sync::mpsc::Receiver<TestCommand>) {
 }
 
 #[cfg(feature = "native-test")]
+fn target_bounds(
+    context: &mut gpui::VisualTestContext,
+    element_id: &str,
+) -> Result<gpui::Bounds<gpui::Pixels>, String> {
+    context
+        .debug_bounds(Box::leak(element_id.to_string().into_boxed_str()))
+        .ok_or_else(|| "unknown_native_test_target".to_string())
+}
+
+#[cfg(feature = "native-test")]
 pub(crate) fn start(width: f32, height: f32) -> Result<u64, String> {
     execute(|reply| TestCommand::Start {
         width,
@@ -211,6 +293,29 @@ pub(crate) fn focus(id: u64, component_id: String) -> Result<(), String> {
         component_id,
         reply,
     })
+}
+
+#[cfg(feature = "native-test")]
+pub(crate) fn click(id: u64, element_id: String) -> Result<(), String> {
+    execute(|reply| TestCommand::Click {
+        id,
+        element_id,
+        reply,
+    })
+}
+
+#[cfg(feature = "native-test")]
+pub(crate) fn bounds(id: u64, element_id: String) -> Result<TestBounds, String> {
+    execute(|reply| TestCommand::Bounds {
+        id,
+        element_id,
+        reply,
+    })
+}
+
+#[cfg(feature = "native-test")]
+pub(crate) fn idle(id: u64) -> Result<(), String> {
+    execute(|reply| TestCommand::Idle { id, reply })
 }
 
 #[cfg(feature = "native-test")]

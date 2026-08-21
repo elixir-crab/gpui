@@ -111,7 +111,9 @@ pub(crate) fn render(
     let key_focus_handles = focus_handles.clone();
     #[cfg(feature = "native-test")]
     let test_focus_id = group_id.clone();
-    let element = crate::apply_generated_render_styles(gpui::div(), node.style).id(node.id);
+    let element = crate::apply_generated_render_styles(gpui::div(), node.style)
+        .id(node.id)
+        .debug_selector(|| group_id.clone());
     #[cfg(feature = "native-test")]
     let element = crate::element::register_test_focus(element, test_focus_id, context);
     let element = element

@@ -1,9 +1,19 @@
 defmodule GPUI.Test do
   @moduledoc """
-  ExUnit helpers for testing GPUI views and applications without a native window.
+  ExUnit helpers for renderer-independent application tests and deterministic
+  GPUI interaction tests.
 
-  Use this module from a test case to import deterministic runtime, event, and
-  tree-query helpers:
+  Ordinary tests use a lightweight `GPUI.Test.Display`:
+
+      use GPUI.Test, async: true
+
+  Tests that need GPUI layout, focus, hit testing, or keyboard dispatch opt in
+  to a supervised deterministic native UI:
+
+      use GPUI.Test, native: [size: {640, 480}]
+
+  Both modes import one concise helper vocabulary; the first argument identifies
+  whether an interaction targets a runtime or an interactive UI.
 
       defmodule FocusTimerTest do
         use GPUI.Test, async: true
@@ -28,10 +38,53 @@ defmodule GPUI.Test do
   alias GPUI.Snapshot
 
   defmacro __using__(opts) do
-    quote do
-      use ExUnit.Case, unquote(opts)
-      import GPUI.Test
+    {native_opts, case_opts} = Keyword.pop(opts, :native)
+
+    if native_opts && Keyword.get(case_opts, :async, false) do
+      raise ArgumentError, "native GPUI tests cannot run asynchronously"
     end
+
+    native_opts =
+      case native_opts do
+        true ->
+          []
+
+        opts when is_list(opts) ->
+          opts
+
+        nil ->
+          nil
+
+        other ->
+          raise ArgumentError,
+                "expected :native to be true or a keyword list, got: #{inspect(other)}"
+      end
+
+    quote do
+      use ExUnit.Case, unquote(case_opts)
+      import GPUI.Test
+
+      if unquote(native_opts != nil) do
+        @moduletag :native
+
+        setup context do
+          GPUI.Test.__setup_native__(context, unquote(Macro.escape(native_opts)))
+        end
+      end
+    end
+  end
+
+  @doc false
+  @spec __setup_native__(map(), keyword()) :: {:ok, ui: GPUI.Test.UI.t()}
+  def __setup_native__(_context, opts) do
+    child_spec =
+      Supervisor.child_spec(
+        {GPUI.Test.Native, Keyword.put(opts, :owner, self())},
+        id: {GPUI.Test.Native, make_ref()}
+      )
+
+    pid = ExUnit.Callbacks.start_supervised!(child_spec)
+    {:ok, ui: GPUI.Test.Native.ui(pid)}
   end
 
   @doc "Starts a supervised runtime backed by `GPUI.Test.Display`."
@@ -54,6 +107,11 @@ defmodule GPUI.Test do
   def render(view, assigns \\ %{}) do
     view.render(Map.new(assigns))
   end
+
+  @doc "Renders a view into an interactive deterministic native UI."
+  @spec render(GPUI.Test.UI.t(), module(), map() | keyword()) :: GPUI.Test.UI.t()
+  def render(%GPUI.Test.UI{} = ui, view, assigns),
+    do: GPUI.Test.Native.render(ui, view, assigns)
 
   @doc "Returns a runtime snapshot, or passes an existing snapshot through."
   @spec snapshot(GenServer.server() | Snapshot.t()) :: Snapshot.t()
@@ -121,6 +179,26 @@ defmodule GPUI.Test do
   @spec command(GenServer.server(), String.t(), keyword()) :: Snapshot.t()
   def command(runtime, event, opts \\ []),
     do: dispatch_named(runtime, :command, event, opts)
+
+  @doc "Clicks a stable element ID in an interactive deterministic UI."
+  @spec click(GPUI.Test.UI.t(), String.t()) :: GPUI.Test.UI.t()
+  def click(%GPUI.Test.UI{} = ui, target), do: GPUI.Test.Native.click(ui, target)
+
+  @doc "Moves native keyboard focus to a stable element ID."
+  @spec focus(GPUI.Test.UI.t(), String.t()) :: GPUI.Test.UI.t()
+  def focus(%GPUI.Test.UI{} = ui, target), do: GPUI.Test.Native.focus(ui, target)
+
+  @doc "Presses a semantic key in an interactive deterministic UI."
+  @spec press(GPUI.Test.UI.t(), atom() | String.t()) :: GPUI.Test.UI.t()
+  def press(%GPUI.Test.UI{} = ui, key), do: GPUI.Test.Native.press(ui, key)
+
+  @doc "Returns the rendered bounds for a stable element ID."
+  @spec bounds(GPUI.Test.UI.t(), String.t()) :: map()
+  def bounds(%GPUI.Test.UI{} = ui, target), do: GPUI.Test.Native.bounds(ui, target)
+
+  @doc "Runs native UI work until GPUI is parked."
+  @spec settle(GPUI.Test.UI.t()) :: GPUI.Test.UI.t()
+  def settle(%GPUI.Test.UI{} = ui), do: GPUI.Test.Native.settle(ui)
 
   @doc "Dispatches a click event and returns the updated snapshot."
   @spec click(GenServer.server(), String.t(), keyword()) :: Snapshot.t()

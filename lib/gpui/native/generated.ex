@@ -90,6 +90,18 @@ defmodule GPUI.Native.Generated do
         :erlang.nif_error(:nif_not_loaded)
       end
 
+      def native_test_click(_test_id, _element_id) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_bounds(_test_id, _element_id) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_idle(_test_id) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
       def native_test_key(_test_id, _key) do
         :erlang.nif_error(:nif_not_loaded)
       end

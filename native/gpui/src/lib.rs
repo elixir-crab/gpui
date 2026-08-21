@@ -20,7 +20,6 @@ mod host;
 mod image_decode;
 #[cfg(feature = "real-gpui")]
 mod input;
-#[cfg(feature = "native-test")]
 mod native_test;
 #[cfg(feature = "real-gpui")]
 mod resource;
