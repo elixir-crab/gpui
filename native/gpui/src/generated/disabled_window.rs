@@ -44,3 +44,11 @@ fn await_frame_after<'a>(
 ) -> NifResult<Term<'a>> {
     real_gpui_disabled()
 }
+#[rustler::nif(schedule = "DirtyIo")]
+#[allow(unused_variables)]
+fn set_theme<'a>(
+    _runtime: ResourceArc<RuntimeResource>,
+    _mode: Theme,
+) -> NifResult<Term<'a>> {
+    real_gpui_disabled()
+}

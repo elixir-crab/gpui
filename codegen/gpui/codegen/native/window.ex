@@ -10,6 +10,7 @@ defmodule GPUI.Codegen.Native.Window do
 
   @type chrome :: :system | :content
   @type lifecycle :: :close_request | :focus | :blur
+  @type theme :: :light | :dark
 
   @type close_request :: %{
           required(:window_id) => R.u64()
@@ -100,6 +101,15 @@ defmodule GPUI.Codegen.Native.Window do
       runtime,
       frame_after_request(window_id, generation, timeout_ms)
     )
+  end
+
+  @nif schedule: :dirty_io
+  @spec set_theme(
+          R.resource(R.path(:RuntimeResource)),
+          theme()
+        ) :: R.nif_result(term())
+  defnif set_theme(runtime, mode) do
+    set_theme_impl(nif_env(), runtime, mode)
   end
 
   @type root :: %{

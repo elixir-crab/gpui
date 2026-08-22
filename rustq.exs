@@ -103,7 +103,8 @@ generate "native-stubs", "lib/gpui/native/generated.ex" do
           close_window: MetaAST.function!(GPUI.Codegen.Native.Window, :close_window),
           await_frame: MetaAST.function!(GPUI.Codegen.Native.Window, :await_frame),
           frame_token: MetaAST.function!(GPUI.Codegen.Native.Window, :frame_token),
-          await_frame_after: MetaAST.function!(GPUI.Codegen.Native.Window, :await_frame_after)
+          await_frame_after: MetaAST.function!(GPUI.Codegen.Native.Window, :await_frame_after),
+          set_theme: MetaAST.function!(GPUI.Codegen.Native.Window, :set_theme)
         ],
       GPUI.Native.Generated
     )

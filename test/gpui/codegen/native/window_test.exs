@@ -40,9 +40,12 @@ defmodule GPUI.Codegen.Native.WindowTest do
     assert nif_exported?(Window, :await_frame_after, 4)
     assert %AST.Struct{name: :FrameRequest} = MetaAST.type_item!(Window, :FrameRequest)
     assert %AST.Struct{name: :FrameAfterRequest} = MetaAST.type_item!(Window, :FrameAfterRequest)
+    assert %AST.Enum{name: :Theme} = MetaAST.type_item!(Window, :Theme)
+    assert nif_exported?(Window, :set_theme, 2)
     assert source =~ "await_frame_impl(env, runtime, frame_request(window_id, timeout_ms))"
     assert source =~ "frame_token_impl(env, runtime, close_request(window_id))"
     assert source =~ "frame_after_request(window_id, generation, timeout_ms)"
+    assert source =~ "set_theme_impl(env, runtime, mode)"
     assert source =~ "decode_element_node(request.tree)"
   end
 

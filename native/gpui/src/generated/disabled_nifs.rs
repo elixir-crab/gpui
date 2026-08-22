@@ -8,13 +8,6 @@ mod disabled_nifs {
     ) -> NifResult<Term<'a>> {
         Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
     }
-    pub(crate) fn set_theme_impl<'a>(
-        _env: Env<'a>,
-        _runtime: ResourceArc<RuntimeResource>,
-        _mode: Atom,
-    ) -> NifResult<Term<'a>> {
-        Err(rustler::Error::Term(Box::new("real_gpui_disabled")))
-    }
     pub(crate) fn put_resource_impl<'a>(
         _env: Env<'a>,
         _runtime: ResourceArc<RuntimeResource>,

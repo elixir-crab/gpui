@@ -58,6 +58,11 @@ pub enum Lifecycle {
 pub struct Root<'a> {
     pub tree: Term<'a>,
 }
+#[derive(Clone, Copy, Debug, Eq, PartialEq, rustler::NifUnitEnum)]
+pub enum Theme {
+    Light,
+    Dark,
+}
 #[derive(Clone, Debug, rustler::NifMap)]
 pub struct UpdateRequest<'a> {
     pub window_id: u64,
@@ -151,6 +156,15 @@ fn await_frame_after<'a>(
         runtime,
         frame_after_request(window_id, generation, timeout_ms),
     )
+}
+#[rustler::nif(schedule = "DirtyIo")]
+#[allow(unused_variables)]
+fn set_theme<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    mode: Theme,
+) -> NifResult<Term<'a>> {
+    set_theme_impl(env, runtime, mode)
 }
 fn decode_update<'a>(request: UpdateRequest<'a>) -> NifResult<(u64, ElementNode)> {
     match decode_element_node(request.tree) {

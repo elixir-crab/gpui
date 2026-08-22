@@ -10,7 +10,8 @@ defmodule GPUI.Codegen.Native.DisabledWindowTest do
         close_window: 2,
         await_frame: 3,
         frame_token: 2,
-        await_frame_after: 4
+        await_frame_after: 4,
+        set_theme: 2
       ] do
     test "exports #{name}/#{arity} as a dirty-I/O disabled-native fallback" do
       name = unquote(name)

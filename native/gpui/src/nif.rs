@@ -361,14 +361,11 @@ pub(crate) fn stop_runtime_impl<'a>(
 pub(crate) fn set_theme_impl<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,
-    mode: Atom,
+    mode: Theme,
 ) -> NifResult<Term<'a>> {
-    let native_mode = if mode == atoms::light() {
-        NativeThemeMode::Light
-    } else if mode == atoms::dark() {
-        NativeThemeMode::Dark
-    } else {
-        return Err(rustler::Error::BadArg);
+    let (native_mode, encoded_mode) = match mode {
+        Theme::Light => (NativeThemeMode::Light, atoms::light()),
+        Theme::Dark => (NativeThemeMode::Dark, atoms::dark()),
     };
     let (reply, receiver) = std::sync::mpsc::sync_channel(1);
     let command = WindowCommand::SetTheme {
@@ -378,7 +375,7 @@ pub(crate) fn set_theme_impl<'a>(
 
     encode_command_result(
         env,
-        execute_window_command(&runtime, command, receiver).map(|()| mode),
+        execute_window_command(&runtime, command, receiver).map(|()| encoded_mode),
     )
 }
 

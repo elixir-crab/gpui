@@ -34,10 +34,6 @@ defmodule GPUI.Native.Generated do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def set_theme(_runtime, _mode) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
       def put_resource(_runtime, _resource_id, _resource) do
         :erlang.nif_error(:nif_not_loaded)
       end
@@ -131,6 +127,10 @@ defmodule GPUI.Native.Generated do
       end
 
       def await_frame_after(_runtime, _window_id, _generation, _timeout_ms) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def set_theme(_runtime, _mode) do
         :erlang.nif_error(:nif_not_loaded)
       end
     end

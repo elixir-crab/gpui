@@ -65,7 +65,6 @@ defmodule GPUI.Codegen.Native.Boundary do
     text_buffer_redo: [schedule: :dirty_cpu],
     open_window: [schedule: :dirty_io, real_only: true],
     stop_runtime: [schedule: :dirty_io],
-    set_theme: [schedule: :dirty_io, real_only: true],
     put_resource: [schedule: :dirty_cpu, real_only: true],
     drop_resource: [real_only: true],
     drain_events: [],

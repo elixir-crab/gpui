@@ -47,4 +47,11 @@ defmodule GPUI.Codegen.Native.DisabledWindow do
         ) :: R.nif_result(term())
   defnif await_frame_after(_runtime, _window_id, _generation, _timeout_ms),
     do: real_gpui_disabled()
+
+  @nif schedule: :dirty_io
+  @spec set_theme(
+          R.resource(R.path(:RuntimeResource)),
+          R.path(:Theme)
+        ) :: R.nif_result(term())
+  defnif set_theme(_runtime, _mode), do: real_gpui_disabled()
 end
