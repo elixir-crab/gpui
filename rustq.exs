@@ -100,7 +100,10 @@ generate "native-stubs", "lib/gpui/native/generated.ex" do
         Enum.map(rusty_functions, &{:decode_image, &1}) ++
         [
           update_window: MetaAST.function!(GPUI.Codegen.Native.Window, :update_window),
-          close_window: MetaAST.function!(GPUI.Codegen.Native.Window, :close_window)
+          close_window: MetaAST.function!(GPUI.Codegen.Native.Window, :close_window),
+          await_frame: MetaAST.function!(GPUI.Codegen.Native.Window, :await_frame),
+          frame_token: MetaAST.function!(GPUI.Codegen.Native.Window, :frame_token),
+          await_frame_after: MetaAST.function!(GPUI.Codegen.Native.Window, :await_frame_after)
         ],
       GPUI.Native.Generated
     )

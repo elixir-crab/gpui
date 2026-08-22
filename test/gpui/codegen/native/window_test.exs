@@ -35,6 +35,14 @@ defmodule GPUI.Codegen.Native.WindowTest do
     assert source =~ "fn decode_close(request: CloseRequest) -> u64"
     assert source =~ "update_window_impl(env, runtime, request)"
     assert source =~ "close_window_impl(env, runtime, close_request(window_id))"
+    assert nif_exported?(Window, :await_frame, 3)
+    assert nif_exported?(Window, :frame_token, 2)
+    assert nif_exported?(Window, :await_frame_after, 4)
+    assert %AST.Struct{name: :FrameRequest} = MetaAST.type_item!(Window, :FrameRequest)
+    assert %AST.Struct{name: :FrameAfterRequest} = MetaAST.type_item!(Window, :FrameAfterRequest)
+    assert source =~ "await_frame_impl(env, runtime, frame_request(window_id, timeout_ms))"
+    assert source =~ "frame_token_impl(env, runtime, close_request(window_id))"
+    assert source =~ "frame_after_request(window_id, generation, timeout_ms)"
     assert source =~ "decode_element_node(request.tree)"
   end
 

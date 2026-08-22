@@ -20,6 +20,25 @@ defmodule GPUI.Codegen.Native.Window do
           required(:tree) => term()
         }
 
+  @type frame_request :: %{
+          required(:window_id) => R.u64(),
+          required(:timeout_ms) => R.u64()
+        }
+
+  @type frame_after_request :: %{
+          required(:window_id) => R.u64(),
+          required(:generation) => R.u64(),
+          required(:timeout_ms) => R.u64()
+        }
+
+  @spec frame_request(R.u64(), R.u64()) :: frame_request()
+  defrust frame_request(window_id, timeout_ms),
+    do: %{window_id: window_id, timeout_ms: timeout_ms}
+
+  @spec frame_after_request(R.u64(), R.u64(), R.u64()) :: frame_after_request()
+  defrust frame_after_request(window_id, generation, timeout_ms),
+    do: %{window_id: window_id, generation: generation, timeout_ms: timeout_ms}
+
   @spec update_request(R.u64(), term()) :: update_request()
   defrust update_request(window_id, tree), do: %{window_id: window_id, tree: tree}
 
@@ -47,6 +66,40 @@ defmodule GPUI.Codegen.Native.Window do
         ) :: R.nif_result(term())
   defnif close_window(runtime, window_id) do
     close_window_impl(nif_env(), runtime, close_request(window_id))
+  end
+
+  @nif schedule: :dirty_io
+  @spec await_frame(
+          R.resource(R.path(:RuntimeResource)),
+          R.u64(),
+          R.u64()
+        ) :: R.nif_result(term())
+  defnif await_frame(runtime, window_id, timeout_ms) do
+    await_frame_impl(nif_env(), runtime, frame_request(window_id, timeout_ms))
+  end
+
+  @nif schedule: :dirty_io
+  @spec frame_token(
+          R.resource(R.path(:RuntimeResource)),
+          R.u64()
+        ) :: R.nif_result(term())
+  defnif frame_token(runtime, window_id) do
+    frame_token_impl(nif_env(), runtime, close_request(window_id))
+  end
+
+  @nif schedule: :dirty_io
+  @spec await_frame_after(
+          R.resource(R.path(:RuntimeResource)),
+          R.u64(),
+          R.u64(),
+          R.u64()
+        ) :: R.nif_result(term())
+  defnif await_frame_after(runtime, window_id, generation, timeout_ms) do
+    await_frame_after_impl(
+      nif_env(),
+      runtime,
+      frame_after_request(window_id, generation, timeout_ms)
+    )
   end
 
   @type root :: %{

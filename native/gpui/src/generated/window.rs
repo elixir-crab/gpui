@@ -37,6 +37,17 @@ pub struct Decoded<'a> {
     pub commands: Vec<(String, String)>,
     pub root: Root<'a>,
 }
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct FrameAfterRequest {
+    pub window_id: u64,
+    pub generation: u64,
+    pub timeout_ms: u64,
+}
+#[derive(Clone, Debug, rustler::NifMap)]
+pub struct FrameRequest {
+    pub window_id: u64,
+    pub timeout_ms: u64,
+}
 #[derive(Clone, Copy, Debug, Eq, PartialEq, rustler::NifUnitEnum)]
 pub enum Lifecycle {
     CloseRequest,
@@ -51,6 +62,25 @@ pub struct Root<'a> {
 pub struct UpdateRequest<'a> {
     pub window_id: u64,
     pub tree: Term<'a>,
+}
+#[allow(clippy::redundant_field_names)]
+fn frame_request(window_id: u64, timeout_ms: u64) -> FrameRequest {
+    FrameRequest {
+        window_id: window_id,
+        timeout_ms: timeout_ms,
+    }
+}
+#[allow(clippy::redundant_field_names)]
+fn frame_after_request(
+    window_id: u64,
+    generation: u64,
+    timeout_ms: u64,
+) -> FrameAfterRequest {
+    FrameAfterRequest {
+        window_id: window_id,
+        generation: generation,
+        timeout_ms: timeout_ms,
+    }
 }
 #[allow(clippy::redundant_field_names)]
 fn update_request<'a>(window_id: u64, tree: Term<'a>) -> UpdateRequest<'a> {
@@ -87,6 +117,40 @@ fn close_window<'a>(
     window_id: u64,
 ) -> NifResult<Term<'a>> {
     close_window_impl(env, runtime, close_request(window_id))
+}
+#[rustler::nif(schedule = "DirtyIo")]
+#[allow(unused_variables)]
+fn await_frame<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+    timeout_ms: u64,
+) -> NifResult<Term<'a>> {
+    await_frame_impl(env, runtime, frame_request(window_id, timeout_ms))
+}
+#[rustler::nif(schedule = "DirtyIo")]
+#[allow(unused_variables)]
+fn frame_token<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+) -> NifResult<Term<'a>> {
+    frame_token_impl(env, runtime, close_request(window_id))
+}
+#[rustler::nif(schedule = "DirtyIo")]
+#[allow(unused_variables)]
+fn await_frame_after<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    window_id: u64,
+    generation: u64,
+    timeout_ms: u64,
+) -> NifResult<Term<'a>> {
+    await_frame_after_impl(
+        env,
+        runtime,
+        frame_after_request(window_id, generation, timeout_ms),
+    )
 }
 fn decode_update<'a>(request: UpdateRequest<'a>) -> NifResult<(u64, ElementNode)> {
     match decode_element_node(request.tree) {

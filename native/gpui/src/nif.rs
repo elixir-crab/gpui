@@ -230,9 +230,12 @@ pub(crate) fn close_window_impl<'a>(
 pub(crate) fn await_frame_impl<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,
-    window_id: u64,
-    timeout_ms: u64,
+    request: FrameRequest,
 ) -> NifResult<Term<'a>> {
+    let FrameRequest {
+        window_id,
+        timeout_ms,
+    } = request;
     let (reply, receiver) = std::sync::mpsc::sync_channel(1);
     let command = WindowCommand::AwaitFrame {
         runtime_id: runtime.id,
@@ -256,8 +259,9 @@ pub(crate) fn await_frame_impl<'a>(
 pub(crate) fn frame_token_impl<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,
-    window_id: u64,
+    request: CloseRequest,
 ) -> NifResult<Term<'a>> {
+    let window_id = decode_close(request);
     let (reply, receiver) = std::sync::mpsc::sync_channel(1);
     let command = WindowCommand::FrameToken {
         runtime_id: runtime.id,
@@ -280,10 +284,13 @@ pub(crate) fn frame_token_impl<'a>(
 pub(crate) fn await_frame_after_impl<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,
-    window_id: u64,
-    generation: u64,
-    timeout_ms: u64,
+    request: FrameAfterRequest,
 ) -> NifResult<Term<'a>> {
+    let FrameAfterRequest {
+        window_id,
+        generation,
+        timeout_ms,
+    } = request;
     let (reply, receiver) = std::sync::mpsc::sync_channel(1);
     let command = WindowCommand::AwaitFrameAfter {
         runtime_id: runtime.id,

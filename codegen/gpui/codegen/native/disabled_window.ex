@@ -22,4 +22,29 @@ defmodule GPUI.Codegen.Native.DisabledWindow do
           R.u64()
         ) :: R.nif_result(term())
   defnif close_window(_runtime, _window_id), do: real_gpui_disabled()
+
+  @nif schedule: :dirty_io
+  @spec await_frame(
+          R.resource(R.path(:RuntimeResource)),
+          R.u64(),
+          R.u64()
+        ) :: R.nif_result(term())
+  defnif await_frame(_runtime, _window_id, _timeout_ms), do: real_gpui_disabled()
+
+  @nif schedule: :dirty_io
+  @spec frame_token(
+          R.resource(R.path(:RuntimeResource)),
+          R.u64()
+        ) :: R.nif_result(term())
+  defnif frame_token(_runtime, _window_id), do: real_gpui_disabled()
+
+  @nif schedule: :dirty_io
+  @spec await_frame_after(
+          R.resource(R.path(:RuntimeResource)),
+          R.u64(),
+          R.u64(),
+          R.u64()
+        ) :: R.nif_result(term())
+  defnif await_frame_after(_runtime, _window_id, _generation, _timeout_ms),
+    do: real_gpui_disabled()
 end

@@ -17,3 +17,30 @@ fn close_window<'a>(
 ) -> NifResult<Term<'a>> {
     real_gpui_disabled()
 }
+#[rustler::nif(schedule = "DirtyIo")]
+#[allow(unused_variables)]
+fn await_frame<'a>(
+    _runtime: ResourceArc<RuntimeResource>,
+    _window_id: u64,
+    _timeout_ms: u64,
+) -> NifResult<Term<'a>> {
+    real_gpui_disabled()
+}
+#[rustler::nif(schedule = "DirtyIo")]
+#[allow(unused_variables)]
+fn frame_token<'a>(
+    _runtime: ResourceArc<RuntimeResource>,
+    _window_id: u64,
+) -> NifResult<Term<'a>> {
+    real_gpui_disabled()
+}
+#[rustler::nif(schedule = "DirtyIo")]
+#[allow(unused_variables)]
+fn await_frame_after<'a>(
+    _runtime: ResourceArc<RuntimeResource>,
+    _window_id: u64,
+    _generation: u64,
+    _timeout_ms: u64,
+) -> NifResult<Term<'a>> {
+    real_gpui_disabled()
+}

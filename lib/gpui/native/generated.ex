@@ -30,18 +30,6 @@ defmodule GPUI.Native.Generated do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def await_frame(_runtime, _window_id, _timeout_ms) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def frame_token(_runtime, _window_id) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def await_frame_after(_runtime, _window_id, _generation, _timeout_ms) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
       def stop_runtime(_runtime) do
         :erlang.nif_error(:nif_not_loaded)
       end
@@ -131,6 +119,18 @@ defmodule GPUI.Native.Generated do
       end
 
       def close_window(_runtime, _window_id) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def await_frame(_runtime, _window_id, _timeout_ms) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def frame_token(_runtime, _window_id) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def await_frame_after(_runtime, _window_id, _generation, _timeout_ms) do
         :erlang.nif_error(:nif_not_loaded)
       end
     end

@@ -53,33 +53,6 @@ fn open_window<'a>(
     open_window_impl(env, runtime, window)
 }
 #[rustler::nif(schedule = "DirtyIo")]
-fn await_frame<'a>(
-    env: Env<'a>,
-    runtime: ResourceArc<RuntimeResource>,
-    window_id: u64,
-    timeout_ms: u64,
-) -> NifResult<Term<'a>> {
-    await_frame_impl(env, runtime, window_id, timeout_ms)
-}
-#[rustler::nif(schedule = "DirtyIo")]
-fn frame_token<'a>(
-    env: Env<'a>,
-    runtime: ResourceArc<RuntimeResource>,
-    window_id: u64,
-) -> NifResult<Term<'a>> {
-    frame_token_impl(env, runtime, window_id)
-}
-#[rustler::nif(schedule = "DirtyIo")]
-fn await_frame_after<'a>(
-    env: Env<'a>,
-    runtime: ResourceArc<RuntimeResource>,
-    window_id: u64,
-    generation: u64,
-    timeout_ms: u64,
-) -> NifResult<Term<'a>> {
-    await_frame_after_impl(env, runtime, window_id, generation, timeout_ms)
-}
-#[rustler::nif(schedule = "DirtyIo")]
 fn stop_runtime<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,

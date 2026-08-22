@@ -5,7 +5,13 @@ defmodule GPUI.Codegen.Native.DisabledWindowTest do
   alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
 
-  for {name, arity} <- [update_window: 3, close_window: 2] do
+  for {name, arity} <- [
+        update_window: 3,
+        close_window: 2,
+        await_frame: 3,
+        frame_token: 2,
+        await_frame_after: 4
+      ] do
     test "exports #{name}/#{arity} as a dirty-I/O disabled-native fallback" do
       name = unquote(name)
       arity = unquote(arity)
