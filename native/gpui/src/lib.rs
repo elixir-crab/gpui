@@ -55,6 +55,7 @@ include!("generated/rusty.rs");
 include!("generated/runtime_boundary.rs");
 include!("generated/test_boundary.rs");
 include!("generated/text_types.rs");
+include!("generated/text_boundary.rs");
 include!("generated/event_boundary.rs");
 #[cfg(not(feature = "real-gpui"))]
 include!("generated/disabled_resource_boundary.rs");

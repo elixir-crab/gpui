@@ -57,11 +57,6 @@ defmodule GPUI.Codegen.Native.Boundary do
   end
 
   @boundary_nifs [
-    text_buffer_new: [schedule: :dirty_cpu],
-    text_buffer_snapshot: [schedule: :dirty_cpu],
-    text_buffer_transact: [schedule: :dirty_cpu],
-    text_buffer_undo: [schedule: :dirty_cpu],
-    text_buffer_redo: [schedule: :dirty_cpu],
     open_window: [schedule: :dirty_io, real_only: true]
   ]
 

@@ -29,6 +29,7 @@ require_file("codegen/gpui/codegen/native/event_boundary.ex")
 require_file("codegen/gpui/codegen/native/events.ex")
 require_file("codegen/gpui/codegen/native/style.ex")
 require_file("codegen/gpui/codegen/native/test_boundary.ex")
+require_file("codegen/gpui/codegen/native/text_boundary.ex")
 require_file("codegen/gpui/codegen/native/text_types.ex")
 require_file("codegen/gpui/codegen/native/window.ex")
 require_file("codegen/gpui/codegen/native/atoms.ex")
@@ -52,6 +53,10 @@ end
 
 rust "native/gpui/src/generated/test_boundary.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.TestBoundary)
+end
+
+rust "native/gpui/src/generated/text_boundary.rs" do
+  RustQ.Native.items(GPUI.Codegen.Native.TextBoundary)
 end
 
 rust "native/gpui/src/generated/text_types.rs" do
@@ -132,6 +137,16 @@ generate "native-stubs", "lib/gpui/native/generated.ex" do
       Nif.functions_from_source("native/gpui/src/nif.rs", nifs) ++
         Enum.map(rusty_functions, &{:decode_image, &1}) ++
         [
+          text_buffer_new:
+            MetaAST.function!(GPUI.Codegen.Native.TextBoundary, :text_buffer_new),
+          text_buffer_snapshot:
+            MetaAST.function!(GPUI.Codegen.Native.TextBoundary, :text_buffer_snapshot),
+          text_buffer_transact:
+            MetaAST.function!(GPUI.Codegen.Native.TextBoundary, :text_buffer_transact),
+          text_buffer_undo:
+            MetaAST.function!(GPUI.Codegen.Native.TextBoundary, :text_buffer_undo),
+          text_buffer_redo:
+            MetaAST.function!(GPUI.Codegen.Native.TextBoundary, :text_buffer_redo),
           start_runtime:
             MetaAST.function!(GPUI.Codegen.Native.RuntimeBoundary, :start_runtime),
           stop_runtime: MetaAST.function!(GPUI.Codegen.Native.RuntimeBoundary, :stop_runtime),

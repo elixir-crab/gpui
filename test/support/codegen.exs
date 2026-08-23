@@ -27,6 +27,7 @@ for file <- ~w(
   events.ex
   style.ex
   test_boundary.ex
+  text_boundary.ex
   text_types.ex
   window.ex
   atoms.ex
