@@ -1,8 +1,9 @@
 #[cfg(any(test, feature = "components"))]
 use crate::TextRange;
-use crate::{TextEdit, TextPosition, TextSelection, TextTransaction};
+use crate::{
+    TextEdit, TextPosition, TextSelection, TextSnapshot, TextTransaction, TransactionResult,
+};
 use ropey::{LineType, Rope};
-use rustler::NifMap;
 use std::collections::{HashMap, VecDeque};
 #[cfg(feature = "components")]
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -17,22 +18,6 @@ static NEXT_NATIVE_TRANSACTION_ID: AtomicU64 = AtomicU64::new(1);
 pub(crate) fn next_native_transaction_id(surface_id: &str) -> String {
     let sequence = NEXT_NATIVE_TRANSACTION_ID.fetch_add(1, Ordering::Relaxed);
     format!("native-{surface_id}-{sequence}")
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, NifMap)]
-pub(crate) struct TextSnapshot {
-    pub(crate) revision: u64,
-    pub(crate) text: String,
-    pub(crate) selections: Vec<TextSelection>,
-    pub(crate) can_undo: bool,
-    pub(crate) can_redo: bool,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, NifMap)]
-pub(crate) struct TransactionResult {
-    pub(crate) revision: u64,
-    pub(crate) duplicate: bool,
-    pub(crate) selections: Vec<TextSelection>,
 }
 
 #[derive(Clone)]

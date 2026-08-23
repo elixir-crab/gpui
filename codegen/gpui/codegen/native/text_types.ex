@@ -37,9 +37,31 @@ defmodule GPUI.Codegen.Native.TextTypes do
           required(:selections) => R.vec(R.path(:TextSelection))
         }
 
+  @type text_snapshot :: %{
+          required(:revision) => R.u64(),
+          required(:text) => String.t(),
+          required(:selections) => R.vec(R.path(:TextSelection)),
+          required(:can_undo) => boolean(),
+          required(:can_redo) => boolean()
+        }
+
+  @type transaction_result :: %{
+          required(:revision) => R.u64(),
+          required(:duplicate) => boolean(),
+          required(:selections) => R.vec(R.path(:TextSelection))
+        }
+
   @spec items() :: [RustQ.Rust.AST.item()]
   def items do
-    [:text_position, :text_range, :text_selection, :text_edit, :text_transaction]
+    [
+      :text_position,
+      :text_range,
+      :text_selection,
+      :text_edit,
+      :text_transaction,
+      :text_snapshot,
+      :transaction_result
+    ]
     |> then(&MetaAST.struct_type_items(__MODULE__, &1,
       derive: [:Clone, :Debug, :PartialEq, :Eq, :NifMap],
       vis: :crate,

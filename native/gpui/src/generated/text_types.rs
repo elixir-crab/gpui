@@ -28,10 +28,26 @@ pub(crate) struct TextSelection {
 }
 #[derive(Clone, Debug, PartialEq, Eq, NifMap)]
 #[allow(dead_code)]
+pub(crate) struct TextSnapshot {
+    pub(crate) revision: u64,
+    pub(crate) text: String,
+    pub(crate) selections: Vec<TextSelection>,
+    pub(crate) can_undo: bool,
+    pub(crate) can_redo: bool,
+}
+#[derive(Clone, Debug, PartialEq, Eq, NifMap)]
+#[allow(dead_code)]
 pub(crate) struct TextTransaction {
     pub(crate) id: String,
     pub(crate) base_revision: u64,
     pub(crate) origin: String,
     pub(crate) edits: Vec<TextEdit>,
+    pub(crate) selections: Vec<TextSelection>,
+}
+#[derive(Clone, Debug, PartialEq, Eq, NifMap)]
+#[allow(dead_code)]
+pub(crate) struct TransactionResult {
+    pub(crate) revision: u64,
+    pub(crate) duplicate: bool,
     pub(crate) selections: Vec<TextSelection>,
 }

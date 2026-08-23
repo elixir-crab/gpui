@@ -14,12 +14,16 @@ defmodule GPUI.Codegen.Native.TextTypesTest do
     assert Enum.any?(items, &match?(%AST.Struct{name: :TextSelection}, &1))
     assert Enum.any?(items, &match?(%AST.Struct{name: :TextEdit}, &1))
     assert Enum.any?(items, &match?(%AST.Struct{name: :TextTransaction}, &1))
+    assert Enum.any?(items, &match?(%AST.Struct{name: :TextSnapshot}, &1))
+    assert Enum.any?(items, &match?(%AST.Struct{name: :TransactionResult}, &1))
 
     assert source =~ "struct TextPosition"
     assert source =~ "struct TextRange"
     assert source =~ "struct TextSelection"
     assert source =~ "struct TextEdit"
     assert source =~ "struct TextTransaction"
+    assert source =~ "struct TextSnapshot"
+    assert source =~ "struct TransactionResult"
     assert source =~ "NifMap"
     assert source =~ "utf16_offset: u64"
     assert source =~ "anchor: TextPosition"
@@ -27,6 +31,9 @@ defmodule GPUI.Codegen.Native.TextTypesTest do
     assert source =~ "origin: String"
     assert source =~ "edits: Vec<TextEdit>"
     assert source =~ "selections: Vec<TextSelection>"
+    assert source =~ "can_undo: bool"
+    assert source =~ "can_redo: bool"
+    assert source =~ "duplicate: bool"
     assert RustQ.valid?(source, "generated_text_types.rs")
   end
 end
