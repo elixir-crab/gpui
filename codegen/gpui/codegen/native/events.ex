@@ -94,6 +94,103 @@ defmodule GPUI.Codegen.Native.Events do
   EventDefinitions.define_input_kind()
   EventDefinitions.define_event_impls()
 
+  @spec encode_bounds_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.u64(),
+          String.t(),
+          R.path(:ElementBoundsGeometry)
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_bounds_event(env, window_id, event, value),
+    do: encode_value_event(env, Atoms.bounds(), window_id, event, value.encode(env))
+
+  @spec encode_clipboard_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.u64(),
+          String.t(),
+          R.path(:TransferPayload)
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_clipboard_event(env, window_id, event, value),
+    do: encode_value_event(env, Atoms.clipboard(), window_id, event, value.encode(env))
+
+  @spec encode_transfer_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.ref(input_kind()),
+          R.u64(),
+          String.t(),
+          R.path(:TransferEventValue)
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_transfer_event(env, kind, window_id, event, value),
+    do: encode_value_event(env, kind.atom(), window_id, event, value.encode(env))
+
+  @allow :dead_code
+  @spec encode_value_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.path(:Atom),
+          R.u64(),
+          String.t(),
+          R.path(:Term, R.lifetime(:a))
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrustp encode_value_event(env, kind, window_id, event, value) do
+    encode_event_map(
+      env,
+      [
+        {Atoms.type_atom(), kind.to_term(env)},
+        {Atoms.window_id(), window_id.encode(env)},
+        {Atoms.event(), event.encode(env)},
+        {Atoms.value(), value}
+      ]
+    )
+  end
+
+  @spec encode_focus_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.ref(input_kind()),
+          R.u64(),
+          String.t(),
+          String.t()
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_focus_event(env, kind, window_id, event, id) do
+    value = encode_event_map(env, [{Atoms.id(), id.encode(env)}])
+    encode_value_event(env, kind.atom(), window_id, event, value)
+  end
+
+  @spec encode_virtual_range_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.u64(),
+          String.t(),
+          R.u64(),
+          R.u64()
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_virtual_range_event(env, window_id, event, first, last) do
+    value =
+      encode_event_map(
+        env,
+        [
+          {Atoms.first(), first.encode(env)},
+          {Atoms.last(), last.encode(env)}
+        ]
+      )
+
+    encode_value_event(env, Atoms.range(), window_id, event, value)
+  end
+
+  @spec encode_missing_resource_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.u64(),
+          String.t()
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_missing_resource_event(env, window_id, id) do
+    encode_event_map(
+      env,
+      [
+        {Atoms.type_atom(), Atoms.missing_resource().to_term(env)},
+        {Atoms.window_id(), window_id.encode(env)},
+        {Atoms.id(), id.encode(env)},
+        {Atoms.resource_type(), Atoms.raster().to_term(env)}
+      ]
+    )
+  end
+
   @spec encode_revisioned_transaction_event(
           R.path(:Env, R.lifetime(:a)),
           R.path(:Atom),
@@ -319,10 +416,20 @@ defmodule GPUI.Codegen.Native.Events do
       :encode_input_event,
       :append_event_value,
       :encode_named_event,
-      :encode_window_event
+      :encode_window_event,
+      :encode_value_event
+    ]
+
+    real_gpui_only = [
+      :encode_bounds_event,
+      :encode_focus_event,
+      :encode_missing_resource_event
     ]
 
     component_only = [
+      :encode_clipboard_event,
+      :encode_transfer_event,
+      :encode_virtual_range_event,
       :encode_revisioned_transaction_event,
       :encode_revisioned_selection_event,
       :encode_revisioned_viewport_event,
@@ -333,11 +440,17 @@ defmodule GPUI.Codegen.Native.Events do
     ]
 
     (Enum.map(always, &MetaAST.function!(__MODULE__, &1)) ++
-       Enum.map(component_only, fn name ->
-         function = MetaAST.function!(__MODULE__, name)
-         %{function | attrs: [A.attr(:cfg, feature: "components") | function.attrs]}
-       end))
+       configured_functions(real_gpui_only, "real-gpui") ++
+       configured_functions(component_only, "components"))
+    |> Enum.uniq_by(& &1.name)
     |> Enum.map(&%{&1 | vis: :crate})
+  end
+
+  defp configured_functions(names, feature) do
+    Enum.map(names, fn name ->
+      function = MetaAST.function!(__MODULE__, name)
+      %{function | attrs: [A.attr(:cfg, feature: feature) | function.attrs]}
+    end)
   end
 
   defp type_items, do: MetaAST.generated_type_items(__MODULE__)

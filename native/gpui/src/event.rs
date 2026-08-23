@@ -349,32 +349,13 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             window_id,
             event,
             id,
-        } => encode_event_map(
-            env,
-            vec![
-                (atoms::type_atom(), kind.atom().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-                (
-                    atoms::value(),
-                    encode_event_map(env, vec![(atoms::id(), id.encode(env))])?,
-                ),
-            ],
-        ),
+        } => encode_focus_event(env, &kind, window_id, event, id),
         #[cfg(feature = "real-gpui")]
         NativeEvent::Bounds {
             window_id,
             event,
             value,
-        } => encode_event_map(
-            env,
-            vec![
-                (atoms::type_atom(), atoms::bounds().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-                (atoms::value(), value.encode(env)),
-            ],
-        ),
+        } => encode_bounds_event(env, window_id, event, value),
         #[cfg(feature = "components")]
         NativeEvent::ClipboardWrite { window_id, event } => {
             encode_named_event(env, atoms::clipboard_write(), window_id, event)
@@ -384,30 +365,14 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             window_id,
             event,
             payload,
-        } => encode_event_map(
-            env,
-            vec![
-                (atoms::type_atom(), atoms::clipboard().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-                (atoms::value(), payload.encode(env)),
-            ],
-        ),
+        } => encode_clipboard_event(env, window_id, event, payload),
         #[cfg(feature = "components")]
         NativeEvent::Transfer {
             kind,
             window_id,
             event,
             value,
-        } => encode_event_map(
-            env,
-            vec![
-                (atoms::type_atom(), kind.atom().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-                (atoms::value(), value.encode(env)),
-            ],
-        ),
+        } => encode_transfer_event(env, &kind, window_id, event, value),
         NativeEvent::WindowCloseRequest { window_id } => {
             encode_window_event(env, atoms::window_close_request(), window_id)
         }
@@ -429,24 +394,7 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             event,
             first,
             last,
-        } => encode_event_map(
-            env,
-            vec![
-                (atoms::type_atom(), atoms::range().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-                (
-                    atoms::value(),
-                    encode_event_map(
-                        env,
-                        vec![
-                            (atoms::first(), first.encode(env)),
-                            (atoms::last(), last.encode(env)),
-                        ],
-                    )?,
-                ),
-            ],
-        ),
+        } => encode_virtual_range_event(env, window_id, event, first, last),
         #[cfg(feature = "components")]
         NativeEvent::FileDialog {
             window_id,
@@ -466,15 +414,9 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             ],
         ),
         #[cfg(feature = "real-gpui")]
-        NativeEvent::MissingResource { window_id, id } => encode_event_map(
-            env,
-            vec![
-                (atoms::type_atom(), atoms::missing_resource().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::id(), id.encode(env)),
-                (atoms::resource_type(), atoms::raster().to_term(env)),
-            ],
-        ),
+        NativeEvent::MissingResource { window_id, id } => {
+            encode_missing_resource_event(env, window_id, id)
+        }
     }
 }
 

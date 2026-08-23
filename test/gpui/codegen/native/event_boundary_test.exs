@@ -21,7 +21,13 @@ defmodule GPUI.Codegen.Native.EventBoundaryTest do
   test "generates encoders for simple routed and lifecycle events" do
     source = GPUI.Codegen.Native.Events.items() |> RustQ.Rust.render_all()
 
-    assert source =~ "fn encode_revisioned_transaction_event"
+    assert source =~ "fn encode_bounds_event"
+    assert source =~ "fn encode_focus_event"
+    assert source =~ "fn encode_missing_resource_event"
+    assert source =~ "fn encode_clipboard_event"
+    assert source =~ "fn encode_transfer_event"
+    assert source =~ "fn encode_virtual_range_event"
+    assert source =~ "fn encode_value_event"
     assert source =~ "fn encode_revisioned_selection_event"
     assert source =~ "fn encode_revisioned_viewport_event"
     assert source =~ "fn encode_revisioned_geometry_event"

@@ -178,6 +178,90 @@ pub(crate) fn encode_window_event<'a>(
         ],
     )
 }
+#[allow(dead_code)]
+pub(crate) fn encode_value_event<'a>(
+    env: Env<'a>,
+    kind: Atom,
+    window_id: u64,
+    event: String,
+    value: Term<'a>,
+) -> NifResult<Term<'a>> {
+    encode_event_map(
+        env,
+        vec![
+            (atoms::type_atom(), kind.to_term(env)), (atoms::window_id(), window_id
+            .encode(env)), (atoms::event(), event.encode(env)), (atoms::value(), value)
+        ],
+    )
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn encode_bounds_event<'a>(
+    env: Env<'a>,
+    window_id: u64,
+    event: String,
+    value: ElementBoundsGeometry,
+) -> NifResult<Term<'a>> {
+    encode_value_event(env, atoms::bounds(), window_id, event, value.encode(env))
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn encode_focus_event<'a>(
+    env: Env<'a>,
+    kind: &InputKind,
+    window_id: u64,
+    event: String,
+    id: String,
+) -> NifResult<Term<'a>> {
+    let value = encode_event_map(env, vec![(atoms::id(), id.encode(env))])?;
+    encode_value_event(env, kind.atom(), window_id, event, value)
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn encode_missing_resource_event<'a>(
+    env: Env<'a>,
+    window_id: u64,
+    id: String,
+) -> NifResult<Term<'a>> {
+    encode_event_map(
+        env,
+        vec![
+            (atoms::type_atom(), atoms::missing_resource().to_term(env)),
+            (atoms::window_id(), window_id.encode(env)), (atoms::id(), id.encode(env)),
+            (atoms::resource_type(), atoms::raster().to_term(env))
+        ],
+    )
+}
+#[cfg(feature = "components")]
+pub(crate) fn encode_clipboard_event<'a>(
+    env: Env<'a>,
+    window_id: u64,
+    event: String,
+    value: TransferPayload,
+) -> NifResult<Term<'a>> {
+    encode_value_event(env, atoms::clipboard(), window_id, event, value.encode(env))
+}
+#[cfg(feature = "components")]
+pub(crate) fn encode_transfer_event<'a>(
+    env: Env<'a>,
+    kind: &InputKind,
+    window_id: u64,
+    event: String,
+    value: TransferEventValue,
+) -> NifResult<Term<'a>> {
+    encode_value_event(env, kind.atom(), window_id, event, value.encode(env))
+}
+#[cfg(feature = "components")]
+pub(crate) fn encode_virtual_range_event<'a>(
+    env: Env<'a>,
+    window_id: u64,
+    event: String,
+    first: u64,
+    last: u64,
+) -> NifResult<Term<'a>> {
+    let value = encode_event_map(
+        env,
+        vec![(atoms::first(), first.encode(env)), (atoms::last(), last.encode(env))],
+    )?;
+    encode_value_event(env, atoms::range(), window_id, event, value)
+}
 #[cfg(feature = "components")]
 pub(crate) fn encode_revisioned_transaction_event<'a>(
     env: Env<'a>,
