@@ -31,9 +31,9 @@ mod text_buffer;
 mod window_codec;
 #[cfg(not(feature = "real-gpui"))]
 use disabled::*;
-#[cfg(any(feature = "components", feature = "real-gpui"))]
-use event::EventValue;
-use event::{decode_event_value, encode_native_event, push_event, InputKind, NativeEvent};
+use event::{
+    decode_event_value, encode_native_event, push_event, EventValue, InputKind, NativeEvent,
+};
 #[cfg(feature = "components")]
 use event::{TextCaretGeometry, TextRangeGeometry, TextRectangle, TextViewportGeometry};
 #[cfg(feature = "components")]
@@ -56,6 +56,7 @@ use text_buffer::{TextBufferError, TextBufferResource, TextSelection, TextTransa
 
 include!("generated/atoms.rs");
 include!("generated/rusty.rs");
+include!("generated/event_boundary.rs");
 #[cfg(not(feature = "real-gpui"))]
 include!("generated/disabled_resource_boundary.rs");
 #[cfg(not(feature = "real-gpui"))]

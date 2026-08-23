@@ -10,6 +10,7 @@ for file <- ~w(
   disabled_window.ex
   dispatch.ex
   elements.ex
+  event_boundary.ex
   events.ex
   style.ex
   window.ex

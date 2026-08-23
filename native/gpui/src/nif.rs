@@ -684,36 +684,31 @@ pub(crate) fn drop_resource_impl<'a>(
 pub(crate) fn inject_event_impl<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,
-    event: Term<'a>,
+    request: InjectRequest<'a>,
 ) -> NifResult<Term<'a>> {
-    let window_id = event.map_get(atoms::window_id())?.decode::<u64>()?;
-    let event_type = event
-        .map_get(atoms::type_atom())
-        .ok()
-        .and_then(|term| term.atom_to_string().ok())
-        .unwrap_or_else(|| "click".to_string());
+    let (kind, window_id, event_name, value) = decode_inject(request)?;
 
-    match event_type.as_str() {
-        "window_close_request" => {
+    match kind {
+        InjectKind::WindowCloseRequest => {
             push_event(
                 &runtime.state,
                 NativeEvent::WindowCloseRequest { window_id },
             )?;
         }
-        "window_focus" | "window_blur" => {
+        InjectKind::WindowFocus | InjectKind::WindowBlur => {
             push_event(
                 &runtime.state,
                 NativeEvent::WindowFocus {
-                    focused: event_type == "window_focus",
+                    focused: kind == InjectKind::WindowFocus,
                     window_id,
                 },
             )?;
         }
-        "window_closed" => {
+        InjectKind::WindowClosed => {
             push_event(&runtime.state, NativeEvent::WindowClosed { window_id })?;
         }
-        "click" => {
-            let event_name = event.map_get(atoms::event())?.decode::<String>()?;
+        InjectKind::Click => {
+            let event_name = event_name.ok_or(rustler::Error::BadArg)?;
             push_event(
                 &runtime.state,
                 NativeEvent::Click {
@@ -722,8 +717,8 @@ pub(crate) fn inject_event_impl<'a>(
                 },
             )?;
         }
-        "command" => {
-            let event_name = event.map_get(atoms::event())?.decode::<String>()?;
+        InjectKind::Command => {
+            let event_name = event_name.ok_or(rustler::Error::BadArg)?;
             push_event(
                 &runtime.state,
                 NativeEvent::Command {
@@ -732,19 +727,20 @@ pub(crate) fn inject_event_impl<'a>(
                 },
             )?;
         }
-        "change" | "release" | "search" | "submit" | "keydown" | "keyup" => {
-            let event_name = event.map_get(atoms::event())?.decode::<String>()?;
-            let value = event
-                .map_get(atoms::value())
-                .ok()
-                .and_then(decode_event_value);
-            let kind = match event_type.as_str() {
-                "change" => InputKind::Change,
-                "release" => InputKind::Release,
-                "search" => InputKind::Search,
-                "submit" => InputKind::Submit,
-                "keydown" => InputKind::KeyDown,
-                "keyup" => InputKind::KeyUp,
+        InjectKind::Change
+        | InjectKind::Release
+        | InjectKind::Search
+        | InjectKind::Submit
+        | InjectKind::Keydown
+        | InjectKind::Keyup => {
+            let event_name = event_name.ok_or(rustler::Error::BadArg)?;
+            let kind = match kind {
+                InjectKind::Change => InputKind::Change,
+                InjectKind::Release => InputKind::Release,
+                InjectKind::Search => InputKind::Search,
+                InjectKind::Submit => InputKind::Submit,
+                InjectKind::Keydown => InputKind::KeyDown,
+                InjectKind::Keyup => InputKind::KeyUp,
                 _other => return Err(rustler::Error::BadArg),
             };
 
@@ -758,7 +754,6 @@ pub(crate) fn inject_event_impl<'a>(
                 },
             )?;
         }
-        _other => return Err(rustler::Error::BadArg),
     }
     Ok((atoms::ok(), atoms::ok()).encode(env))
 }

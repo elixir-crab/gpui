@@ -21,6 +21,7 @@ require_file("codegen/gpui/codegen/native/decoder.ex")
 require_file("codegen/gpui/codegen/native/disabled_window.ex")
 require_file("codegen/gpui/codegen/native/dispatch.ex")
 require_file("codegen/gpui/codegen/native/elements.ex")
+require_file("codegen/gpui/codegen/native/event_boundary.ex")
 require_file("codegen/gpui/codegen/native/events.ex")
 require_file("codegen/gpui/codegen/native/style.ex")
 require_file("codegen/gpui/codegen/native/window.ex")
@@ -60,6 +61,10 @@ end
 
 rust "native/gpui/src/generated/events.rs" do
   GPUI.Codegen.Native.Events.items()
+end
+
+rust "native/gpui/src/generated/event_boundary.rs" do
+  RustQ.Native.items(GPUI.Codegen.Native.EventBoundary)
 end
 
 rust "native/gpui/src/generated/rusty.rs" do
@@ -117,7 +122,9 @@ generate "native-stubs", "lib/gpui/native/generated.ex" do
           put_resource:
             MetaAST.function!(GPUI.Codegen.Native.ResourceBoundary, :put_resource),
           drop_resource:
-            MetaAST.function!(GPUI.Codegen.Native.ResourceBoundary, :drop_resource)
+            MetaAST.function!(GPUI.Codegen.Native.ResourceBoundary, :drop_resource),
+          drain_events: MetaAST.function!(GPUI.Codegen.Native.EventBoundary, :drain_events),
+          inject_event: MetaAST.function!(GPUI.Codegen.Native.EventBoundary, :inject_event)
         ],
       GPUI.Native.Generated
     )

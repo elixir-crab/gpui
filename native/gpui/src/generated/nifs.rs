@@ -59,21 +59,6 @@ fn stop_runtime<'a>(
 ) -> NifResult<Term<'a>> {
     stop_runtime_impl(env, runtime)
 }
-#[rustler::nif]
-fn drain_events<'a>(
-    env: Env<'a>,
-    runtime: ResourceArc<RuntimeResource>,
-) -> NifResult<Term<'a>> {
-    drain_events_impl(env, runtime)
-}
-#[rustler::nif]
-fn inject_event<'a>(
-    env: Env<'a>,
-    runtime: ResourceArc<RuntimeResource>,
-    event: Term<'a>,
-) -> NifResult<Term<'a>> {
-    inject_event_impl(env, runtime, event)
-}
 #[rustler::nif(schedule = "DirtyIo")]
 fn native_test_start<'a>(env: Env<'a>, width: f64, height: f64) -> NifResult<Term<'a>> {
     native_test_start_impl(env, width, height)
