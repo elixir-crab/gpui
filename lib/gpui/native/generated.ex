@@ -2,10 +2,6 @@ defmodule GPUI.Native.Generated do
   @moduledoc "Generated Rustler NIF declarations used by GPUI.Native."
   defmacro __using__(_opts) do
     quote do
-      def start_runtime do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
       def text_buffer_new(_text, _revision, _selections) do
         :erlang.nif_error(:nif_not_loaded)
       end
@@ -27,10 +23,6 @@ defmodule GPUI.Native.Generated do
       end
 
       def open_window(_runtime, _window) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def stop_runtime(_runtime) do
         :erlang.nif_error(:nif_not_loaded)
       end
 
@@ -91,6 +83,14 @@ defmodule GPUI.Native.Generated do
       end
 
       def decode_image(_bytes) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def start_runtime do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def stop_runtime(_runtime) do
         :erlang.nif_error(:nif_not_loaded)
       end
 

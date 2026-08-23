@@ -32,6 +32,7 @@ require_file("codegen/gpui/codegen/native/atoms.ex")
 require_file("codegen/gpui/codegen/native/resources.ex")
 require_file("codegen/gpui/codegen/native/resource_boundary.ex")
 require_file("codegen/gpui/codegen/native/rusty.ex")
+require_file("codegen/gpui/codegen/native/runtime_boundary.ex")
 require_file("codegen/gpui/codegen/native/renderers.ex")
 require_file("codegen/gpui/codegen/native/renderer_dispatch.ex")
 require_file("codegen/gpui/codegen/native/registry.ex")
@@ -68,6 +69,10 @@ end
 
 rust "native/gpui/src/generated/event_boundary.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.EventBoundary)
+end
+
+rust "native/gpui/src/generated/runtime_boundary.rs" do
+  RustQ.Native.items(GPUI.Codegen.Native.RuntimeBoundary)
 end
 
 rust "native/gpui/src/generated/rusty.rs" do
@@ -116,6 +121,9 @@ generate "native-stubs", "lib/gpui/native/generated.ex" do
       Nif.functions_from_source("native/gpui/src/nif.rs", nifs) ++
         Enum.map(rusty_functions, &{:decode_image, &1}) ++
         [
+          start_runtime:
+            MetaAST.function!(GPUI.Codegen.Native.RuntimeBoundary, :start_runtime),
+          stop_runtime: MetaAST.function!(GPUI.Codegen.Native.RuntimeBoundary, :stop_runtime),
           update_window: MetaAST.function!(GPUI.Codegen.Native.Window, :update_window),
           close_window: MetaAST.function!(GPUI.Codegen.Native.Window, :close_window),
           await_frame: MetaAST.function!(GPUI.Codegen.Native.Window, :await_frame),

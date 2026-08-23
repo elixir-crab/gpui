@@ -25,6 +25,7 @@ for file <- ~w(
   resources.ex
   resource_boundary.ex
   rusty.ex
+  runtime_boundary.ex
   renderers.ex
   renderer_dispatch.ex
   registry.ex
