@@ -648,9 +648,12 @@ fn execute_window_command_with_timeout<T>(
 pub(crate) fn put_resource_impl<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,
-    resource_id: String,
-    resource: Term<'a>,
+    request: PutRequest<'a>,
 ) -> NifResult<Term<'a>> {
+    let PutRequest {
+        resource_id,
+        resource,
+    } = request;
     let raster = decode_raster_resource(resource)?;
     raster.validate()?;
     runtime
@@ -666,8 +669,9 @@ pub(crate) fn put_resource_impl<'a>(
 pub(crate) fn drop_resource_impl<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,
-    resource_id: String,
+    request: DropRequest,
 ) -> NifResult<Term<'a>> {
+    let resource_id = request.resource_id;
     runtime
         .state
         .resources

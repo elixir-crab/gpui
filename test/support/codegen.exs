@@ -15,6 +15,7 @@ for file <- ~w(
   window.ex
   atoms.ex
   resources.ex
+  resource_boundary.ex
   rusty.ex
   renderers.ex
   renderer_dispatch.ex

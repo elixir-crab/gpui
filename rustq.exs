@@ -26,6 +26,7 @@ require_file("codegen/gpui/codegen/native/style.ex")
 require_file("codegen/gpui/codegen/native/window.ex")
 require_file("codegen/gpui/codegen/native/atoms.ex")
 require_file("codegen/gpui/codegen/native/resources.ex")
+require_file("codegen/gpui/codegen/native/resource_boundary.ex")
 require_file("codegen/gpui/codegen/native/rusty.ex")
 require_file("codegen/gpui/codegen/native/renderers.ex")
 require_file("codegen/gpui/codegen/native/renderer_dispatch.ex")
@@ -47,6 +48,14 @@ end
 
 rust "native/gpui/src/generated/resources.rs" do
   GPUI.Codegen.Native.Resources.items()
+end
+
+rust "native/gpui/src/generated/resource_boundary.rs" do
+  RustQ.Native.items(GPUI.Codegen.Native.ResourceBoundary)
+end
+
+rust "native/gpui/src/generated/disabled_resource_boundary.rs" do
+  RustQ.Native.items(GPUI.Codegen.Native.DisabledResourceBoundary)
 end
 
 rust "native/gpui/src/generated/events.rs" do
@@ -104,7 +113,11 @@ generate "native-stubs", "lib/gpui/native/generated.ex" do
           await_frame: MetaAST.function!(GPUI.Codegen.Native.Window, :await_frame),
           frame_token: MetaAST.function!(GPUI.Codegen.Native.Window, :frame_token),
           await_frame_after: MetaAST.function!(GPUI.Codegen.Native.Window, :await_frame_after),
-          set_theme: MetaAST.function!(GPUI.Codegen.Native.Window, :set_theme)
+          set_theme: MetaAST.function!(GPUI.Codegen.Native.Window, :set_theme),
+          put_resource:
+            MetaAST.function!(GPUI.Codegen.Native.ResourceBoundary, :put_resource),
+          drop_resource:
+            MetaAST.function!(GPUI.Codegen.Native.ResourceBoundary, :drop_resource)
         ],
       GPUI.Native.Generated
     )

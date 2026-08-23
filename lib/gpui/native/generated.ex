@@ -34,14 +34,6 @@ defmodule GPUI.Native.Generated do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def put_resource(_runtime, _resource_id, _resource) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def drop_resource(_runtime, _resource_id) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
       def drain_events(_runtime) do
         :erlang.nif_error(:nif_not_loaded)
       end
@@ -131,6 +123,14 @@ defmodule GPUI.Native.Generated do
       end
 
       def set_theme(_runtime, _mode) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def put_resource(_runtime, _resource_id, _resource) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def drop_resource(_runtime, _resource_id) do
         :erlang.nif_error(:nif_not_loaded)
       end
     end

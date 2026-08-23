@@ -57,7 +57,11 @@ use text_buffer::{TextBufferError, TextBufferResource, TextSelection, TextTransa
 include!("generated/atoms.rs");
 include!("generated/rusty.rs");
 #[cfg(not(feature = "real-gpui"))]
+include!("generated/disabled_resource_boundary.rs");
+#[cfg(not(feature = "real-gpui"))]
 include!("generated/disabled_window.rs");
+#[cfg(feature = "real-gpui")]
+include!("generated/resource_boundary.rs");
 #[cfg(feature = "real-gpui")]
 include!("generated/window.rs");
 include!("generated/schema.rs");
