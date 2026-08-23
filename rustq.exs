@@ -157,6 +157,12 @@ generate "native-stubs", "lib/gpui/native/generated.ex" do
             MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_click_at),
           native_test_scroll:
             MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_scroll),
+          native_test_input:
+            MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_input),
+          native_test_key:
+            MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_key),
+          native_test_advance:
+            MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_advance),
           native_test_idle:
             MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_idle),
           native_test_events:

@@ -48,27 +48,3 @@ fn open_window<'a>(
 ) -> NifResult<Term<'a>> {
     open_window_impl(env, runtime, window)
 }
-#[rustler::nif(schedule = "DirtyIo")]
-fn native_test_input<'a>(
-    env: Env<'a>,
-    test_id: ResourceArc<native_test::NativeTestSessionResource>,
-    text: String,
-) -> NifResult<Term<'a>> {
-    native_test_input_impl(env, test_id, text)
-}
-#[rustler::nif(schedule = "DirtyIo")]
-fn native_test_advance<'a>(
-    env: Env<'a>,
-    test_id: ResourceArc<native_test::NativeTestSessionResource>,
-    milliseconds: u64,
-) -> NifResult<Term<'a>> {
-    native_test_advance_impl(env, test_id, milliseconds)
-}
-#[rustler::nif(schedule = "DirtyIo")]
-fn native_test_key<'a>(
-    env: Env<'a>,
-    test_id: ResourceArc<native_test::NativeTestSessionResource>,
-    key: String,
-) -> NifResult<Term<'a>> {
-    native_test_key_impl(env, test_id, key)
-}

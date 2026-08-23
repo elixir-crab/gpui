@@ -8,6 +8,18 @@ defmodule GPUI.Codegen.Native.TestBoundary do
 
   alias RustQ.Type, as: R
 
+  @type advance_request :: %{
+          required(:milliseconds) => R.u64()
+        }
+
+  @type input_request :: %{
+          required(:text) => String.t()
+        }
+
+  @type key_request :: %{
+          required(:key) => String.t()
+        }
+
   @type point_request :: %{
           required(:x) => R.f64(),
           required(:y) => R.f64()
@@ -31,6 +43,15 @@ defmodule GPUI.Codegen.Native.TestBoundary do
   @type target_request :: %{
           required(:target) => String.t()
         }
+
+  @spec advance_request(R.u64()) :: advance_request()
+  defrust advance_request(milliseconds), do: %{milliseconds: milliseconds}
+
+  @spec input_request(String.t()) :: input_request()
+  defrust input_request(text), do: %{text: text}
+
+  @spec key_request(String.t()) :: key_request()
+  defrust key_request(key), do: %{key: key}
 
   @spec point_request(R.f64(), R.f64()) :: point_request()
   defrust point_request(x, y), do: %{x: x, y: y}
@@ -117,6 +138,33 @@ defmodule GPUI.Codegen.Native.TestBoundary do
         ) :: R.nif_result(term())
   defnif native_test_scroll(session, target, delta_x, delta_y) do
     native_test_scroll_impl(nif_env(), session, scroll_request(target, delta_x, delta_y))
+  end
+
+  @nif schedule: :dirty_io
+  @spec native_test_input(
+          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          String.t()
+        ) :: R.nif_result(term())
+  defnif native_test_input(session, text) do
+    native_test_input_impl(nif_env(), session, input_request(text))
+  end
+
+  @nif schedule: :dirty_io
+  @spec native_test_key(
+          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          String.t()
+        ) :: R.nif_result(term())
+  defnif native_test_key(session, key) do
+    native_test_key_impl(nif_env(), session, key_request(key))
+  end
+
+  @nif schedule: :dirty_io
+  @spec native_test_advance(
+          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          R.u64()
+        ) :: R.nif_result(term())
+  defnif native_test_advance(session, milliseconds) do
+    native_test_advance_impl(nif_env(), session, advance_request(milliseconds))
   end
 
   @nif schedule: :dirty_io

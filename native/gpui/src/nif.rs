@@ -481,8 +481,9 @@ pub(crate) fn native_test_scroll_impl<'a>(
 pub(crate) fn native_test_input_impl<'a>(
     env: Env<'a>,
     test_id: ResourceArc<native_test::NativeTestSessionResource>,
-    text: String,
+    request: InputRequest,
 ) -> NifResult<Term<'a>> {
+    let text = request.text;
     #[cfg(feature = "native-test")]
     let result = native_test::input(&test_id, text);
     #[cfg(not(feature = "native-test"))]
@@ -543,8 +544,9 @@ pub(crate) fn native_test_idle_impl<'a>(
 pub(crate) fn native_test_advance_impl<'a>(
     env: Env<'a>,
     test_id: ResourceArc<native_test::NativeTestSessionResource>,
-    milliseconds: u64,
+    request: AdvanceRequest,
 ) -> NifResult<Term<'a>> {
+    let milliseconds = request.milliseconds;
     #[cfg(feature = "native-test")]
     let result = native_test::advance(&test_id, milliseconds);
     #[cfg(not(feature = "native-test"))]
@@ -557,8 +559,9 @@ pub(crate) fn native_test_advance_impl<'a>(
 pub(crate) fn native_test_key_impl<'a>(
     env: Env<'a>,
     test_id: ResourceArc<native_test::NativeTestSessionResource>,
-    key: String,
+    request: KeyRequest,
 ) -> NifResult<Term<'a>> {
+    let key = request.key;
     #[cfg(feature = "native-test")]
     let result = native_test::key(&test_id, key);
     #[cfg(not(feature = "native-test"))]

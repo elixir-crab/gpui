@@ -62,10 +62,7 @@ defmodule GPUI.Codegen.Native.Boundary do
     text_buffer_transact: [schedule: :dirty_cpu],
     text_buffer_undo: [schedule: :dirty_cpu],
     text_buffer_redo: [schedule: :dirty_cpu],
-    open_window: [schedule: :dirty_io, real_only: true],
-    native_test_input: [schedule: :dirty_io],
-    native_test_advance: [schedule: :dirty_io],
-    native_test_key: [schedule: :dirty_io]
+    open_window: [schedule: :dirty_io, real_only: true]
   ]
 
   @rusty_nifs [decode_image: [schedule: :dirty_cpu]]

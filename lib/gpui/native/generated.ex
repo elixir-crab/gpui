@@ -26,18 +26,6 @@ defmodule GPUI.Native.Generated do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def native_test_input(_test_id, _text) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def native_test_advance(_test_id, _milliseconds) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def native_test_key(_test_id, _key) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
       def decode_image(_bytes) do
         :erlang.nif_error(:nif_not_loaded)
       end
@@ -119,6 +107,18 @@ defmodule GPUI.Native.Generated do
       end
 
       def native_test_scroll(_session, _target, _delta_x, _delta_y) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_input(_session, _text) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_key(_session, _key) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_advance(_session, _milliseconds) do
         :erlang.nif_error(:nif_not_loaded)
       end
 

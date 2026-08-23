@@ -14,6 +14,9 @@ defmodule GPUI.Codegen.Native.TestBoundaryTest do
         native_test_click: 2,
         native_test_click_at: 3,
         native_test_scroll: 4,
+        native_test_input: 2,
+        native_test_key: 2,
+        native_test_advance: 2,
         native_test_idle: 1,
         native_test_events: 1,
         native_test_stop: 1
@@ -44,6 +47,15 @@ defmodule GPUI.Codegen.Native.TestBoundaryTest do
     assert %AST.Struct{name: :TargetRequest} =
              MetaAST.type_item!(TestBoundary, :TargetRequest)
 
+    assert %AST.Struct{name: :AdvanceRequest} =
+             MetaAST.type_item!(TestBoundary, :AdvanceRequest)
+
+    assert %AST.Struct{name: :InputRequest} =
+             MetaAST.type_item!(TestBoundary, :InputRequest)
+
+    assert %AST.Struct{name: :KeyRequest} =
+             MetaAST.type_item!(TestBoundary, :KeyRequest)
+
     assert %AST.Struct{name: :PointRequest} =
              MetaAST.type_item!(TestBoundary, :PointRequest)
 
@@ -60,6 +72,10 @@ defmodule GPUI.Codegen.Native.TestBoundaryTest do
 
     assert source =~
              "native_test_scroll_impl(env, session, scroll_request(target, delta_x, delta_y))"
+
+    assert source =~ "native_test_input_impl(env, session, input_request(text))"
+    assert source =~ "native_test_key_impl(env, session, key_request(key))"
+    assert source =~ "native_test_advance_impl(env, session, advance_request(milliseconds))"
 
     assert source =~ "native_test_idle_impl(env, session)"
     assert source =~ "native_test_events_impl(env, session)"
