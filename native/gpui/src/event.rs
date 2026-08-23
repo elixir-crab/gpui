@@ -252,22 +252,12 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
                 (atoms::event(), event.encode(env)),
             ],
         ),
-        NativeEvent::Click { window_id, event } => encode_event_map(
-            env,
-            vec![
-                (atoms::type_atom(), atoms::click().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-            ],
-        ),
-        NativeEvent::Command { window_id, event } => encode_event_map(
-            env,
-            vec![
-                (atoms::type_atom(), atoms::command().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-            ],
-        ),
+        NativeEvent::Click { window_id, event } => {
+            encode_named_event(env, atoms::click(), window_id, event)
+        }
+        NativeEvent::Command { window_id, event } => {
+            encode_named_event(env, atoms::command(), window_id, event)
+        }
         NativeEvent::Input {
             kind,
             window_id,
@@ -452,37 +442,21 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
                 (atoms::value(), value.encode(env)),
             ],
         ),
-        NativeEvent::WindowCloseRequest { window_id } => encode_event_map(
+        NativeEvent::WindowCloseRequest { window_id } => {
+            encode_window_event(env, atoms::window_close_request(), window_id)
+        }
+        NativeEvent::WindowFocus { focused, window_id } => encode_window_event(
             env,
-            vec![
-                (
-                    atoms::type_atom(),
-                    atoms::window_close_request().to_term(env),
-                ),
-                (atoms::window_id(), window_id.encode(env)),
-            ],
+            if focused {
+                atoms::window_focus()
+            } else {
+                atoms::window_blur()
+            },
+            window_id,
         ),
-        NativeEvent::WindowFocus { focused, window_id } => encode_event_map(
-            env,
-            vec![
-                (
-                    atoms::type_atom(),
-                    if focused {
-                        atoms::window_focus().to_term(env)
-                    } else {
-                        atoms::window_blur().to_term(env)
-                    },
-                ),
-                (atoms::window_id(), window_id.encode(env)),
-            ],
-        ),
-        NativeEvent::WindowClosed { window_id } => encode_event_map(
-            env,
-            vec![
-                (atoms::type_atom(), atoms::window_closed().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-            ],
-        ),
+        NativeEvent::WindowClosed { window_id } => {
+            encode_window_event(env, atoms::window_closed(), window_id)
+        }
         #[cfg(feature = "components")]
         NativeEvent::VirtualRange {
             window_id,

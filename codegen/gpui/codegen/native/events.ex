@@ -70,7 +70,8 @@ end
 defmodule GPUI.Codegen.Native.Events do
   @moduledoc "Emits generated native event-value decoding and input-kind contracts."
 
-  use RustQ.Meta
+  use RustQ.Meta,
+    rust_sources: ["native/gpui/src/event.rs"]
 
   alias GPUI.Codegen.Native.EventDefinitions
   alias RustQ.Meta.AST, as: MetaAST
@@ -92,6 +93,38 @@ defmodule GPUI.Codegen.Native.Events do
 
   EventDefinitions.define_input_kind()
   EventDefinitions.define_event_impls()
+
+  @spec encode_named_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.path(:Atom),
+          R.u64(),
+          String.t()
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_named_event(env, kind, window_id, event) do
+    encode_event_map(
+      env,
+      [
+        {Atoms.type_atom(), kind.to_term(env)},
+        {Atoms.window_id(), window_id.encode(env)},
+        {Atoms.event(), event.encode(env)}
+      ]
+    )
+  end
+
+  @spec encode_window_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.path(:Atom),
+          R.u64()
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_window_event(env, kind, window_id) do
+    encode_event_map(
+      env,
+      [
+        {Atoms.type_atom(), kind.to_term(env)},
+        {Atoms.window_id(), window_id.encode(env)}
+      ]
+    )
+  end
 
   @spec decode_event_value(term()) :: R.option(event_value())
   defrust decode_event_value(term) do
@@ -161,7 +194,8 @@ defmodule GPUI.Codegen.Native.Events do
   end
 
   def rusty_items do
-    [MetaAST.function!(__MODULE__, :decode_event_value)]
+    [:decode_event_value, :encode_named_event, :encode_window_event]
+    |> Enum.map(&MetaAST.function!(__MODULE__, &1))
     |> Enum.map(&%{&1 | vis: :crate})
   end
 

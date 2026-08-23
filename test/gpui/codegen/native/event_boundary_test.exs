@@ -18,14 +18,22 @@ defmodule GPUI.Codegen.Native.EventBoundaryTest do
     assert source =~ "inject_event_impl(env, runtime, inject_request(event))"
   end
 
+  test "generates encoders for simple routed and lifecycle events" do
+    source = GPUI.Codegen.Native.Events.items() |> RustQ.Rust.render_all()
+
+    assert source =~ "fn encode_named_event"
+    assert source =~ "fn encode_window_event"
+    assert source =~ "atoms::type_atom()"
+    assert source =~ "atoms::window_id()"
+    assert source =~ "atoms::event()"
+    assert RustQ.valid?(source, "generated_events.rs")
+  end
+
   test "derives a closed injected event kind decoder" do
     source = rust_source!(EventBoundary)
 
-    for kind <- ~w(
-          window_close_request window_focus window_blur window_closed
-          click command change release search submit keydown keyup
-        ) do
-      assert source =~ Macro.camelize(kind)
+    for kind <- GPUI.Event.injectable_types() do
+      assert source =~ Macro.camelize(to_string(kind))
     end
 
     assert source =~ "event.map_get(atoms::type_atom())?.decode::<InjectKind>()?"

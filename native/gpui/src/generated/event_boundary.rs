@@ -2,10 +2,6 @@
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, rustler::NifUnitEnum)]
 pub enum InjectKind {
-    WindowCloseRequest,
-    WindowFocus,
-    WindowBlur,
-    WindowClosed,
     Click,
     Command,
     Change,
@@ -14,6 +10,10 @@ pub enum InjectKind {
     Submit,
     Keydown,
     Keyup,
+    WindowCloseRequest,
+    WindowFocus,
+    WindowBlur,
+    WindowClosed,
 }
 #[derive(Clone, Debug, rustler::NifMap)]
 pub struct InjectRequest<'a> {

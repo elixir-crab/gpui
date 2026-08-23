@@ -126,3 +126,30 @@ pub(crate) fn decode_event_value<'a>(term: Term<'a>) -> Option<EventValue> {
         }
     }
 }
+pub(crate) fn encode_named_event<'a>(
+    env: Env<'a>,
+    kind: Atom,
+    window_id: u64,
+    event: String,
+) -> NifResult<Term<'a>> {
+    encode_event_map(
+        env,
+        vec![
+            (atoms::type_atom(), kind.to_term(env)), (atoms::window_id(), window_id
+            .encode(env)), (atoms::event(), event.encode(env))
+        ],
+    )
+}
+pub(crate) fn encode_window_event<'a>(
+    env: Env<'a>,
+    kind: Atom,
+    window_id: u64,
+) -> NifResult<Term<'a>> {
+    encode_event_map(
+        env,
+        vec![
+            (atoms::type_atom(), kind.to_term(env)), (atoms::window_id(), window_id
+            .encode(env))
+        ],
+    )
+}

@@ -3,6 +3,23 @@ defmodule GPUI.EventTest do
 
   alias GPUI.Event
 
+  test "exposes one native injection subset from the canonical event contract" do
+    assert Event.injectable_types() == [
+             :click,
+             :command,
+             :change,
+             :release,
+             :search,
+             :submit,
+             :keydown,
+             :keyup,
+             :window_close_request,
+             :window_focus,
+             :window_blur,
+             :window_closed
+           ]
+  end
+
   test "requires an explicit known event type" do
     assert {:error, {:invalid_event, :type}} =
              Event.normalize(%{window_id: 1, event: "save"})

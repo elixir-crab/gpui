@@ -79,6 +79,17 @@ defmodule GPUI.Event do
     :file_read
   ]
   @lifecycle_types [:window_close_request, :window_focus, :window_blur, :window_closed]
+  @injectable_routed_types [
+    :click,
+    :command,
+    :change,
+    :release,
+    :search,
+    :submit,
+    :keydown,
+    :keyup
+  ]
+  @injectable_types @injectable_routed_types ++ @lifecycle_types
   @known_types @routed_types ++ @lifecycle_types
   @max_event_name_bytes 512
   @max_file_read_bytes 25 * 1_024 * 1_024
@@ -89,7 +100,10 @@ defmodule GPUI.Event do
 
   defguard is_routed_type(type) when type in @routed_types
 
-  @doc "Validates and normalizes a display event into its canonical renderer-independent map."
+  @doc "Returns event types accepted by the low-level native injection boundary."
+  @spec injectable_types() :: [type()]
+  def injectable_types, do: @injectable_types
+
   @spec normalize(t() | map() | keyword()) :: {:ok, map()} | {:error, term()}
   def normalize(%__MODULE__{} = event), do: event |> to_map() |> normalize()
 
