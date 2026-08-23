@@ -26,43 +26,7 @@ defmodule GPUI.Native.Generated do
         :erlang.nif_error(:nif_not_loaded)
       end
 
-      def native_test_start(_width, _height) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def native_test_render(_test_id, _tree) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def native_test_focus(_test_id, _component_id) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def native_test_click(_test_id, _element_id) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def native_test_click_at(_test_id, _x, _y) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def native_test_scroll(_test_id, _element_id, _delta_x, _delta_y) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
       def native_test_input(_test_id, _text) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def native_test_resize(_test_id, _width, _height) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def native_test_bounds(_test_id, _element_id) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def native_test_idle(_test_id) do
         :erlang.nif_error(:nif_not_loaded)
       end
 
@@ -71,14 +35,6 @@ defmodule GPUI.Native.Generated do
       end
 
       def native_test_key(_test_id, _key) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def native_test_events(_test_id) do
-        :erlang.nif_error(:nif_not_loaded)
-      end
-
-      def native_test_stop(_test_id) do
         :erlang.nif_error(:nif_not_loaded)
       end
 
@@ -131,6 +87,50 @@ defmodule GPUI.Native.Generated do
       end
 
       def inject_event(_runtime, _event) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_start(_width, _height) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_render(_session, _tree) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_resize(_session, _width, _height) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_bounds(_session, _target) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_focus(_session, _target) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_click(_session, _target) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_click_at(_session, _x, _y) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_scroll(_session, _target, _delta_x, _delta_y) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_idle(_session) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_events(_session) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
+      def native_test_stop(_session) do
         :erlang.nif_error(:nif_not_loaded)
       end
     end

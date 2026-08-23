@@ -20,6 +20,7 @@ for file <- ~w(
   event_boundary.ex
   events.ex
   style.ex
+  test_boundary.ex
   window.ex
   atoms.ex
   resources.ex

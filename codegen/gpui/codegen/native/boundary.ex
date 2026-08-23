@@ -63,20 +63,9 @@ defmodule GPUI.Codegen.Native.Boundary do
     text_buffer_undo: [schedule: :dirty_cpu],
     text_buffer_redo: [schedule: :dirty_cpu],
     open_window: [schedule: :dirty_io, real_only: true],
-    native_test_start: [schedule: :dirty_io],
-    native_test_render: [schedule: :dirty_io],
-    native_test_focus: [schedule: :dirty_io],
-    native_test_click: [schedule: :dirty_io],
-    native_test_click_at: [schedule: :dirty_io],
-    native_test_scroll: [schedule: :dirty_io],
     native_test_input: [schedule: :dirty_io],
-    native_test_resize: [schedule: :dirty_io],
-    native_test_bounds: [schedule: :dirty_io],
-    native_test_idle: [schedule: :dirty_io],
     native_test_advance: [schedule: :dirty_io],
-    native_test_key: [schedule: :dirty_io],
-    native_test_events: [schedule: :dirty_io],
-    native_test_stop: [schedule: :dirty_io]
+    native_test_key: [schedule: :dirty_io]
   ]
 
   @rusty_nifs [decode_image: [schedule: :dirty_cpu]]

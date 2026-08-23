@@ -27,6 +27,7 @@ require_file("codegen/gpui/codegen/native/elements.ex")
 require_file("codegen/gpui/codegen/native/event_boundary.ex")
 require_file("codegen/gpui/codegen/native/events.ex")
 require_file("codegen/gpui/codegen/native/style.ex")
+require_file("codegen/gpui/codegen/native/test_boundary.ex")
 require_file("codegen/gpui/codegen/native/window.ex")
 require_file("codegen/gpui/codegen/native/atoms.ex")
 require_file("codegen/gpui/codegen/native/resources.ex")
@@ -45,6 +46,10 @@ end
 
 rust "native/gpui/src/generated/disabled_window.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.DisabledWindow)
+end
+
+rust "native/gpui/src/generated/test_boundary.rs" do
+  RustQ.Native.items(GPUI.Codegen.Native.TestBoundary)
 end
 
 rust "native/gpui/src/generated/window.rs" do
@@ -135,7 +140,29 @@ generate "native-stubs", "lib/gpui/native/generated.ex" do
           drop_resource:
             MetaAST.function!(GPUI.Codegen.Native.ResourceBoundary, :drop_resource),
           drain_events: MetaAST.function!(GPUI.Codegen.Native.EventBoundary, :drain_events),
-          inject_event: MetaAST.function!(GPUI.Codegen.Native.EventBoundary, :inject_event)
+          inject_event: MetaAST.function!(GPUI.Codegen.Native.EventBoundary, :inject_event),
+          native_test_start:
+            MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_start),
+          native_test_render:
+            MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_render),
+          native_test_resize:
+            MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_resize),
+          native_test_bounds:
+            MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_bounds),
+          native_test_focus:
+            MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_focus),
+          native_test_click:
+            MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_click),
+          native_test_click_at:
+            MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_click_at),
+          native_test_scroll:
+            MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_scroll),
+          native_test_idle:
+            MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_idle),
+          native_test_events:
+            MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_events),
+          native_test_stop:
+            MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_stop)
         ],
       GPUI.Native.Generated
     )
