@@ -126,6 +126,31 @@ pub(crate) fn decode_event_value<'a>(term: Term<'a>) -> Option<EventValue> {
         }
     }
 }
+pub(crate) fn encode_input_event<'a>(
+    env: Env<'a>,
+    kind: &InputKind,
+    window_id: u64,
+    event: String,
+    value: Option<EventValue>,
+) -> NifResult<Term<'a>> {
+    let entries = vec![
+        (atoms::type_atom(), kind.atom().to_term(env)), (atoms::window_id(), window_id
+        .encode(env)), (atoms::event(), event.encode(env))
+    ];
+    let entries = match value {
+        None => entries,
+        Some(value) => append_event_value(entries, env, value),
+    };
+    encode_event_map(env, entries)
+}
+pub(crate) fn append_event_value<'a>(
+    mut entries: Vec<(Atom, Term<'a>)>,
+    env: Env<'a>,
+    value: EventValue,
+) -> Vec<(Atom, Term<'a>)> {
+    entries.push((atoms::value(), value.encode(env)));
+    entries
+}
 pub(crate) fn encode_named_event<'a>(
     env: Env<'a>,
     kind: Atom,

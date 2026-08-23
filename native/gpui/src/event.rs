@@ -263,19 +263,7 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             window_id,
             event,
             value,
-        } => {
-            let mut entries = vec![
-                (atoms::type_atom(), kind.atom().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-            ];
-
-            if let Some(value) = value {
-                entries.push((atoms::value(), value.encode(env)));
-            }
-
-            encode_event_map(env, entries)
-        }
+        } => encode_input_event(env, &kind, window_id, event, value),
         #[cfg(feature = "components")]
         NativeEvent::Transaction {
             window_id,

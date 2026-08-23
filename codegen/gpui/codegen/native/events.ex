@@ -94,6 +94,39 @@ defmodule GPUI.Codegen.Native.Events do
   EventDefinitions.define_input_kind()
   EventDefinitions.define_event_impls()
 
+  @spec encode_input_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.ref(input_kind()),
+          R.u64(),
+          String.t(),
+          R.option(event_value())
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_input_event(env, kind, window_id, event, value) do
+    entries = [
+      {Atoms.type_atom(), kind.atom().to_term(env)},
+      {Atoms.window_id(), window_id.encode(env)},
+      {Atoms.event(), event.encode(env)}
+    ]
+
+    entries =
+      case value do
+        nil -> entries
+        {:some, value} -> append_event_value(entries, env, value)
+      end
+
+    encode_event_map(env, entries)
+  end
+
+  @spec append_event_value(
+          R.vec({R.path(:Atom), R.path(:Term, R.lifetime(:a))}),
+          R.path(:Env, R.lifetime(:a)),
+          event_value()
+        ) :: R.vec({R.path(:Atom), R.path(:Term, R.lifetime(:a))})
+  defrustp append_event_value(entries, env, value) do
+    entries.push({Atoms.value(), value.encode(env)})
+    entries
+  end
+
   @spec encode_named_event(
           R.path(:Env, R.lifetime(:a)),
           R.path(:Atom),
@@ -194,7 +227,8 @@ defmodule GPUI.Codegen.Native.Events do
   end
 
   def rusty_items do
-    [:decode_event_value, :encode_named_event, :encode_window_event]
+    [:decode_event_value, :encode_input_event, :append_event_value, :encode_named_event,
+     :encode_window_event]
     |> Enum.map(&MetaAST.function!(__MODULE__, &1))
     |> Enum.map(&%{&1 | vis: :crate})
   end
