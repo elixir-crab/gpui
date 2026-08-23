@@ -94,6 +94,93 @@ defmodule GPUI.Codegen.Native.Events do
   EventDefinitions.define_input_kind()
   EventDefinitions.define_event_impls()
 
+  @spec encode_revisioned_transaction_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.path(:Atom),
+          R.u64(),
+          String.t(),
+          R.path(:TextTransaction),
+          R.u64()
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_revisioned_transaction_event(env, kind, window_id, event, value, revision),
+    do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+
+  @spec encode_revisioned_selection_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.path(:Atom),
+          R.u64(),
+          String.t(),
+          R.vec(R.path(:TextSelection)),
+          R.u64()
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_revisioned_selection_event(env, kind, window_id, event, value, revision),
+    do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+
+  @spec encode_revisioned_viewport_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.path(:Atom),
+          R.u64(),
+          String.t(),
+          R.path(:TextViewportGeometry),
+          R.u64()
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_revisioned_viewport_event(env, kind, window_id, event, value, revision),
+    do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+
+  @spec encode_revisioned_geometry_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.path(:Atom),
+          R.u64(),
+          String.t(),
+          R.path(:TextCaretGeometry),
+          R.u64()
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_revisioned_geometry_event(env, kind, window_id, event, value, revision),
+    do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+
+  @spec encode_revisioned_range_geometry_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.path(:Atom),
+          R.u64(),
+          String.t(),
+          R.vec(R.path(:TextRangeGeometry)),
+          R.u64()
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_revisioned_range_geometry_event(env, kind, window_id, event, value, revision),
+    do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+
+  @spec encode_revisioned_position_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.path(:Atom),
+          R.u64(),
+          String.t(),
+          R.path(:TextPosition),
+          R.u64()
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_revisioned_position_event(env, kind, window_id, event, value, revision),
+    do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+
+  @spec encode_revisioned_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.path(:Atom),
+          R.u64(),
+          String.t(),
+          R.path(:Term, R.lifetime(:a)),
+          R.u64()
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrustp encode_revisioned_event(env, kind, window_id, event, value, revision) do
+    encode_event_map(
+      env,
+      [
+        {Atoms.type_atom(), kind.to_term(env)},
+        {Atoms.window_id(), window_id.encode(env)},
+        {Atoms.event(), event.encode(env)},
+        {Atoms.value(), value},
+        {Atoms.revision(), revision.encode(env)}
+      ]
+    )
+  end
+
   @spec encode_input_event(
           R.path(:Env, R.lifetime(:a)),
           R.ref(input_kind()),
@@ -227,9 +314,29 @@ defmodule GPUI.Codegen.Native.Events do
   end
 
   def rusty_items do
-    [:decode_event_value, :encode_input_event, :append_event_value, :encode_named_event,
-     :encode_window_event]
-    |> Enum.map(&MetaAST.function!(__MODULE__, &1))
+    always = [
+      :decode_event_value,
+      :encode_input_event,
+      :append_event_value,
+      :encode_named_event,
+      :encode_window_event
+    ]
+
+    component_only = [
+      :encode_revisioned_transaction_event,
+      :encode_revisioned_selection_event,
+      :encode_revisioned_viewport_event,
+      :encode_revisioned_geometry_event,
+      :encode_revisioned_range_geometry_event,
+      :encode_revisioned_position_event,
+      :encode_revisioned_event
+    ]
+
+    (Enum.map(always, &MetaAST.function!(__MODULE__, &1)) ++
+       Enum.map(component_only, fn name ->
+         function = MetaAST.function!(__MODULE__, name)
+         %{function | attrs: [A.attr(:cfg, feature: "components") | function.attrs]}
+       end))
     |> Enum.map(&%{&1 | vis: :crate})
   end
 

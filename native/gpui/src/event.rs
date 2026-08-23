@@ -1,6 +1,6 @@
-#[cfg(feature = "components")]
-use crate::TextTransaction;
 use crate::{atoms, SharedRuntime};
+#[cfg(feature = "components")]
+use crate::{TextPosition, TextSelection, TextTransaction};
 #[cfg(feature = "components")]
 use rustler::NifMap;
 use rustler::{Atom, Encoder, Env, NifResult, Term};
@@ -244,14 +244,9 @@ pub(crate) fn push_event(runtime: &SharedRuntime, event: NativeEvent) -> NifResu
 pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifResult<Term<'a>> {
     match event {
         #[cfg(feature = "components")]
-        NativeEvent::Copy { window_id, event } => encode_event_map(
-            env,
-            vec![
-                (atoms::type_atom(), atoms::copy().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-            ],
-        ),
+        NativeEvent::Copy { window_id, event } => {
+            encode_named_event(env, atoms::copy(), window_id, event)
+        }
         NativeEvent::Click { window_id, event } => {
             encode_named_event(env, atoms::click(), window_id, event)
         }
@@ -270,15 +265,13 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             event,
             transaction,
             revision,
-        } => encode_event_map(
+        } => encode_revisioned_transaction_event(
             env,
-            vec![
-                (atoms::type_atom(), atoms::transaction().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-                (atoms::value(), transaction.encode(env)),
-                (atoms::revision(), revision.encode(env)),
-            ],
+            atoms::transaction(),
+            window_id,
+            event,
+            transaction,
+            revision,
         ),
         #[cfg(feature = "components")]
         NativeEvent::Selection {
@@ -286,15 +279,13 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             event,
             selections,
             revision,
-        } => encode_event_map(
+        } => encode_revisioned_selection_event(
             env,
-            vec![
-                (atoms::type_atom(), atoms::selection().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-                (atoms::value(), selections.encode(env)),
-                (atoms::revision(), revision.encode(env)),
-            ],
+            atoms::selection(),
+            window_id,
+            event,
+            selections,
+            revision,
         ),
         #[cfg(feature = "components")]
         NativeEvent::Viewport {
@@ -302,15 +293,13 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             event,
             value,
             revision,
-        } => encode_event_map(
+        } => encode_revisioned_viewport_event(
             env,
-            vec![
-                (atoms::type_atom(), atoms::viewport().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-                (atoms::value(), value.encode(env)),
-                (atoms::revision(), revision.encode(env)),
-            ],
+            atoms::viewport(),
+            window_id,
+            event,
+            value,
+            revision,
         ),
         #[cfg(feature = "components")]
         NativeEvent::Geometry {
@@ -318,15 +307,13 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             event,
             value,
             revision,
-        } => encode_event_map(
+        } => encode_revisioned_geometry_event(
             env,
-            vec![
-                (atoms::type_atom(), atoms::geometry().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-                (atoms::value(), value.encode(env)),
-                (atoms::revision(), revision.encode(env)),
-            ],
+            atoms::geometry(),
+            window_id,
+            event,
+            value,
+            revision,
         ),
         #[cfg(feature = "components")]
         NativeEvent::RangeGeometry {
@@ -334,15 +321,13 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             event,
             value,
             revision,
-        } => encode_event_map(
+        } => encode_revisioned_range_geometry_event(
             env,
-            vec![
-                (atoms::type_atom(), atoms::range_geometry().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-                (atoms::value(), value.encode(env)),
-                (atoms::revision(), revision.encode(env)),
-            ],
+            atoms::range_geometry(),
+            window_id,
+            event,
+            value,
+            revision,
         ),
         #[cfg(feature = "components")]
         NativeEvent::HitTest {
@@ -350,15 +335,13 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             event,
             value,
             revision,
-        } => encode_event_map(
+        } => encode_revisioned_position_event(
             env,
-            vec![
-                (atoms::type_atom(), atoms::hit_test().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-                (atoms::value(), value.encode(env)),
-                (atoms::revision(), revision.encode(env)),
-            ],
+            atoms::hit_test(),
+            window_id,
+            event,
+            value,
+            revision,
         ),
         #[cfg(feature = "real-gpui")]
         NativeEvent::Focus {
@@ -393,14 +376,9 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             ],
         ),
         #[cfg(feature = "components")]
-        NativeEvent::ClipboardWrite { window_id, event } => encode_event_map(
-            env,
-            vec![
-                (atoms::type_atom(), atoms::clipboard_write().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-            ],
-        ),
+        NativeEvent::ClipboardWrite { window_id, event } => {
+            encode_named_event(env, atoms::clipboard_write(), window_id, event)
+        }
         #[cfg(feature = "components")]
         NativeEvent::ClipboardRead {
             window_id,

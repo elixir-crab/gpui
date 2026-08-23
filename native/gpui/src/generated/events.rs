@@ -178,3 +178,87 @@ pub(crate) fn encode_window_event<'a>(
         ],
     )
 }
+#[cfg(feature = "components")]
+pub(crate) fn encode_revisioned_transaction_event<'a>(
+    env: Env<'a>,
+    kind: Atom,
+    window_id: u64,
+    event: String,
+    value: TextTransaction,
+    revision: u64,
+) -> NifResult<Term<'a>> {
+    encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+}
+#[cfg(feature = "components")]
+pub(crate) fn encode_revisioned_selection_event<'a>(
+    env: Env<'a>,
+    kind: Atom,
+    window_id: u64,
+    event: String,
+    value: Vec<TextSelection>,
+    revision: u64,
+) -> NifResult<Term<'a>> {
+    encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+}
+#[cfg(feature = "components")]
+pub(crate) fn encode_revisioned_viewport_event<'a>(
+    env: Env<'a>,
+    kind: Atom,
+    window_id: u64,
+    event: String,
+    value: TextViewportGeometry,
+    revision: u64,
+) -> NifResult<Term<'a>> {
+    encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+}
+#[cfg(feature = "components")]
+pub(crate) fn encode_revisioned_geometry_event<'a>(
+    env: Env<'a>,
+    kind: Atom,
+    window_id: u64,
+    event: String,
+    value: TextCaretGeometry,
+    revision: u64,
+) -> NifResult<Term<'a>> {
+    encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+}
+#[cfg(feature = "components")]
+pub(crate) fn encode_revisioned_range_geometry_event<'a>(
+    env: Env<'a>,
+    kind: Atom,
+    window_id: u64,
+    event: String,
+    value: Vec<TextRangeGeometry>,
+    revision: u64,
+) -> NifResult<Term<'a>> {
+    encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+}
+#[cfg(feature = "components")]
+pub(crate) fn encode_revisioned_position_event<'a>(
+    env: Env<'a>,
+    kind: Atom,
+    window_id: u64,
+    event: String,
+    value: TextPosition,
+    revision: u64,
+) -> NifResult<Term<'a>> {
+    encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+}
+#[cfg(feature = "components")]
+pub(crate) fn encode_revisioned_event<'a>(
+    env: Env<'a>,
+    kind: Atom,
+    window_id: u64,
+    event: String,
+    value: Term<'a>,
+    revision: u64,
+) -> NifResult<Term<'a>> {
+    encode_event_map(
+        env,
+        vec![
+            (atoms::type_atom(), kind.to_term(env)), (atoms::window_id(), window_id
+            .encode(env)), (atoms::event(), event.encode(env)), (atoms::value(), value),
+            (atoms::revision(), revision.encode(env))
+        ],
+    )
+}
