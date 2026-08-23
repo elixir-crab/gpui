@@ -48,7 +48,7 @@ use text_buffer::{
     byte_range_to_selection, next_native_transaction_id, position_to_byte_offset,
     selection_to_byte_range,
 };
-use text_buffer::{TextBufferError, TextBufferResource, TextTransaction};
+use text_buffer::{TextBufferError, TextBufferResource};
 
 include!("generated/atoms.rs");
 include!("generated/rusty.rs");

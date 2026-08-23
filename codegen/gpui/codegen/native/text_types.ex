@@ -24,9 +24,22 @@ defmodule GPUI.Codegen.Native.TextTypes do
           required(:primary) => boolean()
         }
 
+  @type text_edit :: %{
+          required(:range) => R.path(:TextRange),
+          required(:text) => String.t()
+        }
+
+  @type text_transaction :: %{
+          required(:id) => String.t(),
+          required(:base_revision) => R.u64(),
+          required(:origin) => String.t(),
+          required(:edits) => R.vec(R.path(:TextEdit)),
+          required(:selections) => R.vec(R.path(:TextSelection))
+        }
+
   @spec items() :: [RustQ.Rust.AST.item()]
   def items do
-    [:text_position, :text_range, :text_selection]
+    [:text_position, :text_range, :text_selection, :text_edit, :text_transaction]
     |> then(&MetaAST.struct_type_items(__MODULE__, &1,
       derive: [:Clone, :Debug, :PartialEq, :Eq, :NifMap],
       vis: :crate,

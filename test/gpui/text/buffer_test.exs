@@ -58,6 +58,37 @@ defmodule GPUI.Text.BufferTest do
     assert {:error, :overlapping_edits} = Buffer.transact(buffer, overlapping)
   end
 
+  test "generated transaction codecs reject malformed nested payloads" do
+    assert {:ok, %Buffer{ref: ref}} = Buffer.new("")
+
+    selection = %{
+      id: "primary",
+      anchor: %{line: 0, utf16_offset: 0},
+      head: %{line: 0, utf16_offset: 0},
+      primary: true
+    }
+
+    assert_raise ErlangError, ~r/Could not decode field :edits/, fn ->
+      GPUI.Native.text_buffer_transact(ref, %{
+        id: "missing-range-end",
+        base_revision: 0,
+        origin: "external",
+        edits: [%{range: %{start: %{line: 0, utf16_offset: 0}}, text: "x"}],
+        selections: [selection]
+      })
+    end
+
+    assert_raise ErlangError, ~r/Could not decode field :selections/, fn ->
+      GPUI.Native.text_buffer_transact(ref, %{
+        id: "invalid-selection-position",
+        base_revision: 0,
+        origin: "external",
+        edits: [],
+        selections: [%{selection | head: %{line: 0}}]
+      })
+    end
+  end
+
   test "addresses CJK and combining code points in UTF-16 units" do
     assert {:ok, buffer} = Buffer.new("中e\u0301文")
 

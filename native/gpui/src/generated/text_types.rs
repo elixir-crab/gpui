@@ -2,6 +2,12 @@
 
 #[derive(Clone, Debug, PartialEq, Eq, NifMap)]
 #[allow(dead_code)]
+pub(crate) struct TextEdit {
+    pub(crate) range: TextRange,
+    pub(crate) text: String,
+}
+#[derive(Clone, Debug, PartialEq, Eq, NifMap)]
+#[allow(dead_code)]
 pub(crate) struct TextPosition {
     pub(crate) line: u64,
     pub(crate) utf16_offset: u64,
@@ -19,4 +25,13 @@ pub(crate) struct TextSelection {
     pub(crate) anchor: TextPosition,
     pub(crate) head: TextPosition,
     pub(crate) primary: bool,
+}
+#[derive(Clone, Debug, PartialEq, Eq, NifMap)]
+#[allow(dead_code)]
+pub(crate) struct TextTransaction {
+    pub(crate) id: String,
+    pub(crate) base_revision: u64,
+    pub(crate) origin: String,
+    pub(crate) edits: Vec<TextEdit>,
+    pub(crate) selections: Vec<TextSelection>,
 }
