@@ -1,6 +1,6 @@
 #[cfg(feature = "real-gpui")]
-use rustler::{Atom, NifMap};
-use rustler::{Binary, Encoder, Env, NifResult, ResourceArc, Term};
+use rustler::Atom;
+use rustler::{Binary, Encoder, Env, NifMap, NifResult, ResourceArc, Term};
 
 #[cfg(feature = "real-gpui")]
 use futures::{channel::mpsc, StreamExt};
@@ -43,21 +43,18 @@ use input::{bind_input_keys, NativeTextInput};
 #[cfg(feature = "real-gpui")]
 use resource::{decode_raster_resource, decode_resource_ref, ImageData, RasterData};
 use runtime::{RuntimeResource, SharedRuntime};
-#[cfg(any(feature = "components", feature = "real-gpui"))]
-use text_buffer::TextPosition;
-#[cfg(feature = "real-gpui")]
-use text_buffer::TextRange;
 #[cfg(feature = "components")]
 use text_buffer::{
     byte_range_to_selection, next_native_transaction_id, position_to_byte_offset,
     selection_to_byte_range,
 };
-use text_buffer::{TextBufferError, TextBufferResource, TextSelection, TextTransaction};
+use text_buffer::{TextBufferError, TextBufferResource, TextTransaction};
 
 include!("generated/atoms.rs");
 include!("generated/rusty.rs");
 include!("generated/runtime_boundary.rs");
 include!("generated/test_boundary.rs");
+include!("generated/text_types.rs");
 include!("generated/event_boundary.rs");
 #[cfg(not(feature = "real-gpui"))]
 include!("generated/disabled_resource_boundary.rs");

@@ -6,6 +6,12 @@ unless Code.ensure_loaded?(GPUI.Event) do
   Code.require_file("lib/gpui/event.ex", project_root)
 end
 
+unless Code.ensure_loaded?(GPUI.Text.Selection) do
+  Code.require_file("lib/gpui/text/position.ex", project_root)
+  Code.require_file("lib/gpui/text/range.ex", project_root)
+  Code.require_file("lib/gpui/text/selection.ex", project_root)
+end
+
 codegen_root = Path.join(project_root, "codegen/gpui/codegen/native")
 
 for file <- ~w(
@@ -21,6 +27,7 @@ for file <- ~w(
   events.ex
   style.ex
   test_boundary.ex
+  text_types.ex
   window.ex
   atoms.ex
   resources.ex

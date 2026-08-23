@@ -1,3 +1,4 @@
+use crate::{TextPosition, TextRange, TextSelection};
 use ropey::{LineType, Rope};
 use rustler::NifMap;
 use std::collections::{HashMap, VecDeque};
@@ -17,29 +18,9 @@ pub(crate) fn next_native_transaction_id(surface_id: &str) -> String {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, NifMap)]
-pub(crate) struct TextPosition {
-    pub(crate) line: u64,
-    pub(crate) utf16_offset: u64,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, NifMap)]
-pub(crate) struct TextRange {
-    pub(crate) start: TextPosition,
-    pub(crate) end: TextPosition,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, NifMap)]
 pub(crate) struct TextEdit {
     pub(crate) range: TextRange,
     pub(crate) text: String,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, NifMap)]
-pub(crate) struct TextSelection {
-    pub(crate) id: String,
-    pub(crate) anchor: TextPosition,
-    pub(crate) head: TextPosition,
-    pub(crate) primary: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, NifMap)]

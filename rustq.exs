@@ -11,6 +11,7 @@ require_file("lib/gpui/schema/style.ex")
 require_file("lib/gpui/accessibility.ex")
 require_file("lib/gpui/text/position.ex")
 require_file("lib/gpui/text/range.ex")
+require_file("lib/gpui/text/selection.ex")
 require_file("lib/gpui/text/rich_run.ex")
 require_file("lib/gpui/schema.ex")
 require_file("lib/gpui/transfer/payload.ex")
@@ -28,6 +29,7 @@ require_file("codegen/gpui/codegen/native/event_boundary.ex")
 require_file("codegen/gpui/codegen/native/events.ex")
 require_file("codegen/gpui/codegen/native/style.ex")
 require_file("codegen/gpui/codegen/native/test_boundary.ex")
+require_file("codegen/gpui/codegen/native/text_types.ex")
 require_file("codegen/gpui/codegen/native/window.ex")
 require_file("codegen/gpui/codegen/native/atoms.ex")
 require_file("codegen/gpui/codegen/native/resources.ex")
@@ -50,6 +52,10 @@ end
 
 rust "native/gpui/src/generated/test_boundary.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.TestBoundary)
+end
+
+rust "native/gpui/src/generated/text_types.rs" do
+  GPUI.Codegen.Native.TextTypes.items()
 end
 
 rust "native/gpui/src/generated/window.rs" do
