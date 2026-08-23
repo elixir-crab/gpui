@@ -94,6 +94,65 @@ defmodule GPUI.Codegen.Native.Events do
   EventDefinitions.define_input_kind()
   EventDefinitions.define_event_impls()
 
+  @spec encode_file_dialog_event(
+          R.path(:Env, R.lifetime(:a)),
+          R.u64(),
+          String.t(),
+          R.path(:Term, R.lifetime(:a))
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_file_dialog_event(env, window_id, event, value),
+    do: encode_value_event(env, Atoms.file_read(), window_id, event, value)
+
+  @spec encode_file_dialog_selected(
+          R.path(:Env, R.lifetime(:a)),
+          R.u64(),
+          String.t(),
+          R.u64(),
+          R.path(:Term, R.lifetime(:a))
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_file_dialog_selected(env, operation_id, name, size, data) do
+    encode_event_map(
+      env,
+      [
+        {Atoms.operation_id(), operation_id.encode(env)},
+        {Atoms.status(), Atoms.selected().to_term(env)},
+        {Atoms.name(), name.encode(env)},
+        {Atoms.size(), size.encode(env)},
+        {Atoms.data(), data}
+      ]
+    )
+  end
+
+  @spec encode_file_dialog_cancelled(
+          R.path(:Env, R.lifetime(:a)),
+          R.u64()
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_file_dialog_cancelled(env, operation_id) do
+    encode_event_map(
+      env,
+      [
+        {Atoms.operation_id(), operation_id.encode(env)},
+        {Atoms.status(), Atoms.cancelled().to_term(env)}
+      ]
+    )
+  end
+
+  @spec encode_file_dialog_error(
+          R.path(:Env, R.lifetime(:a)),
+          R.u64(),
+          String.t()
+        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+  defrust encode_file_dialog_error(env, operation_id, reason) do
+    encode_event_map(
+      env,
+      [
+        {Atoms.operation_id(), operation_id.encode(env)},
+        {Atoms.status(), Atoms.error().to_term(env)},
+        {Atoms.reason(), reason.encode(env)}
+      ]
+    )
+  end
+
   @spec encode_bounds_event(
           R.path(:Env, R.lifetime(:a)),
           R.u64(),
@@ -430,6 +489,10 @@ defmodule GPUI.Codegen.Native.Events do
       :encode_clipboard_event,
       :encode_transfer_event,
       :encode_virtual_range_event,
+      :encode_file_dialog_event,
+      :encode_file_dialog_selected,
+      :encode_file_dialog_cancelled,
+      :encode_file_dialog_error,
       :encode_revisioned_transaction_event,
       :encode_revisioned_selection_event,
       :encode_revisioned_viewport_event,

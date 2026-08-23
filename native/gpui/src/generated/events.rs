@@ -263,6 +263,59 @@ pub(crate) fn encode_virtual_range_event<'a>(
     encode_value_event(env, atoms::range(), window_id, event, value)
 }
 #[cfg(feature = "components")]
+pub(crate) fn encode_file_dialog_event<'a>(
+    env: Env<'a>,
+    window_id: u64,
+    event: String,
+    value: Term<'a>,
+) -> NifResult<Term<'a>> {
+    encode_value_event(env, atoms::file_read(), window_id, event, value)
+}
+#[cfg(feature = "components")]
+pub(crate) fn encode_file_dialog_selected<'a>(
+    env: Env<'a>,
+    operation_id: u64,
+    name: String,
+    size: u64,
+    data: Term<'a>,
+) -> NifResult<Term<'a>> {
+    encode_event_map(
+        env,
+        vec![
+            (atoms::operation_id(), operation_id.encode(env)), (atoms::status(),
+            atoms::selected().to_term(env)), (atoms::name(), name.encode(env)),
+            (atoms::size(), size.encode(env)), (atoms::data(), data)
+        ],
+    )
+}
+#[cfg(feature = "components")]
+pub(crate) fn encode_file_dialog_cancelled<'a>(
+    env: Env<'a>,
+    operation_id: u64,
+) -> NifResult<Term<'a>> {
+    encode_event_map(
+        env,
+        vec![
+            (atoms::operation_id(), operation_id.encode(env)), (atoms::status(),
+            atoms::cancelled().to_term(env))
+        ],
+    )
+}
+#[cfg(feature = "components")]
+pub(crate) fn encode_file_dialog_error<'a>(
+    env: Env<'a>,
+    operation_id: u64,
+    reason: String,
+) -> NifResult<Term<'a>> {
+    encode_event_map(
+        env,
+        vec![
+            (atoms::operation_id(), operation_id.encode(env)), (atoms::status(),
+            atoms::error().to_term(env)), (atoms::reason(), reason.encode(env))
+        ],
+    )
+}
+#[cfg(feature = "components")]
 pub(crate) fn encode_revisioned_transaction_event<'a>(
     env: Env<'a>,
     kind: Atom,

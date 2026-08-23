@@ -401,17 +401,11 @@ pub(crate) fn encode_native_event<'a>(env: Env<'a>, event: NativeEvent) -> NifRe
             event,
             operation_id,
             result,
-        } => encode_event_map(
+        } => encode_file_dialog_event(
             env,
-            vec![
-                (atoms::type_atom(), atoms::file_read().to_term(env)),
-                (atoms::window_id(), window_id.encode(env)),
-                (atoms::event(), event.encode(env)),
-                (
-                    atoms::value(),
-                    encode_file_dialog_result(env, operation_id, result)?,
-                ),
-            ],
+            window_id,
+            event,
+            encode_file_dialog_result(env, operation_id, result)?,
         ),
         #[cfg(feature = "real-gpui")]
         NativeEvent::MissingResource { window_id, id } => {
@@ -433,32 +427,16 @@ fn encode_file_dialog_result(
                 .ok_or_else(|| rustler::Error::Term(Box::new("file_allocation_failed")))?;
             binary.as_mut_slice().copy_from_slice(&data);
 
-            encode_event_map(
+            encode_file_dialog_selected(
                 env,
-                vec![
-                    (atoms::operation_id(), operation_id.encode(env)),
-                    (atoms::status(), atoms::selected().to_term(env)),
-                    (atoms::name(), name.encode(env)),
-                    (atoms::size(), size.encode(env)),
-                    (atoms::data(), binary.release(env).encode(env)),
-                ],
+                operation_id,
+                name,
+                size,
+                binary.release(env).encode(env),
             )
         }
-        FileDialogResult::Cancelled => encode_event_map(
-            env,
-            vec![
-                (atoms::operation_id(), operation_id.encode(env)),
-                (atoms::status(), atoms::cancelled().to_term(env)),
-            ],
-        ),
-        FileDialogResult::Error(reason) => encode_event_map(
-            env,
-            vec![
-                (atoms::operation_id(), operation_id.encode(env)),
-                (atoms::status(), atoms::error().to_term(env)),
-                (atoms::reason(), reason.encode(env)),
-            ],
-        ),
+        FileDialogResult::Cancelled => encode_file_dialog_cancelled(env, operation_id),
+        FileDialogResult::Error(reason) => encode_file_dialog_error(env, operation_id, reason),
     }
 }
 
