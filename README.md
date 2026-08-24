@@ -13,9 +13,10 @@ from [`gpui-component`](https://github.com/longbridge/gpui-component).
 One declarative application can run against a local native display, a
 deterministic test display, or a native display on another machine.
 
-GPUI is a `0.x` project. Linux x86-64 under X11 is the validated distribution
-target; Apple silicon macOS and x86-64 Windows are source-build preview targets.
-See [Compatibility and stability](guides/architecture/compatibility-and-stability.md).
+GPUI is private and unreleased. Current platform evidence targets Linux x86-64
+under X11; Apple silicon macOS and x86-64 Windows are source-build development
+targets. Internal APIs may change directly while the architecture is being
+built. See [Development status and boundaries](guides/architecture/development-status-and-boundaries.md).
 
 ## Write native UI like Elixir
 
@@ -170,7 +171,7 @@ Rust toolchain and GPUI platform libraries. See
 - [Commands and keyboard shortcuts](guides/ui/commands-and-shortcuts.md)
 - [Overlays and menus](guides/ui/overlays-and-menus.md)
 - [Testing GPUI applications](guides/testing/testing.md)
-- [Architecture and compatibility](guides/architecture/compatibility-and-stability.md)
+- [Development status and architectural boundaries](guides/architecture/development-status-and-boundaries.md)
 - [API reference](https://hexdocs.pm/gpui/api-reference.html)
 
 ## Development

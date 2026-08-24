@@ -119,12 +119,12 @@ mix run examples/remote/display_client.exs
 
 ## Failure behavior
 
-Requests have explicit IDs and timeouts. Negotiation rejects unsupported
-protocol versions or capabilities. Protocol versions require an exact match;
-capabilities negotiate additive behavior within that version rather than making
-incompatible payloads forward-compatible. See
-[Compatibility and stability](../architecture/compatibility-and-stability.md)
-for the package and wire-version policy. Mounts and events carry stable operation IDs,
+Requests have explicit IDs and timeouts. Negotiation rejects mismatched current
+protocol versions or missing capabilities before mounting a session. The
+version identifies the one wire shape implemented by the current source tree;
+no older private-project wire revisions are retained. See
+[Development status and boundaries](../architecture/development-status-and-boundaries.md)
+for the current package and protocol policy. Mounts and events carry stable operation IDs,
 so retrying after a lost reply does not mount twice or apply the same event
 twice. A disconnected session remains resumable until its configured session
 TTL expires; terminating a connection immediately removes only its connection

@@ -7,7 +7,7 @@
 - Added native dialog E2E scenarios for forward and reverse focus containment, Escape policy, controlled closure, and keyboard reopening through the restored trigger.
 - Extended release validation with a clean renderer-independent consumer that compiles and runs `GPUI.Test` without building or loading the native NIF.
 - Hardened release security validation to fail Rust unsoundness advisories and updated the pinned native dependency graph past the affected `event-listener` release.
-- Added an explicit compatibility policy for public Elixir contracts, exact-match remote protocol versions, native artifacts, platform claims, snapshots, accessibility boundaries, and post-1.0 deprecations.
+- Replaced premature release-compatibility policy with explicit private, unreleased development boundaries while retaining exact current-process protocol validation.
 - Added a neutral controlled two-pane native resizable split with bounded sizes, monotonic resize requests, and consumer-owned persistence.
 - Added idiomatic optional `handle_window_event/3` callbacks with `{:close, assigns}` approval, plus declarative native window minimum size and resizability.
 - Added stable-ID monotonic focus requests and native focus/blur events for buttons, low-level inputs, controlled inputs, and text surfaces.

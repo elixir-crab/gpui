@@ -42,10 +42,10 @@ details = %GPUI.WindowSpec{
 {:ok, snapshot} = GPUI.Runtime.close_window(runtime, "repository-details")
 ```
 
-Keys are optional for backward-compatible initial windows, but dynamically
-managed windows should use non-empty unique strings of at most 128 bytes. Titles
-are limited to 512 bytes and a session can own at most 32 windows. IDs are never
-reused in a session, including after a keyed window closes and reopens. Closing
+Keys are optional for initial windows, but dynamically managed windows should
+use non-empty unique strings of at most 128 bytes. Titles are limited to 512
+bytes and a session can own at most 32 windows. IDs are never reused in a
+session, including after a keyed window closes and reopens. Closing
 by key or ID removes only that window; other root assigns and native windows
 remain intact. Snapshot synchronization performs the actual platform close.
 Source refresh rerenders the current topology and preserves every window's

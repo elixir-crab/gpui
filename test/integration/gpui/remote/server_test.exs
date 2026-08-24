@@ -1066,10 +1066,11 @@ defmodule GPUI.Remote.ServerTest do
     assert {:ok, _hello} =
              SafeRPC.call(client, :hello, %{version: 2, capabilities: [:display_v1]})
 
-    assert {:ok, _mount} = SafeRPC.call(client, :mount, %{session_id: "legacy-transfer"})
+    assert {:ok, _mount} =
+             SafeRPC.call(client, :mount, %{session_id: "transfer-without-capability"})
 
     event = %{
-      session_id: "legacy-transfer",
+      session_id: "transfer-without-capability",
       request_id: "drop-1",
       type: :drop,
       window_id: 1,
