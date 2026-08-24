@@ -21,7 +21,7 @@ services, diagnostics, and editor chrome must remain consumer-owned.
 
 The native host currently pins:
 
-- GPUI at `1a246efd7e1b83ab568ec5e3e6c1a43a42e1abba`;
+- GPUI at `7bddd16a09cf0084cefb3d98468b178343b9f1e2`;
 - `gpui-component` at `5c5eb1db04dc1146bdec903a8ac74407bd6c2098`.
 
 The latter provides native text-decoration collections, which are sufficient for

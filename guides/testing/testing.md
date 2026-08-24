@@ -132,15 +132,15 @@ production windows, so dialog opening and Escape closure can exercise the real
 top-layer path. Real-window focus containment, content activation, and trigger
 restoration remain desktop-owned facts.
 
-`gpui-component::InputState` calls the public macOS content-type helper while
-rendering a focused input. That helper correctly treats an unavailable raw
-window handle as “no native content-type integration”, but GPUI's `TestWindow`
-currently panics instead of returning `raw_window_handle::HandleError` from its
-handle traits. A two-line upstream GPUI correction to return
-`HandleError::NotSupported` makes controlled input render and edit through the
-real component path. GPUI does not carry a dependency-checkout patch, so input
-remains blocked until the pinned GPUI revision includes that truthful behavior.
-Desktop E2E continues to own IME, native content types, selection, and clipboard.
+The pinned GPUI revision includes the upstream fix from
+[zed-industries/zed#62775](https://github.com/zed-industries/zed/pull/62775):
+`TestWindow` reports `raw_window_handle::HandleError::NotSupported` instead of
+panicking when code requests unavailable raw window or display handles. This
+allows `gpui-component::InputState` to render through its real component path in
+deterministic tests while native content-type integration degrades cleanly.
+Deterministic coverage owns controlled value reconciliation, typing, and submit
+events; desktop E2E continues to own IME, native content types, OS selection,
+and clipboard behavior.
 
 These tests verify deterministic renderer behavior, not operating-system facts.
 Real desktop E2E remains necessary for native window creation,

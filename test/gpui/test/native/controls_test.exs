@@ -1,6 +1,38 @@
 defmodule GPUI.Test.Native.ControlsTest do
   use GPUI.Test, native: [size: {320, 160}]
 
+  defmodule InputView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(assigns) do
+      ~GPUI"""
+      <GPUI.UI.input
+        id="name"
+        label="Name"
+        value={assigns.value}
+        focus_request={assigns.focus_request}
+        phx-change="name_changed"
+        phx-submit="name_submitted"
+      />
+      """
+    end
+  end
+
+  test "controlled input emits edits and reconciles the Elixir-owned value", %{ui: ui} do
+    render(ui, InputView, value: "Ada", focus_request: 1)
+    settle(ui)
+    type(ui, "X")
+
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "name_changed", value: "XAda"}}}
+
+    render(ui, InputView, value: "XAda", focus_request: 1)
+    press(ui, :enter)
+
+    assert_receive {:gpui, ^ui,
+                    {:event, %{type: :submit, event: "name_submitted", value: "X\nAda"}}}
+  end
+
   defmodule FormView do
     use GPUI.View
 

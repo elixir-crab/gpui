@@ -359,7 +359,7 @@ mod tests {
         });
 
         *state.tree.lock().unwrap() = crate::ElementNode::empty_root();
-        cx.update(|window, cx| window.draw(cx).clear());
+        cx.update(|window, cx| window.draw(cx).clear(cx));
         cx.simulate_event(FileDropEvent::Submit {
             position: point(px(20.0), px(20.0)),
         });
@@ -395,7 +395,7 @@ mod tests {
         });
 
         *state.tree.lock().unwrap() = drop_target_tree();
-        cx.update(|window, cx| window.draw(cx).clear());
+        cx.update(|window, cx| window.draw(cx).clear(cx));
         cx.simulate_event(FileDropEvent::Pending {
             position: point(px(30.0), px(25.0)),
         });

@@ -6,7 +6,7 @@ accessibility tree and handles assistive-technology actions. This guide records
 the boundary for the pinned native stack:
 
 ```text
-GPUI:           1a246efd7e1b83ab568ec5e3e6c1a43a42e1abba
+GPUI:           7bddd16a09cf0084cefb3d98468b178343b9f1e2
 gpui-component: 5c5eb1db04dc1146bdec903a8ac74407bd6c2098
 ```
 
