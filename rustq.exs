@@ -4,6 +4,7 @@ alias RustQ.Meta.AST, as: MetaAST
 alias RustQ.Rustler.Atom, as: RustlerAtom
 alias RustQ.Rustler.Nif
 
+require_file("lib/gpui/schema/extension.ex")
 require_file("lib/gpui/schema/component.ex")
 require_file("lib/gpui/schema/component_docs.ex")
 require_file("lib/gpui/schema/resource.ex")
@@ -27,6 +28,7 @@ require_file("codegen/gpui/codegen/native/dispatch.ex")
 require_file("codegen/gpui/codegen/native/elements.ex")
 require_file("codegen/gpui/codegen/native/event_boundary.ex")
 require_file("codegen/gpui/codegen/native/events.ex")
+require_file("codegen/gpui/codegen/native/extensions.ex")
 require_file("codegen/gpui/codegen/native/style.ex")
 require_file("codegen/gpui/codegen/native/test_boundary.ex")
 require_file("codegen/gpui/codegen/native/text_boundary.ex")
@@ -77,6 +79,10 @@ end
 
 rust "native/gpui/src/generated/disabled_resource_boundary.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.DisabledResourceBoundary)
+end
+
+rust "native/gpui/src/generated/extensions.rs" do
+  GPUI.Codegen.Native.Extensions.items()
 end
 
 rust "native/gpui/src/generated/events.rs" do

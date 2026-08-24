@@ -3,10 +3,12 @@ defmodule GPUI.Schema do
 
   alias GPUI.Schema.Component
   alias GPUI.Schema.ComponentDocs
+  alias GPUI.Schema.Extension
   alias GPUI.Schema.Resource
   alias GPUI.Schema.Style
 
   Code.ensure_compiled!(ComponentDocs)
+  Code.ensure_compiled!(Extension)
 
   @accessibility_attrs GPUI.Accessibility.attrs()
 
@@ -128,6 +130,11 @@ defmodule GPUI.Schema do
     %Component{
       tag: :ui_edge_fade,
       kind: :edge_fade_component,
+      extension: %Extension{
+        id: :edge_fade,
+        version: 1,
+        capabilities: [:linear_gradient, :theme_background]
+      },
       children: true,
       attrs: [
         id: :string,
@@ -139,6 +146,16 @@ defmodule GPUI.Schema do
     %Component{
       tag: :ui_frost,
       kind: :frost_component,
+      extension: %Extension{
+        id: :frost,
+        version: 1,
+        capabilities: [
+          :solid_fallback,
+          :translucent_fallback,
+          :reduced_transparency,
+          :backdrop_blur
+        ]
+      },
       children: true,
       attrs: [
         id: :string,
@@ -150,6 +167,7 @@ defmodule GPUI.Schema do
     %Component{
       tag: :ui_paint,
       kind: :paint_component,
+      extension: %Extension{id: :paint, version: 1, capabilities: [:rect, :line]},
       attrs: [
         id: :string,
         commands: {:default, :paint_commands, []}
@@ -1024,6 +1042,28 @@ defmodule GPUI.Schema do
     }
   ]
 
+  @extensions @components
+              |> Enum.flat_map(fn
+                %Component{extension: %Extension{} = extension} -> [extension]
+                _component -> []
+              end)
+
+  extension_keys = Enum.map(@extensions, &{&1.id, &1.version})
+
+  if Enum.uniq(extension_keys) != extension_keys do
+    raise ArgumentError, "extension IDs and versions must be unique"
+  end
+
+  Enum.each(@extensions, fn extension ->
+    unless is_atom(extension.id) and is_integer(extension.version) and extension.version > 0 and
+             is_list(extension.capabilities) and
+             Enum.count_until(extension.capabilities, 65) <= 64 and
+             Enum.all?(extension.capabilities, &is_atom/1) and
+             Enum.uniq(extension.capabilities) == extension.capabilities do
+      raise ArgumentError, "invalid extension contract: #{inspect(extension)}"
+    end
+  end)
+
   def components, do: @components
 
   @doc "Returns generated public option documentation for a component tag."
@@ -1541,6 +1581,17 @@ defmodule GPUI.Schema do
   defp invalid_attr!(tag, name, expected, value) do
     raise ArgumentError,
           "#{tag} :#{name} must be #{expected}; got: #{inspect(value)}"
+  end
+
+  @doc "Returns all schema-owned versioned presentation contracts."
+  @spec extensions() :: [Extension.t()]
+  def extensions, do: @extensions
+
+  @doc "Returns one schema-owned presentation contract by ID."
+  @spec extension(atom()) :: Extension.t()
+  def extension(id) when is_atom(id) do
+    Enum.find(@extensions, &(&1.id == id)) ||
+      raise ArgumentError, "unknown GPUI extension #{inspect(id)}"
   end
 
   def stateful_components, do: Enum.filter(@components, & &1.stateful)

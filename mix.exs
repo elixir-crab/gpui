@@ -153,6 +153,7 @@ defmodule GPUI.MixProject do
           GPUI.Image,
           GPUI.Raster,
           GPUI.ResourceRef,
+          GPUI.Schema.Extension,
           GPUI.Tailwind,
           GPUI.Template,
           GPUI.WindowSpec
@@ -178,6 +179,7 @@ defmodule GPUI.MixProject do
       GPUI.Accessibility,
       GPUI.Application,
       GPUI.Schema.Component,
+      GPUI.Schema.Extension,
       GPUI.Command,
       GPUI.Session,
       GPUI.Snapshot,

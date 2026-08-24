@@ -1,5 +1,9 @@
 project_root = Mix.Project.project_file() |> Path.dirname()
 
+unless Code.ensure_loaded?(GPUI.Schema.Extension) do
+  Code.require_file("lib/gpui/schema/extension.ex", project_root)
+end
+
 unless Code.ensure_loaded?(GPUI.Event) do
   Code.require_file("lib/gpui/transfer/payload.ex", project_root)
   Code.require_file("lib/gpui/transfer/event.ex", project_root)
@@ -25,6 +29,7 @@ for file <- ~w(
   elements.ex
   event_boundary.ex
   events.ex
+  extensions.ex
   style.ex
   test_boundary.ex
   text_boundary.ex

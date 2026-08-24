@@ -5,6 +5,7 @@ defmodule GPUI.Schema.Component do
   defstruct [
     :tag,
     :kind,
+    :extension,
     events: [],
     required_events: [],
     attrs: [],
@@ -54,6 +55,7 @@ defmodule GPUI.Schema.Component do
   @type t :: %__MODULE__{
           tag: atom(),
           kind: atom(),
+          extension: GPUI.Schema.Extension.t() | nil,
           events: keyword(atom()),
           required_events: [atom()],
           attrs: keyword(attr_type()),
