@@ -40,15 +40,20 @@ Rope buffer positions
   -> Input element line shaping and painting
 ```
 
-`DisplayMap` publicly maps `BufferPoint` and `DisplayPoint`, but its wrapping
-input is still the Rope text. It has no insertion layer between buffer text and
-wrapping. Consequently it cannot account for external inline text width,
-projection-induced wraps, or block rows.
+`DisplayMap` publicly maps `BufferPoint` and `DisplayPoint`, and `FoldRange`
+publicly represents inclusive whole-line candidates. Its wrapping input is still
+the Rope text, and `InputState` keeps `DisplayMap` private. The pinned state API
+populates candidates internally from tree-sitter and exposes only code-editor
+folding enablement; current upstream `main` additionally exposes
+`apply_highlighter_fold_candidates/2`, but still does not expose authoritative
+active-fold state for ordinary consumers. Consequently consumers cannot provide
+complete fold state without pretending to be a highlighter or reaching through
+private state. The generic API request is tracked in
+[gpui-component#2826](https://github.com/longbridge/gpui-component/issues/2826).
 
-The fold projection only hides interior whole-line wrap rows. It does not render
-a placeholder, represent arbitrary intra-line hidden ranges, or expose a public
-`InputState` contract for consumer-supplied folds. Hidden ranges therefore remain
-deferred separately.
+The fold projection only hides interior whole-line wrap rows while keeping both
+boundary lines visible. It does not render a placeholder or represent arbitrary
+intra-line hidden ranges. Hidden ranges therefore remain deferred separately.
 
 ## Inline completion is not a general insertion API
 
