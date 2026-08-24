@@ -147,7 +147,9 @@ defmodule GPUI.Display do
   end
 
   defp validate_presentation_support(supports) do
-    if Enum.count_until(supports, 65) > 64,
+    max_contracts = GPUI.Schema.Extension.Support.max_contracts()
+
+    if Enum.count_until(supports, max_contracts + 1) > max_contracts,
       do: {:error, {:invalid_display_return, :presentation_capabilities, :too_many_contracts}},
       else: collect_presentation_support(supports)
   end

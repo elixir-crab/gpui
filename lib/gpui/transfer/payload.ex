@@ -79,7 +79,8 @@ defmodule GPUI.Transfer.Payload do
       |> Enum.uniq()
 
     if length(paths) > @max_paths do
-      raise ArgumentError, "transfer payload accepts at most 64 unique external paths"
+      raise ArgumentError,
+            "transfer payload accepts at most #{@max_paths} unique external paths"
     end
 
     if Enum.reduce(paths, 0, &(byte_size(&1) + &2)) > @max_all_path_bytes do

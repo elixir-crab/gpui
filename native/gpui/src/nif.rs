@@ -1,5 +1,8 @@
 use crate::*;
 
+#[cfg(feature = "real-gpui")]
+const MAX_WINDOW_COMMANDS: usize = 64;
+
 pub(crate) fn text_buffer_new_impl<'a>(
     env: Env<'a>,
     text: String,
@@ -150,7 +153,7 @@ pub(crate) fn open_window_impl<'a>(
 
 #[cfg(feature = "real-gpui")]
 fn validate_window_commands(commands: Vec<(String, String)>) -> NifResult<Vec<CommandBinding>> {
-    if commands.len() > 64 {
+    if commands.len() > MAX_WINDOW_COMMANDS {
         return Err(rustler::Error::BadArg);
     }
 

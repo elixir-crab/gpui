@@ -7,6 +7,9 @@ use crate::{
 };
 use crate::{gpui, ElementRenderContext, TextSurfaceNode};
 
+#[cfg(feature = "components")]
+const MAX_REQUESTED_RANGES: usize = 64;
+
 #[cfg(feature = "real-gpui")]
 impl std::fmt::Debug for TextSurfaceNode {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -652,7 +655,7 @@ fn block_labels(
     let state = state.read(cx);
     projections
         .iter()
-        .take(64)
+        .take(MAX_REQUESTED_RANGES)
         .filter_map(|projection| {
             let line = usize::try_from(projection.line).ok()?;
             let position = if projection.placement == "before" {
@@ -884,7 +887,7 @@ fn emit_geometry_events(
     if let Some(event) = &surface.range_geometry_event {
         let mut key = Vec::new();
         let mut geometries = Vec::new();
-        for range in requested_ranges.iter().take(64) {
+        for range in requested_ranges.iter().take(MAX_REQUESTED_RANGES) {
             let Ok(byte_range) = crate::text_buffer::range_to_byte_range(&surface.text, range)
             else {
                 continue;

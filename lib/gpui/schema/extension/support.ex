@@ -1,6 +1,8 @@
 defmodule GPUI.Schema.Extension.Support do
   @moduledoc "Bounded display support for one exact presentation contract version."
 
+  @max_contracts 64
+
   @enforce_keys [:id, :version, :capabilities]
   defstruct [:id, :version, :capabilities]
 
@@ -9,6 +11,10 @@ defmodule GPUI.Schema.Extension.Support do
           version: pos_integer(),
           capabilities: [atom()]
         }
+
+  @doc "Maximum extension contracts advertised by one display or remote peer."
+  @spec max_contracts() :: pos_integer()
+  def max_contracts, do: @max_contracts
 
   @doc "Builds and validates support against the canonical schema contract."
   @spec new(atom(), pos_integer(), [atom()]) :: {:ok, t()} | {:error, term()}
@@ -36,9 +42,10 @@ defmodule GPUI.Schema.Extension.Support do
 
   defp validate_capabilities(contract, capabilities) do
     unknown = capabilities -- contract.capabilities
+    max_capabilities = GPUI.Schema.Extension.max_capabilities()
 
     cond do
-      Enum.count_until(capabilities, 65) > 64 ->
+      Enum.count_until(capabilities, max_capabilities + 1) > max_capabilities ->
         {:error, :too_many_capabilities}
 
       Enum.uniq(capabilities) != capabilities ->

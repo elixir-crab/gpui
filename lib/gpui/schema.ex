@@ -10,6 +10,10 @@ defmodule GPUI.Schema do
   Code.ensure_compiled!(ComponentDocs)
   Code.ensure_compiled!(Extension)
 
+  @max_text_surface_lines 64
+  @max_block_projections 64
+  @max_text_ranges 64
+
   @accessibility_attrs GPUI.Accessibility.attrs()
 
   @motion_attrs [
@@ -1054,10 +1058,13 @@ defmodule GPUI.Schema do
     raise ArgumentError, "extension IDs and versions must be unique"
   end
 
+  max_extension_capabilities = Extension.max_capabilities()
+
   Enum.each(@extensions, fn extension ->
     unless is_atom(extension.id) and is_integer(extension.version) and extension.version > 0 and
              is_list(extension.capabilities) and
-             Enum.count_until(extension.capabilities, 65) <= 64 and
+             Enum.count_until(extension.capabilities, max_extension_capabilities + 1) <=
+               max_extension_capabilities and
              Enum.all?(extension.capabilities, &is_atom/1) and
              Enum.uniq(extension.capabilities) == extension.capabilities do
       raise ArgumentError, "invalid extension contract: #{inspect(extension)}"
@@ -1194,12 +1201,14 @@ defmodule GPUI.Schema do
   end
 
   defp validate_text_surface_line_bounds!(min_lines, max_lines) do
-    if is_integer(min_lines) and min_lines > 64 do
-      raise ArgumentError, "text_surface min_lines must be at most 64, got: #{inspect(min_lines)}"
+    if is_integer(min_lines) and min_lines > @max_text_surface_lines do
+      raise ArgumentError,
+            "text_surface min_lines must be at most #{@max_text_surface_lines}, got: #{inspect(min_lines)}"
     end
 
-    if is_integer(max_lines) and max_lines > 64 do
-      raise ArgumentError, "text_surface max_lines must be at most 64, got: #{inspect(max_lines)}"
+    if is_integer(max_lines) and max_lines > @max_text_surface_lines do
+      raise ArgumentError,
+            "text_surface max_lines must be at most #{@max_text_surface_lines}, got: #{inspect(max_lines)}"
     end
 
     if is_integer(min_lines) and is_integer(max_lines) and min_lines > max_lines do
@@ -1374,11 +1383,19 @@ defmodule GPUI.Schema do
   defp validate_attr!(_tag, _name, :text_position, %{__struct__: GPUI.Text.Position}), do: :ok
 
   defp validate_attr!(tag, name, :text_block_projections, value) when is_list(value) do
-    valid? = Enum.count_until(value, 65) <= 64 and Enum.all?(value, &valid_block_projection?/1)
+    valid? =
+      Enum.count_until(value, @max_block_projections + 1) <= @max_block_projections and
+        Enum.all?(value, &valid_block_projection?/1)
 
     if valid?,
       do: :ok,
-      else: invalid_attr!(tag, name, "at most 64 bounded GPUI.Text.BlockProjection values", value)
+      else:
+        invalid_attr!(
+          tag,
+          name,
+          "at most #{@max_block_projections} bounded GPUI.Text.BlockProjection values",
+          value
+        )
   end
 
   defp validate_attr!(tag, name, :text_inline_projections, value) when is_list(value) do
@@ -1440,11 +1457,11 @@ defmodule GPUI.Schema do
   end
 
   defp validate_attr!(tag, name, :text_ranges, value) when is_list(value) do
-    if Enum.count_until(value, 65) <= 64 and
+    if Enum.count_until(value, @max_text_ranges + 1) <= @max_text_ranges and
          Enum.all?(value, &match?(%{__struct__: GPUI.Text.Range}, &1)) do
       :ok
     else
-      invalid_attr!(tag, name, "at most 64 GPUI.Text.Range values", value)
+      invalid_attr!(tag, name, "at most #{@max_text_ranges} GPUI.Text.Range values", value)
     end
   end
 
@@ -1563,7 +1580,10 @@ defmodule GPUI.Schema do
 
   defp expected_attr_type(:resource), do: "a resource map"
   defp expected_attr_type(:text_buffer), do: "a GPUI.Text.Buffer"
-  defp expected_attr_type(:text_ranges), do: "at most 64 GPUI.Text.Range values"
+
+  defp expected_attr_type(:text_ranges),
+    do: "at most #{@max_text_ranges} GPUI.Text.Range values"
+
   defp expected_attr_type(:text_position), do: "a GPUI.Text.Position"
   defp expected_attr_type(:rich_text_runs), do: "at most 2048 GPUI.Text.RichRun values"
 
@@ -1574,7 +1594,7 @@ defmodule GPUI.Schema do
     do: "at most 128 bounded GPUI.Text.InlineProjection values"
 
   defp expected_attr_type(:text_block_projections),
-    do: "at most 64 bounded GPUI.Text.BlockProjection values"
+    do: "at most #{@max_block_projections} bounded GPUI.Text.BlockProjection values"
 
   defp expected_attr_type(:paint_commands), do: "at most 256 bounded paint commands"
 

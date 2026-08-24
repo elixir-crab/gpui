@@ -1,5 +1,7 @@
 use crate::*;
 
+const MAX_SHORTCUT_BYTES: usize = 64;
+
 #[cfg(feature = "real-gpui")]
 pub(crate) type WindowCommandReply = std::sync::mpsc::SyncSender<Result<(), String>>;
 
@@ -43,7 +45,7 @@ impl CommandBinding {
 
 #[cfg(feature = "real-gpui")]
 fn valid_command_shortcut(shortcut: &str) -> bool {
-    if shortcut.is_empty() || shortcut.len() > 64 {
+    if shortcut.is_empty() || shortcut.len() > MAX_SHORTCUT_BYTES {
         return false;
     }
 

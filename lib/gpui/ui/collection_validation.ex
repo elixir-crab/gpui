@@ -1,6 +1,8 @@
 defmodule GPUI.UI.CollectionValidation do
   @moduledoc "Validation and normalization shared by virtualized collection builders."
 
+  @max_table_columns 64
+
   alias GPUI.Element
 
   def validate_event!(component, assigns, event) do
@@ -25,8 +27,8 @@ defmodule GPUI.UI.CollectionValidation do
   def element_id!(%Element{attrs: attrs}), do: Map.fetch!(Map.new(attrs), :id)
 
   def validate_table_columns!(columns, column_ids) do
-    if Enum.count_until(columns, 65) > 64 do
-      raise ArgumentError, "ui_data_table supports at most 64 columns"
+    if Enum.count_until(columns, @max_table_columns + 1) > @max_table_columns do
+      raise ArgumentError, "ui_data_table supports at most #{@max_table_columns} columns"
     end
 
     if column_ids != Enum.uniq(column_ids) do
