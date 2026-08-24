@@ -16,9 +16,9 @@ defmodule GPUI.Schema.Extension.Support do
   @spec max_contracts() :: pos_integer()
   def max_contracts, do: @max_contracts
 
-  @doc "Tests one exact contract version and optional capability against support."
-  @spec compatible?(t(), atom(), pos_integer(), atom() | nil) :: boolean()
-  def compatible?(%__MODULE__{} = support, id, version, capability \\ nil) do
+  @doc "Tests whether support provides one exact contract version and optional capability."
+  @spec provides?(t(), atom(), pos_integer(), atom() | nil) :: boolean()
+  def provides?(%__MODULE__{} = support, id, version, capability \\ nil) do
     support.id == id and support.version == version and
       (is_nil(capability) or capability in support.capabilities)
   end

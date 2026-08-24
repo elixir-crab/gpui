@@ -11,11 +11,11 @@ defmodule GPUI.Schema.Extension.SupportTest do
               capabilities: [:solid_fallback, :reduced_transparency]
             } = support} = Support.new(:frost, 1, [:solid_fallback, :reduced_transparency])
 
-    assert Support.compatible?(support, :frost, 1)
-    assert Support.compatible?(support, :frost, 1, :solid_fallback)
-    refute Support.compatible?(support, :frost, 1, :backdrop_blur)
-    refute Support.compatible?(support, :frost, 2)
-    refute Support.compatible?(support, :paint, 1)
+    assert Support.provides?(support, :frost, 1)
+    assert Support.provides?(support, :frost, 1, :solid_fallback)
+    refute Support.provides?(support, :frost, 1, :backdrop_blur)
+    refute Support.provides?(support, :frost, 2)
+    refute Support.provides?(support, :paint, 1)
 
     assert {:error, {:unsupported_version, 1, 2}} = Support.new(:frost, 2, [])
     assert {:error, {:unknown_extension, :widget}} = Support.new(:widget, 1, [])

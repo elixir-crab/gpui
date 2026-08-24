@@ -180,7 +180,7 @@ defmodule GPUI.Codegen.Native.Elements do
           else: {:error, badarg()}
 
       {:error, _missing} ->
-        if expected_version == 1, do: {:ok, {}}, else: {:error, badarg()}
+        {:error, badarg()}
     end
   end
 

@@ -36,16 +36,13 @@ paint@1      rect, line
 
 New snapshots carry `__extension_version__` in the renderer-hidden `attrs` map.
 Applications cannot set the field through public builders. Native generated
-decoders require the exact declared version before decoding the component.
-
-During the pre-stable compatibility window, a missing version is interpreted as
-version 1. An explicit malformed or mismatched version is rejected. Stable
-protocol revisions should require the field and remove this legacy allowance.
+decoders require the exact declared version before decoding the component;
+missing, malformed, and mismatched versions are rejected.
 
 An incompatible field or command change increments the contract version. A new
 capability must not silently broaden an existing closed version when it changes
-the wire schema. Implementations may retain multiple exact versions when old
-snapshots must remain supported.
+the wire schema. Before the first release, contracts may instead be redesigned
+or replaced directly because no historical payloads are supported.
 
 ## Capabilities and fallbacks
 

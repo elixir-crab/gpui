@@ -584,9 +584,7 @@ pub(crate) fn require_extension_version<'a>(
                 Err(rustler::Error::BadArg)
             }
         }
-        Err(_missing) => {
-            if expected_version == 1 { Ok(()) } else { Err(rustler::Error::BadArg) }
-        }
+        Err(_missing) => Err(rustler::Error::BadArg),
     }
 }
 #[cfg(feature = "real-gpui")]

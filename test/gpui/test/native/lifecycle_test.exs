@@ -30,6 +30,16 @@ defmodule GPUI.Test.Native.LifecycleTest do
     assert ^ui = render(ui, ExtensionView, %{})
   end
 
+  test "native rejects missing extension payload versions", %{ui: ui} do
+    tree =
+      ExtensionView
+      |> GPUI.Test.render(%{})
+      |> GPUI.Element.to_payload()
+      |> update_in([:attrs], &Map.delete(&1, :__extension_version__))
+
+    assert_invalid_extension_payload(ui, tree)
+  end
+
   test "native rejects explicit mismatched extension payload versions", %{ui: ui} do
     tree =
       ExtensionView
@@ -37,6 +47,10 @@ defmodule GPUI.Test.Native.LifecycleTest do
       |> GPUI.Element.to_payload()
       |> put_in([:attrs, :__extension_version__], 2)
 
+    assert_invalid_extension_payload(ui, tree)
+  end
+
+  defp assert_invalid_extension_payload(ui, tree) do
     viewport = %{type: :viewport, attrs: %{}, children: [tree]}
 
     assert_raise ArgumentError, fn ->
