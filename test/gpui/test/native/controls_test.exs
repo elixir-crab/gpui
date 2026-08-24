@@ -11,6 +11,10 @@ defmodule GPUI.Test.Native.ControlsTest do
         id="name"
         label="Name"
         value={assigns.value}
+        placeholder={assigns.placeholder}
+        disabled={assigns.disabled}
+        loading={assigns.loading}
+        masked={assigns.masked}
         focus_request={assigns.focus_request}
         phx-change="name_changed"
         phx-submit="name_submitted"
@@ -19,18 +23,58 @@ defmodule GPUI.Test.Native.ControlsTest do
     end
   end
 
+  defp render_input(ui, opts \\ []) do
+    render(
+      ui,
+      InputView,
+      Keyword.merge(
+        [
+          value: "Ada",
+          placeholder: "Name",
+          disabled: false,
+          loading: false,
+          masked: false,
+          focus_request: 1
+        ],
+        opts
+      )
+    )
+  end
+
   test "controlled input emits edits and reconciles the Elixir-owned value", %{ui: ui} do
-    render(ui, InputView, value: "Ada", focus_request: 1)
+    render_input(ui)
     settle(ui)
     type(ui, "X")
 
     assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "name_changed", value: "XAda"}}}
 
-    render(ui, InputView, value: "XAda", focus_request: 1)
+    render_input(ui, value: "XAda")
     press(ui, :enter)
 
     assert_receive {:gpui, ^ui,
-                    {:event, %{type: :submit, event: "name_submitted", value: "X\nAda"}}}
+                    {:event, %{type: :submit, event: "name_submitted", value: "XAda"}}}
+
+    refute_receive {:gpui, ^ui,
+                    {:event, %{type: :change, event: "name_changed", value: "X\nAda"}}}
+  end
+
+  test "controlled input restores rejected edits and blocks disabled typing", %{ui: ui} do
+    render_input(ui)
+    settle(ui)
+    type(ui, "X")
+
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "name_changed", value: "XAda"}}}
+
+    render_input(ui, value: "Grace", placeholder: "Author", loading: true)
+    type(ui, "Y")
+
+    assert_receive {:gpui, ^ui,
+                    {:event, %{type: :change, event: "name_changed", value: "GraceY"}}}
+
+    render_input(ui, disabled: true, focus_request: 2)
+    settle(ui)
+    type(ui, "Z")
+    refute_receive {:gpui, ^ui, {:event, %{event: "name_changed"}}}
   end
 
   defmodule FormView do

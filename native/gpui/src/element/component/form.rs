@@ -291,6 +291,11 @@ pub(crate) fn render_input_component(
         .role(accessibility.role)
         .aria_label(accessibility.label)
         .track_focus(&focus_handle.tab_stop(!node.disabled))
+        .on_key_down(|event, _window, cx| {
+            if event.keystroke.key == "enter" {
+                cx.stop_propagation();
+            }
+        })
         .flex()
         .w_full()
         .h(gpui::px(component_height));
