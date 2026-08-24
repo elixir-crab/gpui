@@ -189,6 +189,6 @@ defmodule MyApp.TimerTest do
 end
 ```
 
-Continue with [Components and styling](components-and-styling.html),
+Continue with [UI components](components.html),
 [Overlays and menus](overlays-and-menus.html), [Testing GPUI applications](overview.html),
 and [Sessions, snapshots, and displays](sessions-snapshots-and-displays.html).

@@ -9,7 +9,7 @@ are trying to do.
 1. Start with [Your first application](first-application.html).
 2. Learn the runtime model in
    [Sessions, snapshots, and displays](sessions-snapshots-and-displays.html).
-3. Browse [Components and styling](components-and-styling.html),
+3. Browse [UI components](components.html),
    [Commands and keyboard shortcuts](commands-and-shortcuts.html), and
    [Overlays and menus](overlays-and-menus.html).
 4. Add coverage with [Testing GPUI applications](overview.html).

@@ -253,4 +253,4 @@ keyboard and accessibility semantics remain in their focused renderers. This
 keeps generated code structural while preserving readable native behavior.
 
 See [Remote displays](remote-displays.html) for transport topology and
-[Testing GPUI applications](testing.html) for renderer-independent testing.
+[Testing GPUI applications](overview.html) for renderer-independent testing.

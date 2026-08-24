@@ -125,7 +125,7 @@ See [Sessions, snapshots, and displays](guides/concepts/sessions-snapshots-and-d
 
 Read more in [Editable text internals](guides/internals/editable-text.md),
 [Accessibility internals](guides/internals/accessibility.md),
-and [Components and styling](guides/ui/components-and-styling.md).
+and [UI components](guides/ui/components.md).
 
 ## Examples
 
@@ -168,7 +168,12 @@ Rust toolchain and GPUI platform libraries. See
 
 - [Documentation home](guides/documentation.md)
 - [Your first application](guides/getting-started/first-application.md)
-- [Components and styling](guides/ui/components-and-styling.md)
+- [UI components](guides/ui/components.md)
+- [Templates and elements](guides/ui/templates-and-elements.md)
+- [Forms and controls](guides/ui/forms-and-controls.md)
+- [Collections and data views](guides/ui/collections-and-data-views.md)
+- [Text and editing](guides/ui/text-and-editing.md)
+- [Layout, styling, and presentation](guides/ui/layout-styling-and-presentation.md)
 - [Commands and keyboard shortcuts](guides/ui/commands-and-shortcuts.md)
 - [Overlays and menus](guides/ui/overlays-and-menus.md)
 - [Testing GPUI applications](guides/testing/overview.md)
