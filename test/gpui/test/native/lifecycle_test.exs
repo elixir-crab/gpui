@@ -17,6 +17,33 @@ defmodule GPUI.Test.Native.LifecycleTest do
     end
   end
 
+  defmodule ExtensionView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(_assigns) do
+      GPUI.UI.frost(%{id: "versioned-frost", children: ["content"]})
+    end
+  end
+
+  test "generated extension payloads render through exact native version checks", %{ui: ui} do
+    assert ^ui = render(ui, ExtensionView, %{})
+  end
+
+  test "native rejects explicit mismatched extension payload versions", %{ui: ui} do
+    tree =
+      ExtensionView
+      |> GPUI.Test.render(%{})
+      |> GPUI.Element.to_payload()
+      |> put_in([:attrs, :__extension_version__], 2)
+
+    viewport = %{type: :viewport, attrs: %{}, children: [tree]}
+
+    assert_raise ArgumentError, fn ->
+      GPUI.Native.Test.render(ui.pid |> :sys.get_state() |> Map.fetch!(:session), viewport)
+    end
+  end
+
   test "native command failures expose operation, subject, reason, and UI", %{ui: ui} do
     render(ui, ControlsView, %{})
 

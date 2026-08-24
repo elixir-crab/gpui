@@ -101,6 +101,7 @@ defmodule GPUI.MixProject do
         "guides/architecture/native-text-projection-boundaries.md",
         "guides/architecture/declarative-motion-boundaries.md",
         "guides/architecture/declarative-window-chrome-boundaries.md",
+        "guides/architecture/versioned-presentation-extensions.md",
         "guides/ui/components-and-styling.md",
         "guides/ui/commands-and-shortcuts.md",
         "guides/ui/overlays-and-menus.md",
