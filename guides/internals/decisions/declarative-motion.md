@@ -1,4 +1,4 @@
-# Declarative native motion boundaries
+# Decision: declarative native motion
 
 GPUI motion is a bounded presentation request on ordinary declarative
 containers. Elixir owns when motion starts and the final tree; the display owns

@@ -1,4 +1,4 @@
-# Development status and boundaries
+# Platform support and development status
 
 GPUI is a private, unreleased project. It has no supported historical public
 API, wire payload, snapshot format, native artifact, or platform matrix.
@@ -25,7 +25,7 @@ Apple silicon macOS and x86-64 Windows are source-build development targets with
 different levels of interaction evidence. Linux ARM, musl, Windows ARM, and
 other target triples are not currently validated.
 
-See [Native builds and deployment](native-builds.md) for current prerequisites
+See [Native builds and deployment](native-builds.html) for current prerequisites
 and the proposed artifact process.
 
 ## Architectural boundary
@@ -70,7 +70,7 @@ The native NIF and pinned GPUI stack are implementation details. Elixir code
 must not depend on generated Rust layouts or native renderer symbols.
 
 Accessibility claims are limited to the semantics and actions documented in
-[Native accessibility boundaries](native-accessibility-boundaries.md). GPUI does
+[Accessibility](accessibility.html). GPUI does
 not claim arbitrary ARIA, DOM behavior, or uniform screen-reader behavior across
 operating systems.
 

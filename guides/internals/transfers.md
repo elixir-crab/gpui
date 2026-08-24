@@ -1,4 +1,4 @@
-# Native transfer payload boundaries
+# Transfer payload internals
 
 GPUI applications need clipboard and operating-system file-drop facts without
 moving attachment, upload, filesystem, or product policy into the renderer.

@@ -1,4 +1,4 @@
-# Getting started
+# Your first application
 
 GPUI keeps application state in ordinary Elixir processes and uses a display to
 present serializable snapshots. A local application combines one or more
@@ -190,5 +190,5 @@ end
 ```
 
 Continue with [Components and styling](components-and-styling.html),
-[Overlays and menus](overlays-and-menus.html), [Testing GPUI applications](testing.html),
-and [Sessions, runtimes, and displays](sessions-and-displays.html).
+[Overlays and menus](overlays-and-menus.html), [Testing GPUI applications](overview.html),
+and [Sessions, snapshots, and displays](sessions-snapshots-and-displays.html).

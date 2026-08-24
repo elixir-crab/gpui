@@ -93,30 +93,34 @@ defmodule GPUI.MixProject do
       extras: [
         "README.md",
         "CHANGELOG.md",
-        "guides/introduction/getting-started.md",
-        "guides/architecture/sessions-and-displays.md",
-        "guides/architecture/development-status-and-boundaries.md",
-        "guides/architecture/editable-text-primitives.md",
-        "guides/architecture/native-accessibility-boundaries.md",
-        "guides/architecture/native-text-projection-boundaries.md",
-        "guides/architecture/declarative-motion-boundaries.md",
-        "guides/architecture/declarative-window-chrome-boundaries.md",
-        "guides/architecture/versioned-presentation-extensions.md",
+        "guides/documentation.md",
+        "guides/getting-started/first-application.md",
+        "guides/concepts/sessions-snapshots-and-displays.md",
         "guides/ui/components-and-styling.md",
         "guides/ui/commands-and-shortcuts.md",
         "guides/ui/overlays-and-menus.md",
         "guides/remote/remote-displays.md",
-        "guides/testing/testing.md",
+        "guides/testing/overview.md",
         "guides/testing/coverage-ownership.md",
-        "guides/deployment/native-builds.md"
+        "guides/deployment/native-builds.md",
+        "guides/internals/platform-support.md",
+        "guides/internals/editable-text.md",
+        "guides/internals/accessibility.md",
+        "guides/internals/text-projections.md",
+        "guides/internals/transfers.md",
+        "guides/internals/presentation-contracts.md",
+        "guides/internals/decisions/declarative-motion.md",
+        "guides/internals/decisions/window-chrome.md"
       ],
       groups_for_extras: [
-        Introduction: ~r/guides\/introduction\//,
-        Architecture: ~r/guides\/architecture\//,
+        Introduction: ["README.md", "guides/documentation.md"],
+        "Getting Started": ~r/guides\/getting-started\//,
+        Concepts: ~r/guides\/concepts\//,
         UI: ~r/guides\/ui\//,
         Remote: ~r/guides\/remote\//,
         Testing: ~r/guides\/testing\//,
-        Deployment: ~r/guides\/deployment\//
+        Deployment: ~r/guides\/deployment\//,
+        Internals: ~r/guides\/internals\//
       ],
       groups_for_modules: [
         Core: [

@@ -1,4 +1,4 @@
-# Editable text primitives
+# Editable text internals
 
 GPUI exposes editable text as neutral model and renderer primitives. It does not
 provide an IDE, editor shell, document tab, language client, gutter, completion
@@ -199,7 +199,7 @@ Independent projection inputs will eventually cover:
 True layout-affecting inline and block insertions remain deferred. The pinned
 native input has no projection collection that participates consistently in
 wrapping, scroll extent, geometry, hit testing, and document/display mapping;
-see [Native text projection extension boundaries](native-text-projection-boundaries.md).
+see [Native text projections](text-projections.html).
 
 Consumers can use those inputs to build code editors, prose editors, notebooks,
 diff tools, terminal prompts, or domain-specific annotated text surfaces without

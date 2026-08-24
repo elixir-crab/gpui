@@ -1,4 +1,4 @@
-# Declarative native window chrome boundaries
+# Decision: declarative native window chrome
 
 GPUI exposes two renderer-independent window chrome modes:
 

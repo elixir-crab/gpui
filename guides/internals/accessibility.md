@@ -1,4 +1,4 @@
-# Native accessibility boundaries
+# Accessibility internals
 
 GPUI snapshots are renderer-independent, but programmatic accessibility only
 becomes real when a display maps snapshot semantics into its platform

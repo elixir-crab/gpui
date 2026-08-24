@@ -1,4 +1,4 @@
-# Versioned presentation extension contracts
+# Presentation extension contracts
 
 GPUI presentation extensions are schema-owned optional renderer capabilities.
 They are not plugins, dynamically loaded native modules, arbitrary component

@@ -16,7 +16,7 @@ deterministic test display, or a native display on another machine.
 GPUI is private and unreleased. Current platform evidence targets Linux x86-64
 under X11; Apple silicon macOS and x86-64 Windows are source-build development
 targets. Internal APIs may change directly while the architecture is being
-built. See [Development status and boundaries](guides/architecture/development-status-and-boundaries.md).
+built. See [Platform support and development status](guides/internals/platform-support.md).
 
 ## Write native UI like Elixir
 
@@ -66,7 +66,7 @@ RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/02_focus_timer.exs
 RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/03_settings_form.exs
 ```
 
-See [Getting started](guides/introduction/getting-started.md) for supervision,
+See [Your first application](guides/getting-started/first-application.md) for supervision,
 controlled components, event handling, and native prerequisites.
 
 ## Why GPUI
@@ -101,9 +101,9 @@ deterministic without Rust or a display server. The remote protocol can keep
 the authoritative session on one machine while another presents its native
 windows. Dynamic multi-window topology remains snapshot-driven in every mode.
 
-See [Sessions, runtimes, and displays](guides/architecture/sessions-and-displays.md),
+See [Sessions, snapshots, and displays](guides/concepts/sessions-snapshots-and-displays.md),
 [Remote displays](guides/remote/remote-displays.md), and
-[Testing GPUI applications](guides/testing/testing.md).
+[Testing GPUI applications](guides/testing/overview.md).
 
 ## Highlights
 
@@ -123,8 +123,8 @@ See [Sessions, runtimes, and displays](guides/architecture/sessions-and-displays
   schema. Handwritten Rust is reserved for platform integration,
   reconciliation, and latency-sensitive native mechanics.
 
-Read more in [Editable text primitives](guides/architecture/editable-text-primitives.md),
-[Native accessibility boundaries](guides/architecture/native-accessibility-boundaries.md),
+Read more in [Editable text internals](guides/internals/editable-text.md),
+[Accessibility internals](guides/internals/accessibility.md),
 and [Components and styling](guides/ui/components-and-styling.md).
 
 ## Examples
@@ -166,12 +166,13 @@ Rust toolchain and GPUI platform libraries. See
 
 ## Documentation
 
-- [Getting started](guides/introduction/getting-started.md)
+- [Documentation home](guides/documentation.md)
+- [Your first application](guides/getting-started/first-application.md)
 - [Components and styling](guides/ui/components-and-styling.md)
 - [Commands and keyboard shortcuts](guides/ui/commands-and-shortcuts.md)
 - [Overlays and menus](guides/ui/overlays-and-menus.md)
-- [Testing GPUI applications](guides/testing/testing.md)
-- [Development status and architectural boundaries](guides/architecture/development-status-and-boundaries.md)
+- [Testing GPUI applications](guides/testing/overview.md)
+- [Platform support and development status](guides/internals/platform-support.md)
 - [API reference](https://hexdocs.pm/gpui/api-reference.html)
 
 ## Development
@@ -187,7 +188,7 @@ Clippy, native unit tests, Dialyzer, Credo, duplication, and architecture
 checks. Hosted push validation splits the renderer-independent and native
 checks; the full native interaction and release-package suite is an explicit
 `Release candidate` workflow rather than a scheduled or per-push job. See
-[Testing GPUI applications](guides/testing/testing.md) for native
+[Testing GPUI applications](guides/testing/overview.md) for native
 Xvfb/Lavapipe interaction coverage.
 
 ## License

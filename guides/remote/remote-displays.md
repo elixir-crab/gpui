@@ -123,7 +123,7 @@ Requests have explicit IDs and timeouts. Negotiation rejects mismatched current
 protocol versions or missing capabilities before mounting a session. The
 version identifies the one wire shape implemented by the current source tree;
 no older private-project wire revisions are retained. See
-[Development status and boundaries](../architecture/development-status-and-boundaries.md)
+[Platform support and development status](platform-support.html)
 for the current package and protocol policy. Mounts and events carry stable operation IDs,
 so retrying after a lost reply does not mount twice or apply the same event
 twice. A disconnected session remains resumable until its configured session

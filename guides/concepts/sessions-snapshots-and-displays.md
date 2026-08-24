@@ -1,4 +1,4 @@
-# Sessions, runtimes, and displays
+# Sessions, snapshots, and displays
 
 GPUI separates renderer-independent application state from display lifecycle.
 This keeps view logic deterministic, permits local and remote presentation, and

@@ -1,4 +1,4 @@
-# Native text projection extension boundaries
+# Native text projections
 
 This note records the extension points available in the pinned native text stack
 before GPUI exposes layout-affecting projection primitives publicly.
