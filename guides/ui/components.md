@@ -18,6 +18,8 @@ Choose a guide by the task you are working on:
   points to the revisioned editable-text model.
 - [Layout, styling, and presentation](layout-styling-and-presentation.html)
   covers Tailwind-compatible classes, layers, motion, bounds, and themes.
+- [Presentation primitives](presentation-primitives.html) covers bounded edge
+  fades, frost fallbacks, and rectangle-and-line custom paint.
 - [Resources and display actions](resources-and-display-actions.html) covers
   display-local file selection, clipboard writes, image decoding, and raster
   resources.

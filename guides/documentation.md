@@ -20,6 +20,8 @@ are trying to do.
   display in another process or machine.
 - [Native builds and deployment](native-builds.html) covers source builds,
   feature sets, and release validation.
+- [Presentation primitives](presentation-primitives.html) explains bounded edge
+  fades, frost fallbacks, and custom paint for application authors.
 - [Test coverage ownership](coverage-ownership.html) identifies which test tier
   owns each kind of behavior.
 

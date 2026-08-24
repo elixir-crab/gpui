@@ -102,6 +102,7 @@ defmodule GPUI.MixProject do
         "guides/ui/collections-and-data-views.md",
         "guides/ui/text-and-editing.md",
         "guides/ui/layout-styling-and-presentation.md",
+        "guides/ui/presentation-primitives.md",
         "guides/ui/resources-and-display-actions.md",
         "guides/ui/windows-and-lifecycle.md",
         "guides/ui/commands-and-shortcuts.md",

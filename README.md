@@ -174,6 +174,7 @@ Rust toolchain and GPUI platform libraries. See
 - [Collections and data views](guides/ui/collections-and-data-views.md)
 - [Text and editing](guides/ui/text-and-editing.md)
 - [Layout, styling, and presentation](guides/ui/layout-styling-and-presentation.md)
+- [Presentation primitives](guides/ui/presentation-primitives.md)
 - [Commands and keyboard shortcuts](guides/ui/commands-and-shortcuts.md)
 - [Overlays and menus](guides/ui/overlays-and-menus.md)
 - [Testing GPUI applications](guides/testing/overview.md)
