@@ -99,6 +99,40 @@ defmodule GPUI.UITest do
 
     assert Enum.map(attrs[:commands], & &1.kind) == ["rect", "line"]
 
+    assert %Element{attrs: zero_rect_attrs} =
+             UI.paint(%{
+               id: "zero-rect",
+               commands: [%{type: :rect, x: 0, y: 0, width: 0, height: 0, color: 0}]
+             })
+
+    assert [%{kind: "rect", width: 0, height: 0}] = zero_rect_attrs[:commands]
+
+    assert %Element{attrs: bounded_attrs} =
+             UI.paint(%{
+               id: "bounded",
+               commands:
+                 List.duplicate(
+                   %{type: :rect, x: 0, y: 0, width: 1, height: 1, color: 0},
+                   256
+                 )
+             })
+
+    assert Enum.count_until(bounded_attrs[:commands], 257) == 256
+
+    assert_raise ArgumentError, ~r/at most 256 bounded paint commands/, fn ->
+      UI.paint(%{
+        id: "too-many",
+        commands: List.duplicate(%{type: :rect, x: 0, y: 0, width: 1, height: 1, color: 0}, 257)
+      })
+    end
+
+    assert_raise ArgumentError, ~r/at most 256 bounded paint commands/, fn ->
+      UI.paint(%{
+        id: "zero-width-line",
+        commands: [%{type: :line, x1: 0, y1: 0, x2: 1, y2: 1, width: 0, color: 0}]
+      })
+    end
+
     assert_raise ArgumentError, ~r/at most 256 bounded paint commands/, fn ->
       UI.paint(%{id: "shader", commands: [%{type: :shader, source: "void main() {}"}]})
     end

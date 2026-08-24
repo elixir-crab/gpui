@@ -26,6 +26,13 @@ defmodule GPUI.Test.Native.LifecycleTest do
     end
   end
 
+  defmodule MalformedPaintView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(_assigns), do: GPUI.UI.paint(%{id: "malformed-paint", commands: []})
+  end
+
   test "generated extension payloads render through exact native version checks", %{ui: ui} do
     assert ^ui = render(ui, ExtensionView, %{})
   end
@@ -40,6 +47,27 @@ defmodule GPUI.Test.Native.LifecycleTest do
     assert_invalid_extension_payload(ui, tree)
   end
 
+  test "native rejects malformed paint commands that bypass Elixir schema validation", %{ui: ui} do
+    tree =
+      MalformedPaintView
+      |> GPUI.Test.render(%{})
+      |> GPUI.Element.to_payload()
+      |> put_in([:attrs, :commands], [
+        %{
+          kind: "rect",
+          x: "not-a-coordinate",
+          y: 0,
+          x2: 0,
+          y2: 0,
+          width: 1,
+          height: 1,
+          color: 0
+        }
+      ])
+
+    assert_invalid_extension_payload(ui, tree, ErlangError)
+  end
+
   test "native rejects explicit mismatched extension payload versions", %{ui: ui} do
     tree =
       ExtensionView
@@ -50,10 +78,10 @@ defmodule GPUI.Test.Native.LifecycleTest do
     assert_invalid_extension_payload(ui, tree)
   end
 
-  defp assert_invalid_extension_payload(ui, tree) do
+  defp assert_invalid_extension_payload(ui, tree, error \\ ArgumentError) do
     viewport = %{type: :viewport, attrs: %{}, children: [tree]}
 
-    assert_raise ArgumentError, fn ->
+    assert_raise error, fn ->
       GPUI.Native.Test.render(ui.pid |> :sys.get_state() |> Map.fetch!(:session), viewport)
     end
   end

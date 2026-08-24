@@ -33,6 +33,7 @@ pub(crate) fn render_edge_fade(
     let color: gpui::Hsla = gpui::rgba(0x000000ff).into();
     let transparent = color.opacity(0.0);
     let mut element = crate::element::apply_generated_render_styles(div(), style)
+        .debug_selector(|| id.clone())
         .id(id)
         .relative()
         .overflow_hidden();

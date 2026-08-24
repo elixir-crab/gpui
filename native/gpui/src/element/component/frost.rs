@@ -35,6 +35,7 @@ pub(crate) fn render_frost(
     }));
 
     let mut element = crate::element::apply_generated_render_styles(gpui::div(), style)
+        .debug_selector(|| id.clone())
         .id(id)
         .relative()
         .bg(color);

@@ -10,6 +10,7 @@ pub(crate) fn render_paint(
         PathBuilder, Styled,
     };
 
+    let selector = node.id.clone();
     let canvas = canvas(
         move |_, _, _| {},
         move |bounds, _, window, _| {
@@ -47,6 +48,7 @@ pub(crate) fn render_paint(
     .size_full();
 
     crate::element::apply_generated_render_styles(gpui::div(), node.style)
+        .debug_selector(|| selector)
         .id(node.id)
         .child(canvas)
         .into_any_element()
