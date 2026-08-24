@@ -29,6 +29,10 @@ defmodule GPUI.Codegen.Native.SchemaTest do
 
     assert_unique_named_items(parsed)
     assert source =~ "let node_type = decode_element_type(term)?;"
+    assert source =~ "fn require_extension_version"
+    assert source =~ "require_extension_version(term, \"edge_fade\", 1)?;"
+    assert source =~ "require_extension_version(term, \"frost\", 1)?;"
+    assert source =~ "require_extension_version(term, \"paint\", 1)?;"
     assert source =~ "let attrs = decode_element_attrs(term)?;"
     assert source =~ "let children = decode_element_children(term)?;"
     assert source =~ "let image = decode_image_data(attrs.map_get(atoms::raster())?)?;"

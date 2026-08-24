@@ -49,13 +49,34 @@ defmodule GPUI.Codegen.Native.ComponentDefinitionMacros do
           {name, quote(do: unwrap!(component_string_attr(term, unquote(atom_call(attr)))))}
         end)
 
+    version_check =
+      case component.extension do
+        %GPUI.Schema.Extension{id: id, version: version} ->
+          quote do
+            unwrap!(require_extension_version(term, unquote(Atom.to_string(id)), unquote(version)))
+          end
+
+        nil ->
+          nil
+      end
+
+    body =
+      if version_check do
+        quote do
+          unquote(version_check)
+          {:ok, struct_literal(unquote(struct), unquote(fields))}
+        end
+      else
+        quote do
+          {:ok, struct_literal(unquote(struct), unquote(fields))}
+        end
+      end
+
     quote do
       @allow RustQ.Clippy.redundant_field_names()
       @allow RustQ.Clippy.lint(:useless_vec)
       @spec unquote(decoder)(term()) :: R.nif_result(unquote(type_name)())
-      defrust unquote(decoder)(term) do
-        {:ok, struct_literal(unquote(struct), unquote(fields))}
-      end
+      defrust unquote(decoder)(term), do: unquote(body)
     end
   end
 

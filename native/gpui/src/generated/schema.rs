@@ -560,6 +560,26 @@ pub(crate) fn decode_paint_commands<'a>(
     }
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn require_extension_version<'a>(
+    term: Term<'a>,
+    _extension_id: &str,
+    expected_version: u64,
+) -> NifResult<()> {
+    let attrs = decode_element_attrs(term)?;
+    match attrs.map_get(atoms::__extension_version__()) {
+        Ok(version) => {
+            if version.decode::<u64>()? == expected_version {
+                Ok(())
+            } else {
+                Err(rustler::Error::BadArg)
+            }
+        }
+        Err(_missing) => {
+            if expected_version == 1 { Ok(()) } else { Err(rustler::Error::BadArg) }
+        }
+    }
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn decode_element_type<'a>(term: Term<'a>) -> NifResult<String> {
     let type_term = term.map_get(atoms::type_atom())?;
     type_term.atom_to_string()
@@ -2301,6 +2321,7 @@ pub(crate) struct EdgeFadeComponentNode {
 pub(crate) fn decode_generated_edge_fade_component<'a>(
     term: Term<'a>,
 ) -> NifResult<EdgeFadeComponentNode> {
+    require_extension_version(term, "edge_fade", 1)?;
     Ok(EdgeFadeComponentNode {
         style: decode_style(term)?,
         id: component_id(term)?,
@@ -2331,6 +2352,7 @@ pub(crate) struct FrostComponentNode {
 pub(crate) fn decode_generated_frost_component<'a>(
     term: Term<'a>,
 ) -> NifResult<FrostComponentNode> {
+    require_extension_version(term, "frost", 1)?;
     Ok(FrostComponentNode {
         style: decode_style(term)?,
         id: component_id(term)?,
@@ -2362,6 +2384,7 @@ pub(crate) struct PaintComponentNode {
 pub(crate) fn decode_generated_paint_component<'a>(
     term: Term<'a>,
 ) -> NifResult<PaintComponentNode> {
+    require_extension_version(term, "paint", 1)?;
     Ok(PaintComponentNode {
         style: decode_style(term)?,
         id: component_id(term)?,

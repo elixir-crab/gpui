@@ -111,6 +111,17 @@ defmodule GPUI.UITest do
     end
   end
 
+  test "serializes exact extension versions as renderer-hidden attributes" do
+    for element <- [
+          UI.edge_fade(%{id: "fade", edges: [:bottom]}),
+          UI.frost(%{id: "frost"}),
+          UI.paint(%{id: "paint", commands: []})
+        ] do
+      assert %{attrs: %{__extension_version__: 1}} = Element.to_payload(element)
+      refute Keyword.has_key?(element.attrs, :__extension_version__)
+    end
+  end
+
   test "validates progress, file-read, and clipboard values" do
     assert_raise ArgumentError, ~r/value must be between zero and max/, fn ->
       UI.progress(%{id: "upload", label: "Uploading", value: 101})

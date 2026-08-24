@@ -36,16 +36,28 @@ defmodule GPUI.Element do
   def to_payload(value) when is_integer(value) or is_float(value) or is_atom(value), do: value
 
   defp payload(%__MODULE__{} = element) do
-    attrs = validated_primitive_attrs(element)
+    attrs =
+      element
+      |> validated_primitive_attrs()
+      |> normalize_class_attr()
+      |> attrs_to_payload()
+      |> put_extension_version(element.type)
 
     %{
       type: element.type,
-      attrs: attrs |> normalize_class_attr() |> attrs_to_payload(),
+      attrs: attrs,
       children: Enum.map(element.children, &payload/1)
     }
   end
 
   defp payload(value), do: to_payload(value)
+
+  defp put_extension_version(attrs, type) do
+    case GPUI.Schema.component!(type).extension do
+      %GPUI.Schema.Extension{version: version} -> Map.put(attrs, :__extension_version__, version)
+      nil -> attrs
+    end
+  end
 
   defp validated_primitive_attrs(%__MODULE__{type: :layer, children: [_child], attrs: attrs}) do
     attrs

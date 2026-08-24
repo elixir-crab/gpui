@@ -167,6 +167,21 @@ defmodule GPUI.Codegen.Native.Elements do
     end
   end
 
+  @spec require_extension_version(term(), R.str(), R.u64()) :: R.nif_result(R.unit())
+  defrust require_extension_version(term, _extension_id, expected_version) do
+    attrs = unwrap!(decode_element_attrs(term))
+
+    case attrs.map_get(Atoms.__extension_version__()) do
+      {:ok, version} ->
+        if decode_as!(version, R.u64()) == expected_version,
+          do: {:ok, {}},
+          else: {:error, badarg()}
+
+      {:error, _missing} ->
+        if expected_version == 1, do: {:ok, {}}, else: {:error, badarg()}
+    end
+  end
+
   @spec decode_element_type(term()) :: R.nif_result(String.t())
   defrustp decode_element_type(term) do
     type_term = unwrap!(term.map_get(Atoms.type_atom()))
