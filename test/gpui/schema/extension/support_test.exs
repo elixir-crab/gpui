@@ -22,6 +22,10 @@ defmodule GPUI.Schema.Extension.SupportTest do
 
     assert Support.provides?(support, :frost, 1)
     assert Support.provides?(support, :frost, 1, :solid_fallback)
+
+    assert {:error, {:unknown_capabilities, [:backdrop_blur]}} =
+             Support.new(:frost, 1, [:backdrop_blur])
+
     refute Support.provides?(support, :frost, 1, :backdrop_blur)
     refute Support.provides?(support, :frost, 2)
     refute Support.provides?(support, :paint, 1)

@@ -153,12 +153,7 @@ defmodule GPUI.Schema do
       extension: %Extension{
         id: :frost,
         version: 1,
-        capabilities: [
-          :solid_fallback,
-          :translucent_fallback,
-          :reduced_transparency,
-          :backdrop_blur
-        ]
+        capabilities: [:solid_fallback, :translucent_fallback, :reduced_transparency]
       },
       children: true,
       attrs: [

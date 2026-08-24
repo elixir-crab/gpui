@@ -10,7 +10,6 @@ pub const FROST_EXTENSION_CAPABILITIES: &[&str] = &[
     "solid_fallback",
     "translucent_fallback",
     "reduced_transparency",
-    "backdrop_blur",
 ];
 pub const PAINT_EXTENSION_VERSION: u32 = 1;
 pub const PAINT_EXTENSION_CAPABILITIES: &[&str] = &["rect", "line"];

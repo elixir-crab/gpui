@@ -10,7 +10,8 @@ defmodule GPUI.Codegen.Native.ExtensionsTest do
     assert source =~ "const EDGE_FADE_EXTENSION_VERSION: u32 = 1;"
     assert source =~ "const FROST_EXTENSION_VERSION: u32 = 1;"
     assert source =~ "const PAINT_EXTENSION_VERSION: u32 = 1;"
-    assert source =~ ~s("backdrop_blur")
+    assert source =~ ~s("reduced_transparency")
+    refute source =~ ~s("backdrop_blur")
     assert source =~ ~s("rect")
     assert source =~ ~s("line")
     assert RustQ.valid?(source, "generated_extensions.rs")

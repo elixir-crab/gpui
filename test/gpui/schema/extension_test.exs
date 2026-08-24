@@ -19,8 +19,7 @@ defmodule GPUI.Schema.ExtensionTest do
     assert capabilities == [
              :solid_fallback,
              :translucent_fallback,
-             :reduced_transparency,
-             :backdrop_blur
+             :reduced_transparency
            ]
 
     assert_raise ArgumentError, ~r/unknown GPUI extension/, fn ->

@@ -30,7 +30,7 @@ and a closed capability vocabulary. The current built-ins are:
 ```text
 edge_fade@1  linear_gradient, theme_background
 frost@1      solid_fallback, translucent_fallback,
-             reduced_transparency, backdrop_blur
+             reduced_transparency
 paint@1      rect, line
 ```
 
@@ -48,9 +48,10 @@ or replaced directly because no historical payloads are supported.
 
 A contract's capability list is vocabulary, not an implementation claim.
 `GPUI.Display.presentation_capabilities/2` reports only behavior that the
-particular display implements. For example, frost version 1 declares
-`backdrop_blur`, but native displays do not advertise it until a real and tested
-platform implementation exists.
+particular display implements. The pinned GPUI stack exposes blur only as a
+whole-window background appearance; it has no public element- or layer-level
+backdrop filter. Frost therefore declares only the implemented solid,
+translucent, and reduced-transparency behavior.
 
 Every optional enhancement requires a deterministic fallback in the serialized
 component declaration:
