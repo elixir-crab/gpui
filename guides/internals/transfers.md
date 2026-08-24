@@ -1,27 +1,12 @@
 # Transfer payload internals
 
-GPUI applications need clipboard and operating-system file-drop facts without
-moving attachment, upload, filesystem, or product policy into the renderer.
-This guide records the first neutral boundary before the protocol is exposed.
+This guide records the native and transport boundary behind the public
+application contract in
+[Resources and display actions](resources-and-display-actions.html). GPUI
+transfers bounded clipboard and operating-system file facts without moving
+attachment, upload, filesystem, or product policy into the renderer.
 
-## Display-machine ownership
-
-Clipboard contents and external paths always belong to the machine running the
-`GPUI.Display`. A remote display therefore reports paths on the remote display
-machine, not paths on the BEAM host. The framework never reads a dropped path,
-uploads it, resolves project-relative meaning, or assumes that another display
-can open it.
-
-Consumers retain responsibility for:
-
-- file type and size validation;
-- reading files and handling permission failures;
-- upload and attachment lifecycle;
-- MIME and application-format interpretation;
-- project-relative path conversion;
-- command execution and security policy.
-
-## Pinned native capabilities
+## Native capability boundary
 
 The pinned GPUI revision exposes:
 
@@ -29,130 +14,115 @@ The pinned GPUI revision exposes:
 - platform clipboard read and write operations;
 - `FileDropEvent::{Entered, Pending, Submit, Exited}`;
 - `ExternalPaths` as display-machine `PathBuf` values;
-- ordinary drag-over, drag-move, and drop listeners for typed native values.
+- drag-over, drag-move, and drop listeners for typed native values.
 
 GPUI translates an operating-system file drop into an internal drag containing
-`ExternalPaths`. `Entered` is the only phase carrying the paths; later pending
-and submit phases carry position while GPUI retains the active drag value.
-This makes a renderer-owned bounded drag session necessary before emitting
-Elixir events.
+`ExternalPaths`. `Entered` is the only platform phase carrying the paths; later
+pending and submit phases carry position while GPUI retains the active drag
+value. The renderer therefore owns a bounded drag session that preserves the
+payload until terminal drop or leave.
 
-The pinned public clipboard contract does not provide arbitrary MIME byte
-entries. The framework must not advertise a generic clipboard-format API until
-the native platforms expose one coherently. The first contract should therefore
-cover text and external paths only; clipboard images can be considered later
-through existing bounded raster/resource machinery.
+The public clipboard layer does not expose arbitrary MIME byte entries
+coherently across supported platforms. GPUI must not advertise a generic
+clipboard-format API by treating platform-specific or internal representations
+as a portable contract.
 
-## First payload contract
+## Renderer-owned drag sessions
 
-The initial renderer-independent payload should be equivalent to:
+The renderer assigns each native drag a monotonic session ID and retains:
 
-```elixir
-%GPUI.Transfer.Payload{
-  text: nil | String.t(),
-  external_paths: [String.t()]
-}
-```
+- the canonical bounded `GPUI.Transfer.Payload`;
+- the currently hit stable target ID;
+- the latest window-relative native-pixel position;
+- whether enter, movement, leave, or drop is pending.
 
-Proposed hard limits:
+Enter and drop include the retained payload. Movement is high frequency and can
+be coalesced to the latest position without losing ordered terminal facts. Leave
+and drop close the session so stale native callbacks cannot attach to a later
+drag.
+
+Routing uses ordinary element hit testing and typed runtime events. It does not
+introduce a generic effect bus, synchronous pointer NIF, or renderer-owned
+application object.
+
+## Canonical protocol representation
+
+`GPUI.Transfer.Payload` and `GPUI.Transfer.Event` are the public normalized
+values. Their wire maps use bounded UTF-8 strings, finite numeric coordinates,
+a closed `window_native_pixels` coordinate space, and explicit payload presence
+by event phase.
+
+Validation occurs before session dispatch for local and remote events. Paths
+that cannot be represented as bounded UTF-8 are rejected rather than converted
+lossily. Duplicate paths are removed in first-seen order. No protocol decoder
+opens a path, reads a file, infers MIME, or constructs an attachment.
+
+Generated event decoding and handwritten native session mechanics share this
+canonical Elixir-owned schema; native structs are not a public protocol.
+
+## Clipboard ordering
+
+Button activation can request clipboard read, clipboard write, a bounded file
+read, and an ordinary click. The renderer executes them in this order:
 
 ```text
-text                         1 MiB
-external paths               64
-one encoded path             4 KiB
-all encoded paths            256 KiB
+clipboard operations
+→ file read
+→ ordinary click
 ```
 
-Paths that are not representable as bounded UTF-8 strings must be rejected
-explicitly rather than lossily converted. Duplicate paths should be removed in
-first-seen order. Payloads contain facts only; no path is opened or read.
+This makes the event sequence deterministic while preserving each operation as
+an explicit opt-in. Clipboard reads emit `GPUI.Transfer.Payload`; writes emit an
+acknowledgement after requesting the platform operation.
 
-## Event contract
+Native editable text does not route ordinary paste through this explicit button
+contract. Its immediate platform selection, paste, and IME behavior update the
+native buffer, and the resulting revisioned transaction is the
+application-visible fact.
 
-A drop target opts into fixed typed phases:
+## Remote capability enforcement
+
+Remote transfer support is additive within the exact current protocol version:
 
 ```text
-:drag_enter
-:drag_move
-:drag_leave
-:drop
+clipboard_text_v1
+external_path_transfer_v1
 ```
 
-Each `handle_event/3` callback receives a public value:
+A display forwards an event only when the corresponding capability was
+negotiated. The server retains peer capabilities per connection and rejects
+transfer events from a peer that did not advertise support. Reconnection runs a
+fresh hello before queued events resume.
 
-```elixir
-%GPUI.Transfer.Event{
-  session_id: 42,
-  target_id: "attachments",
-  position: {320.0, 180.0},
-  coordinate_space: :window_native_pixels,
-  payload: %GPUI.Transfer.Payload{
-    text: nil,
-    external_paths: ["/display/tmp/document.pdf"]
-  }
-}
-```
+Remote paths remain facts about the display machine and are never rewritten as
+BEAM-host paths. Bounds are checked before transport and again before runtime
+dispatch. Movement may be display-side coalesced; enter, leave, and drop remain
+ordered session facts.
 
-`:drag_enter` and `:drop` include the bounded payload. `:drag_move` is coalesced and carries only the
-session identity and latest position. `:drag_leave` terminates the session.
-A monotonically increasing renderer-owned session ID prevents stale movement
-or leave events from being associated with a later drag.
+## Resource and allocation ownership
 
-A target must use a stable element ID. Enter/move/drop routing uses normal
-hit-testing and ordinary typed runtime events; no generic effect bus or
-synchronous pointer NIF is introduced.
+The bounded file-picker action reads one file on the display machine because its
+purpose is to produce portable bytes. Larger workflows remain supervised
+application tasks rather than long-lived renderer operations.
 
-## Clipboard contract
-
-Clipboard integration begins with explicit opt-in operations rather than a
-global clipboard subscription. An ordinary `GPUI.UI.button/1` opts into a
-clipboard read with `phx-clipboard-read`. Its user activation reads bounded
-display-machine clipboard text and emits `:clipboard` with `%GPUI.Transfer.Payload{}` through `phx-clipboard-read`.
-```heex
-<UI.button
-  id="paste"
-  label="Paste"
-  phx-clipboard-read="clipboard_read"
-/>
-```
-
-When both `phx-click` and `phx-clipboard-read` are present, the bounded
-clipboard event is emitted first and the ordinary click follows. Non-text, empty, or text over 1 MiB produces `text: nil`; arbitrary MIME bytes
-are never exposed. Ordinary `GPUI.UI.button/1` activation may write bounded
-`clipboard_text` through `phx-clipboard-write`.
-
-Remote clipboard events require the additive `:clipboard_text_v1` capability.
-
-Native editable text keeps its immediate platform paste and IME behavior. The
-buffer transaction remains the authoritative application-visible result.
-Clipboard payload events are needed only when a consumer requests external
-path facts or wants to apply policy before accepting a transfer.
-
-## Remote displays
-
-Transfer support uses the additive `:external_path_transfer_v1` capability
-within the exact remote protocol version. A display forwards transfer events
-only when that capability appears in the server hello response. The server
-retains peer capabilities per connection, rejects transfer events from peers
-that did not advertise the capability, and validates bounded transfer values
-before session dispatch. Reconnection performs a fresh hello before queued
-transfer events resume.
-
-A remote display that lacks transfer support must reject or
-omit the opt-in feature explicitly. Remote paths are never rewritten as BEAM
-host paths, and payload bytes remain bounded before transport.
-
-High-frequency movement is display-side coalesced. Enter, leave, and drop are
-ordered terminal facts and are never silently coalesced away.
+Decoded raster data can be installed as a runtime resource and referenced from
+later snapshots. Native code owns allocation and image decoding mechanics;
+Elixir owns resource identity, lifetime policy, replacement, and application
+meaning.
 
 ## Deferred capabilities
 
-The first transfer contract intentionally excludes:
+The current transfer contract intentionally excludes:
 
-- arbitrary MIME/custom clipboard bytes;
-- automatic file reads or uploads;
-- directory traversal;
+- arbitrary MIME or custom clipboard bytes;
+- automatic reads of externally dropped paths;
+- automatic uploads or directory traversal;
 - drag sources and cross-application data promises;
-- clipboard history or observation;
+- clipboard history or global observation;
 - application-specific attachment objects;
-- images until a bounded renderer-independent resource contract is selected.
+- clipboard images until they have a bounded renderer-independent resource
+  contract across platforms;
+- streaming transfer payloads without explicit flow control and cancellation.
+
+Additions must remain bounded, serializable, display-machine-aware, and neutral
+about product policy.
