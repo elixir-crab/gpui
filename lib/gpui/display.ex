@@ -26,7 +26,13 @@ defmodule GPUI.Display do
               pos_integer()
             ) :: :ok | {:error, term()}
 
-  @optional_callbacks await_frame: 3, frame_token: 2, await_frame_after: 4
+  @callback presentation_capabilities(GenServer.server()) ::
+              {:ok, [GPUI.Schema.Extension.Support.t()]} | {:error, term()}
+
+  @optional_callbacks await_frame: 3,
+                      frame_token: 2,
+                      await_frame_after: 4,
+                      presentation_capabilities: 1
 
   @doc "Starts a display module and normalizes its startup result."
   @spec start(module(), keyword()) :: {:ok, pid()} | {:error, term()}
@@ -124,6 +130,49 @@ defmodule GPUI.Display do
       end
     end)
   end
+
+  @doc "Returns bounded optional presentation support advertised by a display."
+  @spec presentation_capabilities(module(), GenServer.server()) ::
+          {:ok, [GPUI.Schema.Extension.Support.t()]} | {:error, term()}
+  def presentation_capabilities(display_module, display) do
+    if function_exported?(display_module, :presentation_capabilities, 1) do
+      case invoke(display_module, :presentation_capabilities, [display]) do
+        {:ok, supports} when is_list(supports) -> validate_presentation_support(supports)
+        {:error, _reason} = error -> error
+        invalid -> {:error, {:invalid_display_return, :presentation_capabilities, invalid}}
+      end
+    else
+      {:ok, []}
+    end
+  end
+
+  defp validate_presentation_support(supports) do
+    if Enum.count_until(supports, 65) > 64,
+      do: {:error, {:invalid_display_return, :presentation_capabilities, :too_many_contracts}},
+      else: collect_presentation_support(supports)
+  end
+
+  defp collect_presentation_support(supports) do
+    supports
+    |> Enum.reduce_while({:ok, []}, &collect_presentation_support/2)
+    |> case do
+      {:ok, valid} -> {:ok, Enum.reverse(valid)}
+      error -> error
+    end
+  end
+
+  defp collect_presentation_support(
+         %GPUI.Schema.Extension.Support{id: id, version: version, capabilities: capabilities},
+         {:ok, valid}
+       ) do
+    case GPUI.Schema.Extension.Support.new(id, version, capabilities) do
+      {:ok, support} -> {:cont, {:ok, [support | valid]}}
+      {:error, reason} -> {:halt, {:error, {:invalid_extension_support, reason}}}
+    end
+  end
+
+  defp collect_presentation_support(invalid, _valid),
+    do: {:halt, {:error, {:invalid_extension_support, invalid}}}
 
   @doc "Runs work asynchronously and replies to the original GenServer caller."
   @spec async_reply(GenServer.from(), (-> term()), (term() -> term())) :: :ok

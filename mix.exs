@@ -154,6 +154,7 @@ defmodule GPUI.MixProject do
           GPUI.Raster,
           GPUI.ResourceRef,
           GPUI.Schema.Extension,
+          GPUI.Schema.Extension.Support,
           GPUI.Tailwind,
           GPUI.Template,
           GPUI.WindowSpec
@@ -180,6 +181,7 @@ defmodule GPUI.MixProject do
       GPUI.Application,
       GPUI.Schema.Component,
       GPUI.Schema.Extension,
+      GPUI.Schema.Extension.Support,
       GPUI.Command,
       GPUI.Session,
       GPUI.Snapshot,

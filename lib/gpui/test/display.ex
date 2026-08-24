@@ -43,6 +43,9 @@ defmodule GPUI.Test.Display do
   end
 
   @impl GPUI.Display
+  def presentation_capabilities(_display), do: {:ok, []}
+
+  @impl GPUI.Display
   def await_frame(display, window_id, _timeout) do
     if Agent.get(display, &window_present?(&1, window_id)),
       do: :ok,

@@ -24,6 +24,22 @@ defmodule GPUI.Display.Native do
   @impl GPUI.Display
   def inject_event(display, event), do: GenServer.call(display, {:inject_event, event})
 
+  @impl GPUI.Display
+  def presentation_capabilities(_display) do
+    supports = [
+      {:edge_fade, [:linear_gradient, :theme_background]},
+      {:frost, [:solid_fallback, :translucent_fallback, :reduced_transparency]},
+      {:paint, [:rect, :line]}
+    ]
+
+    {:ok,
+     Enum.map(supports, fn {id, capabilities} ->
+       contract = GPUI.Schema.extension(id)
+       {:ok, support} = GPUI.Schema.Extension.Support.new(id, contract.version, capabilities)
+       support
+     end)}
+  end
+
   @doc "Waits until a complete native frame has followed the current window state."
   @spec await_frame(GenServer.server(), pos_integer(), pos_integer()) ::
           :ok | {:error, term()}

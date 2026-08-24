@@ -1,6 +1,11 @@
 defmodule GPUI.Test.DisplayTest do
   use ExUnit.Case, async: true
 
+  test "advertises no renderer enhancements" do
+    display = start_supervised!({GPUI.Test.Display, []})
+    assert {:ok, []} = GPUI.Display.presentation_capabilities(GPUI.Test.Display, display)
+  end
+
   test "records synchronized snapshots chronologically" do
     display = start_supervised!({GPUI.Test.Display, []})
     first = %GPUI.Snapshot{windows: [], resources: %{}}
