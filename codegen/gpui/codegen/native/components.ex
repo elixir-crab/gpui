@@ -65,7 +65,7 @@ defmodule GPUI.Codegen.Native.ComponentDefinitionMacros do
   defp component_field_type(_name, {:default, :string}), do: quote(do: String.t())
 
   defp component_field_type(_name, {:default, type, _value})
-       when type in [:number, :positive_number],
+       when type in [:number, :positive_number, :unit_number, :edge_fade_size],
        do: quote(do: R.f64())
 
   defp component_field_type(_name, :non_negative_integer), do: quote(do: R.option(R.u64()))
@@ -78,6 +78,9 @@ defmodule GPUI.Codegen.Native.ComponentDefinitionMacros do
 
   defp component_field_type(_name, {:default, {:enum, _values}, _default}),
     do: quote(do: R.option(String.t()))
+
+  defp component_field_type(_name, {:default, {:enum_list, _values}, _default}),
+    do: quote(do: R.vec(String.t()))
 
   defp component_field_type(_name, :boolean), do: quote(do: boolean())
   defp component_field_type(_name, {:default, :boolean, _value}), do: quote(do: boolean())
@@ -112,9 +115,9 @@ defmodule GPUI.Codegen.Native.ComponentDefinitionMacros do
       )
 
   defp component_decoder_expr(name, {:default, type, default})
-       when type in [:number, :positive_number] do
+       when type in [:number, :positive_number, :unit_number, :edge_fade_size] do
     helper =
-      if type == :positive_number,
+      if type in [:positive_number, :edge_fade_size],
         do: :component_positive_number_attr,
         else: :component_number_attr
 
@@ -177,6 +180,12 @@ defmodule GPUI.Codegen.Native.ComponentDefinitionMacros do
         {:some, value} -> some(value)
         :none -> some(unquote(default).to_string())
       end
+    end
+  end
+
+  defp component_decoder_expr(name, {:default, {:enum_list, values}, _default}) do
+    quote do
+      unwrap!(component_enum_list_attr(term, unquote(atom_call(name)), ref(unquote(values))))
     end
   end
 

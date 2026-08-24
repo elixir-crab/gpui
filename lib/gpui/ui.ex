@@ -34,6 +34,7 @@ defmodule GPUI.UI do
 
   Schema.define_component_option_types(
     button_options: :ui_button,
+    edge_fade_options: :ui_edge_fade,
     progress_options: :ui_progress,
     checkbox_options: :ui_checkbox,
     input_options: :ui_input,
@@ -116,6 +117,24 @@ defmodule GPUI.UI do
     end
 
     component(:ui_button, assigns)
+  end
+
+  @doc """
+  Builds a neutral bounded edge-fade overlay around arbitrary child content.
+
+  `edges` is a unique subset of `:top`, `:right`, `:bottom`, and `:left`.
+  `size` is bounded to 1–256 native pixels and `opacity` to 0–1.
+
+  #{Schema.component_options_doc(:ui_edge_fade)}
+  """
+  @spec edge_fade(edge_fade_options()) :: Element.t()
+  def edge_fade(assigns) when is_map(assigns) do
+    assigns =
+      assigns
+      |> Schema.apply_defaults(:ui_edge_fade)
+      |> Map.update!(:edges, &Enum.map(&1, fn edge -> to_string(edge) end))
+
+    component(:ui_edge_fade, assigns)
   end
 
   @doc """

@@ -9,6 +9,7 @@ defmodule GPUI.SchemaTest do
              :ui_drop_target,
              :ui_split,
              :ui_button,
+             :ui_edge_fade,
              :ui_progress,
              :ui_popover,
              :ui_popover_trigger,

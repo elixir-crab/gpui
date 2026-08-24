@@ -25,6 +25,8 @@ defmodule GPUI.Schema.Component do
           | :number
           | :non_negative_number
           | :positive_number
+          | :unit_number
+          | :edge_fade_size
           | :layer_priority
           | :non_negative_integer
           | :positive_integer
@@ -43,8 +45,10 @@ defmodule GPUI.Schema.Component do
   @type attr_type ::
           scalar_type()
           | {:enum, [String.t()]}
+          | {:enum_list, [String.t()]}
           | {:default, scalar_type()}
           | {:default, scalar_type() | {:enum, [String.t()]}, term()}
+          | {:default, {:enum_list, [String.t()]}, term()}
 
   @type t :: %__MODULE__{
           tag: atom(),

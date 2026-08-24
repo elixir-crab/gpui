@@ -333,6 +333,28 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
+  @spec component_enum_list_attr(term(), atom(), R.slice(R.str())) ::
+          R.nif_result(R.vec(String.t()))
+  defrust component_enum_list_attr(term, attr, allowed) do
+    case component_attr(term, attr) do
+      {:ok, {:some, value}} ->
+        values = decode_as!(value, R.vec(String.t()))
+
+        if values.len() <= allowed.len() and
+             values.iter().all(fn value -> allowed.contains(ref(value.as_str())) end) do
+          {:ok, values}
+        else
+          {:error, badarg()}
+        end
+
+      {:ok, nil} ->
+        {:ok, []}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   @spec component_id(term()) :: R.nif_result(String.t())
   defrust component_id(term) do
     component_required_string_attr(term, Atoms.id())

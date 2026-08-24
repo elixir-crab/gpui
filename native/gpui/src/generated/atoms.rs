@@ -22,10 +22,10 @@ mod atoms {
         "copy", cursor = "cursor", dark = "dark", data = "data", decorations =
         "decorations", delay = "delay", disabled = "disabled", display = "display",
         drag_enter = "drag_enter", drag_leave = "drag_leave", drag_move = "drag_move",
-        drop = "drop", error = "error", event = "event", expanded = "expanded",
-        file_max_bytes = "file_max_bytes", file_prompt = "file_prompt", file_read =
-        "file_read", first = "first", fit = "fit", flex = "flex", flex_basis =
-        "flex_basis", flex_direction = "flex_direction", flex_grow = "flex_grow",
+        drop = "drop", edges = "edges", error = "error", event = "event", expanded =
+        "expanded", file_max_bytes = "file_max_bytes", file_prompt = "file_prompt",
+        file_read = "file_read", first = "first", fit = "fit", flex = "flex", flex_basis
+        = "flex_basis", flex_direction = "flex_direction", flex_grow = "flex_grow",
         flex_shrink = "flex_shrink", flex_wrap = "flex_wrap", focus = "focus",
         focus_request = "focus_request", follow = "follow", follow_request =
         "follow_request", font_size = "font_size", font_weight = "font_weight", format =

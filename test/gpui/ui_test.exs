@@ -32,6 +32,34 @@ defmodule GPUI.UITest do
     assert copy[:clipboard_text] == "value"
   end
 
+  test "builds bounded edge fades with closed edge values" do
+    fade =
+      UI.edge_fade(%{
+        id: "feed-fades",
+        edges: [:top, :bottom],
+        size: 32,
+        opacity: 0.75,
+        children: ["content"]
+      })
+
+    assert %Element{type: :ui_edge_fade, attrs: attrs, children: ["content"]} = fade
+    assert attrs[:edges] == ["top", "bottom"]
+    assert attrs[:size] == 32
+    assert attrs[:opacity] == 0.75
+
+    assert_raise ArgumentError, ~r/unique list drawn from/, fn ->
+      UI.edge_fade(%{id: "bad-edges", edges: [:top, :top]})
+    end
+
+    assert_raise ArgumentError, ~r/number from 1 through 256/, fn ->
+      UI.edge_fade(%{id: "bad-size", size: 257})
+    end
+
+    assert_raise ArgumentError, ~r/number from zero through one/, fn ->
+      UI.edge_fade(%{id: "bad-opacity", opacity: 1.1})
+    end
+  end
+
   test "validates progress, file-read, and clipboard values" do
     assert_raise ArgumentError, ~r/value must be between zero and max/, fn ->
       UI.progress(%{id: "upload", label: "Uploading", value: 101})

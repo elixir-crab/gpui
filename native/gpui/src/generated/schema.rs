@@ -8,6 +8,7 @@ pub enum GeneratedComponentKind {
     DropTargetComponent,
     SplitComponent,
     ButtonComponent,
+    EdgeFadeComponent,
     ProgressComponent,
     PopoverComponent,
     PopoverTriggerComponent,
@@ -352,6 +353,27 @@ pub(crate) fn component_enum_attr<'a>(
             }
         }
         Ok(None) => Ok(None),
+        Err(reason) => Err(reason),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn component_enum_list_attr<'a>(
+    term: Term<'a>,
+    attr: Atom,
+    allowed: &[&str],
+) -> NifResult<Vec<String>> {
+    match component_attr(term, attr) {
+        Ok(Some(value)) => {
+            let values = value.decode::<Vec<String>>()?;
+            if values.len() <= allowed.len()
+                && values.iter().all(|value| allowed.contains(&value.as_str()))
+            {
+                Ok(values)
+            } else {
+                Err(rustler::Error::BadArg)
+            }
+        }
+        Ok(None) => Ok(vec![]),
         Err(reason) => Err(reason),
     }
 }
@@ -2253,6 +2275,36 @@ pub(crate) fn decode_generated_button_component<'a>(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct EdgeFadeComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) edges: Vec<String>,
+    pub(crate) size: f64,
+    pub(crate) opacity: f64,
+    pub(crate) children: Vec<ElementNode>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_edge_fade_component<'a>(
+    term: Term<'a>,
+) -> NifResult<EdgeFadeComponentNode> {
+    Ok(EdgeFadeComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        edges: component_enum_list_attr(
+            term,
+            atoms::edges(),
+            &vec!["top", "right", "bottom", "left"],
+        )?,
+        size: component_positive_number_attr(term, atoms::size())?.unwrap_or(24.0),
+        opacity: component_number_attr(term, atoms::opacity())?.unwrap_or(1.0),
+        children: decode_children(term)?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct ProgressComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -3466,6 +3518,7 @@ pub(crate) enum ElementNode {
     DropTargetComponent(DropTargetComponentNode),
     SplitComponent(SplitComponentNode),
     ButtonComponent(ButtonComponentNode),
+    EdgeFadeComponent(EdgeFadeComponentNode),
     ProgressComponent(ProgressComponentNode),
     PopoverComponent(PopoverComponentNode),
     PopoverTriggerComponent(PopoverTriggerComponentNode),
@@ -3512,6 +3565,7 @@ pub enum GeneratedElementTag {
     UiDropTarget,
     UiSplit,
     UiButton,
+    UiEdgeFade,
     UiProgress,
     UiPopover,
     UiPopoverTrigger,
@@ -3565,6 +3619,7 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_drop_target" => GeneratedElementTag::UiDropTarget,
         "ui_split" => GeneratedElementTag::UiSplit,
         "ui_button" => GeneratedElementTag::UiButton,
+        "ui_edge_fade" => GeneratedElementTag::UiEdgeFade,
         "ui_progress" => GeneratedElementTag::UiProgress,
         "ui_popover" => GeneratedElementTag::UiPopover,
         "ui_popover_trigger" => GeneratedElementTag::UiPopoverTrigger,
@@ -3619,6 +3674,7 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::UiDropTarget => GeneratedComponentKind::DropTargetComponent,
         GeneratedElementTag::UiSplit => GeneratedComponentKind::SplitComponent,
         GeneratedElementTag::UiButton => GeneratedComponentKind::ButtonComponent,
+        GeneratedElementTag::UiEdgeFade => GeneratedComponentKind::EdgeFadeComponent,
         GeneratedElementTag::UiProgress => GeneratedComponentKind::ProgressComponent,
         GeneratedElementTag::UiPopover => GeneratedComponentKind::PopoverComponent,
         GeneratedElementTag::UiPopoverTrigger => {
@@ -3713,6 +3769,10 @@ pub(crate) fn decode_generated_element_node<'a>(
         GeneratedComponentKind::ButtonComponent => {
             decode_generated_button_component(term)
                 .map(|node| ElementNode::ButtonComponent(node))
+        }
+        GeneratedComponentKind::EdgeFadeComponent => {
+            decode_generated_edge_fade_component(term)
+                .map(|node| ElementNode::EdgeFadeComponent(node))
         }
         GeneratedComponentKind::ProgressComponent => {
             decode_generated_progress_component(term)
@@ -3872,6 +3932,9 @@ pub(crate) fn render_generated_component_node(
         }
         ElementNode::ButtonComponent(node) => {
             element::component::controls::render_button_component(node, context)
+        }
+        ElementNode::EdgeFadeComponent(node) => {
+            element::component::edge_fade::render_edge_fade(node, context)
         }
         ElementNode::ProgressComponent(node) => {
             element::component::display::render_progress(node, context)

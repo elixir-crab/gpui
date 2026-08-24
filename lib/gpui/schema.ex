@@ -126,6 +126,17 @@ defmodule GPUI.Schema do
       ]
     },
     %Component{
+      tag: :ui_edge_fade,
+      kind: :edge_fade_component,
+      children: true,
+      attrs: [
+        id: :string,
+        edges: {:default, {:enum_list, ~w(top right bottom left)}, []},
+        size: {:default, :edge_fade_size, 24.0},
+        opacity: {:default, :unit_number, 1.0}
+      ]
+    },
+    %Component{
       tag: :ui_progress,
       kind: :progress_component,
       public_required_attrs: [:label],
@@ -1239,6 +1250,14 @@ defmodule GPUI.Schema do
   defp validate_attr!(_tag, _name, :positive_number, value) when is_number(value) and value > 0,
     do: :ok
 
+  defp validate_attr!(_tag, _name, :unit_number, value)
+       when is_number(value) and value >= 0 and value <= 1,
+       do: :ok
+
+  defp validate_attr!(_tag, _name, :edge_fade_size, value)
+       when is_number(value) and value >= 1 and value <= 256,
+       do: :ok
+
   defp validate_attr!(_tag, _name, :non_negative_integer, value)
        when is_integer(value) and value >= 0, do: :ok
 
@@ -1262,6 +1281,17 @@ defmodule GPUI.Schema do
     if Enum.all?(value, &is_binary/1),
       do: :ok,
       else: invalid_attr!(tag, name, "a list of strings", value)
+  end
+
+  defp validate_attr!(tag, name, {:enum_list, values}, value) when is_list(value) do
+    normalized = Enum.map(value, &to_string/1)
+
+    if length(normalized) <= length(values) and normalized == Enum.uniq(normalized) and
+         Enum.all?(normalized, &(&1 in values)) do
+      :ok
+    else
+      invalid_attr!(tag, name, "a unique list drawn from #{inspect(values)}", value)
+    end
   end
 
   defp validate_attr!(_tag, _name, type, value)
@@ -1424,11 +1454,14 @@ defmodule GPUI.Schema do
   defp expected_attr_type(:number), do: "a number"
   defp expected_attr_type(:non_negative_number), do: "a non-negative number"
   defp expected_attr_type(:positive_number), do: "a number greater than zero"
+  defp expected_attr_type(:unit_number), do: "a number from zero through one"
+  defp expected_attr_type(:edge_fade_size), do: "a number from 1 through 256"
   defp expected_attr_type(:layer_priority), do: "an integer from 0 through 1024"
   defp expected_attr_type(:non_negative_integer), do: "a non-negative integer"
   defp expected_attr_type(:positive_integer), do: "an integer greater than zero"
   defp expected_attr_type(:boolean), do: "a boolean"
   defp expected_attr_type(:string_list), do: "a list of strings"
+  defp expected_attr_type({:enum_list, values}), do: "a unique list drawn from #{inspect(values)}"
 
   defp expected_attr_type(type) when type in [:select_options, :radio_options],
     do: "an options list"
