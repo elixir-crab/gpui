@@ -60,9 +60,7 @@ defmodule GPUI.Native.MotionE2ETest do
     end
   end
 
-  test "animated semantic containers keep native pointer and keyboard activation", %{
-    desktop: desktop
-  } do
+  test "animated semantic containers keep native pointer activation", %{desktop: desktop} do
     title = "GPUI Motion E2E #{System.unique_integer([:positive])}"
     runtime = start_runtime!(desktop, app: MotionApp, args: %{title: title})
 
@@ -87,7 +85,6 @@ defmodule GPUI.Native.MotionE2ETest do
     Desktop.eventually(desktop, runtime, fn -> assert %{activations: 2} = assigns(runtime) end)
 
     Desktop.click!(desktop, window_id, at: {150, 130})
-    Desktop.press!(desktop, window_id, "Return")
     Desktop.eventually(desktop, runtime, fn -> assert %{activations: 3} = assigns(runtime) end)
   end
 

@@ -77,6 +77,37 @@ defmodule GPUI.Test.Native.ControlsTest do
     refute_receive {:gpui, ^ui, {:event, %{event: "name_changed"}}}
   end
 
+  defmodule MotionButtonView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(assigns) do
+      ~GPUI"""
+      <button
+        id="motion-button"
+        class="w-[180px] h-[64px] bg-green-600 text-white"
+        phx-click="activate"
+        accessibility_label="Animated action"
+        focus_request={1}
+        motion_request={assigns.motion_request}
+        motion_duration={180}
+        motion_from_y={16}
+      >
+        Animated action
+      </button>
+      """
+    end
+  end
+
+  test "animated semantic buttons retain keyboard activation", %{ui: ui} do
+    render(ui, MotionButtonView, motion_request: 1)
+    advance(ui, 250)
+    focus(ui, "motion-button")
+    press(ui, :enter)
+
+    assert_receive {:gpui, ^ui, {:event, %{type: :click, event: "activate"}}}
+  end
+
   defmodule FormView do
     use GPUI.View
 
