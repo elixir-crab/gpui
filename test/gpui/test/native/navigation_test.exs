@@ -103,12 +103,33 @@ defmodule GPUI.Test.Native.NavigationTest do
     assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "dialog_changed", value: true}}}
   end
 
-  test "dialog opens in the native top layer and routes Escape closure", %{ui: ui} do
+  test "dialog opens in the native top layer and routes content activation", %{ui: ui} do
+    render(ui, DialogView, open: true)
+    settle(ui)
+
+    assert %{width: width, height: height} = bounds(ui, "dialog-action")
+    assert width > 0
+    assert height > 0
+
+    click(ui, "dialog-action")
+    assert_receive {:gpui, ^ui, {:event, %{type: :click, event: "dialog_action"}}}
+  end
+
+  test "dialog routes Escape closure and restores its trigger focus", %{ui: ui} do
+    render(ui, DialogView, open: false)
+    focus(ui, "settings-dialog")
+    press(ui, :enter)
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "dialog_changed", value: true}}}
+
     render(ui, DialogView, open: true)
     settle(ui)
     press(ui, :escape)
 
     assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "dialog_changed", value: false}}}
+
+    render(ui, DialogView, open: false)
+    press(ui, :enter)
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "dialog_changed", value: true}}}
   end
 
   test "accordion items expose stable targets and controlled pointer changes", %{ui: ui} do

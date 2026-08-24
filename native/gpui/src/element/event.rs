@@ -14,12 +14,13 @@ pub(crate) fn apply_click_event(
 ) -> gpui::AnyElement {
     use gpui::{AccessibleAction, InteractiveElement, StatefulInteractiveElement};
 
+    let debug_selector = element_id.clone();
     let element_id = if event.is_some() {
         format!("gpui-elixir-click-{window_id}-{element_id}")
     } else {
         element_id
     };
-    let element = element.id(element_id);
+    let element = element.debug_selector(|| debug_selector).id(element_id);
     let element = super::apply_window_control(element, window_control, runtime.clone(), window_id);
 
     if let Some(event) = event {

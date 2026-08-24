@@ -102,6 +102,7 @@ impl Drop for NativeTestSessionResource {
 struct TestSession {
     runtime: SharedRuntime,
     view: gpui::Entity<ElixirRoot>,
+    root: gpui::Entity<gpui_component::Root>,
     context: gpui::VisualTestContext,
 }
 
@@ -191,8 +192,22 @@ fn initialize(width: f32, height: f32) -> TestSession {
     TestSession {
         runtime,
         view,
+        root,
         context: context.clone(),
     }
+}
+
+#[cfg(feature = "native-test")]
+fn draw_root(session: &mut TestSession) {
+    use gpui::IntoElement as _;
+
+    let root = session.root.clone();
+    let viewport_size = session.context.update(|window, _cx| window.viewport_size());
+    session
+        .context
+        .draw(gpui::Point::default(), viewport_size, |_window, _cx| {
+            root.into_any_element()
+        });
 }
 
 #[cfg(feature = "native-test")]
@@ -271,6 +286,8 @@ fn handle_non_stop_command(session: &mut TestSession, command: TestCommand) {
                 *root.window_state.tree.lock().expect("native test tree") = *tree;
                 cx.notify();
             });
+            session.context.run_until_parked();
+            draw_root(session);
             session.context.run_until_parked();
             let _ = reply.send(Ok(()));
         }
@@ -353,6 +370,8 @@ fn handle_non_stop_command(session: &mut TestSession, command: TestCommand) {
             let _ = reply.send(result);
         }
         TestCommand::Idle { reply } => {
+            session.context.run_until_parked();
+            draw_root(session);
             session.context.run_until_parked();
             let _ = reply.send(Ok(()));
         }
