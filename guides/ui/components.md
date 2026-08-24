@@ -14,8 +14,9 @@ Choose a guide by the task you are working on:
 - [Collections and data views](collections-and-data-views.html) covers variable
   and uniform virtualization, source-backed lists, tables, trees, and code
   viewers.
-- [Text and editing](text-and-editing.html) covers selectable rich text and
-  points to the revisioned editable-text model.
+- [Text and editing](text-and-editing.html) covers selectable rich text.
+- [Editable text surfaces](editable-text.html) covers persistent buffers,
+  revisioned transactions, submission, geometry, and text annotations.
 - [Layout, styling, and presentation](layout-styling-and-presentation.html)
   covers Tailwind-compatible classes, layers, motion, bounds, and themes.
 - [Presentation primitives](presentation-primitives.html) covers bounded edge

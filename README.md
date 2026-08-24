@@ -123,7 +123,7 @@ See [Sessions, snapshots, and displays](guides/concepts/sessions-snapshots-and-d
   schema. Handwritten Rust is reserved for platform integration,
   reconciliation, and latency-sensitive native mechanics.
 
-Read more in [Editable text internals](guides/internals/editable-text.md),
+Read more in [Editable text internals](guides/internals/editable-text-internals.md),
 [Accessibility internals](guides/internals/accessibility.md),
 and [UI components](guides/ui/components.md).
 
@@ -173,6 +173,7 @@ Rust toolchain and GPUI platform libraries. See
 - [Forms and controls](guides/ui/forms-and-controls.md)
 - [Collections and data views](guides/ui/collections-and-data-views.md)
 - [Text and editing](guides/ui/text-and-editing.md)
+- [Editable text surfaces](guides/ui/editable-text.md)
 - [Layout, styling, and presentation](guides/ui/layout-styling-and-presentation.md)
 - [Presentation primitives](guides/ui/presentation-primitives.md)
 - [Commands and keyboard shortcuts](guides/ui/commands-and-shortcuts.md)

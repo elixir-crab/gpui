@@ -2,8 +2,9 @@
 
 Text primitives preserve renderer-independent content and coordinates while the
 native display owns transient selection, shaping, and interaction mechanics. For
-revisioned editable surfaces, also see
-[Editable text internals](editable-text.html).
+revisioned editable surfaces, see
+[Editable text surfaces](editable-text.html). Implementation details remain in
+[Editable text internals](editable-text-internals.html).
 
 ## Rich selectable text
 

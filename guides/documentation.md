@@ -20,6 +20,8 @@ are trying to do.
   display in another process or machine.
 - [Native builds and deployment](native-builds.html) covers source builds,
   feature sets, and release validation.
+- [Editable text surfaces](editable-text.html) explains persistent buffers,
+  revisioned edits, submission, geometry, and annotations.
 - [Presentation primitives](presentation-primitives.html) explains bounded edge
   fades, frost fallbacks, and custom paint for application authors.
 - [Test coverage ownership](coverage-ownership.html) identifies which test tier
@@ -31,7 +33,7 @@ These documents describe implementation boundaries rather than the normal
 application-authoring workflow:
 
 - [Platform support and development status](platform-support.html)
-- [Editable text internals](editable-text.html)
+- [Editable text internals](editable-text-internals.html)
 - [Native text projections](text-projections.html)
 - [Accessibility](accessibility.html)
 - [Transfer payloads](transfers.html)
