@@ -169,13 +169,23 @@ fn initialize(width: f32, height: f32) -> TestSession {
         Vec::new(),
     ));
     let runtime_for_view = runtime.clone();
-    let (view, context) = app.add_window_view(move |_window, _cx| {
-        ElixirRoot::new(state, runtime_for_view, 1, false, false)
+    let view_slot = std::rc::Rc::new(std::cell::RefCell::new(None));
+    let view_for_window = view_slot.clone();
+    let (root, context) = app.add_window_view(move |window, cx| {
+        use gpui::AppContext as _;
+
+        let view = cx.new(|_cx| ElixirRoot::new(state, runtime_for_view, 1, false, false));
+        *view_for_window.borrow_mut() = Some(view.clone());
+        gpui_component::Root::new(view, window, cx)
     });
+    let view = view_slot
+        .borrow_mut()
+        .take()
+        .expect("native test window should install the Elixir view");
     context.draw(
         gpui::Point::default(),
         gpui::size(gpui::px(width), gpui::px(height)),
-        |_window, _cx| view.clone().into_any_element(),
+        |_window, _cx| root.clone().into_any_element(),
     );
 
     TestSession {

@@ -127,11 +127,20 @@ and full-snapshot variable collections across empty, populated, remeasured,
 tail-following, and empty states. Desktop collection E2E should therefore focus
 on actual OS wheel delivery, compositor behavior, and real-window stability.
 
-The current GPUI test platform cannot instantiate `gpui-component`'s input
-state because that implementation requests a real raw platform window handle.
-Keep editable-input behavior in renderer-independent and desktop E2E coverage
-until the pinned component exposes a headless-safe input constructor; `type/2`
-is already part of the neutral command vocabulary for that eventual support.
+The deterministic harness installs the same `gpui_component::Root` layer used by
+production windows, so dialog opening and Escape closure can exercise the real
+top-layer path. Real-window focus containment, content activation, and trigger
+restoration remain desktop-owned facts.
+
+`gpui-component::InputState` calls the public macOS content-type helper while
+rendering a focused input. That helper correctly treats an unavailable raw
+window handle as “no native content-type integration”, but GPUI's `TestWindow`
+currently panics instead of returning `raw_window_handle::HandleError` from its
+handle traits. A two-line upstream GPUI correction to return
+`HandleError::NotSupported` makes controlled input render and edit through the
+real component path. GPUI does not carry a dependency-checkout patch, so input
+remains blocked until the pinned GPUI revision includes that truthful behavior.
+Desktop E2E continues to own IME, native content types, selection, and clipboard.
 
 These tests verify deterministic renderer behavior, not operating-system facts.
 Real desktop E2E remains necessary for native window creation,
