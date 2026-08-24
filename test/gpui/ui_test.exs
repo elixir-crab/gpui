@@ -88,6 +88,29 @@ defmodule GPUI.UITest do
     end
   end
 
+  test "builds a bounded serializable paint display list" do
+    commands = [
+      %{type: :rect, x: 4, y: 6, width: 80, height: 24, color: 0x336699FF},
+      %{type: :line, x1: 0, y1: 0, x2: 100, y2: 40, width: 2, color: 0xFFFFFFFF}
+    ]
+
+    assert %Element{type: :ui_paint, attrs: attrs} =
+             UI.paint(%{id: "chart-overlay", commands: commands})
+
+    assert Enum.map(attrs[:commands], &elem(&1, 0)) == ["rect", "line"]
+
+    assert_raise ArgumentError, ~r/at most 256 bounded paint commands/, fn ->
+      UI.paint(%{id: "shader", commands: [%{type: :shader, source: "void main() {}"}]})
+    end
+
+    assert_raise ArgumentError, ~r/at most 256 bounded paint commands/, fn ->
+      UI.paint(%{
+        id: "unbounded",
+        commands: [%{type: :rect, x: 1_000_001, y: 0, width: 1, height: 1, color: 0}]
+      })
+    end
+  end
+
   test "validates progress, file-read, and clipboard values" do
     assert_raise ArgumentError, ~r/value must be between zero and max/, fn ->
       UI.progress(%{id: "upload", label: "Uploading", value: 101})

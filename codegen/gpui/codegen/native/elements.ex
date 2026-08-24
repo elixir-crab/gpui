@@ -149,6 +149,24 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:blur) => R.option(String.t())
         }
 
+  @spec decode_paint_commands(term()) ::
+          R.nif_result(R.vec({String.t(), R.vec(R.f64()), R.u32()}))
+  defrust decode_paint_commands(term) do
+    case component_attr(term, Atoms.commands()) do
+      {:ok, {:some, value}} ->
+        decode_as(
+          value,
+          R.vec({String.t(), R.vec(R.f64()), R.u32()})
+        )
+
+      {:ok, nil} ->
+        {:ok, []}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   @spec decode_element_type(term()) :: R.nif_result(String.t())
   defrustp decode_element_type(term) do
     type_term = unwrap!(term.map_get(Atoms.type_atom()))

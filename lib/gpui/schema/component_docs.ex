@@ -110,6 +110,7 @@ defmodule GPUI.Schema.ComponentDocs do
   defp type_doc(:select_options), do: "list of `t:GPUI.UI.select_option/0`"
   defp type_doc(:radio_options), do: "list of `t:GPUI.UI.radio_option/0`"
   defp type_doc(:rich_text_runs), do: "list of `t:GPUI.Text.RichRun.t/0`"
+  defp type_doc(:paint_commands), do: "at most 256 bounded rectangle or line commands"
   defp type_doc(:resource), do: "resource map"
 
   defp type_doc({:enum, values}) do
@@ -151,6 +152,7 @@ defmodule GPUI.Schema.ComponentDocs do
   defp type_ast(:select_options), do: quote(do: [GPUI.UI.select_option()])
   defp type_ast(:radio_options), do: quote(do: [GPUI.UI.radio_option()])
   defp type_ast(:rich_text_runs), do: quote(do: [GPUI.Text.RichRun.t()])
+  defp type_ast(:paint_commands), do: quote(do: [map()])
   defp type_ast(:resource), do: quote(do: map())
   defp type_ast({:enum, _values}), do: quote(do: String.t())
   defp type_ast({:enum_list, _values}), do: quote(do: [String.t() | atom()])

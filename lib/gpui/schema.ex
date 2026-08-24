@@ -148,6 +148,14 @@ defmodule GPUI.Schema do
       ]
     },
     %Component{
+      tag: :ui_paint,
+      kind: :paint_component,
+      attrs: [
+        id: :string,
+        commands: {:default, :paint_commands, []}
+      ]
+    },
+    %Component{
       tag: :ui_progress,
       kind: :progress_component,
       public_required_attrs: [:label],
@@ -1305,6 +1313,14 @@ defmodule GPUI.Schema do
     end
   end
 
+  defp validate_attr!(tag, name, :paint_commands, value) when is_list(value) do
+    valid? = Enum.count_until(value, 257) <= 256 and Enum.all?(value, &valid_paint_command?/1)
+
+    if valid?,
+      do: :ok,
+      else: invalid_attr!(tag, name, "at most 256 bounded paint commands", value)
+  end
+
   defp validate_attr!(_tag, _name, type, value)
        when type in [:select_options, :radio_options] and is_list(value),
        do: :ok
@@ -1448,6 +1464,34 @@ defmodule GPUI.Schema do
 
   defp valid_rgb?(color), do: is_integer(color) and color in 0..0xFFFFFF
 
+  defp valid_paint_command?(%{type: type, x: x, y: y, width: width, height: height, color: color})
+       when type in [:rect, "rect"] do
+    paint_coordinate?(x) and paint_coordinate?(y) and paint_size?(width) and paint_size?(height) and
+      valid_rgba?(color)
+  end
+
+  defp valid_paint_command?(%{
+         type: type,
+         x1: x1,
+         y1: y1,
+         x2: x2,
+         y2: y2,
+         width: width,
+         color: color
+       })
+       when type in [:line, "line"] do
+    Enum.all?([x1, y1, x2, y2], &paint_coordinate?/1) and is_number(width) and width > 0 and
+      width <= 256 and valid_rgba?(color)
+  end
+
+  defp valid_paint_command?(_command), do: false
+
+  defp paint_coordinate?(value),
+    do: is_number(value) and value >= -1_000_000 and value <= 1_000_000
+
+  defp paint_size?(value), do: is_number(value) and value >= 0 and value <= 1_000_000
+  defp valid_rgba?(color), do: is_integer(color) and color in 0..0xFFFFFFFF
+
   defp expected_attr_type(:string), do: "a string"
 
   defp expected_attr_type(:accessibility_label),
@@ -1491,6 +1535,8 @@ defmodule GPUI.Schema do
 
   defp expected_attr_type(:text_block_projections),
     do: "at most 64 bounded GPUI.Text.BlockProjection values"
+
+  defp expected_attr_type(:paint_commands), do: "at most 256 bounded paint commands"
 
   defp invalid_attr!(tag, name, expected, value) do
     raise ArgumentError,

@@ -36,6 +36,7 @@ defmodule GPUI.UI do
     button_options: :ui_button,
     edge_fade_options: :ui_edge_fade,
     frost_options: :ui_frost,
+    paint_options: :ui_paint,
     progress_options: :ui_progress,
     checkbox_options: :ui_checkbox,
     input_options: :ui_input,
@@ -150,6 +151,40 @@ defmodule GPUI.UI do
   def frost(assigns) when is_map(assigns) do
     assigns = Schema.apply_defaults(assigns, :ui_frost)
     component(:ui_frost, assigns)
+  end
+
+  @doc """
+  Builds a bounded serializable custom-paint display list.
+
+  Commands are closed rectangle and line maps. The schema accepts at most 256
+  commands with bounded coordinates, dimensions, stroke widths, and RGBA colors.
+
+  #{Schema.component_options_doc(:ui_paint)}
+  """
+  @spec paint(paint_options()) :: Element.t()
+  def paint(assigns) when is_map(assigns) do
+    assigns =
+      assigns
+      |> Schema.apply_defaults(:ui_paint)
+      |> then(&Schema.validate_component_assigns!(&1, :ui_paint))
+
+    commands =
+      Enum.map(Map.fetch!(assigns, :commands), fn command ->
+        kind = command.type |> to_string()
+        x = Map.get(command, :x, Map.get(command, :x1, 0))
+        y = Map.get(command, :y, Map.get(command, :y1, 0))
+        x2 = Map.get(command, :x2, 0)
+        y2 = Map.get(command, :y2, 0)
+        width = Map.get(command, :width, 0)
+        height = Map.get(command, :height, 0)
+        {kind, [x, y, x2, y2, width, height], command.color}
+      end)
+
+    %Element{
+      type: :ui_paint,
+      attrs: assigns |> Map.put(:commands, commands) |> Map.to_list(),
+      children: []
+    }
   end
 
   @doc """
