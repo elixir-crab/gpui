@@ -116,6 +116,11 @@ persistent native text buffer:
 RUST_FONTCONFIG_DLOPEN=1 mix run examples/features/run_editable_text_surface.exs
 ```
 
+`features/presentation_primitives.exs` composes bounded edge fades, explicit
+frost fallbacks, and a serializable rectangle/line paint display list. The
+example keeps topology and fallback policy in Elixir while native renderers own
+only the GPUI interpretation.
+
 `features/resource_ref_image.exs` demonstrates installing a raster once and
 rendering a lightweight reusable resource reference:
 

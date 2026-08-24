@@ -16,6 +16,13 @@ defmodule GPUI.Schema.Extension.Support do
   @spec max_contracts() :: pos_integer()
   def max_contracts, do: @max_contracts
 
+  @doc "Tests one exact contract version and optional capability against support."
+  @spec compatible?(t(), atom(), pos_integer(), atom() | nil) :: boolean()
+  def compatible?(%__MODULE__{} = support, id, version, capability \\ nil) do
+    support.id == id and support.version == version and
+      (is_nil(capability) or capability in support.capabilities)
+  end
+
   @doc "Builds and validates support against the canonical schema contract."
   @spec new(atom(), pos_integer(), [atom()]) :: {:ok, t()} | {:error, term()}
   def new(id, version, capabilities)
