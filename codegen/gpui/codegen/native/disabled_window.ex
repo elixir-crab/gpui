@@ -9,6 +9,13 @@ defmodule GPUI.Codegen.Native.DisabledWindow do
   alias RustQ.Type, as: R
 
   @nif schedule: :dirty_io
+  @spec open_window(
+          R.resource(R.path(:RuntimeResource)),
+          term()
+        ) :: R.nif_result(term())
+  defnif open_window(_runtime, _window), do: real_gpui_disabled()
+
+  @nif schedule: :dirty_io
   @spec update_window(
           R.resource(R.path(:RuntimeResource)),
           R.u64(),

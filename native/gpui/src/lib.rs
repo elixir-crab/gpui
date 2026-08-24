@@ -67,8 +67,6 @@ include!("generated/resource_boundary.rs");
 #[cfg(feature = "real-gpui")]
 include!("generated/window.rs");
 include!("generated/schema.rs");
-include!("generated/disabled_nifs.rs");
-include!("generated/nifs.rs");
 
 #[cfg(feature = "real-gpui")]
 mod element;

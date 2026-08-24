@@ -1,9 +1,5 @@
 defmodule GPUI.Codegen.Native.Boundary do
-  @moduledoc "Defines generated Rustler NIF exports and disabled-native fallback implementations."
-
-  alias RustQ.Rust.AST
-  alias RustQ.Rust.AST.Builder, as: A
-  alias RustQ.Rustler.Nif
+  @moduledoc "Defines shared metadata and generated Elixir façades for native boundaries."
 
   @native_test_facade [
     start: {:native_test_start, [:width, :height]},
@@ -56,10 +52,6 @@ defmodule GPUI.Codegen.Native.Boundary do
     |> Kernel.<>("\n")
   end
 
-  @boundary_nifs [
-    open_window: [schedule: :dirty_io, real_only: true]
-  ]
-
   @rusty_nifs [decode_image: [schedule: :dirty_cpu]]
 
   @doc "Adds public source documentation to a generated Elixir module structurally."
@@ -80,40 +72,6 @@ defmodule GPUI.Codegen.Native.Boundary do
     |> Kernel.<>("\n")
   end
 
-  @spec nifs() :: keyword(keyword())
-  def nifs, do: @boundary_nifs
-
   @spec rusty_nifs() :: keyword(keyword())
   def rusty_nifs, do: @rusty_nifs
-
-  @spec disabled_items() :: [AST.item()]
-  def disabled_items do
-    specs = Enum.filter(nifs(), fn {_name, opts} -> Keyword.get(opts, :real_only, false) end)
-
-    "native/gpui/src/nif.rs"
-    |> Nif.wrappers_from_source(specs)
-    |> Enum.map(fn function ->
-      args =
-        Enum.map(function.args, fn arg ->
-          %{arg | name: String.to_atom("_#{arg.name}")}
-        end)
-
-      %{
-        function
-        | name: String.to_atom("#{function.name}_impl"),
-          vis: :crate,
-          args: args,
-          attrs: [],
-          body: [A.return_stmt(disabled_error())]
-      }
-    end)
-  end
-
-  defp disabled_error do
-    "real_gpui_disabled"
-    |> A.lit()
-    |> then(&A.path_call([:Box, :new], [&1]))
-    |> then(&A.path_call([:rustler, :Error, :Term], [&1]))
-    |> A.err()
-  end
 end

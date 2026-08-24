@@ -27,6 +27,8 @@ defmodule GPUI.Codegen.Native.WindowTest do
 
     assert %AST.Struct{name: :UpdateRequest} = MetaAST.type_item!(Window, :UpdateRequest)
     assert %AST.Struct{name: :CloseRequest} = MetaAST.type_item!(Window, :CloseRequest)
+    assert nif_exported?(Window, :open_window, 2)
+    assert source =~ "open_window_impl(env, runtime, window)"
     assert nif_exported?(Window, :update_window, 3)
     assert nif_exported?(Window, :close_window, 2)
     assert source =~ ~r/#\[rustler::nif\(schedule = "DirtyIo"\)\]\s+.*fn update_window/s

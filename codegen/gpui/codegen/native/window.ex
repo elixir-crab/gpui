@@ -50,6 +50,13 @@ defmodule GPUI.Codegen.Native.Window do
   defrust decode_close(request), do: request.window_id
 
   @nif schedule: :dirty_io
+  @spec open_window(
+          R.resource(R.path(:RuntimeResource)),
+          term()
+        ) :: R.nif_result(term())
+  defnif open_window(runtime, window), do: open_window_impl(nif_env(), runtime, window)
+
+  @nif schedule: :dirty_io
   @spec update_window(
           R.resource(R.path(:RuntimeResource)),
           R.u64(),

@@ -2,6 +2,14 @@
 
 #[rustler::nif(schedule = "DirtyIo")]
 #[allow(unused_variables)]
+fn open_window<'a>(
+    _runtime: ResourceArc<RuntimeResource>,
+    _window: Term<'a>,
+) -> NifResult<Term<'a>> {
+    real_gpui_disabled()
+}
+#[rustler::nif(schedule = "DirtyIo")]
+#[allow(unused_variables)]
 fn update_window<'a>(
     _runtime: ResourceArc<RuntimeResource>,
     _window_id: u64,

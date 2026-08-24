@@ -6,6 +6,7 @@ defmodule GPUI.Codegen.Native.DisabledWindowTest do
   alias RustQ.Rust.AST
 
   for {name, arity} <- [
+        open_window: 2,
         update_window: 3,
         close_window: 2,
         await_frame: 3,

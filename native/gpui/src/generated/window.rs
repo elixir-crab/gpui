@@ -105,6 +105,15 @@ fn decode_close(request: CloseRequest) -> u64 {
 }
 #[rustler::nif(schedule = "DirtyIo")]
 #[allow(unused_variables)]
+fn open_window<'a>(
+    env: Env<'a>,
+    runtime: ResourceArc<RuntimeResource>,
+    window: Term<'a>,
+) -> NifResult<Term<'a>> {
+    open_window_impl(env, runtime, window)
+}
+#[rustler::nif(schedule = "DirtyIo")]
+#[allow(unused_variables)]
 fn update_window<'a>(
     env: Env<'a>,
     runtime: ResourceArc<RuntimeResource>,

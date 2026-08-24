@@ -109,22 +109,6 @@ rust "component-registry", "native/gpui/src/generated/component_registry.rs" do
   GPUI.Codegen.Native.Schema.registry_items()
 end
 
-nifs = GPUI.Codegen.Native.Boundary.nifs()
-
-generate "disabled-nifs", "native/gpui/src/generated/disabled_nifs.rs" do
-  content(
-    RustQ.render_file!(
-      "codegen/gpui/codegen/native/templates/disabled_nifs.rs",
-      splice: [items: GPUI.Codegen.Native.Boundary.disabled_items()],
-      rustfmt: true
-    )
-  )
-end
-
-rust "native/gpui/src/generated/nifs.rs" do
-  Nif.wrappers_from_source("native/gpui/src/nif.rs", nifs)
-end
-
 generate "native-test-facade", "lib/gpui/native/test.ex" do
   content(GPUI.Codegen.Native.Boundary.native_test_facade_source())
 end
@@ -140,8 +124,7 @@ generate "native-stubs", "lib/gpui/native/generated.ex" do
 
   generated =
     Nif.stubs_from_functions(
-      Nif.functions_from_source("native/gpui/src/nif.rs", nifs) ++
-        Enum.map(rusty_functions, &{:decode_image, &1}) ++
+      Enum.map(rusty_functions, &{:decode_image, &1}) ++
         [
           text_buffer_new:
             MetaAST.function!(GPUI.Codegen.Native.TextBoundary, :text_buffer_new),
@@ -156,6 +139,7 @@ generate "native-stubs", "lib/gpui/native/generated.ex" do
           start_runtime:
             MetaAST.function!(GPUI.Codegen.Native.RuntimeBoundary, :start_runtime),
           stop_runtime: MetaAST.function!(GPUI.Codegen.Native.RuntimeBoundary, :stop_runtime),
+          open_window: MetaAST.function!(GPUI.Codegen.Native.Window, :open_window),
           update_window: MetaAST.function!(GPUI.Codegen.Native.Window, :update_window),
           close_window: MetaAST.function!(GPUI.Codegen.Native.Window, :close_window),
           await_frame: MetaAST.function!(GPUI.Codegen.Native.Window, :await_frame),

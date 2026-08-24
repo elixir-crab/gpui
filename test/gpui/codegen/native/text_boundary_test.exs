@@ -1,7 +1,7 @@
 defmodule GPUI.Codegen.Native.TextBoundaryTest do
   use RustQ.Test, async: true
 
-  alias GPUI.Codegen.Native.{Boundary, TextBoundary}
+  alias GPUI.Codegen.Native.TextBoundary
   alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
 
@@ -53,7 +53,9 @@ defmodule GPUI.Codegen.Native.TextBoundaryTest do
              "text_buffer_redo_impl(env, buffer, base_revision)"
   end
 
-  test "leaves only the real window entrypoint in the source-scanned manifest" do
-    assert Boundary.nifs() == [open_window: [schedule: :dirty_io, real_only: true]]
+  test "uses only RustQ-authored NIF declarations" do
+    source = File.read!("native/gpui/src/nif.rs")
+
+    refute source =~ "#[rustler::nif"
   end
 end
