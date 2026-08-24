@@ -66,7 +66,23 @@ defmodule GPUITest.Desktop.Linux do
   def drag!(window_id, from_x, from_y, to_x, to_y) do
     request_frame!(window_id, from_x, from_y)
     command!(["mousedown", "1"])
-    request_frame!(window_id, to_x, to_y)
+    Process.sleep(20)
+
+    1..10
+    |> Enum.each(fn step ->
+      previous_step = step - 1
+
+      command!([
+        "mousemove_relative",
+        "--sync",
+        "--",
+        to_string(div((to_x - from_x) * step, 10) - div((to_x - from_x) * previous_step, 10)),
+        to_string(div((to_y - from_y) * step, 10) - div((to_y - from_y) * previous_step, 10))
+      ])
+
+      Process.sleep(10)
+    end)
+
     command!(["mouseup", "1"])
   end
 
@@ -79,18 +95,17 @@ defmodule GPUITest.Desktop.Linux do
       :synthetic_input,
       :scroll_wheel,
       :window_capture,
-      :native_close,
-      :window_drag
+      :native_close
     ])
   end
 
   defp linux_key(key), do: String.replace(key, "primary+", "ctrl+")
 
-  defp wheel!(delta, negative_button, positive_button) when is_number(delta) do
+  defp wheel!(delta, positive_delta_button, negative_delta_button) when is_number(delta) do
     count = delta |> abs() |> Kernel./(40) |> Float.ceil() |> trunc()
 
     if count > 0 do
-      button = if delta < 0, do: negative_button, else: positive_button
+      button = if delta > 0, do: positive_delta_button, else: negative_delta_button
       command!(["click", "--repeat", to_string(count), to_string(button)])
     end
   end

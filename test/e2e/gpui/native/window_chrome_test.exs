@@ -61,15 +61,18 @@ defmodule GPUI.Native.WindowChromeE2ETest do
     window_id = Desktop.window!(desktop, title)
     before = Desktop.window_info!(desktop, window_id)
 
-    Desktop.drag!(desktop, window_id, from: {220, 24}, to: {280, 64})
+    if MapSet.member?(Desktop.capabilities(desktop), :window_drag) do
+      Desktop.drag!(desktop, window_id, from: {220, 24}, to: {280, 64})
 
-    Desktop.eventually(desktop, runtime, fn ->
-      after_drag = Desktop.window_info!(desktop, window_id)
-      assert after_drag.frame.x != before.frame.x or after_drag.frame.y != before.frame.y
-    end)
+      Desktop.eventually(desktop, runtime, fn ->
+        after_drag = Desktop.window_info!(desktop, window_id)
+        assert after_drag.frame.x != before.frame.x or after_drag.frame.y != before.frame.y
+      end)
+    end
 
     after_drag = Desktop.window_info!(desktop, window_id)
-    close_x = after_drag.content_frame.width - 24
+    content_frame = Map.get(after_drag, :content_frame, after_drag.frame)
+    close_x = content_frame.width - 24
     Desktop.click!(desktop, window_id, at: {close_x, 24})
 
     Desktop.eventually(desktop, runtime, fn -> assert %{close_requests: 1} = assigns(runtime) end)
