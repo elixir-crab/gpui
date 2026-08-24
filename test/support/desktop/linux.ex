@@ -21,7 +21,7 @@ defmodule GPUITest.Desktop.Linux do
   end
 
   def request_frame!(window_id, x, y),
-    do: command!(["mousemove", "--sync", "--window", window_id, to_string(x), to_string(y)])
+    do: command!(["mousemove", "--window", window_id, to_string(x), to_string(y)])
 
   def click!(window_id, x, y) do
     request_frame!(window_id, x, y)

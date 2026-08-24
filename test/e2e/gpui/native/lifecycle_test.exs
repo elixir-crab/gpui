@@ -341,7 +341,19 @@ defmodule GPUI.Native.LifecycleE2ETest do
   defp snapshot(windows, resources \\ %{}),
     do: %Snapshot{windows: windows, resources: resources}
 
-  defp window(id, title, tree), do: %{id: id, title: title, root: %{tree: tree}}
+  defp window(id, title, tree) do
+    %{
+      id: id,
+      title: title,
+      size: [800, 600],
+      min_size: nil,
+      resizable: true,
+      chrome: :system,
+      lifecycle: [],
+      commands: [],
+      root: %{tree: tree}
+    }
+  end
 
   defp tree(text) do
     %{
