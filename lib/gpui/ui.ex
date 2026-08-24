@@ -35,6 +35,7 @@ defmodule GPUI.UI do
   Schema.define_component_option_types(
     button_options: :ui_button,
     edge_fade_options: :ui_edge_fade,
+    frost_options: :ui_frost,
     progress_options: :ui_progress,
     checkbox_options: :ui_checkbox,
     input_options: :ui_input,
@@ -135,6 +136,20 @@ defmodule GPUI.UI do
       |> Map.update!(:edges, &Enum.map(&1, fn edge -> to_string(edge) end))
 
     component(:ui_edge_fade, assigns)
+  end
+
+  @doc """
+  Builds a declarative frosted surface with an explicit fallback contract.
+
+  Set `reduced_transparency: true` from application accessibility policy to
+  force an opaque surface. `fallback` controls unsupported-platform behavior.
+
+  #{Schema.component_options_doc(:ui_frost)}
+  """
+  @spec frost(frost_options()) :: Element.t()
+  def frost(assigns) when is_map(assigns) do
+    assigns = Schema.apply_defaults(assigns, :ui_frost)
+    component(:ui_frost, assigns)
   end
 
   @doc """

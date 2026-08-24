@@ -60,6 +60,34 @@ defmodule GPUI.UITest do
     end
   end
 
+  test "builds frost with explicit accessibility and fallback policy" do
+    assert %Element{type: :ui_frost, attrs: attrs, children: ["content"]} =
+             UI.frost(%{id: "inspector", children: ["content"]})
+
+    assert attrs[:fallback] == "solid"
+    assert attrs[:opacity] == 0.82
+    assert attrs[:reduced_transparency] == false
+
+    assert %Element{attrs: reduced} =
+             UI.frost(%{
+               id: "reduced",
+               fallback: "translucent",
+               opacity: 0.5,
+               reduced_transparency: true
+             })
+
+    assert reduced[:fallback] == "translucent"
+    assert reduced[:reduced_transparency] == true
+
+    assert_raise ArgumentError, ~r/fallback must be one of/, fn ->
+      UI.frost(%{id: "bad-fallback", fallback: "blur-or-crash"})
+    end
+
+    assert_raise ArgumentError, ~r/number from zero through one/, fn ->
+      UI.frost(%{id: "bad-opacity", opacity: -0.1})
+    end
+  end
+
   test "validates progress, file-read, and clipboard values" do
     assert_raise ArgumentError, ~r/value must be between zero and max/, fn ->
       UI.progress(%{id: "upload", label: "Uploading", value: 101})

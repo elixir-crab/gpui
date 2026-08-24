@@ -9,6 +9,7 @@ pub enum GeneratedComponentKind {
     SplitComponent,
     ButtonComponent,
     EdgeFadeComponent,
+    FrostComponent,
     ProgressComponent,
     PopoverComponent,
     PopoverTriggerComponent,
@@ -2305,6 +2306,40 @@ pub(crate) fn decode_generated_edge_fade_component<'a>(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct FrostComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) fallback: Option<String>,
+    pub(crate) opacity: f64,
+    pub(crate) reduced_transparency: bool,
+    pub(crate) children: Vec<ElementNode>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_frost_component<'a>(
+    term: Term<'a>,
+) -> NifResult<FrostComponentNode> {
+    Ok(FrostComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        fallback: match component_enum_attr(
+            term,
+            atoms::fallback(),
+            &vec!["solid", "translucent"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("solid".to_string()),
+        },
+        opacity: component_number_attr(term, atoms::opacity())?.unwrap_or(0.82),
+        reduced_transparency: component_bool_attr(term, atoms::reduced_transparency())?
+            .unwrap_or(false),
+        children: decode_children(term)?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct ProgressComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -3519,6 +3554,7 @@ pub(crate) enum ElementNode {
     SplitComponent(SplitComponentNode),
     ButtonComponent(ButtonComponentNode),
     EdgeFadeComponent(EdgeFadeComponentNode),
+    FrostComponent(FrostComponentNode),
     ProgressComponent(ProgressComponentNode),
     PopoverComponent(PopoverComponentNode),
     PopoverTriggerComponent(PopoverTriggerComponentNode),
@@ -3566,6 +3602,7 @@ pub enum GeneratedElementTag {
     UiSplit,
     UiButton,
     UiEdgeFade,
+    UiFrost,
     UiProgress,
     UiPopover,
     UiPopoverTrigger,
@@ -3620,6 +3657,7 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_split" => GeneratedElementTag::UiSplit,
         "ui_button" => GeneratedElementTag::UiButton,
         "ui_edge_fade" => GeneratedElementTag::UiEdgeFade,
+        "ui_frost" => GeneratedElementTag::UiFrost,
         "ui_progress" => GeneratedElementTag::UiProgress,
         "ui_popover" => GeneratedElementTag::UiPopover,
         "ui_popover_trigger" => GeneratedElementTag::UiPopoverTrigger,
@@ -3675,6 +3713,7 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::UiSplit => GeneratedComponentKind::SplitComponent,
         GeneratedElementTag::UiButton => GeneratedComponentKind::ButtonComponent,
         GeneratedElementTag::UiEdgeFade => GeneratedComponentKind::EdgeFadeComponent,
+        GeneratedElementTag::UiFrost => GeneratedComponentKind::FrostComponent,
         GeneratedElementTag::UiProgress => GeneratedComponentKind::ProgressComponent,
         GeneratedElementTag::UiPopover => GeneratedComponentKind::PopoverComponent,
         GeneratedElementTag::UiPopoverTrigger => {
@@ -3773,6 +3812,10 @@ pub(crate) fn decode_generated_element_node<'a>(
         GeneratedComponentKind::EdgeFadeComponent => {
             decode_generated_edge_fade_component(term)
                 .map(|node| ElementNode::EdgeFadeComponent(node))
+        }
+        GeneratedComponentKind::FrostComponent => {
+            decode_generated_frost_component(term)
+                .map(|node| ElementNode::FrostComponent(node))
         }
         GeneratedComponentKind::ProgressComponent => {
             decode_generated_progress_component(term)
@@ -3935,6 +3978,9 @@ pub(crate) fn render_generated_component_node(
         }
         ElementNode::EdgeFadeComponent(node) => {
             element::component::edge_fade::render_edge_fade(node, context)
+        }
+        ElementNode::FrostComponent(node) => {
+            element::component::frost::render_frost(node, context)
         }
         ElementNode::ProgressComponent(node) => {
             element::component::display::render_progress(node, context)

@@ -137,6 +137,17 @@ defmodule GPUI.Schema do
       ]
     },
     %Component{
+      tag: :ui_frost,
+      kind: :frost_component,
+      children: true,
+      attrs: [
+        id: :string,
+        fallback: {:default, {:enum, ~w(solid translucent)}, "solid"},
+        opacity: {:default, :unit_number, 0.82},
+        reduced_transparency: {:default, :boolean, false}
+      ]
+    },
+    %Component{
       tag: :ui_progress,
       kind: :progress_component,
       public_required_attrs: [:label],

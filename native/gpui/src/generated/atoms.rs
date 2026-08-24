@@ -23,11 +23,11 @@ mod atoms {
         "decorations", delay = "delay", disabled = "disabled", display = "display",
         drag_enter = "drag_enter", drag_leave = "drag_leave", drag_move = "drag_move",
         drop = "drop", edges = "edges", error = "error", event = "event", expanded =
-        "expanded", file_max_bytes = "file_max_bytes", file_prompt = "file_prompt",
-        file_read = "file_read", first = "first", fit = "fit", flex = "flex", flex_basis
-        = "flex_basis", flex_direction = "flex_direction", flex_grow = "flex_grow",
-        flex_shrink = "flex_shrink", flex_wrap = "flex_wrap", focus = "focus",
-        focus_request = "focus_request", follow = "follow", follow_request =
+        "expanded", fallback = "fallback", file_max_bytes = "file_max_bytes", file_prompt
+        = "file_prompt", file_read = "file_read", first = "first", fit = "fit", flex =
+        "flex", flex_basis = "flex_basis", flex_direction = "flex_direction", flex_grow =
+        "flex_grow", flex_shrink = "flex_shrink", flex_wrap = "flex_wrap", focus =
+        "focus", focus_request = "focus_request", follow = "follow", follow_request =
         "follow_request", font_size = "font_size", font_weight = "font_weight", format =
         "format", gap = "gap", geometry = "geometry", geometry_ranges =
         "geometry_ranges", hard_tabs = "hard_tabs", header_height = "header_height",
@@ -75,17 +75,18 @@ mod atoms {
         "placeholder", position = "position", position_mode = "position_mode", position_x
         = "position_x", position_y = "position_y", priority = "priority", range =
         "range", range_geometry = "range_geometry", raster = "raster", reason = "reason",
-        release = "release", resize_request = "resize_request", resource_ref =
-        "resource_ref", resource_type = "resource_type", reveal = "reveal", reveal_index
-        = "reveal_index", reveal_request = "reveal_request", reveal_strategy =
-        "reveal_strategy", reverse = "reverse", revision = "revision", right = "right",
-        runs = "runs", scale = "scale", scroll_request = "scroll_request", scroll_to =
-        "scroll_to", search = "search", search_placeholder = "search_placeholder", select
-        = "select", selectable = "selectable", selected = "selected", selected_column =
-        "selected_column", selected_index = "selected_index", selection = "selection",
-        set_size = "set_size", show_line_numbers = "show_line_numbers", show_whitespaces
-        = "show_whitespaces", size = "size", sizes = "sizes", soft_wrap = "soft_wrap",
-        sort = "sort", sort_column = "sort_column", sort_direction = "sort_direction",
+        reduced_transparency = "reduced_transparency", release = "release",
+        resize_request = "resize_request", resource_ref = "resource_ref", resource_type =
+        "resource_type", reveal = "reveal", reveal_index = "reveal_index", reveal_request
+        = "reveal_request", reveal_strategy = "reveal_strategy", reverse = "reverse",
+        revision = "revision", right = "right", runs = "runs", scale = "scale",
+        scroll_request = "scroll_request", scroll_to = "scroll_to", search = "search",
+        search_placeholder = "search_placeholder", select = "select", selectable =
+        "selectable", selected = "selected", selected_column = "selected_column",
+        selected_index = "selected_index", selection = "selection", set_size =
+        "set_size", show_line_numbers = "show_line_numbers", show_whitespaces =
+        "show_whitespaces", size = "size", sizes = "sizes", soft_wrap = "soft_wrap", sort
+        = "sort", sort_column = "sort_column", sort_direction = "sort_direction",
         sortable = "sortable", stale_revision = "stale_revision", status = "status", step
         = "step", stride = "stride", style = "style", style_runs = "style_runs", submit =
         "submit", submit_policy = "submit_policy", tab_size = "tab_size", tab_width =

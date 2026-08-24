@@ -6,6 +6,7 @@ pub(crate) mod display;
 pub(crate) mod drop_target;
 pub(crate) mod edge_fade;
 pub(crate) mod form;
+pub(crate) mod frost;
 pub(crate) mod overlay;
 pub(crate) mod radio;
 pub(crate) mod rich_text;
