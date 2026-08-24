@@ -179,6 +179,9 @@ Rust toolchain and GPUI platform libraries. See
 - [Commands and keyboard shortcuts](guides/ui/commands-and-shortcuts.md)
 - [Overlays and menus](guides/ui/overlays-and-menus.md)
 - [Testing GPUI applications](guides/testing/overview.md)
+- [Application tests](guides/testing/application-tests.md)
+- [Deterministic native tests](guides/testing/native-tests.md)
+- [Desktop E2E and visual evidence](guides/testing/desktop-e2e.md)
 - [Platform support and development status](guides/internals/platform-support.md)
 - [API reference](https://hexdocs.pm/gpui/api-reference.html)
 

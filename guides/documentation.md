@@ -12,7 +12,8 @@ are trying to do.
 3. Browse [UI components](components.html),
    [Commands and keyboard shortcuts](commands-and-shortcuts.html), and
    [Overlays and menus](overlays-and-menus.html).
-4. Add coverage with [Testing GPUI applications](overview.html).
+4. Choose the appropriate test tier in
+   [Testing GPUI applications](overview.html).
 
 ## Use framework capabilities
 

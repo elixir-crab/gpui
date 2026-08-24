@@ -12,7 +12,7 @@ GPUI behavior is divided by what each layer can truthfully prove.
 | Uniform and variable collections | Range/source policy | Selection, ranges, scrolling, transitions | Compositor range and wheel delivery |
 | Dialog and overlays | Controlled open/close policy | Stable trigger bounds, keyboard open requests, native `gpui_component::Root` ownership, and Escape closure | Real window focus containment, content activation, and restoration |
 | Rich text | Runs, ranges, links, controlled events | Shaping and link-navigation Rust unit coverage; stable public target pending | Real shaped rendering |
-| Persistent editable text | Buffer, revisions, transactions | Controlled input typing, reconciliation, and submit events through real `InputState`; persistent text-buffer mechanics | Native IME, content types, OS selection and clipboard |
+| Persistent editable text | Buffer, revisions, transactions | Controlled input typing, reconciliation, submit events, geometry, and projection mechanics through real `InputState` | Native IME, content types, OS selection and clipboard |
 | Clipboard and external transfer | Bounded payload and event policy | Boundary/routing unit coverage | OS clipboard and external transfer facts |
 | Remote display | Protocol, synchronization and reconnect policy | Not applicable | Real remote-native window smoke |
 | Pixel appearance and contrast | Not applicable | Not a behavioral assertion | Synchronized visual capture |
