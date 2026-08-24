@@ -12,6 +12,17 @@ defmodule GPUI.Codegen.Native.Elements do
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Type, as: R
 
+  @type paint_command :: %{
+          required(:kind) => String.t(),
+          required(:x) => R.f64(),
+          required(:y) => R.f64(),
+          required(:x2) => R.f64(),
+          required(:y2) => R.f64(),
+          required(:width) => R.f64(),
+          required(:height) => R.f64(),
+          required(:color) => R.u32()
+        }
+
   @type viewport_node :: %{
           required(:children) => R.vec(R.path(:ElementNode))
         }
@@ -149,21 +160,12 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:blur) => R.option(String.t())
         }
 
-  @spec decode_paint_commands(term()) ::
-          R.nif_result(R.vec({String.t(), R.vec(R.f64()), R.u32()}))
+  @spec decode_paint_commands(term()) :: R.nif_result(R.vec(R.path(:PaintCommand)))
   defrust decode_paint_commands(term) do
     case component_attr(term, Atoms.commands()) do
-      {:ok, {:some, value}} ->
-        decode_as(
-          value,
-          R.vec({String.t(), R.vec(R.f64()), R.u32()})
-        )
-
-      {:ok, nil} ->
-        {:ok, []}
-
-      {:error, reason} ->
-        {:error, reason}
+      {:ok, {:some, value}} -> decode_as(value, R.vec(R.path(:PaintCommand)))
+      {:ok, nil} -> {:ok, []}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -539,7 +541,15 @@ defmodule GPUI.Codegen.Native.Elements do
     structs =
       MetaAST.struct_type_items(
         __MODULE__,
-        [
+        [:paint_command],
+        derive: [:Clone, :Debug, :NifMap],
+        attrs: [A.attr(:cfg, feature: "real-gpui")],
+        vis: :crate,
+        field_vis: :crate
+      ) ++
+        MetaAST.struct_type_items(
+          __MODULE__,
+          [
           :viewport_node,
           :container_node,
           :anchored_layer_node,

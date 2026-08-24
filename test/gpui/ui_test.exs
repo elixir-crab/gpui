@@ -97,7 +97,7 @@ defmodule GPUI.UITest do
     assert %Element{type: :ui_paint, attrs: attrs} =
              UI.paint(%{id: "chart-overlay", commands: commands})
 
-    assert Enum.map(attrs[:commands], &elem(&1, 0)) == ["rect", "line"]
+    assert Enum.map(attrs[:commands], & &1.kind) == ["rect", "line"]
 
     assert_raise ArgumentError, ~r/at most 256 bounded paint commands/, fn ->
       UI.paint(%{id: "shader", commands: [%{type: :shader, source: "void main() {}"}]})

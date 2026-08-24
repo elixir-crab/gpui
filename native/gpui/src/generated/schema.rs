@@ -400,6 +400,18 @@ pub(crate) fn text_fragment<'a>(term: Term<'a>) -> NifResult<String> {
         }
     }
 }
+#[derive(Clone, Debug, NifMap)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct PaintCommand {
+    pub(crate) kind: String,
+    pub(crate) x: f64,
+    pub(crate) y: f64,
+    pub(crate) x2: f64,
+    pub(crate) y2: f64,
+    pub(crate) width: f64,
+    pub(crate) height: f64,
+    pub(crate) color: u32,
+}
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 pub(crate) struct AnchoredLayerNode {
@@ -550,11 +562,9 @@ pub(crate) struct TextStyleRunNode {
     pub(crate) font_style: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_paint_commands<'a>(
-    term: Term<'a>,
-) -> NifResult<Vec<(String, Vec<f64>, u32)>> {
+pub(crate) fn decode_paint_commands<'a>(term: Term<'a>) -> NifResult<Vec<PaintCommand>> {
     match component_attr(term, atoms::commands()) {
-        Ok(Some(value)) => value.decode::<Vec<(String, Vec<f64>, u32)>>(),
+        Ok(Some(value)) => value.decode::<Vec<PaintCommand>>(),
         Ok(None) => Ok(vec![]),
         Err(reason) => Err(reason),
     }
@@ -2376,7 +2386,7 @@ pub(crate) fn decode_generated_frost_component<'a>(
 pub(crate) struct PaintComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
-    pub(crate) commands: Vec<(String, Vec<f64>, u32)>,
+    pub(crate) commands: Vec<PaintCommand>,
 }
 #[cfg(feature = "real-gpui")]
 #[allow(clippy::redundant_field_names)]

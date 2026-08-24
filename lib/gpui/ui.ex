@@ -177,7 +177,17 @@ defmodule GPUI.UI do
         y2 = Map.get(command, :y2, 0)
         width = Map.get(command, :width, 0)
         height = Map.get(command, :height, 0)
-        {kind, [x, y, x2, y2, width, height], command.color}
+
+        %{
+          kind: kind,
+          x: x,
+          y: y,
+          x2: x2,
+          y2: y2,
+          width: width,
+          height: height,
+          color: command.color
+        }
       end)
 
     %Element{
