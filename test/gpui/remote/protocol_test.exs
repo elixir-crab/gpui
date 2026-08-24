@@ -11,7 +11,10 @@ defmodule GPUI.Remote.ProtocolTest do
   end
 
   test "builds transport-independent messages" do
-    assert %{op: :hello, payload: %{role: :display_client, capabilities: capabilities}} =
+    assert %{
+             op: :hello,
+             payload: %{role: :display_client, capabilities: capabilities, presentation: []}
+           } =
              Protocol.hello(%{role: :display_client})
 
     assert :external_path_transfer_v1 in capabilities
@@ -25,6 +28,33 @@ defmodule GPUI.Remote.ProtocolTest do
 
     assert %{op: :event, payload: %{type: :click}} = Protocol.event(%{type: :click})
     assert %{op: :snapshot, payload: %{}} = Protocol.snapshot()
+  end
+
+  test "advertises bounded presentation support without making it mount-critical" do
+    {:ok, frost} =
+      GPUI.Schema.Extension.Support.new(:frost, 1, [
+        :solid_fallback,
+        :reduced_transparency
+      ])
+
+    presentation = Protocol.presentation([frost])
+
+    assert [%{id: :frost, version: 1, capabilities: capabilities}] = presentation
+    assert :solid_fallback in capabilities
+
+    assert {:ok, [^frost]} = Protocol.validate_presentation(presentation)
+    assert {:ok, []} = Protocol.validate_presentation([])
+
+    assert {:error, {:invalid_presentation_contract, {:unsupported_version, 1, 2}}} =
+             Protocol.validate_presentation([
+               %{id: :frost, version: 2, capabilities: []}
+             ])
+
+    assert {:ok, %{presentation: []}} =
+             Protocol.negotiate(%{
+               version: 2,
+               capabilities: [:display_v1]
+             })
   end
 
   test "validates bounded clipboard events" do
@@ -65,7 +95,7 @@ defmodule GPUI.Remote.ProtocolTest do
   end
 
   test "negotiates protocol version and capabilities" do
-    assert {:ok, %{version: 2, capabilities: capabilities}} =
+    assert {:ok, %{version: 2, capabilities: capabilities, presentation: []}} =
              Protocol.negotiate(%{version: 2, capabilities: [:display_v1]})
 
     assert :app_server in capabilities

@@ -39,20 +39,65 @@ defmodule GPUI.Remote.Protocol do
   def hello(payload \\ %{}) when is_map(payload) do
     payload =
       Map.merge(
-        %{role: :display_client, version: @version, capabilities: @display_capabilities},
+        %{
+          role: :display_client,
+          version: @version,
+          capabilities: @display_capabilities,
+          presentation: []
+        },
         payload
       )
 
     message(:hello, payload)
   end
 
+  @doc "Encodes validated display presentation support for a remote hello payload."
+  @spec presentation([GPUI.Schema.Extension.Support.t()]) :: [map()]
+  def presentation(supports) when is_list(supports) do
+    Enum.map(supports, fn support ->
+      %{id: support.id, version: support.version, capabilities: support.capabilities}
+    end)
+  end
+
+  @doc "Validates bounded informational presentation support from a remote peer."
+  @spec validate_presentation(term()) ::
+          {:ok, [GPUI.Schema.Extension.Support.t()]} | {:error, term()}
+  def validate_presentation(supports) when is_list(supports) do
+    max_contracts = GPUI.Schema.Extension.Support.max_contracts()
+
+    if Enum.count_until(supports, max_contracts + 1) > max_contracts,
+      do: {:error, :too_many_presentation_contracts},
+      else: collect_presentation(supports, [])
+  end
+
+  def validate_presentation(_supports), do: {:error, :invalid_presentation_contracts}
+
+  defp collect_presentation([], valid), do: {:ok, Enum.reverse(valid)}
+
+  defp collect_presentation(
+         [%{id: id, version: version, capabilities: capabilities} | supports],
+         valid
+       ) do
+    case GPUI.Schema.Extension.Support.new(id, version, capabilities) do
+      {:ok, support} -> collect_presentation(supports, [support | valid])
+      {:error, reason} -> {:error, {:invalid_presentation_contract, reason}}
+    end
+  end
+
+  defp collect_presentation([invalid | _supports], _valid),
+    do: {:error, {:invalid_presentation_contract, invalid}}
+
   def negotiate(payload) when is_map(payload) do
-    GPUI.Remote.ProtocolNegotiation.negotiate(
-      payload,
-      @version,
-      @required_peer_capabilities,
-      @server_capabilities
-    )
+    with {:ok, presentation} <- validate_presentation(Map.get(payload, :presentation, [])),
+         {:ok, negotiated} <-
+           GPUI.Remote.ProtocolNegotiation.negotiate(
+             payload,
+             @version,
+             @required_peer_capabilities,
+             @server_capabilities
+           ) do
+      {:ok, Map.put(negotiated, :presentation, presentation(presentation))}
+    end
   end
 
   @spec clipboard_event?(term()) :: boolean()

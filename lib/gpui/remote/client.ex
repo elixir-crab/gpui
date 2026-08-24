@@ -67,42 +67,46 @@ defmodule GPUI.Remote.Client do
 
     case GPUI.Polling.interval(opts) do
       {:ok, poll_interval} ->
-        case start_rpc_client(opts) do
-          {:ok, rpc, capabilities} ->
-            start_display(rpc, capabilities, display_module, display_opts, poll_interval, opts)
-
-          {:error, reason} ->
-            {:stop, {:rpc_start_failed, reason}}
-        end
+        start_display(display_module, display_opts, poll_interval, opts)
 
       {:error, reason} ->
         {:stop, reason}
     end
   end
 
-  defp start_display(rpc, capabilities, display_module, display_opts, poll_interval, opts) do
+  defp start_display(display_module, display_opts, poll_interval, opts) do
     case GPUI.Display.start(display_module, display_opts) do
       {:ok, display} ->
-        state = %{
-          opts: opts,
-          rpc: rpc,
-          negotiated_capabilities: capabilities,
-          display: display,
-          display_module: display_module,
-          mounted_args: nil,
-          session_id: Keyword.get_lazy(opts, :session_id, &new_session_id/0),
-          poll_interval: poll_interval,
-          poll_timer: nil,
-          pending_events: [],
-          revision: 0,
-          subscribers: %{}
-        }
-
-        {:ok, schedule_poll(state)}
+        start_rpc(display, display_module, poll_interval, opts)
 
       {:error, reason} ->
-        Reconnect.stop_client(rpc)
         {:stop, {:display_start_failed, reason}}
+    end
+  end
+
+  defp start_rpc(display, display_module, poll_interval, opts) do
+    with {:ok, supports} <- GPUI.Display.presentation_capabilities(display_module, display),
+         {:ok, rpc, capabilities} <- start_rpc_client(opts, supports) do
+      state = %{
+        opts: opts,
+        rpc: rpc,
+        negotiated_capabilities: capabilities,
+        display: display,
+        display_module: display_module,
+        mounted_args: nil,
+        session_id: Keyword.get_lazy(opts, :session_id, &new_session_id/0),
+        poll_interval: poll_interval,
+        poll_timer: nil,
+        pending_events: [],
+        revision: 0,
+        subscribers: %{}
+      }
+
+      {:ok, schedule_poll(state)}
+    else
+      {:error, reason} ->
+        stop_display(display)
+        {:stop, {:rpc_start_failed, reason}}
     end
   end
 
@@ -250,7 +254,13 @@ defmodule GPUI.Remote.Client do
   defp reconnect(state) do
     Reconnect.stop_client(state.rpc)
 
-    case start_rpc_client(state.opts) do
+    supports =
+      case GPUI.Display.presentation_capabilities(state.display_module, state.display) do
+        {:ok, supports} -> supports
+        {:error, _reason} -> []
+      end
+
+    case start_rpc_client(state.opts, supports) do
       {:ok, rpc, capabilities} ->
         resume_or_remount(%{state | rpc: rpc, negotiated_capabilities: capabilities})
 
@@ -471,21 +481,26 @@ defmodule GPUI.Remote.Client do
     |> Base.url_encode64(padding: false)
   end
 
-  defp start_rpc_client(opts) do
+  defp start_rpc_client(opts, supports) do
     opts =
       opts
       |> Keyword.put(:transport, TCP)
       |> Keyword.put_new(:cap, Protocol.capability())
 
     case SafeRPC.Client.start_link(opts) do
-      {:ok, client} -> negotiate_client(client)
+      {:ok, client} -> negotiate_client(client, supports)
       {:error, reason} -> {:error, reason}
     end
   end
 
-  defp negotiate_client(client) do
-    %{op: op, payload: payload} = Protocol.hello()
+  defp negotiate_client(client, supports) do
+    %{op: op, payload: payload} =
+      Protocol.hello(%{presentation: Protocol.presentation(supports)})
 
+    negotiate_client_call(client, op, payload)
+  end
+
+  defp negotiate_client_call(client, op, payload) do
     case safe_call(client, op, payload) do
       {:ok, %{capabilities: capabilities}} when is_list(capabilities) ->
         {:ok, client, capabilities}
