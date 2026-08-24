@@ -200,7 +200,7 @@ pub(crate) fn component_attr<'a>(
     term: Term<'a>,
     attr: Atom,
 ) -> NifResult<Option<Term<'a>>> {
-    match term.map_get(atoms::attrs()) {
+    match decode_element_attrs(term) {
         Ok(attrs) => {
             match attrs.map_get(attr) {
                 Ok(value) => {
@@ -526,6 +526,19 @@ pub(crate) struct TextStyleRunNode {
     pub(crate) font_style: Option<String>,
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn decode_element_type<'a>(term: Term<'a>) -> NifResult<String> {
+    let type_term = term.map_get(atoms::type_atom())?;
+    type_term.atom_to_string()
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_element_attrs<'a>(term: Term<'a>) -> NifResult<Term<'a>> {
+    term.map_get(atoms::attrs())
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_element_children<'a>(term: Term<'a>) -> NifResult<Vec<Term<'a>>> {
+    term.map_get(atoms::children())?.decode::<Vec<Term<'a>>>()
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn decode_element_node<'a>(term: Term<'a>) -> NifResult<ElementNode> {
     match term.decode::<String>() {
         Ok(decoded_text) => {
@@ -537,24 +550,15 @@ pub(crate) fn decode_element_node<'a>(term: Term<'a>) -> NifResult<ElementNode> 
             )
         }
         Err(_reason) => {
-            match term.map_get(atoms::type_atom()) {
-                Ok(type_term) => {
-                    match type_term.atom_to_string() {
-                        Ok(node_type) => {
-                            let tag = decode_generated_element_tag(node_type.as_str());
-                            decode_generated_element_node(term, tag)
-                        }
-                        Err(reason) => Err(reason),
-                    }
-                }
-                Err(reason) => Err(reason),
-            }
+            let node_type = decode_element_type(term)?;
+            let tag = decode_generated_element_tag(node_type.as_str());
+            decode_generated_element_node(term, tag)
         }
     }
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn string_attr<'a>(term: Term<'a>, attr: Atom) -> Option<String> {
-    match term.map_get(atoms::attrs()) {
+    match decode_element_attrs(term) {
         Ok(attrs) => {
             match attrs.map_get(attr) {
                 Ok(value) => value.decode::<String>().ok(),
@@ -634,7 +638,7 @@ pub(crate) fn decode_anchored_layer_node<'a>(
     term: Term<'a>,
     _tag: GeneratedElementTag,
 ) -> NifResult<ElementNode> {
-    let attrs = term.map_get(atoms::attrs())?;
+    let attrs = decode_element_attrs(term)?;
     Ok(
         ElementNode::AnchoredLayer(AnchoredLayerNode {
             id: attrs.map_get(atoms::id())?.decode::<String>()?,
@@ -654,36 +658,34 @@ pub(crate) fn decode_anchored_layer_node<'a>(
     )
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn decode_image_node<'a>(
-    term: Term<'a>,
-    _tag: GeneratedElementTag,
-) -> NifResult<ElementNode> {
-    let attrs = term.map_get(atoms::attrs())?;
-    let raster = attrs.map_get(atoms::raster())?;
+pub(crate) fn decode_image_data<'a>(raster: Term<'a>) -> NifResult<ImageData> {
     let resource_ref = match raster.map_get(atoms::__type__()) {
         Ok(type_term) => atom_eq(type_term, "resource_ref"),
         Err(_missing) => false,
     };
     if resource_ref {
-        let id = decode_resource_ref(raster)?;
-        Ok(
-            ElementNode::Image(ImageNode {
-                image: ImageData::Ref(id),
-                style: decode_style(term)?,
-                label: non_empty_string_attr(term, atoms::label()),
-            }),
-        )
+        Ok(ImageData::Ref(decode_resource_ref(raster)?))
     } else {
         let raster = decode_raster_resource(raster)?;
         raster.validate()?;
-        Ok(
-            ElementNode::Image(ImageNode {
-                image: ImageData::Raster(raster),
-                style: decode_style(term)?,
-                label: non_empty_string_attr(term, atoms::label()),
-            }),
-        )
+        Ok(ImageData::Raster(raster))
     }
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+pub(crate) fn decode_image_node<'a>(
+    term: Term<'a>,
+    _tag: GeneratedElementTag,
+) -> NifResult<ElementNode> {
+    let attrs = decode_element_attrs(term)?;
+    let image = decode_image_data(attrs.map_get(atoms::raster())?)?;
+    Ok(
+        ElementNode::Image(ImageNode {
+            image: image,
+            style: decode_style(term)?,
+            label: non_empty_string_attr(term, atoms::label()),
+        }),
+    )
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn non_empty_string_attr<'a>(term: Term<'a>, attr: Atom) -> Option<String> {
@@ -697,7 +699,7 @@ pub(crate) fn text_ranges_attr<'a>(
     term: Term<'a>,
     attr: Atom,
 ) -> NifResult<Vec<TextRange>> {
-    match term.map_get(atoms::attrs()) {
+    match decode_element_attrs(term) {
         Ok(attrs) => {
             match attrs.map_get(attr) {
                 Ok(value) => value.decode::<Vec<TextRange>>(),
@@ -777,7 +779,7 @@ pub(crate) fn decode_text_surface_node<'a>(
     term: Term<'a>,
     _tag: GeneratedElementTag,
 ) -> NifResult<ElementNode> {
-    let attrs = term.map_get(atoms::attrs())?;
+    let attrs = decode_element_attrs(term)?;
     Ok(
         ElementNode::TextSurface(TextSurfaceNode {
             style: decode_style(term)?,
@@ -859,13 +861,13 @@ pub(crate) fn decode_input_node<'a>(
 }
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_children<'a>(term: Term<'a>) -> NifResult<Vec<ElementNode>> {
-    let children = term.map_get(atoms::children())?.decode::<Vec<Term<'a>>>()?;
+    let children = decode_element_children(term)?;
     children.into_iter().map(|child| decode_element_node(child)).collect()
 }
 #[cfg(feature = "real-gpui")]
 #[allow(unreachable_patterns)]
 pub(crate) fn decode_text_children<'a>(term: Term<'a>) -> NifResult<String> {
-    let children = term.map_get(atoms::children())?.decode::<Vec<Term<'a>>>()?;
+    let children = decode_element_children(term)?;
     {
         let mut __rustq_reduce = Ok(String::new());
         for child in children {
@@ -1729,7 +1731,7 @@ pub(crate) fn apply_generated_render_styles(
 #[cfg(feature = "real-gpui")]
 #[allow(unreachable_patterns)]
 pub(crate) fn decode_style<'a>(term: Term<'a>) -> NifResult<StyleAttrs> {
-    let attrs = term.map_get(atoms::attrs())?;
+    let attrs = decode_element_attrs(term)?;
     match attrs.map_get(atoms::style()) {
         Ok(style) => {
             let entries = style.decode::<Vec<(Atom, Term<'a>)>>()?;
@@ -1986,7 +1988,7 @@ pub(crate) struct SelectOptionNode {
 pub(crate) fn decode_select_options<'a>(
     term: Term<'a>,
 ) -> NifResult<Vec<SelectOptionNode>> {
-    let attrs = term.map_get(atoms::attrs())?;
+    let attrs = decode_element_attrs(term)?;
     let options = attrs.map_get(atoms::options())?.decode::<Vec<Term<'a>>>()?;
     let result = {
         let mut __rustq_reduce = Ok((HashSet::new(), vec![]));
@@ -2014,7 +2016,7 @@ pub(crate) fn decode_select_options<'a>(
 pub(crate) fn decode_radio_options<'a>(
     term: Term<'a>,
 ) -> NifResult<Vec<RadioOptionNode>> {
-    let attrs = term.map_get(atoms::attrs())?;
+    let attrs = decode_element_attrs(term)?;
     let options = attrs.map_get(atoms::options())?.decode::<Vec<Term<'a>>>()?;
     let result = {
         let mut __rustq_reduce = Ok((HashSet::new(), vec![]));

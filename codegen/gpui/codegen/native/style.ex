@@ -217,7 +217,7 @@ defmodule GPUI.Codegen.Native.Style do
   @allow :unreachable_patterns
   @spec decode_style(term()) :: R.nif_result(style_attrs())
   defrust decode_style(term) do
-    attrs = unwrap!(term.map_get(Atoms.attrs()))
+    attrs = unwrap!(decode_element_attrs(term))
 
     case attrs.map_get(Atoms.style()) do
       {:ok, style} ->

@@ -40,7 +40,7 @@ defmodule GPUI.Codegen.Native.ComponentContracts do
       end
 
     quote do
-      attrs = unwrap!(unquote(term).map_get(Atoms.attrs()))
+      attrs = unwrap!(decode_element_attrs(unquote(term)))
       options = decode_as!(attrs.map_get(Atoms.options()), R.vec(term()))
 
       result =

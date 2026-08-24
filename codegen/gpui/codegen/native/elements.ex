@@ -149,6 +149,20 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:blur) => R.option(String.t())
         }
 
+  @spec decode_element_type(term()) :: R.nif_result(String.t())
+  defrustp decode_element_type(term) do
+    type_term = unwrap!(term.map_get(Atoms.type_atom()))
+    type_term.atom_to_string()
+  end
+
+  @spec decode_element_attrs(term()) :: R.nif_result(term())
+  defrustp decode_element_attrs(term), do: term.map_get(Atoms.attrs())
+
+  @spec decode_element_children(term()) :: R.nif_result(R.vec(term()))
+  defrustp decode_element_children(term) do
+    decode_as(unwrap!(term.map_get(Atoms.children())), R.vec(term()))
+  end
+
   @spec decode_element_node(term()) :: R.nif_result(R.path(:ElementNode))
   defrust decode_element_node(term) do
     case decode_as(term, String.t()) do
@@ -161,26 +175,15 @@ defmodule GPUI.Codegen.Native.Elements do
          )}
 
       {:error, _reason} ->
-        case term.map_get(Atoms.type_atom()) do
-          {:ok, type_term} ->
-            case type_term.atom_to_string() do
-              {:ok, node_type} ->
-                tag = decode_generated_element_tag(node_type.as_str())
-                decode_generated_element_node(term, tag)
-
-              {:error, reason} ->
-                {:error, reason}
-            end
-
-          {:error, reason} ->
-            {:error, reason}
-        end
+        node_type = unwrap!(decode_element_type(term))
+        tag = decode_generated_element_tag(node_type.as_str())
+        decode_generated_element_node(term, tag)
     end
   end
 
   @spec string_attr(term(), atom()) :: R.option(String.t())
   defrust string_attr(term, attr) do
-    case term.map_get(Atoms.attrs()) do
+    case decode_element_attrs(term) do
       {:ok, attrs} ->
         case attrs.map_get(attr) do
           {:ok, value} -> decode_as(value, String.t()).ok()
@@ -247,7 +250,7 @@ defmodule GPUI.Codegen.Native.Elements do
   @spec decode_anchored_layer_node(term(), R.path(:GeneratedElementTag)) ::
           R.nif_result(R.path(:ElementNode))
   defrust decode_anchored_layer_node(term, _tag) do
-    attrs = unwrap!(term.map_get(Atoms.attrs()))
+    attrs = unwrap!(decode_element_attrs(term))
 
     {:ok,
      enum_variant(
@@ -270,12 +273,8 @@ defmodule GPUI.Codegen.Native.Elements do
      )}
   end
 
-  @spec decode_image_node(term(), R.path(:GeneratedElementTag)) ::
-          R.nif_result(R.path(:ElementNode))
-  defrust decode_image_node(term, _tag) do
-    attrs = unwrap!(term.map_get(Atoms.attrs()))
-    raster = unwrap!(attrs.map_get(Atoms.raster()))
-
+  @spec decode_image_data(term()) :: R.nif_result(R.path(:ImageData))
+  defrustp decode_image_data(raster) do
     resource_ref =
       case raster.map_get(Atoms.__type__()) do
         {:ok, type_term} -> atom_eq(type_term, "resource_ref")
@@ -283,33 +282,31 @@ defmodule GPUI.Codegen.Native.Elements do
       end
 
     if resource_ref do
-      id = unwrap!(decode_resource_ref(raster))
-
-      {:ok,
-       enum_variant(
-         ElementNode,
-         :image,
-         struct_literal(ImageNode,
-           image: enum_variant(ImageData, :ref, id),
-           style: unwrap!(decode_style(term)),
-           label: non_empty_string_attr(term, Atoms.label())
-         )
-       )}
+      {:ok, enum_variant(ImageData, :ref, unwrap!(decode_resource_ref(raster)))}
     else
       raster = unwrap!(decode_raster_resource(raster))
       unwrap!(raster.validate())
-
-      {:ok,
-       enum_variant(
-         ElementNode,
-         :image,
-         struct_literal(ImageNode,
-           image: enum_variant(ImageData, :raster, raster),
-           style: unwrap!(decode_style(term)),
-           label: non_empty_string_attr(term, Atoms.label())
-         )
-       )}
+      {:ok, enum_variant(ImageData, :raster, raster)}
     end
+  end
+
+  @allow Clippy.redundant_field_names()
+  @spec decode_image_node(term(), R.path(:GeneratedElementTag)) ::
+          R.nif_result(R.path(:ElementNode))
+  defrust decode_image_node(term, _tag) do
+    attrs = unwrap!(decode_element_attrs(term))
+    image = unwrap!(decode_image_data(unwrap!(attrs.map_get(Atoms.raster()))))
+
+    {:ok,
+     enum_variant(
+       ElementNode,
+       :image,
+       struct_literal(ImageNode,
+         image: image,
+         style: unwrap!(decode_style(term)),
+         label: non_empty_string_attr(term, Atoms.label())
+       )
+     )}
   end
 
   @spec non_empty_string_attr(term(), atom()) :: R.option(String.t())
@@ -322,7 +319,7 @@ defmodule GPUI.Codegen.Native.Elements do
 
   @spec text_ranges_attr(term(), atom()) :: R.nif_result(R.vec(R.path(:TextRange)))
   defrustp text_ranges_attr(term, attr) do
-    case term.map_get(Atoms.attrs()) do
+    case decode_element_attrs(term) do
       {:ok, attrs} ->
         case attrs.map_get(attr) do
           {:ok, value} -> decode_as(value, R.vec(R.path(:TextRange)))
@@ -395,7 +392,7 @@ defmodule GPUI.Codegen.Native.Elements do
   @spec decode_text_surface_node(term(), R.path(:GeneratedElementTag)) ::
           R.nif_result(R.path(:ElementNode))
   defrust decode_text_surface_node(term, _tag) do
-    attrs = unwrap!(term.map_get(Atoms.attrs()))
+    attrs = unwrap!(decode_element_attrs(term))
 
     {:ok,
      enum_variant(
@@ -467,7 +464,7 @@ defmodule GPUI.Codegen.Native.Elements do
 
   @spec decode_children(term()) :: R.nif_result(R.vec(R.path(:ElementNode)))
   defrust decode_children(term) do
-    children = decode_as!(term.map_get(Atoms.children()), R.vec(term()))
+    children = unwrap!(decode_element_children(term))
 
     for child <- children do
       decode_element_node(child)
@@ -477,7 +474,7 @@ defmodule GPUI.Codegen.Native.Elements do
   @allow :unreachable_patterns
   @spec decode_text_children(term()) :: R.nif_result(String.t())
   defrust decode_text_children(term) do
-    children = decode_as!(term.map_get(Atoms.children()), R.vec(term()))
+    children = unwrap!(decode_element_children(term))
 
     for child <- children, reduce: {:ok, String.new()} do
       {:ok, text} ->

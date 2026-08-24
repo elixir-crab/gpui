@@ -177,7 +177,7 @@ defmodule GPUI.Codegen.Native.Decoder do
 
   @spec component_attr(term(), atom()) :: R.nif_result(R.option(term()))
   defrust component_attr(term, attr) do
-    case term.map_get(Atoms.attrs()) do
+    case decode_element_attrs(term) do
       {:ok, attrs} ->
         case attrs.map_get(attr) do
           {:ok, value} ->

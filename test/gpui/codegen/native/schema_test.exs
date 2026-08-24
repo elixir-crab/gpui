@@ -22,8 +22,16 @@ defmodule GPUI.Codegen.Native.SchemaTest do
     assert Enum.any?(Syn.structs(parsed), &(&1.name == "AccessibilitySemantics"))
     assert Enum.any?(Syn.structs(parsed), &(&1.name == "StyleAttrs"))
     assert Enum.any?(Syn.functions(parsed), &(&1.name == "render_generated_component_node"))
+    assert Enum.any?(Syn.functions(parsed), &(&1.name == "decode_element_type"))
+    assert Enum.any?(Syn.functions(parsed), &(&1.name == "decode_element_attrs"))
+    assert Enum.any?(Syn.functions(parsed), &(&1.name == "decode_element_children"))
+    assert Enum.any?(Syn.functions(parsed), &(&1.name == "decode_image_data"))
 
     assert_unique_named_items(parsed)
+    assert source =~ "let node_type = decode_element_type(term)?;"
+    assert source =~ "let attrs = decode_element_attrs(term)?;"
+    assert source =~ "let children = decode_element_children(term)?;"
+    assert source =~ "let image = decode_image_data(attrs.map_get(atoms::raster())?)?;"
     assert source =~ "accessibility: AccessibilitySemantics"
     assert source =~ "pub(crate) disabled: bool"
     assert source =~ "impl AccessibilityRole"
