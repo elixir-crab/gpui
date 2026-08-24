@@ -294,7 +294,7 @@ fn handle_non_stop_command(session: &mut TestSession, command: TestCommand) {
             let _ = reply.send(result);
         }
         TestCommand::Click { element_id, reply } => {
-            let result = target_bounds(&mut session.context, &element_id).map(|bounds| {
+            let result = target_bounds(&mut session.context, element_id).map(|bounds| {
                 session
                     .context
                     .simulate_click(bounds.center(), gpui::Modifiers::default());
@@ -314,7 +314,7 @@ fn handle_non_stop_command(session: &mut TestSession, command: TestCommand) {
             delta_y,
             reply,
         } => {
-            let result = target_bounds(&mut session.context, &element_id).map(|bounds| {
+            let result = target_bounds(&mut session.context, element_id).map(|bounds| {
                 session.context.simulate_event(gpui::ScrollWheelEvent {
                     position: bounds.center(),
                     delta: gpui::ScrollDelta::Pixels(gpui::point(
@@ -344,13 +344,12 @@ fn handle_non_stop_command(session: &mut TestSession, command: TestCommand) {
             let _ = reply.send(Ok(()));
         }
         TestCommand::Bounds { element_id, reply } => {
-            let result =
-                target_bounds(&mut session.context, &element_id).map(|bounds| TestBounds {
-                    x: f32::from(bounds.origin.x) as f64,
-                    y: f32::from(bounds.origin.y) as f64,
-                    width: f32::from(bounds.size.width) as f64,
-                    height: f32::from(bounds.size.height) as f64,
-                });
+            let result = target_bounds(&mut session.context, element_id).map(|bounds| TestBounds {
+                x: f32::from(bounds.origin.x) as f64,
+                y: f32::from(bounds.origin.y) as f64,
+                width: f32::from(bounds.size.width) as f64,
+                height: f32::from(bounds.size.height) as f64,
+            });
             let _ = reply.send(result);
         }
         TestCommand::Idle { reply } => {

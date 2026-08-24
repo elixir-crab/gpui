@@ -104,6 +104,7 @@ defmodule GPUI.Codegen.Native.Registry do
   alias GPUI.Codegen.Native.RegistryDefinitions
   alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
+  alias RustQ.Rust.AST.Builder, as: A
 
   require RegistryDefinitions
   RegistryDefinitions.define_registry()
@@ -112,16 +113,22 @@ defmodule GPUI.Codegen.Native.Registry do
   def items do
     [
       type_item!(:ComponentKind, derive: [:Clone, :Copy, :Debug, :Eq, :Hash, :PartialEq]),
-      type_item!(:StatefulComponent),
+      type_item!(:StatefulComponent,
+        attrs: [A.allow_attr(A.path([:clippy, :large_enum_variant]))]
+      ),
       impl_item!()
     ]
   end
 
   defp impl_item!, do: MetaAST.impl!(__MODULE__, :ComponentRegistry)
 
-  defp type_item!(name, opts \\ []) do
+  defp type_item!(name, opts) do
     item = MetaAST.enum_type_item!(__MODULE__, name)
 
-    %{item | derive: Keyword.get(opts, :derive, []), vis: nil}
+    %{item |
+      attrs: Keyword.get(opts, :attrs, []),
+      derive: Keyword.get(opts, :derive, []),
+      vis: nil
+    }
   end
 end

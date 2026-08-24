@@ -19,6 +19,7 @@ enum ComponentKind {
     Slider,
     TextSurface,
 }
+#[allow(clippy::large_enum_variant)]
 enum StatefulComponent {
     DropTarget(ComponentDropTarget),
     Split(ComponentSplit),
