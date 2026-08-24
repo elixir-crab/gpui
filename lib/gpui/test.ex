@@ -17,8 +17,9 @@ defmodule GPUI.Test do
 
       use GPUI.Test, native: [size: {640, 480}]
 
-  Native UI cases are skipped by ordinary `mix test`; run them through
-  `mix gpui.test.native` so the package is compiled for `MIX_TARGET=native_test`.
+  Native UI cases are skipped by ordinary ExUnit runs. Use the dedicated
+  deterministic native-test Mix task so the package is compiled for the
+  `native_test` target.
 
   Both modes import one concise helper vocabulary; the first argument identifies
   whether an interaction targets a runtime or an interactive UI.

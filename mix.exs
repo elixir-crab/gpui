@@ -166,7 +166,7 @@ defmodule GPUI.MixProject do
           GPUI.Remote.Protocol,
           GPUI.Remote.Transport.TCP
         ],
-        Testing: [GPUI.Test, GPUI.Test.Display]
+        Testing: [GPUI.Test, GPUI.Test.UI, GPUI.Test.Display]
       ]
     ]
   end
@@ -224,6 +224,7 @@ defmodule GPUI.MixProject do
       GPUI.Remote.Protocol,
       GPUI.Remote.Transport.TCP,
       GPUI.Test,
+      GPUI.Test.UI,
       GPUI.Test.Display,
       Mix.Tasks.Gpui.Release.Check
     ]

@@ -66,8 +66,8 @@ In particular, reduced transparency must disable translucent or blur effects.
 ## Remote advertisement
 
 Remote hello messages may include a bounded informational `presentation` list.
-Entries use exact contract versions and capabilities validated against
-`GPUI.Schema`. Missing presentation support is equivalent to an empty list and
+Entries use exact contract versions and capabilities validated against the
+canonical schema. Missing presentation support is equivalent to an empty list and
 is never a handshake requirement.
 
 Transport capabilities such as `display_v1` and `window_topology_v1` remain
