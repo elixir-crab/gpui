@@ -2,9 +2,10 @@ defmodule GPUI.Codegen.Native.ResourceBoundary do
   @moduledoc "Defines RustQ-owned native resource request and NIF boundaries."
 
   use RustQ.Native,
+    otp_app: :gpui_native,
     build: false,
     load: false,
-    rust_sources: ["native/gpui/src/nif.rs"]
+    rust_sources: ["apps/gpui_native/native/gpui/src/nif.rs"]
 
   alias RustQ.Type, as: R
 
@@ -18,11 +19,12 @@ defmodule GPUI.Codegen.Native.ResourceBoundary do
         }
 
   @spec put_request(String.t(), term()) :: put_request()
-  defrust put_request(resource_id, resource),
+  defrust(put_request(resource_id, resource),
     do: %{resource_id: resource_id, resource: resource}
+  )
 
   @spec drop_request(String.t()) :: drop_request()
-  defrust drop_request(resource_id), do: %{resource_id: resource_id}
+  defrust(drop_request(resource_id), do: %{resource_id: resource_id})
 
   @nif schedule: :dirty_cpu
   @spec put_resource(
@@ -47,9 +49,10 @@ defmodule GPUI.Codegen.Native.DisabledResourceBoundary do
   @moduledoc "Defines RustQ-owned resource NIF fallbacks without real GPUI."
 
   use RustQ.Native,
+    otp_app: :gpui_native,
     build: false,
     load: false,
-    rust_sources: ["native/gpui/src/disabled.rs"]
+    rust_sources: ["apps/gpui_native/native/gpui/src/disabled.rs"]
 
   alias RustQ.Type, as: R
 
@@ -59,11 +62,11 @@ defmodule GPUI.Codegen.Native.DisabledResourceBoundary do
           String.t(),
           term()
         ) :: R.nif_result(term())
-  defnif put_resource(_runtime, _resource_id, _resource), do: real_gpui_disabled()
+  defnif(put_resource(_runtime, _resource_id, _resource), do: real_gpui_disabled())
 
   @spec drop_resource(
           R.resource(R.path(:RuntimeResource)),
           String.t()
         ) :: R.nif_result(term())
-  defnif drop_resource(_runtime, _resource_id), do: real_gpui_disabled()
+  defnif(drop_resource(_runtime, _resource_id), do: real_gpui_disabled())
 end

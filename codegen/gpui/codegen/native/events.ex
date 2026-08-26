@@ -71,7 +71,7 @@ defmodule GPUI.Codegen.Native.Events do
   @moduledoc "Emits generated native event-value decoding and input-kind contracts."
 
   use RustQ.Meta,
-    rust_sources: ["native/gpui/src/event.rs"]
+    rust_sources: ["apps/gpui_native/native/gpui/src/event.rs"]
 
   alias GPUI.Codegen.Native.EventDefinitions
   alias RustQ.Meta.AST, as: MetaAST
@@ -100,8 +100,9 @@ defmodule GPUI.Codegen.Native.Events do
           String.t(),
           R.path(:Term, R.lifetime(:a))
         ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
-  defrust encode_file_dialog_event(env, window_id, event, value),
+  defrust(encode_file_dialog_event(env, window_id, event, value),
     do: encode_value_event(env, Atoms.file_read(), window_id, event, value)
+  )
 
   @spec encode_file_dialog_selected(
           R.path(:Env, R.lifetime(:a)),
@@ -159,8 +160,9 @@ defmodule GPUI.Codegen.Native.Events do
           String.t(),
           R.path(:ElementBoundsGeometry)
         ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
-  defrust encode_bounds_event(env, window_id, event, value),
+  defrust(encode_bounds_event(env, window_id, event, value),
     do: encode_value_event(env, Atoms.bounds(), window_id, event, value.encode(env))
+  )
 
   @spec encode_clipboard_event(
           R.path(:Env, R.lifetime(:a)),
@@ -168,8 +170,9 @@ defmodule GPUI.Codegen.Native.Events do
           String.t(),
           R.path(:TransferPayload)
         ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
-  defrust encode_clipboard_event(env, window_id, event, value),
+  defrust(encode_clipboard_event(env, window_id, event, value),
     do: encode_value_event(env, Atoms.clipboard(), window_id, event, value.encode(env))
+  )
 
   @spec encode_transfer_event(
           R.path(:Env, R.lifetime(:a)),
@@ -178,8 +181,9 @@ defmodule GPUI.Codegen.Native.Events do
           String.t(),
           R.path(:TransferEventValue)
         ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
-  defrust encode_transfer_event(env, kind, window_id, event, value),
+  defrust(encode_transfer_event(env, kind, window_id, event, value),
     do: encode_value_event(env, kind.atom(), window_id, event, value.encode(env))
+  )
 
   @allow :dead_code
   @spec encode_value_event(
@@ -258,8 +262,9 @@ defmodule GPUI.Codegen.Native.Events do
           R.path(:TextTransaction),
           R.u64()
         ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
-  defrust encode_revisioned_transaction_event(env, kind, window_id, event, value, revision),
+  defrust(encode_revisioned_transaction_event(env, kind, window_id, event, value, revision),
     do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+  )
 
   @spec encode_revisioned_selection_event(
           R.path(:Env, R.lifetime(:a)),
@@ -269,8 +274,9 @@ defmodule GPUI.Codegen.Native.Events do
           R.vec(R.path(:TextSelection)),
           R.u64()
         ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
-  defrust encode_revisioned_selection_event(env, kind, window_id, event, value, revision),
+  defrust(encode_revisioned_selection_event(env, kind, window_id, event, value, revision),
     do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+  )
 
   @spec encode_revisioned_viewport_event(
           R.path(:Env, R.lifetime(:a)),
@@ -280,8 +286,9 @@ defmodule GPUI.Codegen.Native.Events do
           R.path(:TextViewportGeometry),
           R.u64()
         ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
-  defrust encode_revisioned_viewport_event(env, kind, window_id, event, value, revision),
+  defrust(encode_revisioned_viewport_event(env, kind, window_id, event, value, revision),
     do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+  )
 
   @spec encode_revisioned_geometry_event(
           R.path(:Env, R.lifetime(:a)),
@@ -291,8 +298,9 @@ defmodule GPUI.Codegen.Native.Events do
           R.path(:TextCaretGeometry),
           R.u64()
         ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
-  defrust encode_revisioned_geometry_event(env, kind, window_id, event, value, revision),
+  defrust(encode_revisioned_geometry_event(env, kind, window_id, event, value, revision),
     do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+  )
 
   @spec encode_revisioned_range_geometry_event(
           R.path(:Env, R.lifetime(:a)),
@@ -302,8 +310,9 @@ defmodule GPUI.Codegen.Native.Events do
           R.vec(R.path(:TextRangeGeometry)),
           R.u64()
         ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
-  defrust encode_revisioned_range_geometry_event(env, kind, window_id, event, value, revision),
+  defrust(encode_revisioned_range_geometry_event(env, kind, window_id, event, value, revision),
     do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+  )
 
   @spec encode_revisioned_position_event(
           R.path(:Env, R.lifetime(:a)),
@@ -313,8 +322,9 @@ defmodule GPUI.Codegen.Native.Events do
           R.path(:TextPosition),
           R.u64()
         ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
-  defrust encode_revisioned_position_event(env, kind, window_id, event, value, revision),
+  defrust(encode_revisioned_position_event(env, kind, window_id, event, value, revision),
     do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
+  )
 
   @spec encode_revisioned_event(
           R.path(:Env, R.lifetime(:a)),

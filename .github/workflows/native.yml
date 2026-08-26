@@ -6,12 +6,12 @@ on:
     paths:
       - "native/**"
       - "codegen/**"
-      - "test/e2e/**"
+      - "apps/gpui_native/test/e2e/**"
       - "test/support/desktop/**"
-      - "lib/gpui/native.ex"
-      - "lib/gpui/display/native.ex"
-      - "lib/gpui/runtime.ex"
-      - "lib/gpui/session.ex"
+      - "apps/gpui/lib/gpui/native.ex"
+      - "apps/gpui_native/lib/gpui/display_native.ex"
+      - "apps/gpui/lib/gpui/runtime.ex"
+      - "apps/gpui/lib/gpui/session.ex"
       - "dev/mix/tasks/gpui.test.native.ex"
       - "dev/mix/tasks/gpui.test.mode_switch.ex"
       - "rust-toolchain.toml"
@@ -23,12 +23,12 @@ on:
     paths:
       - "native/**"
       - "codegen/**"
-      - "test/e2e/**"
+      - "apps/gpui_native/test/e2e/**"
       - "test/support/desktop/**"
-      - "lib/gpui/native.ex"
-      - "lib/gpui/display/native.ex"
-      - "lib/gpui/runtime.ex"
-      - "lib/gpui/session.ex"
+      - "apps/gpui/lib/gpui/native.ex"
+      - "apps/gpui_native/lib/gpui/display_native.ex"
+      - "apps/gpui/lib/gpui/runtime.ex"
+      - "apps/gpui/lib/gpui/session.ex"
       - "dev/mix/tasks/gpui.test.native.ex"
       - "dev/mix/tasks/gpui.test.mode_switch.ex"
       - "rust-toolchain.toml"
@@ -71,7 +71,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: native-linux
-          workspaces: native/gpui -> target
+          workspaces: apps/gpui_native/native/gpui -> target
           save-if: false
       - name: Install native desktop dependencies
         run: >-
@@ -101,7 +101,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: native-linux
-          workspaces: native/gpui -> target
+          workspaces: apps/gpui_native/native/gpui -> target
           save-if: ${{ github.event_name == 'workflow_dispatch' && inputs.refresh_cache }}
       - name: Install native dependencies
         run: >-

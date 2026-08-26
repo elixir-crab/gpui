@@ -2,9 +2,10 @@ defmodule GPUI.Codegen.Native.TestBoundary do
   @moduledoc "Defines RustQ-owned deterministic native-test lifecycle NIF boundaries."
 
   use RustQ.Native,
+    otp_app: :gpui_native,
     build: false,
     load: false,
-    rust_sources: ["native/gpui/src/nif.rs"]
+    rust_sources: ["apps/gpui_native/native/gpui/src/nif.rs"]
 
   alias RustQ.Type, as: R
 
@@ -45,33 +46,34 @@ defmodule GPUI.Codegen.Native.TestBoundary do
         }
 
   @spec advance_request(R.u64()) :: advance_request()
-  defrust advance_request(milliseconds), do: %{milliseconds: milliseconds}
+  defrust(advance_request(milliseconds), do: %{milliseconds: milliseconds})
 
   @spec input_request(String.t()) :: input_request()
-  defrust input_request(text), do: %{text: text}
+  defrust(input_request(text), do: %{text: text})
 
   @spec key_request(String.t()) :: key_request()
-  defrust key_request(key), do: %{key: key}
+  defrust(key_request(key), do: %{key: key})
 
   @spec point_request(R.f64(), R.f64()) :: point_request()
-  defrust point_request(x, y), do: %{x: x, y: y}
+  defrust(point_request(x, y), do: %{x: x, y: y})
 
   @spec scroll_request(String.t(), R.f64(), R.f64()) :: scroll_request()
-  defrust scroll_request(target, delta_x, delta_y),
+  defrust(scroll_request(target, delta_x, delta_y),
     do: %{target: target, delta_x: delta_x, delta_y: delta_y}
+  )
 
   @spec render_request(term()) :: render_request()
-  defrust render_request(tree), do: %{tree: tree}
+  defrust(render_request(tree), do: %{tree: tree})
 
   @spec resize_request(R.f64(), R.f64()) :: resize_request()
-  defrust resize_request(width, height), do: %{width: width, height: height}
+  defrust(resize_request(width, height), do: %{width: width, height: height})
 
   @spec target_request(String.t()) :: target_request()
-  defrust target_request(target), do: %{target: target}
+  defrust(target_request(target), do: %{target: target})
 
   @nif schedule: :dirty_io
   @spec native_test_start(R.f64(), R.f64()) :: R.nif_result(term())
-  defnif native_test_start(width, height), do: native_test_start_impl(nif_env(), width, height)
+  defnif(native_test_start(width, height), do: native_test_start_impl(nif_env(), width, height))
 
   @nif schedule: :dirty_io
   @spec native_test_render(
@@ -170,15 +172,15 @@ defmodule GPUI.Codegen.Native.TestBoundary do
   @nif schedule: :dirty_io
   @spec native_test_idle(R.raw(:"ResourceArc<native_test::NativeTestSessionResource>")) ::
           R.nif_result(term())
-  defnif native_test_idle(session), do: native_test_idle_impl(nif_env(), session)
+  defnif(native_test_idle(session), do: native_test_idle_impl(nif_env(), session))
 
   @nif schedule: :dirty_io
   @spec native_test_events(R.raw(:"ResourceArc<native_test::NativeTestSessionResource>")) ::
           R.nif_result(term())
-  defnif native_test_events(session), do: native_test_events_impl(nif_env(), session)
+  defnif(native_test_events(session), do: native_test_events_impl(nif_env(), session))
 
   @nif schedule: :dirty_io
   @spec native_test_stop(R.raw(:"ResourceArc<native_test::NativeTestSessionResource>")) ::
           R.nif_result(term())
-  defnif native_test_stop(session), do: native_test_stop_impl(nif_env(), session)
+  defnif(native_test_stop(session), do: native_test_stop_impl(nif_env(), session))
 end

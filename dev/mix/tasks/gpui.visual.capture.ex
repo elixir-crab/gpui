@@ -2,7 +2,7 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
   use Mix.Task
 
   @shortdoc "Captures synchronized native visual scenarios"
-  @project_root Mix.Project.project_file() |> Path.dirname()
+  @project_root Path.expand("../../../apps/gpui_native", __DIR__)
   @scenario_dir Path.join(@project_root, "test/visual/scenarios")
 
   @impl Mix.Task

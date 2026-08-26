@@ -4,8 +4,10 @@
 
 GPUI keeps application state, window topology, UI declarations, and event
 handling in Elixir. Rust owns the native event loop, windows, rendering, focus,
-IME, accessibility, and latency-sensitive interaction. Native controls come
-from [`gpui-component`](https://github.com/longbridge/gpui-component).
+IME, accessibility, and latency-sensitive interaction. Conventional controls
+are provided separately by [`gpui_components`](apps/gpui_components/README.md)
+and rendered with
+[`gpui-component`](https://github.com/longbridge/gpui-component).
 
 > **Elixir owns the application. GPUI owns the native interaction. Snapshots
 > connect them.**
@@ -142,27 +144,58 @@ Run the `gpui.dev` Mix task with the larger examples for state-preserving
 Elixir source reload. See the [examples index](examples/README.md) for the
 complete catalog.
 
+## Packages
+
+The repository is a Mix umbrella with three independently publishable packages
+and one private maintainer application:
+
+| Package | Purpose |
+| --- | --- |
+| [`gpui`](apps/gpui) | Renderer-independent applications, sessions, snapshots, schemas, remote displays, and test APIs |
+| [`gpui_components`](apps/gpui_components) | Conventional declarative controls backed by `gpui-component` |
+| [`gpui_native`](apps/gpui_native) | RustlerPrecompiled core and standard native display profiles |
+| Root tooling | Private RustQ generation, repository checks, native testing, and release validation |
+
+RustQ runs only in the source umbrella. Generated Elixir and Rust are committed,
+and supported consumer targets download checksum-verified NIF archives through
+`RustlerPrecompiled`; consumer compilation does not run RustQ.
+
 ## Installation
 
-Add GPUI with a path or Git dependency while it is under development:
+For a renderer-independent application or remote server:
 
 ```elixir
 def deps do
-  [{:gpui, path: "../gpui"}]
+  [
+    {:gpui, "~> 0.2.0"}
+  ]
 end
 ```
 
-Desktop applications explicitly enable the native display outside tests:
+For a native application using conventional controls:
+
+```elixir
+def deps do
+  [
+    {:gpui, "~> 0.2.0"},
+    {:gpui_components, "~> 0.2.0"},
+    {:gpui_native, "~> 0.2.0"}
+  ]
+end
+```
+
+Select the standard precompiled host when component elements are used:
 
 ```elixir
 # config/config.exs
-config :gpui, build_native: config_env() != :test
+config :gpui_native, GPUI.Native, profile: :standard
 ```
 
-Renderer-independent sessions, remote servers, and `GPUI.Test` require neither
-Rust nor a native library or display server. Native builds require the pinned
-Rust toolchain and GPUI platform libraries. See
+Use `profile: :core` for the vanilla-GPUI host without the conventional
+component pack. Renderer-independent sessions, remote servers, and `GPUI.Test`
+require neither Rust nor a native library or display server. See
 [Native builds and deployment](guides/deployment/native-builds.md).
+
 
 ## Documentation
 
@@ -190,7 +223,7 @@ Rust toolchain and GPUI platform libraries. See
 ```bash
 mix deps.get
 mix ci
-MIX_ENV=e2e xvfb-run -a dbus-run-session -- mix test --only e2e test/e2e
+MIX_ENV=e2e xvfb-run -a dbus-run-session -- mix test --only e2e apps/gpui_native/test/e2e
 ```
 
 `mix ci` covers Elixir, generated Rust freshness, Cargo feature matrices,

@@ -2,9 +2,10 @@ defmodule GPUI.Codegen.Native.TextBoundary do
   @moduledoc "Defines RustQ-owned persistent text-buffer NIF boundaries."
 
   use RustQ.Native,
+    otp_app: :gpui_native,
     build: false,
     load: false,
-    rust_sources: ["native/gpui/src/nif.rs"]
+    rust_sources: ["apps/gpui_native/native/gpui/src/nif.rs"]
 
   alias RustQ.Type, as: R
 
@@ -17,7 +18,7 @@ defmodule GPUI.Codegen.Native.TextBoundary do
 
   @nif schedule: :dirty_cpu
   @spec text_buffer_snapshot(R.resource(R.path(:TextBufferResource))) :: R.nif_result(term())
-  defnif text_buffer_snapshot(buffer), do: text_buffer_snapshot_impl(nif_env(), buffer)
+  defnif(text_buffer_snapshot(buffer), do: text_buffer_snapshot_impl(nif_env(), buffer))
 
   @nif schedule: :dirty_cpu
   @spec text_buffer_transact(

@@ -1,7 +1,7 @@
 defmodule GPUI.Dev.Visual.ScenarioLoader do
   @moduledoc "Development loader for isolated visual regression scenarios."
 
-  @project_root Mix.Project.project_file() |> Path.dirname()
+  @project_root Path.expand("../../apps/gpui_native", __DIR__ |> Path.dirname())
   @scenario_dir Path.join(@project_root, "test/visual/scenarios")
 
   @spec load!(String.t() | atom()) :: [{module(), binary()}] | nil

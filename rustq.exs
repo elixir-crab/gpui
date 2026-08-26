@@ -4,20 +4,20 @@ alias RustQ.Meta.AST, as: MetaAST
 alias RustQ.Rustler.Atom, as: RustlerAtom
 alias RustQ.Rustler.Nif
 
-require_file("lib/gpui/schema/extension.ex")
-require_file("lib/gpui/schema/component.ex")
-require_file("lib/gpui/schema/component_docs.ex")
-require_file("lib/gpui/schema/resource.ex")
-require_file("lib/gpui/schema/style.ex")
-require_file("lib/gpui/accessibility.ex")
-require_file("lib/gpui/text/position.ex")
-require_file("lib/gpui/text/range.ex")
-require_file("lib/gpui/text/selection.ex")
-require_file("lib/gpui/text/rich_run.ex")
-require_file("lib/gpui/schema.ex")
-require_file("lib/gpui/transfer/payload.ex")
-require_file("lib/gpui/transfer/event.ex")
-require_file("lib/gpui/event.ex")
+require_file("apps/gpui/lib/gpui/schema/extension.ex")
+require_file("apps/gpui/lib/gpui/schema/component.ex")
+require_file("apps/gpui/lib/gpui/schema/component_docs.ex")
+require_file("apps/gpui/lib/gpui/schema/resource.ex")
+require_file("apps/gpui/lib/gpui/schema/style.ex")
+require_file("apps/gpui/lib/gpui/accessibility.ex")
+require_file("apps/gpui/lib/gpui/text/position.ex")
+require_file("apps/gpui/lib/gpui/text/range.ex")
+require_file("apps/gpui/lib/gpui/text/selection.ex")
+require_file("apps/gpui/lib/gpui/text/rich_run.ex")
+require_file("apps/gpui/lib/gpui/schema.ex")
+require_file("apps/gpui/lib/gpui/transfer/payload.ex")
+require_file("apps/gpui/lib/gpui/transfer/event.ex")
+require_file("apps/gpui/lib/gpui/event.ex")
 require_file("codegen/gpui/codegen/native/accessibility.ex")
 require_file("codegen/gpui/codegen/native/boundary.ex")
 require_file("codegen/gpui/codegen/native/component_contracts.ex")
@@ -45,75 +45,75 @@ require_file("codegen/gpui/codegen/native/registry.ex")
 require_file("codegen/gpui/codegen/native/schema_types.ex")
 require_file("codegen/gpui/codegen/native/schema.ex")
 
-rust "native/gpui/src/generated/atoms.rs" do
+rust "apps/gpui_native/native/gpui/src/generated/atoms.rs" do
   RustlerAtom.declaration(GPUI.Codegen.Native.Atoms.all())
 end
 
-rust "native/gpui/src/generated/disabled_window.rs" do
+rust "apps/gpui_native/native/gpui/src/generated/disabled_window.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.DisabledWindow)
 end
 
-rust "native/gpui/src/generated/test_boundary.rs" do
+rust "apps/gpui_native/native/gpui/src/generated/test_boundary.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.TestBoundary)
 end
 
-rust "native/gpui/src/generated/text_boundary.rs" do
+rust "apps/gpui_native/native/gpui/src/generated/text_boundary.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.TextBoundary)
 end
 
-rust "native/gpui/src/generated/text_types.rs" do
+rust "apps/gpui_native/native/gpui/src/generated/text_types.rs" do
   GPUI.Codegen.Native.TextTypes.items()
 end
 
-rust "native/gpui/src/generated/window.rs" do
+rust "apps/gpui_native/native/gpui/src/generated/window.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.Window)
 end
 
-rust "native/gpui/src/generated/resources.rs" do
+rust "apps/gpui_native/native/gpui/src/generated/resources.rs" do
   GPUI.Codegen.Native.Resources.items()
 end
 
-rust "native/gpui/src/generated/resource_boundary.rs" do
+rust "apps/gpui_native/native/gpui/src/generated/resource_boundary.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.ResourceBoundary)
 end
 
-rust "native/gpui/src/generated/disabled_resource_boundary.rs" do
+rust "apps/gpui_native/native/gpui/src/generated/disabled_resource_boundary.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.DisabledResourceBoundary)
 end
 
-rust "native/gpui/src/generated/extensions.rs" do
+rust "apps/gpui_native/native/gpui/src/generated/extensions.rs" do
   GPUI.Codegen.Native.Extensions.items()
 end
 
-rust "native/gpui/src/generated/events.rs" do
+rust "apps/gpui_native/native/gpui/src/generated/events.rs" do
   GPUI.Codegen.Native.Events.items()
 end
 
-rust "native/gpui/src/generated/event_boundary.rs" do
+rust "apps/gpui_native/native/gpui/src/generated/event_boundary.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.EventBoundary)
 end
 
-rust "native/gpui/src/generated/runtime_boundary.rs" do
+rust "apps/gpui_native/native/gpui/src/generated/runtime_boundary.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.RuntimeBoundary)
 end
 
-rust "native/gpui/src/generated/rusty.rs" do
+rust "apps/gpui_native/native/gpui/src/generated/rusty.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.Rusty)
 end
 
-rust "native-schema", "native/gpui/src/generated/schema.rs" do
+rust "native-schema", "apps/gpui_native/native/gpui/src/generated/schema.rs" do
   GPUI.Codegen.Native.Schema.items()
 end
 
-rust "component-registry", "native/gpui/src/generated/component_registry.rs" do
+rust "component-registry", "apps/gpui_native/native/gpui/src/generated/component_registry.rs" do
   GPUI.Codegen.Native.Schema.registry_items()
 end
 
-generate "native-test-facade", "lib/gpui/native/test.ex" do
+generate "native-test-facade", "apps/gpui/lib/gpui/native_test.ex" do
   content(GPUI.Codegen.Native.Boundary.native_test_facade_source())
 end
 
-generate "native-stubs", "lib/gpui/native/generated.ex" do
+generate "native-stubs", "apps/gpui/lib/gpui/native_generated.ex" do
   rusty_functions =
     GPUI.Codegen.Native.Rusty
     |> RustQ.Native.items()
@@ -187,7 +187,15 @@ generate "native-stubs", "lib/gpui/native/generated.ex" do
   content(
     GPUI.Codegen.Native.Boundary.document_generated_module(
       generated,
-      "Generated Rustler NIF declarations used by GPUI.Native."
+      "Generated Rustler NIF declarations loaded by GPUI.Native.NIF."
+    )
+  )
+end
+
+generate "native-facade", "apps/gpui/lib/gpui/native_facade.ex" do
+  content(
+    GPUI.Codegen.Native.Boundary.native_facade_source(
+      File.read!("apps/gpui/lib/gpui/native_generated.ex")
     )
   )
 end

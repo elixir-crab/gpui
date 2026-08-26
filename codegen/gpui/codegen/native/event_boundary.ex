@@ -14,9 +14,10 @@ defmodule GPUI.Codegen.Native.EventBoundary do
   @moduledoc "Defines RustQ-owned native event request and NIF boundaries."
 
   use RustQ.Native,
+    otp_app: :gpui_native,
     build: false,
     load: false,
-    rust_sources: ["native/gpui/src/nif.rs"]
+    rust_sources: ["apps/gpui_native/native/gpui/src/nif.rs"]
 
   alias GPUI.Codegen.Native.EventBoundaryDefinitions
   alias RustQ.Type, as: R
@@ -29,12 +30,11 @@ defmodule GPUI.Codegen.Native.EventBoundary do
         }
 
   @spec inject_request(term()) :: inject_request()
-  defrust inject_request(event), do: %{event: event}
+  defrust(inject_request(event), do: %{event: event})
 
   @spec decode_inject(inject_request()) ::
           R.nif_result(
-            {R.path(:InjectKind), R.u64(), R.option(String.t()),
-             R.option(R.path(:EventValue))}
+            {R.path(:InjectKind), R.u64(), R.option(String.t()), R.option(R.path(:EventValue))}
           )
   defrust decode_inject(request) do
     event = request.event
@@ -57,7 +57,7 @@ defmodule GPUI.Codegen.Native.EventBoundary do
   end
 
   @spec drain_events(R.resource(R.path(:RuntimeResource))) :: R.nif_result(term())
-  defnif drain_events(runtime), do: drain_events_impl(nif_env(), runtime)
+  defnif(drain_events(runtime), do: drain_events_impl(nif_env(), runtime))
 
   @spec inject_event(
           R.resource(R.path(:RuntimeResource)),

@@ -1,22 +1,5 @@
-project_root = Mix.Project.project_file() |> Path.dirname()
-
-unless Code.ensure_loaded?(GPUI.Schema.Extension) do
-  Code.require_file("lib/gpui/schema/extension.ex", project_root)
-end
-
-unless Code.ensure_loaded?(GPUI.Event) do
-  Code.require_file("lib/gpui/transfer/payload.ex", project_root)
-  Code.require_file("lib/gpui/transfer/event.ex", project_root)
-  Code.require_file("lib/gpui/event.ex", project_root)
-end
-
-unless Code.ensure_loaded?(GPUI.Text.Selection) do
-  Code.require_file("lib/gpui/text/position.ex", project_root)
-  Code.require_file("lib/gpui/text/range.ex", project_root)
-  Code.require_file("lib/gpui/text/selection.ex", project_root)
-end
-
-codegen_root = Path.join(project_root, "codegen/gpui/codegen/native")
+repository_root = Path.expand("../..", __DIR__)
+codegen_root = Path.join(repository_root, "codegen/gpui/codegen/native")
 
 for file <- ~w(
   accessibility.ex

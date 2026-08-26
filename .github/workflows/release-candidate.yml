@@ -83,31 +83,31 @@ jobs:
           }
 
           run_group "rich text and transcript" \
-            test/e2e/gpui/native/rich_text_test.exs \
-            test/e2e/gpui/native/rich_transcript_test.exs \
-            test/e2e/gpui/native/composer_transcript_test.exs \
-            test/e2e/gpui/native/virtual_collection_test.exs
+            apps/gpui_native/test/e2e/gpui/native/rich_text_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/rich_transcript_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/composer_transcript_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/virtual_collection_test.exs
           run_group "editable text" \
-            test/e2e/gpui/native/text_surface_test.exs \
-            test/e2e/gpui/native/text_style_run_test.exs
+            apps/gpui_native/test/e2e/gpui/native/text_surface_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/text_style_run_test.exs
           run_group "overlays and topology" \
-            test/e2e/gpui/native/overlay_test.exs \
-            test/e2e/gpui/native/multi_window_topology_test.exs
-          run_group "remote display" test/e2e/gpui/remote
+            apps/gpui_native/test/e2e/gpui/native/overlay_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/multi_window_topology_test.exs
+          run_group "remote display" apps/gpui_native/test/e2e/gpui/remote
           run_group "native controls and examples" \
-            test/e2e/gpui/native/code_viewer_test.exs \
-            test/e2e/gpui/native/components_test.exs \
-            test/e2e/gpui/native/data_table_test.exs \
-            test/e2e/gpui/native/display_controls_test.exs \
-            test/e2e/gpui/native/elixir_workbench_log_source_test.exs \
-            test/e2e/gpui/native/elixir_workbench_repository_source_test.exs \
-            test/e2e/gpui/native/form_controls_test.exs \
-            test/e2e/gpui/native/image_palette_test.exs \
-            test/e2e/gpui/native/interactivity_test.exs \
-            test/e2e/gpui/native/lifecycle_test.exs \
-            test/e2e/gpui/native/split_test.exs \
-            test/e2e/gpui/native/tree_test.exs \
-            test/e2e/gpui/native/virtual_list_test.exs
+            apps/gpui_native/test/e2e/gpui/native/code_viewer_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/components_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/data_table_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/display_controls_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/elixir_workbench_log_source_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/elixir_workbench_repository_source_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/form_controls_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/image_palette_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/interactivity_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/lifecycle_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/split_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/tree_test.exs \
+            apps/gpui_native/test/e2e/gpui/native/virtual_list_test.exs
 
           exit "$failures"
 

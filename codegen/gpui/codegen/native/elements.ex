@@ -3,9 +3,9 @@ defmodule GPUI.Codegen.Native.Elements do
 
   use RustQ.Meta,
     rust_sources: [
-      "native/gpui/src/nif.rs",
-      "native/gpui/src/resource.rs",
-      "native/gpui/src/element/mod.rs"
+      "apps/gpui_native/native/gpui/src/nif.rs",
+      "apps/gpui_native/native/gpui/src/resource.rs",
+      "apps/gpui_native/native/gpui/src/element/mod.rs"
     ]
 
   alias RustQ.Meta.AST, as: MetaAST
@@ -191,7 +191,7 @@ defmodule GPUI.Codegen.Native.Elements do
   end
 
   @spec decode_element_attrs(term()) :: R.nif_result(term())
-  defrustp decode_element_attrs(term), do: term.map_get(Atoms.attrs())
+  defrustp(decode_element_attrs(term), do: term.map_get(Atoms.attrs()))
 
   @spec decode_element_children(term()) :: R.nif_result(R.vec(term()))
   defrustp decode_element_children(term) do
@@ -550,18 +550,18 @@ defmodule GPUI.Codegen.Native.Elements do
         MetaAST.struct_type_items(
           __MODULE__,
           [
-          :viewport_node,
-          :container_node,
-          :anchored_layer_node,
-          :image_node,
-          :text_node,
-          :input_node
-        ],
-        derive: [:Clone, :Debug],
-        attrs: [A.attr(:cfg, feature: "real-gpui")],
-        vis: :crate,
-        field_vis: :crate
-      ) ++
+            :viewport_node,
+            :container_node,
+            :anchored_layer_node,
+            :image_node,
+            :text_node,
+            :input_node
+          ],
+          derive: [:Clone, :Debug],
+          attrs: [A.attr(:cfg, feature: "real-gpui")],
+          vis: :crate,
+          field_vis: :crate
+        ) ++
         MetaAST.struct_type_items(
           __MODULE__,
           [:text_surface_node],

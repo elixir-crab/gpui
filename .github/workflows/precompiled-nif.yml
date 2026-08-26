@@ -21,7 +21,7 @@ jobs:
       artifact-metadata: write
     with:
       project-name: gpui_nif
-      project-dir: native/gpui
+      project-dir: apps/gpui_native/native/gpui
       jobs: >-
         [
           {"target":"x86_64-unknown-linux-gnu","os":"ubuntu-22.04","use-cross":false}

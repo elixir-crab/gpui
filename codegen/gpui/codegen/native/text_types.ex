@@ -62,12 +62,14 @@ defmodule GPUI.Codegen.Native.TextTypes do
       :text_snapshot,
       :transaction_result
     ]
-    |> then(&MetaAST.struct_type_items(__MODULE__, &1,
-      derive: [:Clone, :Debug, :PartialEq, :Eq, :NifMap],
-      vis: :crate,
-      field_vis: :crate,
-      attrs: []
-    ))
+    |> then(
+      &MetaAST.struct_type_items(__MODULE__, &1,
+        derive: [:Clone, :Debug, :PartialEq, :Eq, :NifMap],
+        vis: :crate,
+        field_vis: :crate,
+        attrs: []
+      )
+    )
     |> Enum.map(fn struct ->
       %{struct | attrs: [A.attr(:allow, [:dead_code]) | struct.attrs]}
     end)

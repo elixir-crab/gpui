@@ -1,31 +1,15 @@
-defmodule GPUI.MixProject do
+defmodule GPUI.Umbrella.MixProject do
   use Mix.Project
 
-  @version "0.1.1"
+  @version "0.2.0-dev"
 
   def project do
     [
-      app: :gpui,
+      apps_path: "apps",
       version: @version,
-      elixir: "~> 1.20",
       start_permanent: Mix.env() == :prod,
-      elixirc_paths: elixirc_paths(Mix.env()),
       deps: deps(),
-      package: package(),
-      description: description(),
-      source_url: "https://github.com/dannote/gpui",
-      homepage_url: "https://github.com/dannote/gpui",
-      docs: docs(),
-      test_load_filters: [&load_test_file?/1],
-      test_ignore_filters: [&ignore_test_file?/1],
-      dialyzer: [plt_add_apps: [:ex_unit, :mix]],
       aliases: aliases()
-    ]
-  end
-
-  def application do
-    [
-      extra_applications: [:logger, :ssl]
     ]
   end
 
@@ -35,6 +19,7 @@ defmodule GPUI.MixProject do
         ci: :test,
         "ci.checks": :test,
         "ci.native": :test,
+        "gpui.test.codegen": :test,
         "gpui.release.check": :release,
         "gpui.test.e2e": :e2e,
         "gpui.test.mode_switch": :dev,
@@ -43,229 +28,21 @@ defmodule GPUI.MixProject do
     ]
   end
 
-  defp load_test_file?(path) do
-    String.ends_with?(path, "_test.exs") and
-      (Mix.env() == :e2e or not String.contains?(path, "e2e/")) and
-      (Mix.target() == :native_test or not String.contains?(path, "test/gpui/test/native/"))
-  end
-
-  defp ignore_test_file?(path) do
-    String.contains?(path, "support/") or
-      String.contains?(path, "test/visual/scenarios/") or
-      (Mix.target() != :native_test and String.contains?(path, "test/gpui/test/native/")) or
-      (Mix.env() != :e2e and String.contains?(path, "e2e/"))
-  end
-
-  defp elixirc_paths(env) when env in [:dev, :test, :e2e, :release],
-    do: ["lib", "dev"]
-
-  defp elixirc_paths(_env), do: ["lib"]
-
-  defp description do
-    "Elixir/OTP bindings and HEEx-style UI DSL for Rust GPUI."
-  end
-
-  defp package do
-    [
-      name: "gpui",
-      licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/dannote/gpui"},
-      files: package_files()
-    ]
-  end
-
-  defp package_files do
-    files =
-      ~w(lib codegen examples guides config/config.exs native/gpui/Cargo.toml native/gpui/Cargo.lock native/gpui/compat native/gpui/src mix.exs rustq.exs rust-toolchain.toml README.md CHANGELOG.md LICENSE)
-
-    if File.exists?("checksum-Elixir.GPUI.Native.exs") do
-      ["checksum-Elixir.GPUI.Native.exs" | files]
-    else
-      files
-    end
-  end
-
-  defp docs do
-    [
-      main: "readme",
-      source_ref: "v#{@version}",
-      filter_modules: &documented_module?/2,
-      extras: [
-        "README.md",
-        "CHANGELOG.md",
-        "guides/documentation.md",
-        "guides/getting-started/first-application.md",
-        "guides/concepts/sessions-snapshots-and-displays.md",
-        "guides/ui/components.md",
-        "guides/ui/templates-and-elements.md",
-        "guides/ui/forms-and-controls.md",
-        "guides/ui/collections-and-data-views.md",
-        "guides/ui/text-and-editing.md",
-        "guides/ui/editable-text.md",
-        "guides/ui/layout-styling-and-presentation.md",
-        "guides/ui/presentation-primitives.md",
-        "guides/ui/resources-and-display-actions.md",
-        "guides/ui/windows-and-lifecycle.md",
-        "guides/ui/commands-and-shortcuts.md",
-        "guides/ui/overlays-and-menus.md",
-        "guides/remote/remote-displays.md",
-        "guides/testing/overview.md",
-        "guides/testing/application-tests.md",
-        "guides/testing/native-tests.md",
-        "guides/testing/desktop-e2e.md",
-        "guides/testing/coverage-ownership.md",
-        "guides/deployment/native-builds.md",
-        "guides/internals/platform-support.md",
-        "guides/internals/editable-text-internals.md",
-        "guides/internals/accessibility.md",
-        "guides/internals/text-projections.md",
-        "guides/internals/transfers.md",
-        "guides/internals/presentation-contracts.md",
-        "guides/internals/decisions/declarative-motion.md",
-        "guides/internals/decisions/window-chrome.md"
-      ],
-      groups_for_extras: [
-        Introduction: ["README.md", "guides/documentation.md"],
-        "Getting Started": ~r/guides\/getting-started\//,
-        Concepts: ~r/guides\/concepts\//,
-        UI: ~r/guides\/ui\//,
-        Remote: ~r/guides\/remote\//,
-        Testing: ~r/guides\/testing\//,
-        Deployment: ~r/guides\/deployment\//,
-        Internals: ~r/guides\/internals\//
-      ],
-      groups_for_modules: [
-        Core: [
-          GPUI,
-          GPUI.Application,
-          GPUI.Command,
-          GPUI.Snapshot,
-          GPUI.Runtime,
-          GPUI.Runtime.Update,
-          GPUI.View
-        ],
-        "Advanced infrastructure": [GPUI.Session],
-        Text: [
-          GPUI.Text.Buffer,
-          GPUI.Text.Position,
-          GPUI.Text.Range,
-          GPUI.Text.Edit,
-          GPUI.Text.Selection,
-          GPUI.Text.Transaction,
-          GPUI.Text.Snapshot,
-          GPUI.Text.Viewport,
-          GPUI.Text.CaretGeometry,
-          GPUI.Text.RangeGeometry,
-          GPUI.Text.Rectangle,
-          GPUI.Text.Decoration,
-          GPUI.Text.InlineProjection,
-          GPUI.Text.BlockProjection
-        ],
-        Displays: [GPUI.Display, GPUI.Display.Native],
-        Elements: [
-          GPUI.UI,
-          GPUI.UI.Overlay,
-          GPUI.Element,
-          GPUI.Event,
-          GPUI.Image,
-          GPUI.Raster,
-          GPUI.ResourceRef,
-          GPUI.Schema.Extension,
-          GPUI.Schema.Extension.Support,
-          GPUI.Tailwind,
-          GPUI.Template,
-          GPUI.WindowSpec
-        ],
-        Remote: [
-          GPUI.Remote.Server,
-          GPUI.Remote.Client,
-          GPUI.Remote.Protocol,
-          GPUI.Remote.Transport.TCP
-        ],
-        Testing: [GPUI.Test, GPUI.Test.UI, GPUI.Test.Display]
-      ]
-    ]
-  end
-
-  defp documented_module?(module, _metadata) do
-    module in documented_modules()
-  end
-
-  defp documented_modules do
-    [
-      GPUI,
-      GPUI.Accessibility,
-      GPUI.Application,
-      GPUI.Schema.Component,
-      GPUI.Schema.Extension,
-      GPUI.Schema.Extension.Support,
-      GPUI.Command,
-      GPUI.Session,
-      GPUI.Snapshot,
-      GPUI.Runtime,
-      GPUI.Runtime.Update,
-      GPUI.View,
-      GPUI.Text.Buffer,
-      GPUI.Text.Position,
-      GPUI.Text.Range,
-      GPUI.Text.Edit,
-      GPUI.Text.Selection,
-      GPUI.Text.Transaction,
-      GPUI.Text.Snapshot,
-      GPUI.Text.Viewport,
-      GPUI.Text.CaretGeometry,
-      GPUI.Text.RangeGeometry,
-      GPUI.Text.Rectangle,
-      GPUI.Text.Decoration,
-      GPUI.Text.InlineProjection,
-      GPUI.Text.BlockProjection,
-      GPUI.Text.StyleRun,
-      GPUI.Text.RichRun,
-      GPUI.Transfer.Payload,
-      GPUI.Transfer.Event,
-      GPUI.Display,
-      GPUI.Display.Native,
-      GPUI.UI,
-      GPUI.UI.Overlay,
-      GPUI.Element,
-      GPUI.Event,
-      GPUI.Image,
-      GPUI.Raster,
-      GPUI.ResourceRef,
-      GPUI.Tailwind,
-      GPUI.Template,
-      GPUI.WindowSpec,
-      GPUI.Remote.Server,
-      GPUI.Remote.Client,
-      GPUI.Remote.Protocol,
-      GPUI.Remote.Transport.TCP,
-      GPUI.Test,
-      GPUI.Test.UI,
-      GPUI.Test.Display,
-      Mix.Tasks.Gpui.Release.Check
-    ]
-  end
-
   defp deps do
     [
-      {:ex_slop, "~> 0.4", only: [:dev, :test], runtime: false},
-      {:quickbeam, "~> 0.11.0", only: [:dev, :test], runtime: false},
-      {:reach, "~> 2.0", only: [:dev, :test], runtime: false},
-      {:ex_dna, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.40.3", only: [:dev, :release], runtime: false},
-      {:file_system, "~> 1.0"},
-      {:phoenix_live_view, "~> 1.2.6"},
-      {:rustler, "~> 0.38.0", runtime: false},
-      {:rustler_precompiled, "~> 0.9"},
-      {:rustq, "~> 1.0.0-rc.6", only: [:dev, :test], runtime: false},
-      {:safe_rpc, "~> 0.1.14"},
-      {:igniter, "~> 0.8.2", only: [:dev, :test]}
+      {:ex_slop, "~> 0.4", runtime: false},
+      {:quickbeam, "~> 0.11.0", runtime: false},
+      {:reach, "~> 2.0", runtime: false},
+      {:ex_dna, "~> 1.0", runtime: false},
+      {:dialyxir, "~> 1.0", runtime: false},
+      {:credo, "~> 1.0", runtime: false},
+      {:ex_doc, "~> 0.40.3", runtime: false},
+      {:rustq, "~> 1.0.0-rc.6", runtime: false},
+      {:igniter, "~> 0.8.2"}
     ]
   end
 
-  defp aliases() do
+  defp aliases do
     [
       "ci.checks": [
         "compile --warnings-as-errors",
@@ -288,7 +65,7 @@ defmodule GPUI.MixProject do
         "rust.e2e.clippy",
         "rust.test",
         "test --only native",
-        "dialyzer",
+        "gpui.test.codegen",
         "gpui.test.native"
       ],
       ci: [
@@ -304,9 +81,9 @@ defmodule GPUI.MixProject do
         "rust.e2e.fmt --check",
         "rust.e2e.clippy",
         "rust.test",
+        "gpui.test.codegen",
         "test",
         "credo --strict",
-        "dialyzer",
         "ex_dna --max-clones 0",
         "reach.check --arch --smells",
         "gpui.test.native"
@@ -334,10 +111,10 @@ defmodule GPUI.MixProject do
     if status != 0, do: Mix.raise("RustQ generated files are stale")
   end
 
-  defp rust_fmt(args), do: rust_cmd(["fmt", "--manifest-path", "native/gpui/Cargo.toml"] ++ args)
+  defp rust_fmt(args),
+    do: rust_cmd(["fmt", "--manifest-path", native_manifest()] ++ args)
 
-  defp rust_check(_args), do: rust_cmd(["check", "--manifest-path", "native/gpui/Cargo.toml"])
-
+  defp rust_check(_args), do: rust_cmd(["check", "--manifest-path", native_manifest()])
   defp rust_clippy(_args), do: run_rust_clippy([])
 
   defp rust_headless_clippy(_args),
@@ -346,41 +123,23 @@ defmodule GPUI.MixProject do
   defp rust_core_clippy(_args), do: run_rust_clippy(["--no-default-features"])
 
   defp rust_e2e_fmt(args),
+    do: rust_cmd(["fmt", "--manifest-path", e2e_manifest()] ++ args)
+
+  defp rust_e2e_clippy(_args),
+    do: rust_cmd(["clippy", "--manifest-path", e2e_manifest(), "--", "-D", "warnings"])
+
+  defp rust_test(_args),
+    do: rust_cmd(["test", "--manifest-path", native_manifest(), "--all-features", "--lib"])
+
+  defp run_rust_clippy(feature_args),
     do:
-      rust_cmd([
-        "fmt",
-        "--manifest-path",
-        "test/support/desktop/drivers/linux/Cargo.toml"
-        | args
-      ])
+      rust_cmd(
+        ["clippy", "--manifest-path", native_manifest()] ++
+          feature_args ++ ["--", "-D", "warnings"]
+      )
 
-  defp rust_e2e_clippy(_args) do
-    rust_cmd([
-      "clippy",
-      "--manifest-path",
-      "test/support/desktop/drivers/linux/Cargo.toml",
-      "--",
-      "-D",
-      "warnings"
-    ])
-  end
-
-  defp rust_test(_args) do
-    rust_cmd([
-      "test",
-      "--manifest-path",
-      "native/gpui/Cargo.toml",
-      "--all-features",
-      "--lib"
-    ])
-  end
-
-  defp run_rust_clippy(feature_args) do
-    rust_cmd(
-      ["clippy", "--manifest-path", "native/gpui/Cargo.toml"] ++
-        feature_args ++ ["--", "-D", "warnings"]
-    )
-  end
+  defp native_manifest, do: "apps/gpui_native/native/gpui/Cargo.toml"
+  defp e2e_manifest, do: "apps/gpui_native/test/support/desktop/drivers/linux/Cargo.toml"
 
   defp rust_cmd(args) do
     env = [{"RUST_FONTCONFIG_DLOPEN", System.get_env("RUST_FONTCONFIG_DLOPEN", "1")}]

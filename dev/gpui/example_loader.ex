@@ -1,7 +1,7 @@
 defmodule GPUI.Dev.ExampleLoader do
   @moduledoc "Development loader for compiling and running standalone GPUI examples."
 
-  @project_root Mix.Project.project_file() |> Path.dirname()
+  @project_root Path.expand("../../apps/gpui", __DIR__)
 
   @sources %{
     beam_observatory: "examples/beam_observatory/support/beam_observatory.exs",

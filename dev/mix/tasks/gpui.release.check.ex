@@ -18,7 +18,7 @@ defmodule Mix.Tasks.Gpui.Release.Check do
 
       run!(
         "cargo",
-        ["audit", "--deny", "unsound", "--file", "native/gpui/Cargo.lock"] ++
+        ["audit", "--deny", "unsound", "--file", "apps/gpui_native/native/gpui/Cargo.lock"] ++
           Enum.flat_map(@acknowledged_rust_advisories, &["--ignore", &1])
       )
 
@@ -60,7 +60,7 @@ defmodule Mix.Tasks.Gpui.Release.Check do
 
     write_consumer!(consumer, "config/config.exs", """
     import Config
-    config :gpui, build_native: config_env() != :test
+    config :gpui_native, build_native: config_env() != :test
     """)
 
     write_consumer!(consumer, "lib/release_consumer.ex", """
@@ -115,7 +115,7 @@ defmodule Mix.Tasks.Gpui.Release.Check do
           "--format-version",
           "1",
           "--manifest-path",
-          "native/gpui/Cargo.toml"
+          "apps/gpui_native/native/gpui/Cargo.toml"
         ]
       )
 

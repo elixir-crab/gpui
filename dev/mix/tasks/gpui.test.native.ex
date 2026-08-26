@@ -6,9 +6,17 @@ defmodule Mix.Tasks.Gpui.Test.Native do
 
   @impl Mix.Task
   def run(args) do
+    if Mix.Project.config()[:app] == :gpui_native do
+      run_native_tests(args)
+    else
+      :ok
+    end
+  end
+
+  defp run_native_tests(args) do
     test_args =
       case args do
-        [] -> ["test/gpui/test/native"]
+        [] -> ["test/test/gpui/test/native"]
         args -> args
       end
 

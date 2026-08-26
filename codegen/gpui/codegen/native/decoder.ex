@@ -2,7 +2,7 @@ defmodule GPUI.Codegen.Native.Decoder do
   @moduledoc "Defines the RustQ decoding helpers shared by generated native schema contracts."
 
   use RustQ.Meta,
-    rust_sources: ["native/gpui/src/nif.rs"]
+    rust_sources: ["apps/gpui_native/native/gpui/src/nif.rs"]
 
   alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST.Builder, as: A

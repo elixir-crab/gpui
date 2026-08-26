@@ -4,10 +4,10 @@ defmodule GPUI.Codegen.Native.Renderers do
   alias RustQ.Syn
   alias RustQ.Syn.Type
 
-  @source_root "native/gpui/src"
+  @source_root Path.expand("apps/gpui_native/native/gpui/src")
   @renderer_globs [
-    "native/gpui/src/element/component.rs",
-    "native/gpui/src/element/component/**/*.rs"
+    Path.join(@source_root, "element/component.rs"),
+    Path.join(@source_root, "element/component/**/*.rs")
   ]
 
   @type renderer :: %{path: [atom()], args: [atom()]}

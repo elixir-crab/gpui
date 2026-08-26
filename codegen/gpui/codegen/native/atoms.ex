@@ -17,7 +17,7 @@ defmodule GPUI.Codegen.Native.Atoms do
   end
 
   defp source_atoms do
-    "native/gpui/src/**/*.rs"
+    "apps/gpui_native/native/gpui/src/**/*.rs"
     |> Path.wildcard()
     |> Enum.reject(&String.contains?(&1, "/generated/"))
     |> Enum.flat_map(fn path ->

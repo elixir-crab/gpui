@@ -19,7 +19,7 @@ defmodule Mix.Tasks.Gpui.Tailwind.Palette do
   @source_url "https://unpkg.com/tailwindcss@3.4.17/src/public/colors.js"
   @source_sha256 "28907aa147f4ca19fb3c07bd21e88aac459df8a533e629530eb8b384bcae760d"
   @source_path "support/tailwind/palette-source.json"
-  @output_path "lib/gpui/tailwind/palette.ex"
+  @output_path "apps/gpui/lib/gpui/tailwind/palette.ex"
   @extract_script "support/tailwind/extract-colors.ts"
   @families ~w(slate gray zinc neutral stone red orange amber yellow lime green emerald teal cyan sky blue indigo violet purple fuchsia pink rose)
   @shades ~w(50 100 200 300 400 500 600 700 800 900 950)

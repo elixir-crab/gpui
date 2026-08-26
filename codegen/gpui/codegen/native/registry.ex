@@ -125,10 +125,11 @@ defmodule GPUI.Codegen.Native.Registry do
   defp type_item!(name, opts) do
     item = MetaAST.enum_type_item!(__MODULE__, name)
 
-    %{item |
-      attrs: Keyword.get(opts, :attrs, []),
-      derive: Keyword.get(opts, :derive, []),
-      vis: nil
+    %{
+      item
+      | attrs: Keyword.get(opts, :attrs, []),
+        derive: Keyword.get(opts, :derive, []),
+        vis: nil
     }
   end
 end

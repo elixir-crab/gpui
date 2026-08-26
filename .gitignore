@@ -23,11 +23,11 @@ erl_crash.dump
 *.ez
 
 # Ignore native Rust build artifacts.
-/native/*/target/
-/test/support/desktop/drivers/linux/target/
+/apps/gpui_native/native/*/target/
+/apps/gpui_native/test/support/desktop/drivers/linux/target/
 /support/tailwind/node_modules/
-/test/support/desktop/drivers/macos/.build/
-/priv/native/
+/apps/gpui_native/test/support/desktop/drivers/macos/.build/
+/apps/gpui_native/priv/native/
 
 # Local git worktrees.
 /.worktrees/

@@ -2,9 +2,10 @@ defmodule GPUI.Codegen.Native.Window do
   @moduledoc "Defines the schema-owned native window payload and directional Rust codec."
 
   use RustQ.Native,
+    otp_app: :gpui_native,
     build: false,
     load: false,
-    rust_sources: ["native/gpui/src/window_codec.rs"]
+    rust_sources: ["apps/gpui_native/native/gpui/src/window_codec.rs"]
 
   alias RustQ.Type, as: R
 
@@ -33,28 +34,30 @@ defmodule GPUI.Codegen.Native.Window do
         }
 
   @spec frame_request(R.u64(), R.u64()) :: frame_request()
-  defrust frame_request(window_id, timeout_ms),
+  defrust(frame_request(window_id, timeout_ms),
     do: %{window_id: window_id, timeout_ms: timeout_ms}
+  )
 
   @spec frame_after_request(R.u64(), R.u64(), R.u64()) :: frame_after_request()
-  defrust frame_after_request(window_id, generation, timeout_ms),
+  defrust(frame_after_request(window_id, generation, timeout_ms),
     do: %{window_id: window_id, generation: generation, timeout_ms: timeout_ms}
+  )
 
   @spec update_request(R.u64(), term()) :: update_request()
-  defrust update_request(window_id, tree), do: %{window_id: window_id, tree: tree}
+  defrust(update_request(window_id, tree), do: %{window_id: window_id, tree: tree})
 
   @spec close_request(R.u64()) :: close_request()
-  defrust close_request(window_id), do: %{window_id: window_id}
+  defrust(close_request(window_id), do: %{window_id: window_id})
 
   @spec decode_close(close_request()) :: R.u64()
-  defrust decode_close(request), do: request.window_id
+  defrust(decode_close(request), do: request.window_id)
 
   @nif schedule: :dirty_io
   @spec open_window(
           R.resource(R.path(:RuntimeResource)),
           term()
         ) :: R.nif_result(term())
-  defnif open_window(runtime, window), do: open_window_impl(nif_env(), runtime, window)
+  defnif(open_window(runtime, window), do: open_window_impl(nif_env(), runtime, window))
 
   @nif schedule: :dirty_io
   @spec update_window(

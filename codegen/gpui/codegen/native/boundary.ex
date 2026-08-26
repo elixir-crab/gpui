@@ -52,6 +52,52 @@ defmodule GPUI.Codegen.Native.Boundary do
     |> Kernel.<>("\n")
   end
 
+  @doc "Builds a generated backend-delegating façade from generated NIF stubs."
+  @spec native_facade_source(String.t()) :: String.t()
+  def native_facade_source(source) do
+    source
+    |> Code.string_to_quoted!()
+    |> Macro.prewalk(fn
+      {:defmodule, metadata, [{:__aliases__, alias_metadata, [:GPUI, :Native, :Generated]}, body]} ->
+        {:defmodule, metadata, [{:__aliases__, alias_metadata, [:GPUI, :Native, :Facade]}, body]}
+
+      {:def, metadata, [{name, head_metadata, args}, [do: body]]} = definition
+      when is_atom(name) and (is_list(args) or is_nil(args)) ->
+        args = args || []
+
+        if nif_error?(body) do
+          call =
+            quote do
+              apply(GPUI.Native.backend(), unquote(name), unquote(args))
+            end
+
+          {:def, metadata, [{name, head_metadata, args}, [do: call]]}
+        else
+          definition
+        end
+
+      {:@, metadata, [{:moduledoc, attribute_metadata, [_documentation]}]} ->
+        {:@, metadata,
+         [
+           {:moduledoc, attribute_metadata,
+            ["Generated native boundary delegates used by GPUI.Native."]}
+         ]}
+
+      node ->
+        node
+    end)
+    |> Macro.to_string()
+    |> Code.format_string!()
+    |> IO.iodata_to_binary()
+    |> Kernel.<>("\n")
+  end
+
+  defp nif_error?({{:., _, [{:__aliases__, _, [:erlang]}, :nif_error]}, _, [:nif_not_loaded]}),
+    do: true
+
+  defp nif_error?({{:., _, [:erlang, :nif_error]}, _, [:nif_not_loaded]}), do: true
+  defp nif_error?(_body), do: false
+
   @rusty_nifs [decode_image: [schedule: :dirty_cpu]]
 
   @doc "Adds public source documentation to a generated Elixir module structurally."
