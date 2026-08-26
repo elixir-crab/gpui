@@ -139,8 +139,13 @@ Supported groups include:
   `auto` insets through `inset-*`, `inset-x-*`, `inset-y-*`, `top-*`,
   `right-*`, `bottom-*`, and `left-*`; numeric and arbitrary pixel/percentage
   insets also accept Tailwind's leading-negative form;
-- foreground and background colors, including arbitrary six-digit RGB values
-  such as `bg-[#101828]`;
+- foreground, background, and border colors from the complete Tailwind CSS
+  3.4.17 default palette, plus `black`, `white`, and `transparent`; named colors
+  accept percentage alpha modifiers such as `bg-black/40` and
+  `text-slate-300/70`;
+- bounded arbitrary hexadecimal colors in three-, four-, six-, or eight-digit
+  form, such as `bg-[#abc]`, `text-[#abcd]`, and `border-[#101828]`; arbitrary
+  colors also accept percentage alpha modifiers;
 - typography, weight, line height, alignment, whitespace, ellipsis/truncation,
   and opacity, including safe arbitrary pixel and numeric values;
 - padding, margin, and gaps using Tailwind's numeric spacing convention where

@@ -1,0 +1,18 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "format": "oxfmt --write --config .oxfmtrc.json extract-colors.ts tailwind-colors.d.ts",
+    "format:check": "oxfmt --check --config .oxfmtrc.json extract-colors.ts tailwind-colors.d.ts",
+    "lint": "oxlint -c oxlint.json --type-aware --type-check extract-colors.ts tailwind-colors.d.ts",
+    "typecheck": "tsc --noEmit",
+    "check": "bun run format:check && bun run lint && bun run typecheck"
+  },
+  "devDependencies": {
+    "oxfmt": "0.48.0",
+    "oxlint": "1.63.0",
+    "oxlint-tsgolint": "0.22.1",
+    "tailwindcss": "3.4.17",
+    "typescript": "5.9.3"
+  }
+}

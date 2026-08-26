@@ -477,6 +477,21 @@ defmodule GPUI.TemplateTest do
     end
   end
 
+  test "serializes Tailwind palette alpha through the canonical payload path" do
+    payload =
+      ~GPUI"""
+      <div class="bg-black/40 border border-white/10 text-slate-300/70" />
+      """
+      |> GPUI.Element.to_payload()
+
+    assert payload.attrs.style == [
+             background: [:rgba, 0x00000066],
+             border_width: [:px, 1.0],
+             border_color: [:rgba, 0xFFFFFF1A],
+             color: [:rgba, 0xCBD5E1B3]
+           ]
+  end
+
   test "merges normalized classes with dynamic styles at runtime" do
     dynamic_style = [background: {:rgb, 0xFFFFFF}]
 

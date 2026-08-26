@@ -172,6 +172,53 @@ defmodule GPUI.TailwindTest do
              )
   end
 
+  test "normalizes the complete pinned Tailwind palette" do
+    assert GPUI.Tailwind.Palette.tailwind_version() == "3.4.17"
+    assert map_size(GPUI.Tailwind.Palette.colors()) == 245
+
+    for family <-
+          ~w(slate gray zinc neutral stone red orange amber yellow lime green emerald teal cyan sky blue indigo violet purple fuchsia pink rose),
+        shade <- ~w(50 100 200 300 400 500 600 700 800 900 950) do
+      assert {:ok, {:rgb, rgb}} = GPUI.Tailwind.Palette.fetch("#{family}-#{shade}")
+      assert rgb in 0..0xFFFFFF
+    end
+
+    assert GPUI.Tailwind.Palette.fetch!("slate-950") == {:rgb, 0x020617}
+    assert GPUI.Tailwind.Palette.fetch!("white") == {:rgb, 0xFFFFFF}
+    assert GPUI.Tailwind.Palette.fetch!("transparent") == {:rgba, 0x00000000}
+  end
+
+  test "normalizes named colors with deterministic alpha modifiers" do
+    assert %{style: style, unknown: []} =
+             GPUI.Tailwind.normalize("bg-black/40 text-slate-300/70 border-white/5")
+
+    assert style == [
+             background: {:rgba, 0x00000066},
+             color: {:rgba, 0xCBD5E1B3},
+             border_color: {:rgba, 0xFFFFFF0D}
+           ]
+  end
+
+  test "normalizes bounded arbitrary RGB and RGBA colors" do
+    assert %{style: style, unknown: []} =
+             GPUI.Tailwind.normalize("bg-[#abc] text-[#abcd] border-[#0f172a] bg-[#0f172acc]/80")
+
+    assert style == [
+             color: {:rgba, 0xAABBCCDD},
+             border_color: {:rgb, 0x0F172A},
+             background: {:rgba, 0x0F172AA3}
+           ]
+  end
+
+  test "preserves malformed color classes" do
+    classes =
+      "bg-red-500/101 text-slate-300/-1 border-white/foo bg-[#12] text-[#xyz] " <>
+        "border-[#0f172a]extra bg-not-a-color"
+
+    assert %{style: [], unknown: unknown} = GPUI.Tailwind.normalize(classes)
+    assert unknown == String.split(classes)
+  end
+
   test "normalizes colors used by the counter example" do
     assert %{style: [background: {:rgb, 0x0F172A}], unknown: []} =
              GPUI.Tailwind.normalize("bg-slate-900")

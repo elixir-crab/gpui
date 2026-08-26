@@ -10,24 +10,6 @@ defmodule GPUI.Tailwind do
   @cache_limit 4_096
   @spacing_unit 4.0
 
-  @colors %{
-    "black" => {:rgb, 0x000000},
-    "white" => {:rgb, 0xFFFFFF},
-    "neutral-700" => {:rgb, 0x404040},
-    "neutral-800" => {:rgb, 0x262626},
-    "slate-700" => {:rgb, 0x334155},
-    "slate-800" => {:rgb, 0x1E293B},
-    "slate-900" => {:rgb, 0x0F172A},
-    "red-500" => {:rgb, 0xEF4444},
-    "red-600" => {:rgb, 0xDC2626},
-    "green-500" => {:rgb, 0x22C55E},
-    "green-600" => {:rgb, 0x16A34A},
-    "blue-500" => {:rgb, 0x3B82F6},
-    "blue-600" => {:rgb, 0x2563EB},
-    "blue-700" => {:rgb, 0x1D4ED8},
-    "yellow-500" => {:rgb, 0xEAB308}
-  }
-
   @text_sizes %{
     "xs" => 12.0,
     "sm" => 14.0,
@@ -272,23 +254,72 @@ defmodule GPUI.Tailwind do
   end
 
   defp color(acc, key, value, prefix) do
-    case Map.fetch(@colors, value) do
-      {:ok, color} -> put_style(acc, key, color)
-      :error -> arbitrary_color(acc, key, value, prefix)
-    end
-  end
-
-  defp arbitrary_color(acc, key, "[#" <> rest = value, prefix) do
-    with hex when hex != rest <- String.trim_trailing(rest, "]"),
-         6 <- byte_size(hex),
-         {rgb, ""} <- Integer.parse(hex, 16) do
-      put_style(acc, key, {:rgb, rgb})
+    with {:ok, color_name, alpha} <- split_color_alpha(value),
+         {:ok, color} <- fetch_color(color_name),
+         {:ok, color} <- apply_color_alpha(color, alpha) do
+      put_style(acc, key, color)
     else
-      _other -> unknown(acc, prefix <> value)
+      :error -> unknown(acc, prefix <> value)
     end
   end
 
-  defp arbitrary_color(acc, _key, value, prefix), do: unknown(acc, prefix <> value)
+  defp split_color_alpha(value) do
+    case String.split(value, "/", parts: 2) do
+      [color] -> {:ok, color, nil}
+      [color, alpha] -> parse_color_alpha(color, alpha)
+    end
+  end
+
+  defp parse_color_alpha(color, alpha) do
+    case Integer.parse(alpha) do
+      {percentage, ""} when percentage in 0..100 -> {:ok, color, percentage}
+      _other -> :error
+    end
+  end
+
+  defp fetch_color(value) do
+    case GPUI.Tailwind.Palette.fetch(value) do
+      {:ok, color} -> {:ok, color}
+      :error -> parse_arbitrary_color(value)
+    end
+  end
+
+  defp parse_arbitrary_color("[#" <> rest) do
+    case String.split(rest, "]", parts: 2) do
+      [hex, ""] when byte_size(hex) in [3, 4, 6, 8] -> parse_hex_color(hex)
+      _other -> :error
+    end
+  end
+
+  defp parse_arbitrary_color(_value), do: :error
+
+  defp parse_hex_color(hex) do
+    expanded =
+      case String.graphemes(hex) do
+        [r, g, b] -> r <> r <> g <> g <> b <> b
+        [r, g, b, a] -> r <> r <> g <> g <> b <> b <> a <> a
+        _long_form -> hex
+      end
+
+    case Integer.parse(expanded, 16) do
+      {value, ""} when byte_size(expanded) == 6 -> {:ok, {:rgb, value}}
+      {value, ""} when byte_size(expanded) == 8 -> {:ok, {:rgba, value}}
+      _other -> :error
+    end
+  end
+
+  defp apply_color_alpha(color, nil), do: {:ok, color}
+
+  defp apply_color_alpha({:rgb, rgb}, percentage),
+    do: {:ok, {:rgba, Bitwise.bsl(rgb, 8) + alpha_channel(percentage)}}
+
+  defp apply_color_alpha({:rgba, rgba}, percentage) do
+    alpha = Bitwise.band(rgba, 0xFF)
+    adjusted = round(alpha * percentage / 100)
+    {:ok, {:rgba, Bitwise.band(rgba, 0xFFFFFF00) + adjusted}}
+  end
+
+  defp alpha_channel(percentage), do: round(255 * percentage / 100)
 
   defp spacing(acc, key, value) do
     case parse_spacing(value) do

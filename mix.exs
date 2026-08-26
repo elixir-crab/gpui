@@ -249,6 +249,7 @@ defmodule GPUI.MixProject do
   defp deps do
     [
       {:ex_slop, "~> 0.4", only: [:dev, :test], runtime: false},
+      {:quickbeam, "~> 0.11.0", only: [:dev, :test], runtime: false},
       {:reach, "~> 2.0", only: [:dev, :test], runtime: false},
       {:ex_dna, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
@@ -269,6 +270,7 @@ defmodule GPUI.MixProject do
       "ci.checks": [
         "compile --warnings-as-errors",
         "format --check-formatted",
+        "gpui.tailwind.palette --check",
         "test --exclude native",
         "credo --strict",
         "ex_dna --max-clones 0",
@@ -293,6 +295,7 @@ defmodule GPUI.MixProject do
         "compile --warnings-as-errors",
         "rustq.check",
         "format --check-formatted",
+        "gpui.tailwind.palette --check",
         "rust.fmt --check",
         "rust.check",
         "rust.clippy",
