@@ -193,6 +193,14 @@ defmodule GPUI.Element do
   defp accessibility_checked_to_payload(false), do: "false"
   defp accessibility_checked_to_payload(:mixed), do: "mixed"
 
+  defp attr_value_to_payload({:rgb, color})
+       when is_integer(color) and color in 0..0xFFFFFF,
+       do: [:rgb, color]
+
+  defp attr_value_to_payload({:rgba, color})
+       when is_integer(color) and color in 0..0xFFFFFFFF,
+       do: [:rgba, color]
+
   defp attr_value_to_payload(%GPUI.Raster{} = raster), do: GPUI.Raster.to_payload(raster)
   defp attr_value_to_payload(%GPUI.ResourceRef{} = ref), do: GPUI.ResourceRef.to_payload(ref)
   defp attr_value_to_payload(%GPUI.Text.Buffer{ref: ref}), do: ref

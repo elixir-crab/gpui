@@ -892,10 +892,15 @@ defmodule GPUI.Schema do
     %Style{
       name: :background,
       field: :background,
-      type: :rgb,
-      render: {:option_method, :bg, :rgb}
+      type: :color,
+      render: {:option_method, :bg, :color}
     },
-    %Style{name: :color, field: :color, type: :rgb, render: {:option_method, :text_color, :rgb}},
+    %Style{
+      name: :color,
+      field: :color,
+      type: :color,
+      render: {:option_method, :text_color, :color}
+    },
     %Style{
       name: :font_size,
       field: :font_size,
@@ -1019,8 +1024,8 @@ defmodule GPUI.Schema do
     %Style{
       name: :border_color,
       field: :border_color,
-      type: :rgb,
-      render: {:option_method, :border_color, :rgb}
+      type: :color,
+      render: {:option_method, :border_color, :color}
     }
   ]
 

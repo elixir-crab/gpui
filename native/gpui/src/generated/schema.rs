@@ -75,23 +75,36 @@ pub(crate) fn number_value<'a>(term: Term<'a>) -> Option<f32> {
     }
 }
 #[cfg(feature = "real-gpui")]
-pub(crate) fn rgb_value<'a>(term: Term<'a>) -> Option<u32> {
+pub(crate) fn color_value<'a>(term: Term<'a>) -> Option<u32> {
     match term.decode::<(Term<'a>, Term<'a>)>() {
-        Ok((unit, value)) => {
-            if atom_eq(unit, "rgb") { value.decode::<u32>().ok() } else { None }
-        }
-        Err(_reason) => {
-            match term.decode::<Vec<Term<'a>>>() {
-                Ok(values) => {
-                    if values.len() == 2 && atom_eq(values[0], "rgb") {
-                        values[1].decode::<u32>().ok()
-                    } else {
-                        None
-                    }
-                }
-                Err(_reason) => None,
+        Ok((unit, value)) => decode_color_value(unit, value),
+        Err(_reason) => color_vector_value(term),
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn decode_color_value<'a>(unit: Term<'a>, value: Term<'a>) -> Option<u32> {
+    match value.decode::<u32>() {
+        Ok(color) => {
+            if atom_eq(unit, "rgb") {
+                if color <= 16777215 { Some(color * 256 + 255) } else { None }
+            } else {
+                if atom_eq(unit, "rgba") { Some(color) } else { None }
             }
         }
+        Err(_reason) => None,
+    }
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn color_vector_value<'a>(term: Term<'a>) -> Option<u32> {
+    match term.decode::<Vec<Term<'a>>>() {
+        Ok(values) => {
+            if values.len() == 2 {
+                decode_color_value(values[0], values[1])
+            } else {
+                None
+            }
+        }
+        Err(_reason) => None,
     }
 }
 #[cfg(feature = "real-gpui")]
@@ -1182,13 +1195,13 @@ pub(crate) fn apply_generated_style_attr<'a>(
             valid
         }
         value if value == atoms::background() => {
-            let value = rgb_value(term);
+            let value = color_value(term);
             let valid = value.is_some();
             attrs.background = value;
             valid
         }
         value if value == atoms::color() => {
-            let value = rgb_value(term);
+            let value = color_value(term);
             let valid = value.is_some();
             attrs.color = value;
             valid
@@ -1356,7 +1369,7 @@ pub(crate) fn apply_generated_style_attr<'a>(
             valid
         }
         value if value == atoms::border_color() => {
-            let value = rgb_value(term);
+            let value = color_value(term);
             let valid = value.is_some();
             attrs.border_color = value;
             valid
@@ -1598,13 +1611,13 @@ pub(crate) fn apply_generated_render_styles(
     };
     match style.background {
         Some(value) => {
-            element = element.bg(gpui::rgb(value));
+            element = element.bg(gpui::rgba(value));
         }
         _ => {}
     };
     match style.color {
         Some(value) => {
-            element = element.text_color(gpui::rgb(value));
+            element = element.text_color(gpui::rgba(value));
         }
         _ => {}
     };
@@ -1784,7 +1797,7 @@ pub(crate) fn apply_generated_render_styles(
     };
     match style.border_color {
         Some(value) => {
-            element = element.border_color(gpui::rgb(value));
+            element = element.border_color(gpui::rgba(value));
         }
         _ => {}
     };

@@ -15,22 +15,22 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
 
       @spec full_length() :: R.path({:gpui, :DefiniteLength})
       defrust full_length() do
-        Gpui.relative(1.0)
+        GPUI.relative(1.0)
       end
 
       @spec fraction_length(R.f32()) :: R.path({:gpui, :DefiniteLength})
       defrust fraction_length(value) do
-        Gpui.relative(value)
+        GPUI.relative(value)
       end
 
       @spec pixel_length(R.f32()) :: R.path({:gpui, :DefiniteLength})
       defrust pixel_length(value) do
-        Gpui.px(value).into()
+        GPUI.px(value).into()
       end
 
       @spec auto_flex_basis() :: R.path({:gpui, :Length})
       defrust auto_flex_basis() do
-        Gpui.Length.Auto
+        GPUI.Length.Auto
       end
 
       @spec default_style() :: style_attrs()
@@ -59,7 +59,7 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
 
   defp style_field_type({:atom_eq, _expected}), do: quote(do: boolean())
   defp style_field_type(:atom_string), do: quote(do: R.option(String.t()))
-  defp style_field_type(:rgb), do: quote(do: R.option(R.u32()))
+  defp style_field_type(:color), do: quote(do: R.option(R.u32()))
 
   defp style_field_type(type) when type in [:number, :px, :radius],
     do: quote(do: R.option(R.f32()))
@@ -99,7 +99,7 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
     do: quote(do: atom_eq(term, unquote(to_string(expected))))
 
   defp style_decode_call(:atom_string), do: quote(do: atom_string(term))
-  defp style_decode_call(:rgb), do: quote(do: rgb_value(term))
+  defp style_decode_call(:color), do: quote(do: color_value(term))
   defp style_decode_call(:number), do: quote(do: number_value(term))
   defp style_decode_call(:px), do: quote(do: px_value(term))
   defp style_decode_call(:length), do: quote(do: length_value(term))
@@ -141,11 +141,19 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
   end
 
   defp render_statement(%{field: field, render: {:option_method, method, unit}})
-       when unit in [:rgb, :px, :length, :position_length, :flex_basis, :f32] do
+       when unit in [:color, :px, :length, :position_length, :flex_basis, :f32] do
     rendered_value =
       case unit do
-        unit when unit in [:f32, :length, :position_length, :flex_basis] -> Macro.var(:value, nil)
-        unit -> {{:., [], [{:__aliases__, [], [:Gpui]}, unit]}, [], [Macro.var(:value, nil)]}
+        unit when unit in [:f32, :length, :position_length, :flex_basis] ->
+          Macro.var(:value, nil)
+
+        :color ->
+          quote do
+            GPUI.rgba(value)
+          end
+
+        unit ->
+          {{:., [], [{:__aliases__, [], [:GPUI]}, unit]}, [], [Macro.var(:value, nil)]}
       end
 
     render_option_value_case(field, fn ->
@@ -190,7 +198,7 @@ defmodule GPUI.Codegen.Native.StyleDefinitions do
   defp field_access(receiver, field),
     do: {{:., [], [Macro.var(receiver, nil), field]}, [no_parens: true], []}
 
-  defp rust_path([:gpui | rest]), do: {:__aliases__, [], [:Gpui | rest]}
+  defp rust_path([:gpui | rest]), do: {:__aliases__, [], [:GPUI | rest]}
   defp rust_path(path), do: {:__aliases__, [], path}
 
   defp required(name), do: {:required, [], [name]}
@@ -209,7 +217,7 @@ defmodule GPUI.Codegen.Native.Style do
 
   require StyleDefinitions
 
-  defrustmod(Gpui, as: :gpui)
+  defrustmod(GPUI, as: :gpui)
   defrustmod(StyleAttrs, as: :StyleAttrs)
 
   StyleDefinitions.define_style_data()

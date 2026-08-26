@@ -32,6 +32,7 @@ defmodule GPUI.View do
       import Kernel, except: [div: 2]
       import GPUI
       import GPUI.Template, only: [sigil_GPUI: 2]
+      import GPUI.Color, only: [sigil_RGB: 2, sigil_RGBA: 2]
 
       @impl GPUI.View
       def handle_event(_event, _payload, state), do: {:noreply, state}

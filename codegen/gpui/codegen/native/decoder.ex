@@ -35,28 +35,49 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
-  @spec rgb_value(term()) :: R.option(R.u32())
-  defrust rgb_value(term) do
+  @spec color_value(term()) :: R.option(R.u32())
+  defrust color_value(term) do
     case decode_as(term, {term(), term()}) do
-      {:ok, {unit, value}} ->
+      {:ok, {unit, value}} -> decode_color_value(unit, value)
+      {:error, _reason} -> color_vector_value(term)
+    end
+  end
+
+  @spec decode_color_value(term(), term()) :: R.option(R.u32())
+  defrustp decode_color_value(unit, value) do
+    case decode_as(value, R.u32()) do
+      {:ok, color} ->
         if atom_eq(unit, "rgb") do
-          decode_as(value, R.u32()).ok()
+          if color <= 0xFFFFFF do
+            some(color * 256 + 255)
+          else
+            nil
+          end
+        else
+          if atom_eq(unit, "rgba") do
+            some(color)
+          else
+            nil
+          end
+        end
+
+      {:error, _reason} ->
+        nil
+    end
+  end
+
+  @spec color_vector_value(term()) :: R.option(R.u32())
+  defrustp color_vector_value(term) do
+    case decode_as(term, R.vec(term())) do
+      {:ok, values} ->
+        if values.len() == 2 do
+          decode_color_value(index(values, 0), index(values, 1))
         else
           nil
         end
 
       {:error, _reason} ->
-        case decode_as(term, R.vec(term())) do
-          {:ok, values} ->
-            if values.len() == 2 and atom_eq(index(values, 0), "rgb") do
-              decode_as(index(values, 1), R.u32()).ok()
-            else
-              nil
-            end
-
-          {:error, _reason} ->
-            nil
-        end
+        nil
     end
   end
 

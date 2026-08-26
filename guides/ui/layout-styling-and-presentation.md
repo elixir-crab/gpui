@@ -118,6 +118,18 @@ runtime `<layer>` coordinates while keeping static presentation in classes.
 Templates normalize a constrained Tailwind-compatible vocabulary into typed
 native style attributes. Static layout and design values should use classes;
 reserve `style` for runtime values that cannot be known in the template.
+
+Views import compile-time hexadecimal color sigils for explicit style values:
+
+```elixir
+style={[background: ~RGB"0f172a", border_color: ~RGBA"ffffff1a"]}
+```
+
+`~RGB` accepts three or six hexadecimal digits; `~RGBA` accepts four or eight.
+The sigil name replaces the leading `#`, and short literals expand each digit.
+They produce the same `{:rgb, value}` and `{:rgba, value}` values accepted by
+the canonical style schema.
+
 Supported groups include:
 
 - flex display, direction, wrapping, alignment, growth, shrink, the
