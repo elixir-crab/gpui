@@ -5,6 +5,7 @@ for file <- ~w(
   accessibility.ex
   boundary.ex
   component_contracts.ex
+  host.ex
   components.ex
   decoder.ex
   disabled_window.ex

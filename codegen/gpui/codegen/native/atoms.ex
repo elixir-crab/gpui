@@ -49,7 +49,7 @@ defmodule GPUI.Codegen.Native.Atoms do
 
   defp schema_atoms do
     component_atoms =
-      Enum.flat_map(GPUI.Schema.components(), fn component ->
+      Enum.flat_map(GPUI.Codegen.Native.Host.components(), fn component ->
         Keyword.keys(component.attrs) ++
           Keyword.keys(component.events) ++ Keyword.values(component.events)
       end)

@@ -4,6 +4,9 @@
 
 ### Breaking changes
 
+- Added the immutable `GPUI.Schema.Registry` and made `GPUI.Schema.registry/0`
+  return only neutral core declarations; conventional declarations compose
+  explicitly from `gpui_components`.
 - Split the repository into the `gpui`, `gpui_components`, and `gpui_native`
   packages in a coordinated Mix umbrella. Native consumers now select a fixed
   complete RustlerPrecompiled host through `gpui_native`.

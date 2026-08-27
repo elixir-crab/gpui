@@ -9,16 +9,16 @@ defmodule GPUI.UI.Overlay do
 
   alias GPUI.Component.Slot
   alias GPUI.Element
-  alias GPUI.Schema
+  alias GPUI.Components.Schema, as: ComponentsSchema
 
-  require Schema
+  require ComponentsSchema
 
   @type slot :: %{
           required(:attrs) => keyword(),
           required(:children) => [GPUI.Element.child()]
         }
 
-  Schema.define_component_option_types(
+  ComponentsSchema.define_component_option_types(
     tooltip_options: :ui_tooltip,
     dialog_options: :ui_dialog,
     dropdown_menu_options: :ui_dropdown_menu,
@@ -33,14 +33,14 @@ defmodule GPUI.UI.Overlay do
   `delay` is the show delay in milliseconds from `0` through `60_000`. Set `hoverable` when
   the pointer may move into the tooltip without dismissing it.
 
-  #{Schema.component_options_doc(:ui_tooltip)}
+  #{ComponentsSchema.component_options_doc(:ui_tooltip)}
   """
   @spec tooltip(tooltip_options()) :: Element.t()
   def tooltip(assigns) when is_map(assigns) do
     assigns =
       assigns
-      |> Schema.apply_defaults(:ui_tooltip)
-      |> Schema.validate_component_assigns!(:ui_tooltip, [:trigger, :content])
+      |> ComponentsSchema.apply_defaults(:ui_tooltip)
+      |> ComponentsSchema.validate_component_assigns!(:ui_tooltip, [:trigger, :content])
 
     trigger = one_slot!(assigns, :trigger, :tooltip)
     content = one_slot!(assigns, :content, :tooltip)
@@ -81,14 +81,14 @@ defmodule GPUI.UI.Overlay do
   focus while open and restores the previous focus when it closes. Escape and
   overlay clicks request closure when enabled.
 
-  #{Schema.component_options_doc(:ui_dialog)}
+  #{ComponentsSchema.component_options_doc(:ui_dialog)}
   """
   @spec dialog(dialog_options()) :: Element.t()
   def dialog(assigns) when is_map(assigns) do
     assigns =
       assigns
-      |> Schema.apply_defaults(:ui_dialog)
-      |> Schema.validate_component_assigns!(:ui_dialog, [:trigger, :content])
+      |> ComponentsSchema.apply_defaults(:ui_dialog)
+      |> ComponentsSchema.validate_component_assigns!(:ui_dialog, [:trigger, :content])
 
     trigger = optional_slot!(assigns, :trigger, :dialog)
     content = one_slot!(assigns, :content, :dialog)
@@ -122,14 +122,14 @@ defmodule GPUI.UI.Overlay do
   the selected item value. Popup-menu keyboard navigation, dismissal, and focus
   restoration are provided by GPUI Component.
 
-  #{Schema.component_options_doc(:ui_dropdown_menu)}
+  #{ComponentsSchema.component_options_doc(:ui_dropdown_menu)}
   """
   @spec dropdown_menu(dropdown_menu_options()) :: Element.t()
   def dropdown_menu(assigns) when is_map(assigns) do
     assigns =
       assigns
-      |> Schema.apply_defaults(:ui_dropdown_menu)
-      |> Schema.validate_component_assigns!(:ui_dropdown_menu, [:trigger, :item])
+      |> ComponentsSchema.apply_defaults(:ui_dropdown_menu)
+      |> ComponentsSchema.validate_component_assigns!(:ui_dropdown_menu, [:trigger, :item])
 
     trigger = one_slot!(assigns, :trigger, :dropdown_menu)
     items = Map.get(assigns, :item, [])
@@ -164,14 +164,14 @@ defmodule GPUI.UI.Overlay do
   A non-empty `label` names the trigger and its expanded state. Changes to `open` are emitted through `phx-change`. Escape and, by default,
   outside clicks request closure and restore focus to the trigger.
 
-  #{Schema.component_options_doc(:ui_popover)}
+  #{ComponentsSchema.component_options_doc(:ui_popover)}
   """
   @spec popover(popover_options()) :: Element.t()
   def popover(assigns) when is_map(assigns) do
     assigns =
       assigns
-      |> Schema.apply_defaults(:ui_popover)
-      |> Schema.validate_component_assigns!(:ui_popover, [:trigger, :content])
+      |> ComponentsSchema.apply_defaults(:ui_popover)
+      |> ComponentsSchema.validate_component_assigns!(:ui_popover, [:trigger, :content])
 
     trigger = one_slot!(assigns, :trigger, :popover)
     content = one_slot!(assigns, :content, :popover)

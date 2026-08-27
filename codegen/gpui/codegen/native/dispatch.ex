@@ -2,8 +2,8 @@ defmodule GPUI.Codegen.Native.DispatchDefinitions do
   @moduledoc "Builds schema-derived RustQ dispatch functions for element and component decoding."
 
   defmacro define_dispatch do
-    components = GPUI.Schema.components()
-    tags = GPUI.Schema.native_tags()
+    components = GPUI.Codegen.Native.Host.components()
+    tags = GPUI.Codegen.Native.Host.native_tags()
 
     declarations = [
       string_enum_decoder(tags),

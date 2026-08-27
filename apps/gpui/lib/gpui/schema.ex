@@ -5,6 +5,7 @@ defmodule GPUI.Schema do
   alias GPUI.Schema.ComponentDocs
   alias GPUI.Schema.Extension
   alias GPUI.Schema.Resource
+  alias GPUI.Schema.Registry
   alias GPUI.Schema.Style
 
   Code.ensure_compiled!(ComponentDocs)
@@ -1072,6 +1073,19 @@ defmodule GPUI.Schema do
   end)
 
   def components, do: @components
+
+  @doc "Returns an immutable registry containing neutral core declarations."
+  @spec registry() :: Registry.t()
+  def registry do
+    Registry.new()
+    |> Registry.include(GPUI.Schema.Core)
+  end
+
+  @doc "Returns a composed registry for explicitly selected schema modules."
+  @spec registry([module()]) :: Registry.t()
+  def registry(modules) when is_list(modules) do
+    Enum.reduce(modules, Registry.new(), &Registry.include(&2, &1))
+  end
 
   @doc "Returns generated public option documentation for a component tag."
   @spec component_options_doc(atom()) :: String.t()

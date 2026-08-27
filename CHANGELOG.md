@@ -4,6 +4,9 @@
 
 ### Breaking changes
 
+- Split the canonical schema into an explicit neutral core registry and a
+  conventional component schema owned by `gpui_components`; native generation
+  now composes the selected host from named schema modules.
 - Split the repository into the `gpui`, `gpui_components`, and `gpui_native`
   packages in a coordinated Mix umbrella. Native consumers now select a fixed
   complete RustlerPrecompiled host through `gpui_native`.

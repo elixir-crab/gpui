@@ -12,10 +12,10 @@ defmodule GPUI.UI do
   """
 
   alias GPUI.Element
-  alias GPUI.Schema
+  alias GPUI.Components.Schema, as: ComponentsSchema
   alias GPUI.UI.CollectionValidation
 
-  require Schema
+  require ComponentsSchema
 
   @max_file_bytes 25 * 1_024 * 1_024
 
@@ -32,7 +32,7 @@ defmodule GPUI.UI do
               optional(:disabled) => boolean()
             }
 
-  Schema.define_component_option_types(
+  ComponentsSchema.define_component_option_types(
     button_options: :ui_button,
     edge_fade_options: :ui_edge_fade,
     frost_options: :ui_frost,
@@ -88,7 +88,7 @@ defmodule GPUI.UI do
   exceed 25 MiB. Clipboard operations run before file reads, and file reads run
   before an ordinary click event.
 
-  #{Schema.component_options_doc(:ui_button)}
+  #{ComponentsSchema.component_options_doc(:ui_button)}
   """
   @spec button(button_options()) :: Element.t()
   def button(assigns) when is_map(assigns) do
@@ -97,7 +97,7 @@ defmodule GPUI.UI do
       |> normalize_attr_key(:"phx-clipboard-read")
       |> normalize_attr_key(:"phx-clipboard-write")
 
-    assigns = Schema.apply_defaults(assigns, :ui_button)
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_button)
 
     case Map.get(assigns, :clipboard_text) do
       nil ->
@@ -127,13 +127,13 @@ defmodule GPUI.UI do
   `edges` is a unique subset of `:top`, `:right`, `:bottom`, and `:left`.
   `size` is bounded to 1–256 native pixels and `opacity` to 0–1.
 
-  #{Schema.component_options_doc(:ui_edge_fade)}
+  #{ComponentsSchema.component_options_doc(:ui_edge_fade)}
   """
   @spec edge_fade(edge_fade_options()) :: Element.t()
   def edge_fade(assigns) when is_map(assigns) do
     assigns =
       assigns
-      |> Schema.apply_defaults(:ui_edge_fade)
+      |> ComponentsSchema.apply_defaults(:ui_edge_fade)
       |> Map.update!(:edges, &Enum.map(&1, fn edge -> to_string(edge) end))
 
     component(:ui_edge_fade, assigns)
@@ -145,11 +145,11 @@ defmodule GPUI.UI do
   Set `reduced_transparency: true` from application accessibility policy to
   force an opaque surface. `fallback` controls unsupported-platform behavior.
 
-  #{Schema.component_options_doc(:ui_frost)}
+  #{ComponentsSchema.component_options_doc(:ui_frost)}
   """
   @spec frost(frost_options()) :: Element.t()
   def frost(assigns) when is_map(assigns) do
-    assigns = Schema.apply_defaults(assigns, :ui_frost)
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_frost)
     component(:ui_frost, assigns)
   end
 
@@ -159,14 +159,14 @@ defmodule GPUI.UI do
   Commands are closed rectangle and line maps. The schema accepts at most 256
   commands with bounded coordinates, dimensions, stroke widths, and RGBA colors.
 
-  #{Schema.component_options_doc(:ui_paint)}
+  #{ComponentsSchema.component_options_doc(:ui_paint)}
   """
   @spec paint(paint_options()) :: Element.t()
   def paint(assigns) when is_map(assigns) do
     assigns =
       assigns
-      |> Schema.apply_defaults(:ui_paint)
-      |> then(&Schema.validate_component_assigns!(&1, :ui_paint))
+      |> ComponentsSchema.apply_defaults(:ui_paint)
+      |> then(&ComponentsSchema.validate_component_assigns!(&1, :ui_paint))
 
     commands =
       Enum.map(Map.fetch!(assigns, :commands), fn command ->
@@ -203,11 +203,11 @@ defmodule GPUI.UI do
   `value` defaults to zero, `max` defaults to 100, and `indeterminate` enables
   native loading animation while preserving the textual accessibility label.
 
-  #{Schema.component_options_doc(:ui_progress)}
+  #{ComponentsSchema.component_options_doc(:ui_progress)}
   """
   @spec progress(progress_options()) :: Element.t()
   def progress(assigns) when is_map(assigns) do
-    assigns = Schema.apply_defaults(assigns, :ui_progress)
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_progress)
 
     validate_non_empty_label!(:ui_progress, Map.get(assigns, :label))
 
@@ -225,7 +225,7 @@ defmodule GPUI.UI do
   @doc """
   Builds a labeled controlled checkbox using boolean `checked` and required `phx-change`.
 
-  #{Schema.component_options_doc(:ui_checkbox)}
+  #{ComponentsSchema.component_options_doc(:ui_checkbox)}
   """
   @spec checkbox(checkbox_options()) :: Element.t()
   def checkbox(assigns), do: component(:ui_checkbox, assigns)
@@ -248,7 +248,7 @@ defmodule GPUI.UI do
   Increment `focus_request` to request native focus after validation or another
   application-owned transition.
 
-  #{Schema.component_options_doc(:ui_input)}
+  #{ComponentsSchema.component_options_doc(:ui_input)}
   """
   @spec input(input_options()) :: Element.t()
   def input(assigns), do: component(:ui_input, assigns)
@@ -260,7 +260,7 @@ defmodule GPUI.UI do
   strings, `{label, value}` tuples, or maps with string `:label` and `:value`
   fields.
 
-  #{Schema.component_options_doc(:ui_select)}
+  #{ComponentsSchema.component_options_doc(:ui_select)}
   """
   @spec select(select_options()) :: Element.t()
   def select(assigns), do: component(:ui_select, normalize_options_assigns!(:ui_select, assigns))
@@ -272,7 +272,7 @@ defmodule GPUI.UI do
   `phx-change`; search text changes use `phx-search`. Options use the same
   format as `select/1`.
 
-  #{Schema.component_options_doc(:ui_combobox)}
+  #{ComponentsSchema.component_options_doc(:ui_combobox)}
   """
   @spec combobox(combobox_options()) :: Element.t()
   def combobox(assigns),
@@ -284,7 +284,7 @@ defmodule GPUI.UI do
   A non-empty `label` provides both the visible and native accessibility name;
   `phx-change` owns changes to boolean `checked` state.
 
-  #{Schema.component_options_doc(:ui_switch)}
+  #{ComponentsSchema.component_options_doc(:ui_switch)}
   """
   @spec switch(switch_options()) :: Element.t()
   def switch(assigns) when is_map(assigns) do
@@ -298,7 +298,7 @@ defmodule GPUI.UI do
   A non-empty `label` names the radio group for assistive technology. Options
   accept the same forms as `select/1`; maps may additionally set `disabled: true`.
 
-  #{Schema.component_options_doc(:ui_radio_group)}
+  #{ComponentsSchema.component_options_doc(:ui_radio_group)}
   """
   @spec radio_group(radio_group_options()) :: Element.t()
   def radio_group(%{options: options} = assigns) when is_list(options) do
@@ -349,11 +349,11 @@ defmodule GPUI.UI do
   `expanded` contains the stable item IDs currently open. Changes emit the new
   list through `phx-change`.
 
-  #{Schema.component_options_doc(:ui_accordion)}
+  #{ComponentsSchema.component_options_doc(:ui_accordion)}
   """
   @spec accordion(accordion_options()) :: Element.t()
   def accordion(assigns) when is_map(assigns) do
-    assigns = Schema.apply_defaults(assigns, :ui_accordion)
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_accordion)
 
     expanded = assigns.expanded
     children = Map.get(assigns, :children, [])
@@ -390,7 +390,7 @@ defmodule GPUI.UI do
   @doc """
   Builds an item for `accordion/1`.
 
-  #{Schema.component_options_doc(:ui_accordion_item)}
+  #{ComponentsSchema.component_options_doc(:ui_accordion_item)}
   """
   @spec accordion_item(accordion_item_options()) :: Element.t()
   def accordion_item(%{title: title} = assigns) when is_binary(title) and title != "",
@@ -413,7 +413,7 @@ defmodule GPUI.UI do
   where `last` is exclusive. `selected_index` and `reveal_index` preserve
   controlled identity and scrolling when those rows are not currently loaded.
 
-  #{Schema.component_options_doc(:ui_virtual_list)}
+  #{ComponentsSchema.component_options_doc(:ui_virtual_list)}
   """
   @spec virtual_list(virtual_list_options()) :: Element.t()
   def virtual_list(assigns) when is_map(assigns) do
@@ -423,7 +423,7 @@ defmodule GPUI.UI do
     assigns =
       assigns
       |> Map.put_new(:total_count, length(children))
-      |> Schema.apply_defaults(:ui_virtual_list)
+      |> ComponentsSchema.apply_defaults(:ui_virtual_list)
 
     item_ids =
       CollectionValidation.collection_item_ids!(
@@ -440,11 +440,15 @@ defmodule GPUI.UI do
   @doc """
   Builds a stable row for `virtual_list/1`.
 
-  #{Schema.component_options_doc(:ui_virtual_list_item)}
+  #{ComponentsSchema.component_options_doc(:ui_virtual_list_item)}
   """
   @spec virtual_list_item(virtual_list_item_options()) :: Element.t()
   def virtual_list_item(assigns) when is_map(assigns),
-    do: component(:ui_virtual_list_item, Schema.apply_defaults(assigns, :ui_virtual_list_item))
+    do:
+      component(
+        :ui_virtual_list_item,
+        ComponentsSchema.apply_defaults(assigns, :ui_virtual_list_item)
+      )
 
   @doc """
   Builds a variable-height virtual collection from stable `virtual_item/1` children.
@@ -462,13 +466,13 @@ defmodule GPUI.UI do
   Source-backed slices are intentionally unsupported until unloaded variable
   heights have an explicit estimation contract.
 
-  #{Schema.component_options_doc(:ui_virtual_collection)}
+  #{ComponentsSchema.component_options_doc(:ui_virtual_collection)}
   """
   @spec virtual_collection(virtual_collection_options()) :: Element.t()
   def virtual_collection(assigns) when is_map(assigns) do
     assigns = normalize_attr_key(assigns, :"phx-range")
     children = Map.get(assigns, :children, [])
-    assigns = Schema.apply_defaults(assigns, :ui_virtual_collection)
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_virtual_collection)
 
     item_ids =
       CollectionValidation.collection_item_ids!(
@@ -488,11 +492,11 @@ defmodule GPUI.UI do
   128 bytes. Increment `revision` whenever a retained item's content can change
   its measured height; unchanged revisions preserve the native height cache.
 
-  #{Schema.component_options_doc(:ui_virtual_item)}
+  #{ComponentsSchema.component_options_doc(:ui_virtual_item)}
   """
   @spec virtual_item(virtual_item_options()) :: Element.t()
   def virtual_item(assigns) when is_map(assigns) do
-    assigns = Schema.apply_defaults(assigns, :ui_virtual_item)
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_virtual_item)
 
     CollectionValidation.validate_non_negative_integer!(
       :ui_virtual_item,
@@ -509,7 +513,7 @@ defmodule GPUI.UI do
   Paths always refer to the display machine. The renderer bounds and validates
   paths before emitting typed drag events and never reads dropped files.
 
-  #{Schema.component_options_doc(:ui_drop_target)}
+  #{ComponentsSchema.component_options_doc(:ui_drop_target)}
   """
   @spec drop_target(drop_target_options()) :: Element.t()
   def drop_target(assigns) when is_map(assigns) do
@@ -519,8 +523,8 @@ defmodule GPUI.UI do
         normalize_attr_key(attrs, key)
       end)
 
-    assigns = Schema.apply_defaults(assigns, :ui_drop_target)
-    Schema.validate_component_assigns!(assigns, :ui_drop_target)
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_drop_target)
+    ComponentsSchema.validate_component_assigns!(assigns, :ui_drop_target)
     component(:ui_drop_target, assigns)
   end
 
@@ -536,12 +540,12 @@ defmodule GPUI.UI do
   `phx-link`; activation emits the run's opaque `link` value through the ordinary
   controlled event path. This component does not parse Markdown or HTML.
 
-  #{Schema.component_options_doc(:ui_rich_text)}
+  #{ComponentsSchema.component_options_doc(:ui_rich_text)}
   """
   @spec rich_text(rich_text_options()) :: Element.t()
   def rich_text(assigns) when is_map(assigns) do
     assigns = normalize_attr_key(assigns, :"phx-link")
-    assigns = Schema.apply_defaults(assigns, :ui_rich_text)
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_rich_text)
     CollectionValidation.validate_rich_text!(assigns)
     component(:ui_rich_text, assigns)
   end
@@ -554,7 +558,7 @@ defmodule GPUI.UI do
   exclusive `phx-range` contract as `virtual_list/1`. `phx-sort` receives a
   sortable column ID, while `phx-cell-change` receives `[row_id, column_id]`.
 
-  #{Schema.component_options_doc(:ui_data_table)}
+  #{ComponentsSchema.component_options_doc(:ui_data_table)}
   """
   @spec data_table(data_table_options()) :: Element.t()
   def data_table(assigns) when is_map(assigns) do
@@ -565,7 +569,7 @@ defmodule GPUI.UI do
     assigns =
       assigns
       |> Map.put_new(:total_count, length(rows))
-      |> Schema.apply_defaults(:ui_data_table)
+      |> ComponentsSchema.apply_defaults(:ui_data_table)
 
     column_ids = Enum.map(columns, &CollectionValidation.element_id!/1)
     row_ids = Enum.map(rows, &CollectionValidation.element_id!/1)
@@ -583,11 +587,11 @@ defmodule GPUI.UI do
   @doc """
   Builds one fixed column definition for `data_table/1`.
 
-  #{Schema.component_options_doc(:ui_table_column)}
+  #{ComponentsSchema.component_options_doc(:ui_table_column)}
   """
   @spec table_column(table_column_options()) :: Element.t()
   def table_column(assigns) when is_map(assigns) do
-    assigns = Schema.apply_defaults(assigns, :ui_table_column)
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_table_column)
     validate_non_empty_label!(:ui_table_column, assigns.label)
 
     unless is_number(assigns.width) and assigns.width >= 40 and assigns.width <= 2_000 do
@@ -600,11 +604,11 @@ defmodule GPUI.UI do
   @doc """
   Builds one stable, uniform-height row for `data_table/1`.
 
-  #{Schema.component_options_doc(:ui_table_row)}
+  #{ComponentsSchema.component_options_doc(:ui_table_row)}
   """
   @spec table_row(table_row_options()) :: Element.t()
   def table_row(assigns) when is_map(assigns),
-    do: component(:ui_table_row, Schema.apply_defaults(assigns, :ui_table_row))
+    do: component(:ui_table_row, ComponentsSchema.apply_defaults(assigns, :ui_table_row))
 
   @doc """
   Builds an accessible source-backed tree.
@@ -613,7 +617,7 @@ defmodule GPUI.UI do
   expansion should change. Source-backed ranges follow the same exclusive
   `phx-range` contract as `virtual_list/1`.
 
-  #{Schema.component_options_doc(:ui_tree)}
+  #{ComponentsSchema.component_options_doc(:ui_tree)}
   """
   @spec tree(tree_options()) :: Element.t()
   def tree(assigns) when is_map(assigns) do
@@ -623,7 +627,7 @@ defmodule GPUI.UI do
     assigns =
       assigns
       |> Map.put_new(:total_count, length(children))
-      |> Schema.apply_defaults(:ui_tree)
+      |> ComponentsSchema.apply_defaults(:ui_tree)
 
     item_ids = CollectionValidation.collection_item_ids!(:ui_tree, :ui_tree_item, children)
     CollectionValidation.validate_virtual_collection!(:ui_tree, assigns, item_ids)
@@ -636,11 +640,11 @@ defmodule GPUI.UI do
   @doc """
   Builds one accessible row for `tree/1`.
 
-  #{Schema.component_options_doc(:ui_tree_item)}
+  #{ComponentsSchema.component_options_doc(:ui_tree_item)}
   """
   @spec tree_item(tree_item_options()) :: Element.t()
   def tree_item(assigns) when is_map(assigns) do
-    assigns = Schema.apply_defaults(assigns, :ui_tree_item)
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_tree_item)
 
     CollectionValidation.validate_tree_item!(assigns)
     component(:ui_tree_item, assigns)
@@ -655,7 +659,7 @@ defmodule GPUI.UI do
   unloaded lines; Ctrl/Cmd+C copies the selected loaded line on the display
   machine and acknowledges `phx-copy` when configured.
 
-  #{Schema.component_options_doc(:ui_code_viewer)}
+  #{ComponentsSchema.component_options_doc(:ui_code_viewer)}
   """
   @spec code_viewer(code_viewer_options()) :: Element.t()
   def code_viewer(assigns) when is_map(assigns) do
@@ -665,7 +669,7 @@ defmodule GPUI.UI do
     assigns =
       assigns
       |> Map.put_new(:total_count, length(children))
-      |> Schema.apply_defaults(:ui_code_viewer)
+      |> ComponentsSchema.apply_defaults(:ui_code_viewer)
 
     item_ids =
       CollectionValidation.collection_item_ids!(:ui_code_viewer, :ui_code_line, children)
@@ -696,11 +700,11 @@ defmodule GPUI.UI do
   @doc """
   Builds one native line for `code_viewer/1`.
 
-  #{Schema.component_options_doc(:ui_code_line)}
+  #{ComponentsSchema.component_options_doc(:ui_code_line)}
   """
   @spec code_line(code_line_options()) :: Element.t()
   def code_line(assigns) when is_map(assigns) do
-    assigns = Schema.apply_defaults(assigns, :ui_code_line)
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_code_line)
 
     unless is_binary(Map.get(assigns, :id)) and assigns.id != "" and
              is_binary(assigns.text) do
@@ -737,7 +741,7 @@ defmodule GPUI.UI do
   Options use the same label/value format as `select/1`; `value` identifies the
   selected tab and changes are emitted through `phx-change`.
 
-  #{Schema.component_options_doc(:ui_tabs)}
+  #{ComponentsSchema.component_options_doc(:ui_tabs)}
   """
   @spec tabs(tabs_options()) :: Element.t()
   def tabs(assigns) do
@@ -759,11 +763,11 @@ defmodule GPUI.UI do
   display owns transient drag mechanics and emits the resulting sizes through
   `phx-change`; the authoritative sizes remain in Elixir assigns.
 
-  #{Schema.component_options_doc(:ui_split)}
+  #{ComponentsSchema.component_options_doc(:ui_split)}
   """
   @spec split(split_options()) :: Element.t()
   def split(assigns) when is_map(assigns) do
-    assigns = Schema.apply_defaults(assigns, :ui_split)
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_split)
     validate_split!(assigns)
     component(:ui_split, assigns)
   end
@@ -775,12 +779,12 @@ defmodule GPUI.UI do
   `phx-change` is emitted continuously during pointer interaction and
   `phx-release` is emitted once interaction finishes.
 
-  #{Schema.component_options_doc(:ui_slider)}
+  #{ComponentsSchema.component_options_doc(:ui_slider)}
   """
   @spec slider(slider_options()) :: Element.t()
   def slider(assigns) when is_map(assigns) do
     assigns =
-      Schema.apply_defaults(assigns, :ui_slider)
+      ComponentsSchema.apply_defaults(assigns, :ui_slider)
       |> normalize_slider_numbers!()
 
     validate_slider!(assigns)
@@ -900,7 +904,7 @@ defmodule GPUI.UI do
   end
 
   defp component(type, %{id: id} = assigns) when is_binary(id) and id != "" do
-    assigns = Schema.validate_component_assigns!(assigns, type)
+    assigns = ComponentsSchema.validate_component_assigns!(assigns, type)
 
     %Element{
       type: type,

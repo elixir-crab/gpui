@@ -3,7 +3,7 @@ defmodule GPUI.Codegen.Native.RendererDispatchDefinitions do
 
   defmacro define_renderer_dispatch do
     components =
-      GPUI.Schema.components()
+      GPUI.Codegen.Native.Host.components()
       |> Enum.filter(&component_contract?/1)
 
     nodes = Enum.map(components, &component_node_name/1)
