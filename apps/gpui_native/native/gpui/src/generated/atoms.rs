@@ -31,22 +31,23 @@ mod atoms {
         focus_request = "focus_request", follow = "follow", follow_request =
         "follow_request", font_size = "font_size", font_weight = "font_weight", format =
         "format", gap = "gap", geometry = "geometry", geometry_ranges =
-        "geometry_ranges", hard_tabs = "hard_tabs", header_height = "header_height",
-        height = "height", hit_test = "hit_test", hoverable = "hoverable", id = "id",
-        indeterminate = "indeterminate", inline_projections = "inline_projections", inset
-        = "inset", inset_x = "inset_x", inset_y = "inset_y", invalid_position =
-        "invalid_position", invalid_range = "invalid_range", invalid_selection =
-        "invalid_selection", item_height = "item_height", justify_content =
-        "justify_content", keyboard = "keyboard", keydown = "keydown", keyup = "keyup",
-        kind = "kind", label = "label", last = "last", left = "left", level = "level",
-        light = "light", line_height = "line_height", link = "link", loading = "loading",
-        margin = "margin", margin_bottom = "margin_bottom", margin_left = "margin_left",
-        margin_right = "margin_right", margin_top = "margin_top", margin_x = "margin_x",
-        margin_y = "margin_y", masked = "masked", max = "max", max_columns =
-        "max_columns", max_height = "max_height", max_lines = "max_lines", max_sizes =
-        "max_sizes", max_width = "max_width", menu = "menu", min = "min", min_height =
-        "min_height", min_lines = "min_lines", min_sizes = "min_sizes", min_width =
-        "min_width", missing_resource = "missing_resource", mode = "mode", motion_delay =
+        "geometry_ranges", gpui_component = "gpui_component", hard_tabs = "hard_tabs",
+        header_height = "header_height", headless = "headless", height = "height",
+        hit_test = "hit_test", hoverable = "hoverable", id = "id", indeterminate =
+        "indeterminate", inline_projections = "inline_projections", inset = "inset",
+        inset_x = "inset_x", inset_y = "inset_y", invalid_position = "invalid_position",
+        invalid_range = "invalid_range", invalid_selection = "invalid_selection",
+        item_height = "item_height", justify_content = "justify_content", keyboard =
+        "keyboard", keydown = "keydown", keyup = "keyup", kind = "kind", label = "label",
+        last = "last", left = "left", level = "level", light = "light", line_height =
+        "line_height", link = "link", loading = "loading", margin = "margin",
+        margin_bottom = "margin_bottom", margin_left = "margin_left", margin_right =
+        "margin_right", margin_top = "margin_top", margin_x = "margin_x", margin_y =
+        "margin_y", masked = "masked", max = "max", max_columns = "max_columns",
+        max_height = "max_height", max_lines = "max_lines", max_sizes = "max_sizes",
+        max_width = "max_width", menu = "menu", min = "min", min_height = "min_height",
+        min_lines = "min_lines", min_sizes = "min_sizes", min_width = "min_width",
+        missing_resource = "missing_resource", mode = "mode", motion_delay =
         "motion_delay", motion_duration = "motion_duration", motion_easing =
         "motion_easing", motion_from_opacity = "motion_from_opacity", motion_from_x =
         "motion_from_x", motion_from_y = "motion_from_y", motion_policy =
@@ -95,10 +96,10 @@ mod atoms {
         "text_buffer_lock_failed", text_overflow = "text_overflow", title = "title",
         toggle = "toggle", top = "top", total_count = "total_count", transaction =
         "transaction", transaction_conflict = "transaction_conflict", truncate =
-        "truncate", type_atom = "type", value = "value", variant = "variant", viewport =
-        "viewport", white_space = "white_space", width = "width", window_blur =
-        "window_blur", window_close_request = "window_close_request", window_closed =
-        "window_closed", window_control = "window_control", window_focus =
-        "window_focus", window_id = "window_id"
+        "truncate", type_atom = "type", value = "value", vanilla = "vanilla", variant =
+        "variant", viewport = "viewport", white_space = "white_space", width = "width",
+        window_blur = "window_blur", window_close_request = "window_close_request",
+        window_closed = "window_closed", window_control = "window_control", window_focus
+        = "window_focus", window_id = "window_id"
     }
 }

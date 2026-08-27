@@ -26,6 +26,10 @@ defmodule GPUI.Native.Generated do
         :erlang.nif_error(:nif_not_loaded)
       end
 
+      def host_info do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
       def start_runtime do
         :erlang.nif_error(:nif_not_loaded)
       end

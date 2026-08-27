@@ -20,6 +20,7 @@ defmodule GPUI.Umbrella.MixProject do
         "ci.checks": :test,
         "ci.native": :test,
         "gpui.test.codegen": :test,
+        "gpui.test.hosts": :test,
         "gpui.test.packages": :test,
         "gpui.release.check": :release,
         "gpui.test.e2e": :e2e,
@@ -122,7 +123,8 @@ defmodule GPUI.Umbrella.MixProject do
   defp rust_headless_clippy(_args),
     do: run_rust_clippy(["--no-default-features", "--features", "real-gpui"])
 
-  defp rust_core_clippy(_args), do: run_rust_clippy(["--no-default-features"])
+  defp rust_core_clippy(_args),
+    do: run_rust_clippy(["--no-default-features", "--features", "vanilla-host"])
 
   defp rust_e2e_fmt(args),
     do: rust_cmd(["fmt", "--manifest-path", e2e_manifest()] ++ args)

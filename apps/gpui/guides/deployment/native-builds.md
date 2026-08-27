@@ -1,29 +1,34 @@
 # Native builds and deployment
 
-The published `gpui_native` package owns the RustlerPrecompiled loader and the
-fixed native host profiles. `gpui` remains renderer-independent, while
-`gpui_components` contributes the conventional component schemas and Elixir
-builders used by the standard host.
+The published `gpui_native` package owns the RustlerPrecompiled loader and two
+fixed, complete native hosts. `gpui` remains renderer-independent, while the
+separately installed `gpui_components` package provides conventional component
+schemas and Elixir builders for applications that select the `:gpui_component`
+host.
 
-## Profiles
+## Native hosts
 
-Two release profiles share one generated NIF boundary and one exact GPUI type
+Both release hosts share one generated NIF boundary and one exact GPUI type
 universe:
 
-- `:core` — vanilla GPUI host and neutral primitives;
-- `:standard` — the core host plus `gpui-component`, its assets, conventional
-  controls, overlays, and theme integration.
+- `:vanilla` — a complete host built from vanilla GPUI and neutral primitives;
+- `:gpui_component` — a complete host that statically links the separate
+  `gpui-component` renderer library, assets, conventional controls, overlays,
+  and theme integration.
 
-Select one profile at compile time:
+Select one host at compile time:
 
 ```elixir
-config :gpui_native, GPUI.Native, profile: :core
+config :gpui_native, GPUI.Native, host: :vanilla
 # or
-config :gpui_native, GPUI.Native, profile: :standard
+config :gpui_native, GPUI.Native, host: :gpui_component
 ```
 
-Only one library is loaded into `Elixir.GPUI.Native.NIF`. Profiles are complete
-host binaries, not dynamically attached plugins.
+Exactly one final `cdylib` is loaded into `Elixir.GPUI.Native.NIF`. These are
+alternative complete hosts, not a core dylib followed by a dynamically attached
+component plugin. The component-capable host statically composes its Rust
+libraries against the same pinned GPUI graph so windows, entities, resources,
+and the event loop never cross a Rust shared-library ABI.
 
 ## Consumer compilation
 
@@ -31,8 +36,8 @@ On a supported precompiled target, compilation proceeds as follows:
 
 1. Mix resolves `gpui_native` and its exact matching `gpui` release.
 2. `gpui` compiles the generated backend-neutral `GPUI.Native` facade.
-3. `gpui_native` reads the configured profile at compile time.
-4. `RustlerPrecompiled` selects the profile variant, NIF ABI, and target triple.
+3. `gpui_native` reads the configured host at compile time.
+4. `RustlerPrecompiled` selects the host variant, NIF ABI, and target triple.
 5. It downloads the release archive, verifies its compressed SHA-256 against
    `checksum-Elixir.GPUI.Native.NIF.exs`, extracts it, and loads the NIF.
 6. No RustQ, Cargo, Rust compiler, Node runtime, or source checkout is required.
@@ -99,7 +104,8 @@ Repository CI checks:
 
 - core-only, without real GPUI;
 - headless real GPUI, without desktop linker dependencies;
-- standard desktop GPUI with component integration;
+- vanilla desktop GPUI without component integration;
+- `gpui-component` desktop host with component integration;
 - deterministic native-test and real desktop E2E configurations.
 
 `ZED_HEADLESS=1` selects real GPUI's headless backend for lifecycle work, but
@@ -107,9 +113,9 @@ that backend cannot open a platform window.
 
 ## Precompiled release flow
 
-The package tag `gpui_native-vVERSION` builds profile variants through
-`.github/workflows/precompiled-nif.yml`. Release archives include the profile in
-the RustlerPrecompiled variant suffix, for example `--core` and `--standard`.
+The package tag `gpui_native-vVERSION` builds both host variants through
+`.github/workflows/precompiled-nif.yml`. Release archives include the host in
+the RustlerPrecompiled variant suffix: `--vanilla` or `--gpui-component`.
 Checksums cover compressed `.tar.gz` bytes.
 
 The release sequence is:
@@ -117,7 +123,7 @@ The release sequence is:
 1. run `mix ci` from the umbrella root;
 2. run native desktop ExUnit under Xvfb/Lavapipe on Linux;
 3. run `RUST_FONTCONFIG_DLOPEN=1 mix gpui.release.check`;
-4. tag the coordinated release and build both native profiles;
+4. tag the coordinated release and build both native hosts;
 5. attest and publish the GitHub release archives;
 6. generate `apps/gpui_native/checksum-Elixir.GPUI.Native.NIF.exs` from the
    published bytes;
@@ -132,7 +138,7 @@ contracts such as `paint@1`.
 
 Release validation verifies all three Hex package contents independently,
 documentation, dependency audits, RustQ freshness, source-build fallback,
-profile artifacts, and a no-Rust precompiled consumer. Linux GNU artifacts must
+native host artifacts, and a no-Rust precompiled consumer. Linux GNU artifacts
 retain the `GLIBC_2.35` ceiling.
 
 Zed's Apache-licensed `sum_tree` uses only the `ztracing::instrument` surface,

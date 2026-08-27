@@ -16,7 +16,7 @@ defmodule GPUI.Native.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
-      description: "RustlerPrecompiled native GPUI display profiles for GPUI.",
+      description: "RustlerPrecompiled native GPUI hosts for GPUI.",
       source_url: @source_url,
       homepage_url: @source_url,
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -65,7 +65,6 @@ defmodule GPUI.Native.MixProject do
   defp deps do
     [
       {:gpui, "== #{@version}", in_umbrella: true, hex: :gpui},
-      {:gpui_components, "== #{@version}", in_umbrella: true, hex: :gpui_components},
       {:rustler, "~> 0.38.0", runtime: false},
       {:rustler_precompiled, "~> 0.9"}
     ]

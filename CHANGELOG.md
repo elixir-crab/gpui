@@ -6,7 +6,7 @@
 
 - Split the repository into the `gpui`, `gpui_components`, and `gpui_native`
   packages in a coordinated Mix umbrella. Native consumers now select a fixed
-  RustlerPrecompiled host profile through `gpui_native`.
+  complete RustlerPrecompiled host through `gpui_native`.
 
 ## 0.1.1
 

@@ -153,7 +153,7 @@ and one private maintainer application:
 | --- | --- |
 | [`gpui`](apps/gpui) | Renderer-independent applications, sessions, snapshots, schemas, remote displays, and test APIs |
 | [`gpui_components`](apps/gpui_components) | Conventional declarative controls backed by `gpui-component` |
-| [`gpui_native`](apps/gpui_native) | RustlerPrecompiled core and standard native display profiles |
+| [`gpui_native`](apps/gpui_native) | RustlerPrecompiled vanilla and `gpui-component` native hosts |
 | Root tooling | Private RustQ generation, repository checks, native testing, and release validation |
 
 RustQ runs only in the source umbrella. Generated Elixir and Rust are committed,
@@ -184,15 +184,17 @@ def deps do
 end
 ```
 
-Select the standard precompiled host when component elements are used:
+Select the `gpui-component` host when component elements are used:
 
 ```elixir
 # config/config.exs
-config :gpui_native, GPUI.Native, profile: :standard
+config :gpui_native, GPUI.Native, host: :gpui_component
 ```
 
-Use `profile: :core` for the vanilla-GPUI host without the conventional
-component pack. Renderer-independent sessions, remote servers, and `GPUI.Test`
+Use `host: :vanilla` for the complete vanilla-GPUI host. Exactly one host
+artifact is loaded; the component-capable artifact statically links its
+renderer rather than attaching a second native library at runtime.
+Renderer-independent sessions, remote servers, and `GPUI.Test`
 require neither Rust nor a native library or display server. See
 [Native builds and deployment](guides/deployment/native-builds.md).
 

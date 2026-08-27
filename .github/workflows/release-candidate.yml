@@ -161,4 +161,5 @@ jobs:
         run: >-
           sudo apt-get update && sudo apt-get install -y --no-install-recommends
           libxkbcommon-dev libxkbcommon-x11-dev
+      - run: mix gpui.test.hosts
       - run: mix gpui.release.check

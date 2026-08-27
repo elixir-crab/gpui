@@ -18,7 +18,7 @@ Enable the native display outside tests in your application's configuration:
 ```elixir
 # config/config.exs
 config :gpui_native, build_native: config_env() != :test
-config :gpui_native, GPUI.Native, profile: :standard
+config :gpui_native, GPUI.Native, host: :gpui_component
 ```
 
 This keeps renderer-independent tests free of Rust and native-library

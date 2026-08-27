@@ -26,6 +26,10 @@ defmodule GPUI.Native.Facade do
         apply(GPUI.Native.backend(), :text_buffer_redo, [_buffer, _base_revision])
       end
 
+      def host_info() do
+        apply(GPUI.Native.backend(), :host_info, [])
+      end
+
       def start_runtime() do
         apply(GPUI.Native.backend(), :start_runtime, [])
       end

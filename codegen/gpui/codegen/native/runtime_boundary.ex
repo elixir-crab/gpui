@@ -9,6 +9,9 @@ defmodule GPUI.Codegen.Native.RuntimeBoundary do
 
   alias RustQ.Type, as: R
 
+  @spec host_info() :: R.nif_result(term())
+  defnif(host_info(), do: host_info_impl(nif_env()))
+
   @nif schedule: :dirty_io
   @spec start_runtime() :: R.nif_result(term())
   defnif(start_runtime(), do: start_runtime_impl(nif_env()))

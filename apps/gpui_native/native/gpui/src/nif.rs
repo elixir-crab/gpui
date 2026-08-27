@@ -3,6 +3,19 @@ use crate::*;
 #[cfg(feature = "real-gpui")]
 const MAX_WINDOW_COMMANDS: usize = 64;
 
+pub(crate) fn host_info_impl<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
+    #[cfg(feature = "gpui-component-host")]
+    let host = atoms::gpui_component();
+
+    #[cfg(all(feature = "vanilla-host", not(feature = "gpui-component-host")))]
+    let host = atoms::vanilla();
+
+    #[cfg(not(any(feature = "vanilla-host", feature = "gpui-component-host")))]
+    let host = atoms::headless();
+
+    Ok((atoms::ok(), host).encode(env))
+}
+
 pub(crate) fn text_buffer_new_impl<'a>(
     env: Env<'a>,
     text: String,

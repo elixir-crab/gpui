@@ -10,11 +10,13 @@ name = "gpui_nif"
 crate-type = ["cdylib"]
 
 [features]
-default = ["components"]
+default = ["gpui-component-host"]
 real-gpui = ["dep:zed_gpui", "dep:gpui_platform", "dep:futures", "dep:unicode-segmentation"]
 desktop = ["real-gpui", "gpui_platform/font-kit", "gpui_platform/wayland", "gpui_platform/x11"]
 components = ["desktop", "dep:gpui-component", "dep:gpui-component-assets"]
-native-test = ["components", "zed_gpui/test-support"]
+vanilla-host = ["desktop"]
+gpui-component-host = ["components"]
+native-test = ["gpui-component-host", "zed_gpui/test-support"]
 
 [dependencies]
 rustler = "0.38.0"

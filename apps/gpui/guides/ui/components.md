@@ -2,7 +2,7 @@
 
 Conventional controls live in the separately published `gpui_components`
 package. `GPUI.UI` provides controlled Elixir components rendered by the
-`:standard` `gpui_native` profile with `gpui-component`. Components build
+`:gpui_component` `gpui_native` host with `gpui-component`. Components build
 ordinary `%GPUI.Element{}` data; the native display owns GPUI entities, focus,
 and transient interaction state.
 

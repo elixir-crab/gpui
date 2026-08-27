@@ -27,33 +27,26 @@ defmodule GPUI.Native.NIF do
       System.get_env("GPUI_BUILD_FROM_SOURCE") in ["1", "true"] or
         not precompiled_target? or not File.exists?(checksum)
 
-    profile =
-      Application.compile_env(:gpui_native, [GPUI.Native, :profile], :core)
+    host =
+      Application.compile_env(:gpui_native, [GPUI.Native, :host], :vanilla)
 
     source_variant =
       cond do
         System.get_env("MIX_TARGET") == "native_test" -> "native_test"
         System.get_env("MIX_ENV") == "e2e" -> "desktop"
-        true -> Atom.to_string(profile)
+        host == :vanilla -> "vanilla"
+        host == :gpui_component -> "gpui-component"
+        true -> raise ArgumentError, "unsupported GPUI native host: #{inspect(host)}"
       end
 
-    unless source_variant in ["core", "standard", "native_test", "desktop"] do
-      raise ArgumentError, "unsupported GPUI native profile: #{inspect(profile)}"
-    end
-
-    default_features =
-      Application.compile_env(
-        :gpui_native,
-        [GPUI.Native, :default_features],
-        profile == :standard
-      )
-
     features =
-      Application.compile_env(
-        :gpui_native,
-        [GPUI.Native, :features],
-        if(profile == :standard, do: [], else: [])
-      )
+      cond do
+        System.get_env("MIX_TARGET") == "native_test" -> ["native-test"]
+        System.get_env("MIX_ENV") == "e2e" -> ["gpui-component-host"]
+        System.get_env("ZED_HEADLESS") == "1" -> ["real-gpui"]
+        host == :gpui_component -> ["gpui-component-host"]
+        host == :vanilla -> ["vanilla-host"]
+      end
 
     # Rustler always copies a source build to `gpui_nif`, so copy that result
     # once to a target-specific load path before this module's on-load hook runs.
@@ -71,12 +64,12 @@ defmodule GPUI.Native.NIF do
       nif_versions: ["2.15"],
       variants: %{
         "x86_64-unknown-linux-gnu" => [
-          core: fn -> profile == :core end,
-          standard: fn -> profile == :standard end
+          vanilla: fn -> host == :vanilla end,
+          "gpui-component": fn -> host == :gpui_component end
         ]
       },
       force_build: force_build?,
-      default_features: default_features,
+      default_features: false,
       features: features
     ]
 

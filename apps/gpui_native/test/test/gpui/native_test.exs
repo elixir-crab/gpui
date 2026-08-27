@@ -5,6 +5,8 @@ defmodule GPUI.NativeTest do
 
   test "generated lifecycle boundary starts and stops a native runtime" do
     assert GPUI.Native.compiled?()
+    assert {:ok, host} = GPUI.Native.host_info()
+    assert host in [:headless, :vanilla, :gpui_component]
     assert {:ok, runtime} = GPUI.Native.start_runtime()
     assert {:ok, :ok} = GPUI.Native.stop_runtime(runtime)
   end
@@ -63,6 +65,7 @@ defmodule GPUI.NativeTest do
     Code.ensure_loaded!(GPUI.Native)
 
     assert function_exported?(GPUI.Native, :decode_image, 1)
+    assert function_exported?(GPUI.Native, :host_info, 0)
     assert function_exported?(GPUI.Native, :text_buffer_new, 3)
     assert function_exported?(GPUI.Native, :text_buffer_snapshot, 1)
     assert function_exported?(GPUI.Native, :text_buffer_transact, 2)
