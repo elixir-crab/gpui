@@ -222,11 +222,15 @@ require neither Rust nor a native library or display server. See
 
 ```bash
 mix deps.get
+mix gpui.test.packages
 mix ci
 MIX_ENV=e2e xvfb-run -a dbus-run-session -- mix test --only e2e apps/gpui_native/test/e2e
 ```
 
-`mix ci` covers Elixir, generated Rust freshness, Cargo feature matrices,
+`mix gpui.test.packages` builds the three public Hex payloads and compiles their
+exact unpacked contents in clean downstream consumers, with repository-only
+tooling and Cargo unavailable. `mix ci` includes this package-isolation gate and
+covers Elixir, generated Rust freshness, Cargo feature matrices,
 Clippy, native unit tests, Dialyzer, Credo, duplication, and architecture
 checks. Hosted push validation splits the renderer-independent and native
 checks; the full native interaction and release-package suite is an explicit
