@@ -10,7 +10,7 @@ defmodule GPUI.Codegen.Native.DispatchTest do
     tag_source = MetaAST.function!(Dispatch, :decode_generated_element_tag) |> Rust.render()
     kind_source = MetaAST.function!(Dispatch, :generated_component_kind) |> Rust.render()
 
-    for component <- GPUI.Schema.components() do
+    for component <- GPUI.Codegen.Native.Host.components() do
       assert tag_source =~
                ~s|"#{component.tag}" => GeneratedElementTag::#{variant(component.tag)}|
 
@@ -25,7 +25,7 @@ defmodule GPUI.Codegen.Native.DispatchTest do
   test "derives element decoder dispatch from component contracts" do
     source = MetaAST.function!(Dispatch, :decode_generated_element_node) |> Rust.render()
 
-    for component <- GPUI.Schema.components() |> Enum.uniq_by(& &1.kind) do
+    for component <- GPUI.Codegen.Native.Host.components() |> Enum.uniq_by(& &1.kind) do
       assert source =~ "GeneratedComponentKind::#{variant(component.kind)} =>"
     end
 

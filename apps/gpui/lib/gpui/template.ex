@@ -18,7 +18,7 @@ defmodule GPUI.Template do
                         |> Enum.reject(&String.starts_with?(Atom.to_string(&1.tag), "ui_"))
                         |> Map.new(&{Atom.to_string(&1.tag), &1.tag})
 
-  @component_tags GPUI.Schema.tags()
+  @component_tags GPUI.Schema.Ownership.tags()
                   |> Enum.filter(&String.starts_with?(Atom.to_string(&1), "ui_"))
                   |> MapSet.new(&Atom.to_string/1)
 

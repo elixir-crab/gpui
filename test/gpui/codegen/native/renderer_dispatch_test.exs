@@ -37,7 +37,7 @@ defmodule GPUI.Codegen.Native.RendererDispatchTest do
   end
 
   defp component_contracts do
-    GPUI.Schema.components()
+    GPUI.Codegen.Native.Host.components()
     |> Enum.filter(&String.ends_with?(Atom.to_string(&1.kind), "_component"))
   end
 

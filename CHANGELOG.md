@@ -4,6 +4,9 @@
 
 ### Breaking changes
 
+- Physically moved neutral primitive, specialized-surface, and conventional
+  component declarations into their schema-provider modules; native codegen
+  tests now derive expectations from the explicit composed host manifest.
 - Added schema-provider modules as the extensible ownership identity and a
   closed capability audit separating provider, declaration category, and
   statically linked native requirements without hardcoding package names.

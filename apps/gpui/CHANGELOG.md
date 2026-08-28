@@ -4,6 +4,8 @@
 
 ### Breaking changes
 
+- Physically moved core and specialized-surface component declarations out of
+  the monolithic schema into their provider modules.
 - Added `GPUI.Schema.Provider`, provider-aware registry inspection, and an
   explicit ownership/capability audit for every canonical native tag.
 - Added the immutable `GPUI.Schema.Registry` and made `GPUI.Schema.registry/0`

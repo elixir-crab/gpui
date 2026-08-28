@@ -53,11 +53,16 @@ defmodule GPUI.Element do
   defp payload(value), do: to_payload(value)
 
   defp put_extension_version(attrs, type) do
-    case GPUI.Schema.component!(type).extension do
+    case Enum.find(GPUI.Schema.extensions(), &(&1.id == type_extension_id(type))) do
       %GPUI.Schema.Extension{version: version} -> Map.put(attrs, :__extension_version__, version)
       nil -> attrs
     end
   end
+
+  defp type_extension_id(:ui_edge_fade), do: :edge_fade
+  defp type_extension_id(:ui_frost), do: :frost
+  defp type_extension_id(:ui_paint), do: :paint
+  defp type_extension_id(_type), do: nil
 
   defp validated_primitive_attrs(%__MODULE__{type: :layer, children: [_child], attrs: attrs}) do
     attrs
@@ -155,10 +160,10 @@ defmodule GPUI.Element do
   end
 
   defp collect_component_ids(%__MODULE__{} = element, ids) do
-    ids =
-      if MapSet.member?(@identified_tags, element.type) do
-        id = Keyword.get(element.attrs, :id)
+    id = Keyword.get(element.attrs, :id)
 
+    ids =
+      if MapSet.member?(@identified_tags, element.type) or (is_binary(id) and id != "") do
         unless is_binary(id) and id != "" do
           raise ArgumentError, "#{element.type} requires a non-empty string id"
         end

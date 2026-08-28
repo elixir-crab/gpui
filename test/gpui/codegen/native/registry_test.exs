@@ -8,7 +8,7 @@ defmodule GPUI.Codegen.Native.RegistryTest do
 
   test "derives registry enums and methods from stateful components" do
     [kind, state, %AST.Impl{items: methods}] = Registry.items()
-    components = GPUI.Schema.stateful_components()
+    components = GPUI.Codegen.Native.Host.stateful_components()
 
     assert Enum.map(kind.variants, & &1.name) == Enum.map(components, &variant/1)
     assert Enum.map(state.variants, & &1.name) == Enum.map(components, &variant/1)
@@ -23,7 +23,7 @@ defmodule GPUI.Codegen.Native.RegistryTest do
   test "getters and inserters preserve registry behavior" do
     source = Registry.items() |> Enum.map_join("\n", &Rust.render/1)
 
-    for component <- GPUI.Schema.stateful_components() do
+    for component <- GPUI.Codegen.Native.Host.stateful_components() do
       method = registry_method(component)
       variant = variant(component)
       type = String.to_atom("Component#{variant}")

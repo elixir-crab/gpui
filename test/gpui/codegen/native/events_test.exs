@@ -41,7 +41,7 @@ defmodule GPUI.Codegen.Native.EventsTest do
   end
 
   defp input_kinds do
-    GPUI.Schema.components()
+    GPUI.Codegen.Native.Host.components()
     |> Enum.flat_map(&Keyword.keys(&1.events))
     |> Enum.uniq()
     |> Enum.reject(&(&1 == :click))

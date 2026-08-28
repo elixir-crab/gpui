@@ -10,13 +10,14 @@ defmodule GPUI.Codegen.Native.SchemaTypesTest do
     element_tag = SchemaTypes.element_tag_item()
 
     expected_kinds =
-      GPUI.Schema.components()
+      GPUI.Codegen.Native.Host.components()
       |> Enum.map(& &1.kind)
       |> Enum.uniq()
       |> Kernel.++([:unknown])
       |> Enum.map(&variant/1)
 
-    expected_tags = GPUI.Schema.native_tags() |> Kernel.++([:unknown]) |> Enum.map(&variant/1)
+    expected_tags =
+      GPUI.Codegen.Native.Host.native_tags() |> Kernel.++([:unknown]) |> Enum.map(&variant/1)
 
     assert Enum.map(component_kind.variants, & &1.name) == expected_kinds
     assert Enum.map(element_tag.variants, & &1.name) == expected_tags
@@ -27,7 +28,7 @@ defmodule GPUI.Codegen.Native.SchemaTypesTest do
 
     expected =
       [:Viewport, :Div, :AnchoredLayer, :TextSurface, :Input] ++
-        (GPUI.Schema.components()
+        (GPUI.Codegen.Native.Host.components()
          |> Enum.filter(&String.ends_with?(Atom.to_string(&1.kind), "_component"))
          |> Enum.map(&variant(&1.kind))) ++
         [:Image, :Text]
