@@ -14,15 +14,25 @@ defmodule GPUI.Codegen.Native.Schema do
   alias RustQ.Rust.AST
 
   @spec items() :: [AST.item()]
-  def items do
+  def items, do: selected_items()
+
+  defp selected_items do
+    component_items =
+      [
+        if(GPUI.Codegen.Native.Host.selected_name() == :gpui_component,
+          do: ComponentContracts.items(),
+          else: []
+        ),
+        ComponentDefinitions.items()
+      ]
+
     [
       SchemaTypes.component_kind_item(),
       Decoder.asts(),
       Elements.items(),
       Style.items(GPUI.Schema.style_specs()),
       Accessibility.items(),
-      ComponentContracts.items(),
-      ComponentDefinitions.items(),
+      component_items,
       SchemaTypes.element_node_item(),
       SchemaTypes.element_tag_item(),
       Dispatch.items(),

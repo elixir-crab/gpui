@@ -4,6 +4,10 @@
 
 ### Breaking changes
 
+- RustQ generation now accepts an explicit `GPUI_CODEGEN_HOST` and emits a
+  bounded vanilla projection without conventional component structs, state,
+  event kinds, or dispatch arms; release host checks regenerate and compile both
+  complete projections before restoring the committed component projection.
 - Removed the cross-package canonical tag manifest from `gpui`; complete host
   order is now deterministic provider composition owned by repository codegen,
   while raw `ui_*` template rejection is a provider-neutral namespace rule.

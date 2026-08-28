@@ -585,12 +585,35 @@ defmodule GPUI.Codegen.Native.Elements do
           field_vis: :crate
         )
 
+    structs =
+      if GPUI.Codegen.Native.Host.selected_name() == :vanilla do
+        Enum.map(structs, fn
+          %RustQ.Rust.AST.Struct{name: :RichTextRunNode} = item ->
+            %{item | attrs: [A.attr(:allow, [:dead_code]) | item.attrs]}
+
+          item ->
+            item
+        end)
+      else
+        structs
+      end
+
     structs ++ asts()
   end
 
   def asts do
     Enum.map(MetaAST.functions(__MODULE__), fn ast ->
-      %{ast | vis: :crate, attrs: [A.attr(:cfg, feature: "real-gpui") | ast.attrs]}
+      attrs = [A.attr(:cfg, feature: "real-gpui") | ast.attrs]
+
+      attrs =
+        if GPUI.Codegen.Native.Host.selected_name() == :vanilla and
+             ast.name == :decode_rich_text_runs do
+          [A.attr(:allow, [:dead_code]) | attrs]
+        else
+          attrs
+        end
+
+      %{ast | vis: :crate, attrs: attrs}
     end)
   end
 end

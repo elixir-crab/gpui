@@ -3,7 +3,7 @@ defmodule GPUI.Codegen.Native.RendererDispatchDefinitions do
 
   defmacro define_renderer_dispatch do
     components =
-      GPUI.Codegen.Native.Host.components()
+      GPUI.Codegen.Native.Host.selected_components()
       |> Enum.filter(&component_contract?/1)
 
     nodes = Enum.map(components, &component_node_name/1)
@@ -33,13 +33,26 @@ defmodule GPUI.Codegen.Native.RendererDispatchDefinitions do
         {clause, [declaration | declarations]}
       end)
 
-    clauses = clauses ++ [{:->, [], [[Macro.var(:_, nil)], quote(do: unreachable!())]}]
-    module_declarations = Enum.reverse(module_declarations)
+    used_args = renderers |> Map.values() |> Enum.flat_map(& &1.args) |> MapSet.new()
 
-    body = {:case, [], [Macro.var(:node, nil), [do: clauses]]}
+    allow_attrs =
+      if MapSet.subset?(MapSet.new([:node, :element_id, :context]), used_args),
+        do: [],
+        else: [quote(do: @allow :unused_variables)]
+
+    {body, allow_attrs} =
+      if clauses == [] do
+        {quote(do: unreachable!()), [quote(do: @allow :unused_variables)]}
+      else
+        clauses = clauses ++ [{:->, [], [[Macro.var(:_, nil)], quote(do: unreachable!())]}]
+        {{:case, [], [Macro.var(:node, nil), [do: clauses]]}, allow_attrs}
+      end
+
+    module_declarations = Enum.reverse(module_declarations)
 
     quote do
       unquote_splicing(module_declarations)
+      unquote_splicing(allow_attrs)
 
       @spec render_generated_component_node(
               R.path(:ElementNode),

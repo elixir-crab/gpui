@@ -762,7 +762,9 @@ pub(crate) fn inject_event_impl<'a>(
             let event_name = event_name.ok_or(rustler::Error::BadArg)?;
             let kind = match kind {
                 InjectKind::Change => InputKind::Change,
+                #[cfg(feature = "components")]
                 InjectKind::Release => InputKind::Release,
+                #[cfg(feature = "components")]
                 InjectKind::Search => InputKind::Search,
                 InjectKind::Submit => InputKind::Submit,
                 InjectKind::Keydown => InputKind::KeyDown,

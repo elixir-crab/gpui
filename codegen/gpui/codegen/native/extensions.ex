@@ -5,7 +5,11 @@ defmodule GPUI.Codegen.Native.Extensions do
 
   @spec items() :: [RustQ.Rust.AST.item()]
   def items do
-    GPUI.Codegen.Native.Host.extensions()
+    GPUI.Codegen.Native.Host.selected_components()
+    |> Enum.flat_map(fn
+      %GPUI.Schema.Component{extension: %GPUI.Schema.Extension{} = extension} -> [extension]
+      _component -> []
+    end)
     |> Enum.flat_map(fn extension ->
       prefix = extension.id |> Atom.to_string() |> String.upcase()
 

@@ -2,7 +2,7 @@ defmodule GPUI.Codegen.Native.RegistryDefinitions do
   @moduledoc "Derives typed native component-registry accessors from stateful schema entries."
 
   defmacro define_registry do
-    components = GPUI.Codegen.Native.Host.stateful_components()
+    components = GPUI.Codegen.Native.Host.selected_stateful_components()
 
     component_kind_variants = Enum.map(components, &{registry_method(&1), []})
 

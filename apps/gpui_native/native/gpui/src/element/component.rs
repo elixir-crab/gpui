@@ -1,24 +1,42 @@
+#[cfg(feature = "components")]
 pub(crate) mod accordion;
+#[cfg(feature = "components")]
 pub(crate) mod code_viewer;
+#[cfg(feature = "components")]
 pub(crate) mod controls;
+#[cfg(feature = "components")]
 pub(crate) mod data_table;
+#[cfg(feature = "components")]
 pub(crate) mod display;
+#[cfg(feature = "components")]
 pub(crate) mod drop_target;
 pub(crate) mod edge_fade;
+#[cfg(feature = "components")]
 pub(crate) mod form;
 pub(crate) mod frost;
+#[cfg(feature = "components")]
 pub(crate) mod overlay;
 pub(crate) mod paint;
+#[cfg(feature = "components")]
 pub(crate) mod radio;
+#[cfg(feature = "components")]
 pub(crate) mod rich_text;
+#[cfg(feature = "components")]
 pub(crate) mod slider;
+#[cfg(feature = "components")]
 pub(crate) mod split;
+#[cfg(feature = "components")]
 pub(crate) mod switch;
+#[cfg(feature = "components")]
 pub(crate) mod tabs;
 pub(crate) mod text_surface;
+#[cfg(feature = "components")]
 pub(crate) mod tree;
+#[cfg(feature = "components")]
 pub(crate) mod uniform_collection;
+#[cfg(feature = "components")]
 pub(crate) mod virtual_collection;
+#[cfg(feature = "components")]
 pub(crate) mod virtual_list;
 
 use super::apply_generated_render_styles;
@@ -71,6 +89,7 @@ where
     component
 }
 
+#[cfg_attr(not(feature = "components"), allow(dead_code))]
 #[cfg(not(feature = "components"))]
 pub(super) fn render_component_fallback(
     style: crate::StyleAttrs,

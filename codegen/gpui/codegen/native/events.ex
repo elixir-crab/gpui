@@ -51,7 +51,7 @@ defmodule GPUI.Codegen.Native.EventDefinitions do
 
   @doc "Returns the unique non-click input kinds declared by the component schema."
   def input_kinds do
-    GPUI.Codegen.Native.Host.components()
+    GPUI.Codegen.Native.Host.selected_components()
     |> Enum.flat_map(&Keyword.keys(&1.events))
     |> Enum.uniq()
     |> Enum.reject(&(&1 == :click))

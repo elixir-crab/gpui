@@ -3,7 +3,7 @@ defmodule GPUI.Codegen.Native.ComponentDefinitionMacros do
 
   defmacro define_components do
     declarations =
-      GPUI.Codegen.Native.Host.components()
+      GPUI.Codegen.Native.Host.selected_components()
       |> Enum.filter(&component_contract?/1)
       |> Enum.flat_map(fn component ->
         [component_type_declaration(component), component_decoder_declaration(component)]
@@ -270,7 +270,7 @@ defmodule GPUI.Codegen.Native.ComponentDefinitions do
   @spec items() :: [AST.item()]
   def items do
     components =
-      GPUI.Codegen.Native.Host.components()
+      GPUI.Codegen.Native.Host.selected_components()
       |> Enum.filter(&String.ends_with?(Atom.to_string(&1.kind), "_component"))
 
     structs =

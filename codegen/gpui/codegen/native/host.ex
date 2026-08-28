@@ -23,6 +23,39 @@ defmodule GPUI.Codegen.Native.Host do
     |> Registry.include(GPUI.Components.Schema.Declarations)
   end
 
+  @host_env "GPUI_CODEGEN_HOST"
+
+  @doc "Returns the schema selected explicitly for this generation process."
+  @spec selected() :: Registry.t()
+  def selected do
+    case selected_name() do
+      :vanilla -> vanilla()
+      :gpui_component -> gpui_component()
+    end
+  end
+
+  @doc "Returns the selected host name."
+  @spec selected_name() :: :vanilla | :gpui_component
+  def selected_name do
+    case System.get_env(@host_env, "gpui_component") do
+      "vanilla" -> :vanilla
+      "gpui_component" -> :gpui_component
+      value -> raise ArgumentError, "unsupported #{@host_env}=#{inspect(value)}"
+    end
+  end
+
+  @doc "Returns declarations for the explicitly selected generation host."
+  @spec selected_components() :: [GPUI.Schema.Component.t()]
+  def selected_components, do: Registry.components(selected())
+
+  @doc "Returns native tags for the explicitly selected generation host."
+  @spec selected_native_tags() :: [atom()]
+  def selected_native_tags, do: Registry.native_tags(selected())
+
+  @doc "Returns stateful declarations for the explicitly selected generation host."
+  @spec selected_stateful_components() :: [GPUI.Schema.Component.t()]
+  def selected_stateful_components, do: Registry.stateful_components(selected())
+
   @doc "Returns the composed gpui-component host declarations."
   @spec components() :: [GPUI.Schema.Component.t()]
   def components, do: Registry.components(gpui_component())

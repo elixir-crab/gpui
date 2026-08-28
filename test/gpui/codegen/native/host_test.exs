@@ -14,6 +14,7 @@ defmodule GPUI.Codegen.Native.HostTest do
     assert :div in Registry.native_tags(vanilla)
     assert :ui_paint in Registry.native_tags(vanilla)
     assert :ui_button in Registry.native_tags(component_host)
+    refute Enum.any?(Registry.stateful_components(vanilla), &(&1.kind == :button_component))
     assert length(component_host.components) > length(vanilla.components)
   end
 end

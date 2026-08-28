@@ -28,7 +28,12 @@ defmodule GPUI.Native.NIF do
         not precompiled_target? or not File.exists?(checksum)
 
     host =
-      Application.compile_env(:gpui_native, [GPUI.Native, :host], :vanilla)
+      case System.get_env("GPUI_NATIVE_HOST") do
+        "vanilla" -> :vanilla
+        "gpui_component" -> :gpui_component
+        nil -> Application.compile_env(:gpui_native, [GPUI.Native, :host], :vanilla)
+        value -> raise ArgumentError, "unsupported GPUI_NATIVE_HOST: #{inspect(value)}"
+      end
 
     source_variant =
       cond do
