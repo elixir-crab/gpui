@@ -13,6 +13,7 @@ defmodule GPUI.Schema.Registry do
   defstruct modules: [], components: []
 
   @type schema_module :: module()
+  @type provider_entry :: %{provider: schema_module(), component: Component.t()}
   @type t :: %__MODULE__{modules: [schema_module()], components: [Component.t()]}
 
   @doc false
@@ -81,6 +82,25 @@ defmodule GPUI.Schema.Registry do
   def component!(%__MODULE__{} = registry, tag) when is_atom(tag) do
     Enum.find(registry.components, &(&1.tag == tag)) ||
       raise ArgumentError, "unknown GPUI component #{inspect(tag)}"
+  end
+
+  @doc "Returns the explicit provider module for one composed component."
+  @spec provider!(t(), atom()) :: schema_module()
+  def provider!(%__MODULE__{} = registry, tag) when is_atom(tag) do
+    registry.modules
+    |> Enum.find(fn module -> Enum.any?(module.components(), &(&1.tag == tag)) end)
+    |> case do
+      nil -> raise ArgumentError, "unknown GPUI component #{inspect(tag)}"
+      module -> module
+    end
+  end
+
+  @doc "Returns provider/component entries in composed declaration order."
+  @spec entries(t()) :: [provider_entry()]
+  def entries(%__MODULE__{} = registry) do
+    Enum.map(registry.components, fn component ->
+      %{provider: provider!(registry, component.tag), component: component}
+    end)
   end
 
   defp validate_components!(module, components) do

@@ -4,14 +4,20 @@ defmodule GPUI.Schema.RegistryTest do
   alias GPUI.Schema.Registry
 
   defmodule FirstSchema do
+    @behaviour GPUI.Schema.Provider
+    @impl true
     def components, do: [%GPUI.Schema.Component{tag: :first, kind: :container}]
   end
 
   defmodule SecondSchema do
+    @behaviour GPUI.Schema.Provider
+    @impl true
     def components, do: [%GPUI.Schema.Component{tag: :second, kind: :container}]
   end
 
   defmodule DuplicateSchema do
+    @behaviour GPUI.Schema.Provider
+    @impl true
     def components, do: [%GPUI.Schema.Component{tag: :first, kind: :text}]
   end
 
@@ -24,6 +30,12 @@ defmodule GPUI.Schema.RegistryTest do
     assert registry.modules == [FirstSchema, SecondSchema]
     assert Registry.native_tags(registry) == [:first, :second]
     assert Registry.component!(registry, :second).kind == :container
+    assert Registry.provider!(registry, :first) == FirstSchema
+
+    assert Registry.entries(registry) == [
+             %{provider: FirstSchema, component: Registry.component!(registry, :first)},
+             %{provider: SecondSchema, component: Registry.component!(registry, :second)}
+           ]
   end
 
   test "canonical core registry contains neutral declarations" do

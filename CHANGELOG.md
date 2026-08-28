@@ -4,6 +4,9 @@
 
 ### Breaking changes
 
+- Added schema-provider modules as the extensible ownership identity and a
+  closed capability audit separating provider, declaration category, and
+  statically linked native requirements without hardcoding package names.
 - Split the canonical schema into an explicit neutral core registry and a
   conventional component schema owned by `gpui_components`; native generation
   now composes the selected host from named schema modules.

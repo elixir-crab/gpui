@@ -8,12 +8,11 @@ defmodule GPUI.Codegen.Native.HostTest do
     vanilla = Host.vanilla()
     component_host = Host.gpui_component()
 
-    refute Enum.any?(
-             Registry.native_tags(vanilla),
-             &String.starts_with?(Atom.to_string(&1), "ui_")
-           )
+    refute :ui_button in Registry.native_tags(vanilla)
+    refute :ui_split in Registry.native_tags(vanilla)
 
     assert :div in Registry.native_tags(vanilla)
+    assert :ui_paint in Registry.native_tags(vanilla)
     assert :ui_button in Registry.native_tags(component_host)
     assert length(component_host.components) > length(vanilla.components)
   end

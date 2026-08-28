@@ -7,18 +7,31 @@ defmodule GPUI.Components.Schema do
   owner consumed by component builders and explicit host composition.
   """
 
+  @behaviour GPUI.Schema.Provider
+
   alias GPUI.Schema.ComponentDocs
 
-  @components GPUI.Schema.components()
-              |> Enum.filter(&String.starts_with?(Atom.to_string(&1.tag), "ui_"))
+  @component_tags ~w(
+    ui_drop_target ui_split ui_button ui_progress
+    ui_popover ui_popover_trigger ui_popover_content ui_tooltip ui_tooltip_trigger
+    ui_dialog ui_dialog_trigger ui_dialog_content ui_dropdown_menu
+    ui_dropdown_menu_trigger ui_dropdown_menu_item ui_checkbox ui_input ui_select
+    ui_combobox ui_switch ui_radio_group ui_accordion ui_accordion_item
+    ui_virtual_list ui_virtual_list_item ui_virtual_collection ui_virtual_item
+    ui_rich_text ui_data_table ui_table_column ui_table_row ui_tree ui_tree_item
+    ui_code_viewer ui_code_line ui_tabs ui_slider
+  )a
 
-  @registry GPUI.Schema.Registry.from_components(@components)
+  @components Enum.map(@component_tags, &GPUI.Schema.component!/1)
 
+  @registry GPUI.Schema.Registry.from_components(GPUI.Schema.Surfaces.components() ++ @components)
+
+  @impl true
   @doc "Returns conventional component declarations in protocol order."
   @spec components() :: [GPUI.Schema.Component.t()]
   def components, do: @components
 
-  @doc "Returns one conventional component declaration."
+  @doc "Returns one conventional or component-package-authored surface declaration."
   @spec component!(atom()) :: GPUI.Schema.Component.t()
   def component!(tag) when is_atom(tag), do: GPUI.Schema.Registry.component!(@registry, tag)
 

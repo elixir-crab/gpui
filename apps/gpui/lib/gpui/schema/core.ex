@@ -7,9 +7,12 @@ defmodule GPUI.Schema.Core do
   remain versioned by `GPUI.Schema`.
   """
 
-  @components GPUI.Schema.components()
-              |> Enum.reject(&String.starts_with?(Atom.to_string(&1.tag), "ui_"))
+  @behaviour GPUI.Schema.Provider
 
+  @component_tags ~w(viewport div button layer span scroll list item text_surface text_input img text)a
+  @components Enum.map(@component_tags, &GPUI.Schema.component!/1)
+
+  @impl true
   @doc "Returns neutral primitive declarations in protocol order."
   @spec components() :: [GPUI.Schema.Component.t()]
   def components, do: @components

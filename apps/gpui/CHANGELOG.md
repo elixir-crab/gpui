@@ -4,6 +4,8 @@
 
 ### Breaking changes
 
+- Added `GPUI.Schema.Provider`, provider-aware registry inspection, and an
+  explicit ownership/capability audit for every canonical native tag.
 - Added the immutable `GPUI.Schema.Registry` and made `GPUI.Schema.registry/0`
   return only neutral core declarations; conventional declarations compose
   explicitly from `gpui_components`.

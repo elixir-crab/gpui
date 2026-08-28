@@ -11,7 +11,10 @@ defmodule GPUI.Codegen.Native.Host do
 
   @doc "Returns the neutral vanilla-GPUI host schema."
   @spec vanilla() :: Registry.t()
-  def vanilla, do: GPUI.Schema.registry()
+  def vanilla do
+    GPUI.Schema.registry()
+    |> Registry.include(GPUI.Schema.Surfaces)
+  end
 
   @doc "Returns the vanilla schema plus the official component package."
   @spec gpui_component() :: Registry.t()
