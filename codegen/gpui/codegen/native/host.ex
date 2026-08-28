@@ -19,11 +19,8 @@ defmodule GPUI.Codegen.Native.Host do
   @doc "Returns the vanilla schema plus the official component package."
   @spec gpui_component() :: Registry.t()
   def gpui_component do
-    canonical_tags = GPUI.Schema.Ownership.tags()
-
     vanilla()
     |> Registry.include(GPUI.Components.Schema.Declarations)
-    |> Registry.order(canonical_tags)
   end
 
   @doc "Returns the composed gpui-component host declarations."

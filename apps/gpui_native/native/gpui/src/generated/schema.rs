@@ -5,12 +5,16 @@ pub enum GeneratedComponentKind {
     Viewport,
     Container,
     AnchoredLayer,
-    DropTargetComponent,
-    SplitComponent,
-    ButtonComponent,
+    TextSurface,
+    Input,
+    Image,
+    Text,
     EdgeFadeComponent,
     FrostComponent,
     PaintComponent,
+    DropTargetComponent,
+    SplitComponent,
+    ButtonComponent,
     ProgressComponent,
     PopoverComponent,
     PopoverTriggerComponent,
@@ -45,10 +49,6 @@ pub enum GeneratedComponentKind {
     CodeLineComponent,
     TabsComponent,
     SliderComponent,
-    TextSurface,
-    Input,
-    Image,
-    Text,
     Unknown,
 }
 #[cfg(feature = "real-gpui")]
@@ -2197,6 +2197,93 @@ pub(crate) fn append_radio_option(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct EdgeFadeComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) edges: Vec<String>,
+    pub(crate) size: f64,
+    pub(crate) opacity: f64,
+    pub(crate) children: Vec<ElementNode>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_edge_fade_component<'a>(
+    term: Term<'a>,
+) -> NifResult<EdgeFadeComponentNode> {
+    require_extension_version(term, "edge_fade", 1)?;
+    Ok(EdgeFadeComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        edges: component_enum_list_attr(
+            term,
+            atoms::edges(),
+            &vec!["top", "right", "bottom", "left"],
+        )?,
+        size: component_positive_number_attr(term, atoms::size())?.unwrap_or(24.0),
+        opacity: component_number_attr(term, atoms::opacity())?.unwrap_or(1.0),
+        children: decode_children(term)?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct FrostComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) fallback: Option<String>,
+    pub(crate) opacity: f64,
+    pub(crate) reduced_transparency: bool,
+    pub(crate) children: Vec<ElementNode>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_frost_component<'a>(
+    term: Term<'a>,
+) -> NifResult<FrostComponentNode> {
+    require_extension_version(term, "frost", 1)?;
+    Ok(FrostComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        fallback: match component_enum_attr(
+            term,
+            atoms::fallback(),
+            &vec!["solid", "translucent"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("solid".to_string()),
+        },
+        opacity: component_number_attr(term, atoms::opacity())?.unwrap_or(0.82),
+        reduced_transparency: component_bool_attr(term, atoms::reduced_transparency())?
+            .unwrap_or(false),
+        children: decode_children(term)?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct PaintComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) commands: Vec<PaintCommand>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_paint_component<'a>(
+    term: Term<'a>,
+) -> NifResult<PaintComponentNode> {
+    require_extension_version(term, "paint", 1)?;
+    Ok(PaintComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        commands: decode_paint_commands(term)?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct DropTargetComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -2323,93 +2410,6 @@ pub(crate) fn decode_generated_button_component<'a>(
         clipboard: component_string_attr(term, atoms::phx_clipboard_read())?,
         clipboard_write: component_string_attr(term, atoms::phx_clipboard_write())?,
         file_read: component_string_attr(term, atoms::phx_file_read())?,
-    })
-}
-#[derive(Clone, Debug)]
-#[cfg(feature = "real-gpui")]
-#[allow(dead_code)]
-pub(crate) struct EdgeFadeComponentNode {
-    pub(crate) style: StyleAttrs,
-    pub(crate) id: String,
-    pub(crate) edges: Vec<String>,
-    pub(crate) size: f64,
-    pub(crate) opacity: f64,
-    pub(crate) children: Vec<ElementNode>,
-}
-#[cfg(feature = "real-gpui")]
-#[allow(clippy::redundant_field_names)]
-#[allow(clippy::useless_vec)]
-pub(crate) fn decode_generated_edge_fade_component<'a>(
-    term: Term<'a>,
-) -> NifResult<EdgeFadeComponentNode> {
-    require_extension_version(term, "edge_fade", 1)?;
-    Ok(EdgeFadeComponentNode {
-        style: decode_style(term)?,
-        id: component_id(term)?,
-        edges: component_enum_list_attr(
-            term,
-            atoms::edges(),
-            &vec!["top", "right", "bottom", "left"],
-        )?,
-        size: component_positive_number_attr(term, atoms::size())?.unwrap_or(24.0),
-        opacity: component_number_attr(term, atoms::opacity())?.unwrap_or(1.0),
-        children: decode_children(term)?,
-    })
-}
-#[derive(Clone, Debug)]
-#[cfg(feature = "real-gpui")]
-#[allow(dead_code)]
-pub(crate) struct FrostComponentNode {
-    pub(crate) style: StyleAttrs,
-    pub(crate) id: String,
-    pub(crate) fallback: Option<String>,
-    pub(crate) opacity: f64,
-    pub(crate) reduced_transparency: bool,
-    pub(crate) children: Vec<ElementNode>,
-}
-#[cfg(feature = "real-gpui")]
-#[allow(clippy::redundant_field_names)]
-#[allow(clippy::useless_vec)]
-pub(crate) fn decode_generated_frost_component<'a>(
-    term: Term<'a>,
-) -> NifResult<FrostComponentNode> {
-    require_extension_version(term, "frost", 1)?;
-    Ok(FrostComponentNode {
-        style: decode_style(term)?,
-        id: component_id(term)?,
-        fallback: match component_enum_attr(
-            term,
-            atoms::fallback(),
-            &vec!["solid", "translucent"],
-        )? {
-            Some(value) => Some(value),
-            None => Some("solid".to_string()),
-        },
-        opacity: component_number_attr(term, atoms::opacity())?.unwrap_or(0.82),
-        reduced_transparency: component_bool_attr(term, atoms::reduced_transparency())?
-            .unwrap_or(false),
-        children: decode_children(term)?,
-    })
-}
-#[derive(Clone, Debug)]
-#[cfg(feature = "real-gpui")]
-#[allow(dead_code)]
-pub(crate) struct PaintComponentNode {
-    pub(crate) style: StyleAttrs,
-    pub(crate) id: String,
-    pub(crate) commands: Vec<PaintCommand>,
-}
-#[cfg(feature = "real-gpui")]
-#[allow(clippy::redundant_field_names)]
-#[allow(clippy::useless_vec)]
-pub(crate) fn decode_generated_paint_component<'a>(
-    term: Term<'a>,
-) -> NifResult<PaintComponentNode> {
-    require_extension_version(term, "paint", 1)?;
-    Ok(PaintComponentNode {
-        style: decode_style(term)?,
-        id: component_id(term)?,
-        commands: decode_paint_commands(term)?,
     })
 }
 #[derive(Clone, Debug)]
@@ -3625,12 +3625,12 @@ pub(crate) enum ElementNode {
     AnchoredLayer(AnchoredLayerNode),
     TextSurface(TextSurfaceNode),
     Input(InputNode),
-    DropTargetComponent(DropTargetComponentNode),
-    SplitComponent(SplitComponentNode),
-    ButtonComponent(ButtonComponentNode),
     EdgeFadeComponent(EdgeFadeComponentNode),
     FrostComponent(FrostComponentNode),
     PaintComponent(PaintComponentNode),
+    DropTargetComponent(DropTargetComponentNode),
+    SplitComponent(SplitComponentNode),
+    ButtonComponent(ButtonComponentNode),
     ProgressComponent(ProgressComponentNode),
     PopoverComponent(PopoverComponentNode),
     PopoverTriggerComponent(PopoverTriggerComponentNode),
@@ -3674,12 +3674,20 @@ pub enum GeneratedElementTag {
     Div,
     Button,
     Layer,
-    UiDropTarget,
-    UiSplit,
-    UiButton,
+    Span,
+    Scroll,
+    List,
+    Item,
+    TextSurface,
+    TextInput,
+    Img,
+    Text,
     UiEdgeFade,
     UiFrost,
     UiPaint,
+    UiDropTarget,
+    UiSplit,
+    UiButton,
     UiProgress,
     UiPopover,
     UiPopoverTrigger,
@@ -3714,14 +3722,6 @@ pub enum GeneratedElementTag {
     UiCodeLine,
     UiTabs,
     UiSlider,
-    Span,
-    Scroll,
-    List,
-    Item,
-    TextSurface,
-    TextInput,
-    Img,
-    Text,
     Unknown,
 }
 pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
@@ -3730,12 +3730,20 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "div" => GeneratedElementTag::Div,
         "button" => GeneratedElementTag::Button,
         "layer" => GeneratedElementTag::Layer,
-        "ui_drop_target" => GeneratedElementTag::UiDropTarget,
-        "ui_split" => GeneratedElementTag::UiSplit,
-        "ui_button" => GeneratedElementTag::UiButton,
+        "span" => GeneratedElementTag::Span,
+        "scroll" => GeneratedElementTag::Scroll,
+        "list" => GeneratedElementTag::List,
+        "item" => GeneratedElementTag::Item,
+        "text_surface" => GeneratedElementTag::TextSurface,
+        "text_input" => GeneratedElementTag::TextInput,
+        "img" => GeneratedElementTag::Img,
+        "text" => GeneratedElementTag::Text,
         "ui_edge_fade" => GeneratedElementTag::UiEdgeFade,
         "ui_frost" => GeneratedElementTag::UiFrost,
         "ui_paint" => GeneratedElementTag::UiPaint,
+        "ui_drop_target" => GeneratedElementTag::UiDropTarget,
+        "ui_split" => GeneratedElementTag::UiSplit,
+        "ui_button" => GeneratedElementTag::UiButton,
         "ui_progress" => GeneratedElementTag::UiProgress,
         "ui_popover" => GeneratedElementTag::UiPopover,
         "ui_popover_trigger" => GeneratedElementTag::UiPopoverTrigger,
@@ -3770,14 +3778,6 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_code_line" => GeneratedElementTag::UiCodeLine,
         "ui_tabs" => GeneratedElementTag::UiTabs,
         "ui_slider" => GeneratedElementTag::UiSlider,
-        "span" => GeneratedElementTag::Span,
-        "scroll" => GeneratedElementTag::Scroll,
-        "list" => GeneratedElementTag::List,
-        "item" => GeneratedElementTag::Item,
-        "text_surface" => GeneratedElementTag::TextSurface,
-        "text_input" => GeneratedElementTag::TextInput,
-        "img" => GeneratedElementTag::Img,
-        "text" => GeneratedElementTag::Text,
         _ => GeneratedElementTag::Unknown,
     }
 }
@@ -3787,12 +3787,20 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::Div => GeneratedComponentKind::Container,
         GeneratedElementTag::Button => GeneratedComponentKind::Container,
         GeneratedElementTag::Layer => GeneratedComponentKind::AnchoredLayer,
-        GeneratedElementTag::UiDropTarget => GeneratedComponentKind::DropTargetComponent,
-        GeneratedElementTag::UiSplit => GeneratedComponentKind::SplitComponent,
-        GeneratedElementTag::UiButton => GeneratedComponentKind::ButtonComponent,
+        GeneratedElementTag::Span => GeneratedComponentKind::Container,
+        GeneratedElementTag::Scroll => GeneratedComponentKind::Container,
+        GeneratedElementTag::List => GeneratedComponentKind::Container,
+        GeneratedElementTag::Item => GeneratedComponentKind::Container,
+        GeneratedElementTag::TextSurface => GeneratedComponentKind::TextSurface,
+        GeneratedElementTag::TextInput => GeneratedComponentKind::Input,
+        GeneratedElementTag::Img => GeneratedComponentKind::Image,
+        GeneratedElementTag::Text => GeneratedComponentKind::Text,
         GeneratedElementTag::UiEdgeFade => GeneratedComponentKind::EdgeFadeComponent,
         GeneratedElementTag::UiFrost => GeneratedComponentKind::FrostComponent,
         GeneratedElementTag::UiPaint => GeneratedComponentKind::PaintComponent,
+        GeneratedElementTag::UiDropTarget => GeneratedComponentKind::DropTargetComponent,
+        GeneratedElementTag::UiSplit => GeneratedComponentKind::SplitComponent,
+        GeneratedElementTag::UiButton => GeneratedComponentKind::ButtonComponent,
         GeneratedElementTag::UiProgress => GeneratedComponentKind::ProgressComponent,
         GeneratedElementTag::UiPopover => GeneratedComponentKind::PopoverComponent,
         GeneratedElementTag::UiPopoverTrigger => {
@@ -3855,14 +3863,6 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::UiCodeLine => GeneratedComponentKind::CodeLineComponent,
         GeneratedElementTag::UiTabs => GeneratedComponentKind::TabsComponent,
         GeneratedElementTag::UiSlider => GeneratedComponentKind::SliderComponent,
-        GeneratedElementTag::Span => GeneratedComponentKind::Container,
-        GeneratedElementTag::Scroll => GeneratedComponentKind::Container,
-        GeneratedElementTag::List => GeneratedComponentKind::Container,
-        GeneratedElementTag::Item => GeneratedComponentKind::Container,
-        GeneratedElementTag::TextSurface => GeneratedComponentKind::TextSurface,
-        GeneratedElementTag::TextInput => GeneratedComponentKind::Input,
-        GeneratedElementTag::Img => GeneratedComponentKind::Image,
-        GeneratedElementTag::Text => GeneratedComponentKind::Text,
         GeneratedElementTag::Unknown => GeneratedComponentKind::Unknown,
     }
 }
@@ -3876,18 +3876,10 @@ pub(crate) fn decode_generated_element_node<'a>(
         GeneratedComponentKind::Viewport => decode_viewport_node(term, tag),
         GeneratedComponentKind::Container => decode_container_node(term, tag),
         GeneratedComponentKind::AnchoredLayer => decode_anchored_layer_node(term, tag),
-        GeneratedComponentKind::DropTargetComponent => {
-            decode_generated_drop_target_component(term)
-                .map(|node| ElementNode::DropTargetComponent(node))
-        }
-        GeneratedComponentKind::SplitComponent => {
-            decode_generated_split_component(term)
-                .map(|node| ElementNode::SplitComponent(node))
-        }
-        GeneratedComponentKind::ButtonComponent => {
-            decode_generated_button_component(term)
-                .map(|node| ElementNode::ButtonComponent(node))
-        }
+        GeneratedComponentKind::TextSurface => decode_text_surface_node(term, tag),
+        GeneratedComponentKind::Input => decode_input_node(term, tag),
+        GeneratedComponentKind::Image => decode_image_node(term, tag),
+        GeneratedComponentKind::Text => decode_text_node(term, tag),
         GeneratedComponentKind::EdgeFadeComponent => {
             decode_generated_edge_fade_component(term)
                 .map(|node| ElementNode::EdgeFadeComponent(node))
@@ -3899,6 +3891,18 @@ pub(crate) fn decode_generated_element_node<'a>(
         GeneratedComponentKind::PaintComponent => {
             decode_generated_paint_component(term)
                 .map(|node| ElementNode::PaintComponent(node))
+        }
+        GeneratedComponentKind::DropTargetComponent => {
+            decode_generated_drop_target_component(term)
+                .map(|node| ElementNode::DropTargetComponent(node))
+        }
+        GeneratedComponentKind::SplitComponent => {
+            decode_generated_split_component(term)
+                .map(|node| ElementNode::SplitComponent(node))
+        }
+        GeneratedComponentKind::ButtonComponent => {
+            decode_generated_button_component(term)
+                .map(|node| ElementNode::ButtonComponent(node))
         }
         GeneratedComponentKind::ProgressComponent => {
             decode_generated_progress_component(term)
@@ -4036,10 +4040,6 @@ pub(crate) fn decode_generated_element_node<'a>(
             decode_generated_slider_component(term)
                 .map(|node| ElementNode::SliderComponent(node))
         }
-        GeneratedComponentKind::TextSurface => decode_text_surface_node(term, tag),
-        GeneratedComponentKind::Input => decode_input_node(term, tag),
-        GeneratedComponentKind::Image => decode_image_node(term, tag),
-        GeneratedComponentKind::Text => decode_text_node(term, tag),
         GeneratedComponentKind::Unknown => Err(rustler::Error::BadArg),
     }
 }
@@ -4050,15 +4050,6 @@ pub(crate) fn render_generated_component_node(
     context: &mut element::ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     match node {
-        ElementNode::DropTargetComponent(node) => {
-            element::component::drop_target::render(node, context)
-        }
-        ElementNode::SplitComponent(node) => {
-            element::component::split::render(node, context)
-        }
-        ElementNode::ButtonComponent(node) => {
-            element::component::controls::render_button_component(node, context)
-        }
         ElementNode::EdgeFadeComponent(node) => {
             element::component::edge_fade::render_edge_fade(node, context)
         }
@@ -4067,6 +4058,15 @@ pub(crate) fn render_generated_component_node(
         }
         ElementNode::PaintComponent(node) => {
             element::component::paint::render_paint(node, context)
+        }
+        ElementNode::DropTargetComponent(node) => {
+            element::component::drop_target::render(node, context)
+        }
+        ElementNode::SplitComponent(node) => {
+            element::component::split::render(node, context)
+        }
+        ElementNode::ButtonComponent(node) => {
+            element::component::controls::render_button_component(node, context)
         }
         ElementNode::ProgressComponent(node) => {
             element::component::display::render_progress(node, context)

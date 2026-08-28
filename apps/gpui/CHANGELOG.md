@@ -4,6 +4,9 @@
 
 ### Breaking changes
 
+- Removed the complete component-host ownership manifest from the isolated core
+  package; core now knows only its own provider declarations and reserves the
+  raw `ui_*` template namespace without enumerating optional providers.
 - Physically moved core and specialized-surface component declarations out of
   the monolithic schema into their provider modules.
 - Added `GPUI.Schema.Provider`, provider-aware registry inspection, and an

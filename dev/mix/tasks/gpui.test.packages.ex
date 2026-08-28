@@ -140,8 +140,30 @@ defmodule Mix.Tasks.Gpui.Test.Packages do
         quote(do: refute(Code.ensure_loaded?(Reach)))
       ]
       |> maybe_add_assertion(
+        apps == [:gpui],
+        quote(do: refute(Code.ensure_loaded?(GPUI.Components.Schema)))
+      )
+      |> maybe_add_assertion(
+        apps == [:gpui],
+        quote do
+          assert GPUI.Schema.Registry.native_tags(GPUI.Schema.registry()) ==
+                   Enum.map(GPUI.Schema.Core.components(), & &1.tag)
+        end
+      )
+      |> maybe_add_assertion(
         :gpui_components in apps,
         quote(do: assert(Code.ensure_loaded?(GPUI.UI)))
+      )
+      |> maybe_add_assertion(
+        :gpui_components in apps,
+        quote do
+          registry =
+            GPUI.Schema.registry()
+            |> GPUI.Schema.Registry.include(GPUI.Schema.Surfaces)
+            |> GPUI.Schema.Registry.include(GPUI.Components.Schema.Declarations)
+
+          assert :ui_button in GPUI.Schema.Registry.native_tags(registry)
+        end
       )
       |> maybe_add_assertion(
         :gpui_native in apps,

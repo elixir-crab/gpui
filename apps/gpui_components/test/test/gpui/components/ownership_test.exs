@@ -1,35 +1,29 @@
-defmodule GPUI.Schema.OwnershipTest do
+defmodule GPUI.Components.SchemaIsolationTest do
   use ExUnit.Case, async: true
 
-  alias GPUI.Schema.Ownership
   alias GPUI.Schema.Registry
 
-  test "classifies every canonical tag exactly once" do
-    assert Enum.map(Ownership.all(), &elem(&1, 0)) == Ownership.tags()
-  end
-
-  test "separates declaration provider from native requirement" do
+  test "provider identity follows explicit composition without a global tag manifest" do
     registry =
       GPUI.Schema.registry()
       |> Registry.include(GPUI.Schema.Surfaces)
       |> Registry.include(GPUI.Components.Schema.Declarations)
-      |> Registry.order(Ownership.tags())
 
     assert Registry.provider!(registry, :div) == GPUI.Schema.Core
-    assert Registry.provider!(registry, :ui_button) == GPUI.Components.Schema.Declarations
-
-    assert Ownership.fetch!(:div) == %{category: :primitive, native_requirement: :vanilla}
-
-    assert Ownership.fetch!(:ui_paint) == %{
-             category: :specialized_surface,
-             native_requirement: :vanilla
-           }
-
     assert Registry.provider!(registry, :ui_paint) == GPUI.Schema.Surfaces
+    assert Registry.provider!(registry, :ui_button) == GPUI.Components.Schema.Declarations
+  end
 
-    assert Ownership.fetch!(:ui_button) == %{
-             category: :conventional_control,
-             native_requirement: :gpui_component
-           }
+  test "provider composition has deterministic provider-local order" do
+    registry =
+      GPUI.Schema.registry()
+      |> Registry.include(GPUI.Schema.Surfaces)
+      |> Registry.include(GPUI.Components.Schema.Declarations)
+
+    expected =
+      GPUI.Schema.Core.components() ++
+        GPUI.Schema.Surfaces.components() ++ GPUI.Components.Schema.Declarations.components()
+
+    assert Registry.components(registry) == expected
   end
 end

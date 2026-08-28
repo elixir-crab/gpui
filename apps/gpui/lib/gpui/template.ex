@@ -18,10 +18,6 @@ defmodule GPUI.Template do
                         |> Enum.reject(&String.starts_with?(Atom.to_string(&1.tag), "ui_"))
                         |> Map.new(&{Atom.to_string(&1.tag), &1.tag})
 
-  @component_tags GPUI.Schema.Ownership.tags()
-                  |> Enum.filter(&String.starts_with?(Atom.to_string(&1), "ui_"))
-                  |> MapSet.new(&Atom.to_string/1)
-
   @doc "Compiles a HEEx-style GPUI template into an element tree."
   defmacro sigil_GPUI({:<<>>, meta, [source]}, _modifiers) when is_binary(source) do
     compile(source, __CALLER__, meta)
@@ -187,7 +183,7 @@ defmodule GPUI.Template do
 
       :error ->
         description =
-          if MapSet.member?(@component_tags, name) do
+          if String.starts_with?(name, "ui_") do
             "native component tag <#{name}> is internal; use #{component_builder(name)}"
           else
             "unsupported GPUI tag <#{name}>"

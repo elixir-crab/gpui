@@ -4,6 +4,9 @@
 
 ### Breaking changes
 
+- Removed the cross-package canonical tag manifest from `gpui`; complete host
+  order is now deterministic provider composition owned by repository codegen,
+  while raw `ui_*` template rejection is a provider-neutral namespace rule.
 - Physically moved neutral primitive, specialized-surface, and conventional
   component declarations into their schema-provider modules; native codegen
   tests now derive expectations from the explicit composed host manifest.

@@ -8,9 +8,13 @@ defmodule GPUI.Components.FullSchemaTest do
       GPUI.Schema.registry()
       |> Registry.include(GPUI.Schema.Surfaces)
       |> Registry.include(GPUI.Components.Schema.Declarations)
-      |> Registry.order(GPUI.Schema.Ownership.tags())
 
-    assert Registry.native_tags(registry) == GPUI.Schema.Ownership.tags()
+    assert Registry.native_tags(registry) ==
+             GPUI.Schema.Core.components()
+             |> Kernel.++(GPUI.Schema.Surfaces.components())
+             |> Kernel.++(GPUI.Components.Schema.Declarations.components())
+             |> Enum.map(& &1.tag)
+
     assert Registry.provider!(registry, :ui_button) == GPUI.Components.Schema.Declarations
     assert Registry.provider!(registry, :ui_paint) == GPUI.Schema.Surfaces
     assert Registry.component!(registry, :ui_input).required_events == [:"phx-change"]

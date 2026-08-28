@@ -53,16 +53,14 @@ defmodule GPUI.Element do
   defp payload(value), do: to_payload(value)
 
   defp put_extension_version(attrs, type) do
-    case Enum.find(GPUI.Schema.extensions(), &(&1.id == type_extension_id(type))) do
-      %GPUI.Schema.Extension{version: version} -> Map.put(attrs, :__extension_version__, version)
-      nil -> attrs
+    case Enum.find(GPUI.Schema.components(), &(&1.tag == type)) do
+      %GPUI.Schema.Component{extension: %GPUI.Schema.Extension{version: version}} ->
+        Map.put(attrs, :__extension_version__, version)
+
+      _component_or_unknown ->
+        attrs
     end
   end
-
-  defp type_extension_id(:ui_edge_fade), do: :edge_fade
-  defp type_extension_id(:ui_frost), do: :frost
-  defp type_extension_id(:ui_paint), do: :paint
-  defp type_extension_id(_type), do: nil
 
   defp validated_primitive_attrs(%__MODULE__{type: :layer, children: [_child], attrs: attrs}) do
     attrs

@@ -2,6 +2,7 @@
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 enum ComponentKind {
+    TextSurface,
     DropTarget,
     Split,
     Popover,
@@ -17,10 +18,10 @@ enum ComponentKind {
     Tree,
     CodeViewer,
     Slider,
-    TextSurface,
 }
 #[allow(clippy::large_enum_variant)]
 enum StatefulComponent {
+    TextSurface(ComponentTextSurface),
     DropTarget(ComponentDropTarget),
     Split(ComponentSplit),
     Popover(ComponentPopover),
@@ -36,9 +37,28 @@ enum StatefulComponent {
     Tree(ComponentTree),
     CodeViewer(ComponentCodeViewer),
     Slider(ComponentSlider),
-    TextSurface(ComponentTextSurface),
 }
 impl ComponentRegistry {
+    pub(crate) fn text_surface_mut(
+        &mut self,
+        id: &str,
+    ) -> Option<&mut ComponentTextSurface> {
+        let key = ComponentKey::new(ComponentKind::TextSurface, id);
+        self.active.insert(key.clone());
+        match self.entries.get_mut(&key) {
+            Some(StatefulComponent::TextSurface(component)) => Some(component),
+            _ => None,
+        }
+    }
+    pub(crate) fn insert_text_surface(
+        &mut self,
+        id: &str,
+        component: ComponentTextSurface,
+    ) -> bool {
+        let key = ComponentKey::new(ComponentKind::TextSurface, id);
+        self.active.insert(key.clone());
+        self.entries.insert(key, StatefulComponent::TextSurface(component)).is_none()
+    }
     pub(crate) fn drop_target_mut(
         &mut self,
         id: &str,
@@ -301,26 +321,6 @@ impl ComponentRegistry {
         let key = ComponentKey::new(ComponentKind::Slider, id);
         self.active.insert(key.clone());
         self.entries.insert(key, StatefulComponent::Slider(component)).is_none()
-    }
-    pub(crate) fn text_surface_mut(
-        &mut self,
-        id: &str,
-    ) -> Option<&mut ComponentTextSurface> {
-        let key = ComponentKey::new(ComponentKind::TextSurface, id);
-        self.active.insert(key.clone());
-        match self.entries.get_mut(&key) {
-            Some(StatefulComponent::TextSurface(component)) => Some(component),
-            _ => None,
-        }
-    }
-    pub(crate) fn insert_text_surface(
-        &mut self,
-        id: &str,
-        component: ComponentTextSurface,
-    ) -> bool {
-        let key = ComponentKey::new(ComponentKind::TextSurface, id);
-        self.active.insert(key.clone());
-        self.entries.insert(key, StatefulComponent::TextSurface(component)).is_none()
     }
     pub(crate) fn remove_text_surface(&mut self, id: &str) -> bool {
         let key = ComponentKey::new(ComponentKind::TextSurface, id);
