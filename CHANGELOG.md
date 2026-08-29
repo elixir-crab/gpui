@@ -4,6 +4,9 @@
 
 ### Breaking changes
 
+- Replaced human-readable `cargo tree` dependency checks with a structured
+  `cargo metadata --format-version 1` graph and typed transitive dependency
+  queries used by native-host validation.
 - Moved immutable native projections into the application that owns each future
   Rust crate: `apps/gpui/native` and `apps/gpui_components/native`, without a
   redundant nested crate-name directory.

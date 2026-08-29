@@ -47,21 +47,26 @@ defmodule Mix.Tasks.Gpui.Test.Hosts do
   end
 
   defp assert_dependency_boundary!(host, feature_args) do
-    output = cargo_output!(["tree", "--manifest-path", @manifest] ++ feature_args)
-    includes_components? = String.contains?(output, "gpui-component v")
+    graph = GPUI.Dev.CargoMetadata.load!(@manifest, feature_args)
 
-    case {host, includes_components?} do
-      {:vanilla, false} -> :ok
-      {:gpui_component, true} -> :ok
-      {:vanilla, true} -> Mix.raise("vanilla host unexpectedly links gpui-component")
-      {:gpui_component, false} -> Mix.raise("gpui-component host is missing gpui-component")
+    case host do
+      :vanilla ->
+        refute_dependency!(graph, "gpui_nif", "gpui-component", host)
+
+      :gpui_component ->
+        assert_dependency!(graph, "gpui_nif", "gpui-component", host)
     end
   end
 
-  defp cargo_output!(args) do
-    case System.cmd("cargo", args, env: cargo_env(), stderr_to_stdout: true) do
-      {output, 0} -> output
-      {output, _status} -> Mix.raise("cargo #{Enum.join(args, " ")} failed:\n#{output}")
+  defp assert_dependency!(graph, package, dependency, host) do
+    unless GPUI.Dev.CargoMetadata.depends_on?(graph, package, dependency) do
+      Mix.raise("#{host} host is missing #{dependency}")
+    end
+  end
+
+  defp refute_dependency!(graph, package, dependency, host) do
+    if GPUI.Dev.CargoMetadata.depends_on?(graph, package, dependency) do
+      Mix.raise("#{host} host unexpectedly resolves #{dependency}")
     end
   end
 
