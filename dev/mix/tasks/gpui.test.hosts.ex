@@ -18,32 +18,19 @@ defmodule Mix.Tasks.Gpui.Test.Hosts do
 
   @impl Mix.Task
   def run(_args) do
+    Mix.Task.run("rustq.gen", ["--check"])
+
     Enum.each(@hosts, fn {host, feature_args} ->
       Mix.shell().info("Checking #{host} native host")
-      generate_host!(host)
       assert_generated_boundary!(host)
       assert_dependency_boundary!(host, feature_args)
       cargo!(["check", "--manifest-path", @manifest] ++ feature_args)
     end)
-
-    generate_host!(:gpui_component)
-  end
-
-  defp generate_host!(host) do
-    env = [
-      {"GPUI_CODEGEN_HOST", Atom.to_string(host)},
-      {"GPUI_SKIP_NATIVE", "1"}
-    ]
-
-    case System.cmd("mix", ["rustq.gen"], env: env, stderr_to_stdout: true) do
-      {_output, 0} -> :ok
-      {output, _status} -> Mix.raise("RustQ generation for #{host} failed:\n#{output}")
-    end
   end
 
   defp assert_generated_boundary!(:vanilla) do
-    schema = File.read!("apps/gpui_native/native/gpui/src/generated/schema.rs")
-    registry = File.read!("apps/gpui_native/native/gpui/src/generated/component_registry.rs")
+    schema = File.read!("apps/gpui_native/native/gpui_core/src/generated/schema.rs")
+    registry = File.read!("apps/gpui_native/native/gpui_core/src/generated/component_registry.rs")
 
     if String.contains?(schema, "ButtonComponentNode") or
          String.contains?(registry, "ComponentButton") do
@@ -52,7 +39,7 @@ defmodule Mix.Tasks.Gpui.Test.Hosts do
   end
 
   defp assert_generated_boundary!(:gpui_component) do
-    schema = File.read!("apps/gpui_native/native/gpui/src/generated/schema.rs")
+    schema = File.read!("apps/gpui_native/native/gpui_components/src/generated/schema.rs")
 
     unless String.contains?(schema, "ButtonComponentNode") do
       Mix.raise("gpui-component generated projection is missing conventional components")

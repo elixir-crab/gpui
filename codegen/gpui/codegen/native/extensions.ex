@@ -5,7 +5,7 @@ defmodule GPUI.Codegen.Native.Extensions do
 
   @spec items() :: [RustQ.Rust.AST.item()]
   def items do
-    GPUI.Codegen.Native.Host.selected_components()
+    GPUI.Codegen.Native.Host.components(:gpui_component)
     |> Enum.flat_map(fn
       %GPUI.Schema.Component{extension: %GPUI.Schema.Extension{} = extension} -> [extension]
       _component -> []

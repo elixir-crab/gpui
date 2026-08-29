@@ -104,14 +104,7 @@ defmodule GPUI.Umbrella.MixProject do
   end
 
   defp rustq_check(_args) do
-    {_, status} =
-      System.cmd("mix", ["rustq.gen", "--check"],
-        into: IO.stream(),
-        stderr_to_stdout: true,
-        env: [{"MIX_ENV", "dev"}]
-      )
-
-    if status != 0, do: Mix.raise("RustQ generated files are stale")
+    Mix.Task.run("rustq.gen", ["--check"])
   end
 
   defp rust_fmt(args),

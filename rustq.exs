@@ -51,6 +51,8 @@ require_file("codegen/gpui/codegen/native/renderer_dispatch.ex")
 require_file("codegen/gpui/codegen/native/registry.ex")
 require_file("codegen/gpui/codegen/native/schema_types.ex")
 require_file("codegen/gpui/codegen/native/schema.ex")
+require_file("codegen/gpui/codegen/native/vanilla.ex")
+require_file("codegen/gpui/codegen/native/projections.ex")
 
 rust "apps/gpui_native/native/gpui/src/generated/atoms.rs" do
   RustlerAtom.declaration(GPUI.Codegen.Native.Atoms.all())
@@ -106,6 +108,22 @@ end
 
 rust "apps/gpui_native/native/gpui/src/generated/rusty.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.Rusty)
+end
+
+rust "vanilla-schema", "apps/gpui_native/native/gpui_core/src/generated/schema.rs" do
+  GPUI.Codegen.Native.Projections.schema_items(:vanilla)
+end
+
+rust "vanilla-component-registry", "apps/gpui_native/native/gpui_core/src/generated/component_registry.rs" do
+  GPUI.Codegen.Native.Projections.registry_items(:vanilla)
+end
+
+rust "gpui-component-schema", "apps/gpui_native/native/gpui_components/src/generated/schema.rs" do
+  GPUI.Codegen.Native.Projections.schema_items(:gpui_component)
+end
+
+rust "gpui-component-registry", "apps/gpui_native/native/gpui_components/src/generated/component_registry.rs" do
+  GPUI.Codegen.Native.Projections.registry_items(:gpui_component)
 end
 
 rust "native-schema", "apps/gpui_native/native/gpui/src/generated/schema.rs" do

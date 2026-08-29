@@ -1,9 +1,11 @@
 defmodule GPUI.Codegen.Native.RendererDispatchDefinitions do
   @moduledoc "Builds renderer calls from schema entries and discovered handwritten Rust functions."
 
-  defmacro define_renderer_dispatch do
+  defmacro define_renderer_dispatch(host) do
+    host = Macro.expand(host, __CALLER__)
+
     components =
-      GPUI.Codegen.Native.Host.selected_components()
+      GPUI.Codegen.Native.Host.components(host)
       |> Enum.filter(&component_contract?/1)
 
     nodes = Enum.map(components, &component_node_name/1)
@@ -93,7 +95,7 @@ defmodule GPUI.Codegen.Native.RendererDispatch do
   alias RustQ.Rust.AST.Builder, as: A
 
   require RendererDispatchDefinitions
-  RendererDispatchDefinitions.define_renderer_dispatch()
+  RendererDispatchDefinitions.define_renderer_dispatch(:gpui_component)
 
   @spec item() :: AST.Function.t()
   def item do

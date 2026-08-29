@@ -1,9 +1,10 @@
 defmodule GPUI.Codegen.Native.DispatchDefinitions do
   @moduledoc "Builds schema-derived RustQ dispatch functions for element and component decoding."
 
-  defmacro define_dispatch do
-    components = GPUI.Codegen.Native.Host.selected_components()
-    tags = GPUI.Codegen.Native.Host.selected_native_tags()
+  defmacro define_dispatch(host) do
+    host = Macro.expand(host, __CALLER__)
+    components = GPUI.Codegen.Native.Host.components(host)
+    tags = GPUI.Codegen.Native.Host.native_tags(host)
 
     declarations = [
       string_enum_decoder(tags),
@@ -127,7 +128,7 @@ defmodule GPUI.Codegen.Native.Dispatch do
   alias RustQ.Rust.AST.Builder, as: A
 
   require DispatchDefinitions
-  DispatchDefinitions.define_dispatch()
+  DispatchDefinitions.define_dispatch(:gpui_component)
 
   @spec items() :: [AST.item()]
   def items do

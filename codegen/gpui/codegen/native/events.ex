@@ -1,8 +1,9 @@
 defmodule GPUI.Codegen.Native.EventDefinitions do
   @moduledoc "Derives Rust input-kind enums and encoders from schema event declarations."
 
-  defmacro define_input_kind do
-    variants = Enum.map(input_kinds(), &type_variant/1)
+  defmacro define_input_kind(host) do
+    host = Macro.expand(host, __CALLER__)
+    variants = Enum.map(input_kinds(host), &type_variant/1)
 
     type = variants |> Enum.reverse() |> Enum.reduce(&{:|, [], [&1, &2]})
 
@@ -11,9 +12,11 @@ defmodule GPUI.Codegen.Native.EventDefinitions do
     end
   end
 
-  defmacro define_event_impls do
+  defmacro define_event_impls(host) do
+    host = Macro.expand(host, __CALLER__)
+
     input_kind_clauses =
-      Enum.map(input_kinds(), fn kind ->
+      Enum.map(input_kinds(host), fn kind ->
         variant = type_variant(kind)
         atom_call = remote_call(:Atoms, kind)
 
@@ -50,8 +53,8 @@ defmodule GPUI.Codegen.Native.EventDefinitions do
   end
 
   @doc "Returns the unique non-click input kinds declared by the component schema."
-  def input_kinds do
-    GPUI.Codegen.Native.Host.selected_components()
+  def input_kinds(host) do
+    GPUI.Codegen.Native.Host.components(host)
     |> Enum.flat_map(&Keyword.keys(&1.events))
     |> Enum.uniq()
     |> Enum.reject(&(&1 == :click))
@@ -91,8 +94,8 @@ defmodule GPUI.Codegen.Native.Events do
             nil: []
           )
 
-  EventDefinitions.define_input_kind()
-  EventDefinitions.define_event_impls()
+  EventDefinitions.define_input_kind(:gpui_component)
+  EventDefinitions.define_event_impls(:gpui_component)
 
   @spec encode_file_dialog_event(
           R.path(:Env, R.lifetime(:a)),

@@ -280,7 +280,10 @@ pub(crate) struct ComponentRegistry {
     active: HashSet<ComponentKey>,
 }
 
+#[cfg(feature = "components")]
 include!("../generated/component_registry.rs");
+#[cfg(not(feature = "components"))]
+include!("../../../gpui_core/src/generated/component_registry.rs");
 
 impl ComponentRegistry {
     pub(crate) fn editable_input_focused(&self, window: &gpui::Window, cx: &gpui::App) -> bool {

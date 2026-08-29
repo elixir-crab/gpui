@@ -29,6 +29,8 @@ for file <- ~w(
   registry.ex
   schema_types.ex
   schema.ex
+  vanilla.ex
+  projections.ex
 ) do
   Code.require_file(file, codegen_root)
 end

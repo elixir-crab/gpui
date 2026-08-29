@@ -1,8 +1,9 @@
 defmodule GPUI.Codegen.Native.RegistryDefinitions do
   @moduledoc "Derives typed native component-registry accessors from stateful schema entries."
 
-  defmacro define_registry do
-    components = GPUI.Codegen.Native.Host.selected_stateful_components()
+  defmacro define_registry(host) do
+    host = Macro.expand(host, __CALLER__)
+    components = GPUI.Codegen.Native.Host.stateful_components(host)
 
     component_kind_variants = Enum.map(components, &{registry_method(&1), []})
 
@@ -107,7 +108,7 @@ defmodule GPUI.Codegen.Native.Registry do
   alias RustQ.Rust.AST.Builder, as: A
 
   require RegistryDefinitions
-  RegistryDefinitions.define_registry()
+  RegistryDefinitions.define_registry(:gpui_component)
 
   @spec items() :: [AST.item()]
   def items do

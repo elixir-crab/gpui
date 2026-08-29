@@ -406,18 +406,6 @@ defmodule GPUI.Codegen.Native.Decoder do
       attrs = [A.attr(:cfg, feature: "real-gpui") | ast.attrs]
 
       attrs =
-        if GPUI.Codegen.Native.Host.selected_name() == :vanilla and
-             ast.name in [
-               :component_optional_number_pair_attr,
-               :component_number_pair_attr,
-               :component_string_list_attr
-             ] do
-          [A.attr(:allow, [:dead_code]) | attrs]
-        else
-          attrs
-        end
-
-      attrs =
         case ast.name do
           :length_value ->
             [A.attr(:allow, [A.path([:clippy, :manual_range_contains])]) | attrs]

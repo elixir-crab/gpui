@@ -66,7 +66,10 @@ include!("generated/disabled_window.rs");
 include!("generated/resource_boundary.rs");
 #[cfg(feature = "real-gpui")]
 include!("generated/window.rs");
+#[cfg(feature = "components")]
 include!("generated/schema.rs");
+#[cfg(not(feature = "components"))]
+include!("../../gpui_core/src/generated/schema.rs");
 
 #[cfg(feature = "real-gpui")]
 mod element;

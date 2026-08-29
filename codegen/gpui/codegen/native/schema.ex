@@ -19,10 +19,7 @@ defmodule GPUI.Codegen.Native.Schema do
   defp selected_items do
     component_items =
       [
-        if(GPUI.Codegen.Native.Host.selected_name() == :gpui_component,
-          do: ComponentContracts.items(),
-          else: []
-        ),
+        ComponentContracts.items(),
         ComponentDefinitions.items()
       ]
 

@@ -1,9 +1,11 @@
 defmodule GPUI.Codegen.Native.ComponentDefinitionMacros do
   @moduledoc "Expands GPUI component schema entries into RustQ node types and decoder declarations."
 
-  defmacro define_components do
+  defmacro define_components(host) do
+    host = Macro.expand(host, __CALLER__)
+
     declarations =
-      GPUI.Codegen.Native.Host.selected_components()
+      GPUI.Codegen.Native.Host.components(host)
       |> Enum.filter(&component_contract?/1)
       |> Enum.flat_map(fn component ->
         [component_type_declaration(component), component_decoder_declaration(component)]
@@ -265,12 +267,12 @@ defmodule GPUI.Codegen.Native.ComponentDefinitions do
   alias RustQ.Rust.AST.Builder, as: A
 
   require ComponentDefinitionMacros
-  ComponentDefinitionMacros.define_components()
+  ComponentDefinitionMacros.define_components(:gpui_component)
 
   @spec items() :: [AST.item()]
   def items do
     components =
-      GPUI.Codegen.Native.Host.selected_components()
+      GPUI.Codegen.Native.Host.components(:gpui_component)
       |> Enum.filter(&String.ends_with?(Atom.to_string(&1.kind), "_component"))
 
     structs =

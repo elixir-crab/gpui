@@ -1,11 +1,12 @@
 defmodule GPUI.Codegen.Native.SchemaTypeMacros do
   @moduledoc "Builds RustQ element-tag, component-kind, and element-node enums from GPUI.Schema."
 
-  defmacro define_schema_types do
-    components = GPUI.Codegen.Native.Host.selected_components()
+  defmacro define_schema_types(host) do
+    host = Macro.expand(host, __CALLER__)
+    components = GPUI.Codegen.Native.Host.components(host)
 
     component_kinds = components |> Enum.map(& &1.kind) |> Enum.uniq() |> Kernel.++([:unknown])
-    element_tags = GPUI.Codegen.Native.Host.selected_native_tags() ++ [:unknown]
+    element_tags = GPUI.Codegen.Native.Host.native_tags(host) ++ [:unknown]
 
     element_variants =
       [
@@ -57,7 +58,7 @@ defmodule GPUI.Codegen.Native.SchemaTypes do
   alias RustQ.Rust.AST.Builder, as: A
 
   require SchemaTypeMacros
-  SchemaTypeMacros.define_schema_types()
+  SchemaTypeMacros.define_schema_types(:gpui_component)
 
   @spec component_kind_item() :: AST.Enum.t()
   def component_kind_item,
