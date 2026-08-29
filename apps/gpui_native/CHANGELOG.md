@@ -4,6 +4,6 @@
 
 ### Breaking changes
 
-- Added explicit host-selected RustQ schema generation and compile-time native
-  source-host override support for maintainer validation.
-- Extracted native loading and complete precompiled hosts from `gpui` into the `gpui_native` package.
+- Extracted native loading from `gpui` into this separately installed package.
+- Native builds are complete immutable `:vanilla` or `:gpui_component` hosts;
+  `GPUI.Native.host_info/0` reports the loaded artifact identity.

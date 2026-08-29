@@ -4,21 +4,13 @@
 
 ### Breaking changes
 
-- Added the owner-local `native/` source root for the future `gpui_core` Rust
-  crate and included its generated projection in the package payload.
-- Removed the complete component-host ownership manifest from the isolated core
-  package; core now knows only its own provider declarations and reserves the
-  raw `ui_*` template namespace without enumerating optional providers.
-- Physically moved core and specialized-surface component declarations out of
-  the monolithic schema into their provider modules.
-- Added `GPUI.Schema.Provider`, provider-aware registry inspection, and an
-  explicit ownership/capability audit for every canonical native tag.
-- Added the immutable `GPUI.Schema.Registry` and made `GPUI.Schema.registry/0`
-  return only neutral core declarations; conventional declarations compose
-  explicitly from `gpui_components`.
-- Split the repository into the `gpui`, `gpui_components`, and `gpui_native`
-  packages in a coordinated Mix umbrella. Native consumers now select a fixed
-  complete RustlerPrecompiled host through `gpui_native`.
+- Moved conventional controls and native loading into the separately installed
+  `gpui_components` and `gpui_native` packages.
+- `GPUI.Schema.registry/0` now contains only neutral core declarations;
+  additional native declarations compose explicitly through immutable schema
+  providers.
+- Raw `ui_*` tags remain internal template syntax and must be authored through
+  their public component builders.
 
 ## 0.1.1
 

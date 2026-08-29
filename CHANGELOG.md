@@ -4,30 +4,14 @@
 
 ### Breaking changes
 
-- Replaced human-readable `cargo tree` dependency checks with a structured
-  `cargo metadata --format-version 1` graph and typed transitive dependency
-  queries used by native-host validation.
-- Moved immutable native projections into the application that owns each future
-  Rust crate: `apps/gpui/native` and `apps/gpui_components/native`, without a
-  redundant nested crate-name directory.
-- RustQ now emits immutable vanilla and gpui-component projections together
-  into their future owner crates, with explicit registry arguments and no
-  process environment selection or mutable host regeneration.
-- Removed the cross-package canonical tag manifest from `gpui`; complete host
-  order is now deterministic provider composition owned by repository codegen,
-  while raw `ui_*` template rejection is a provider-neutral namespace rule.
-- Physically moved neutral primitive, specialized-surface, and conventional
-  component declarations into their schema-provider modules; native codegen
-  tests now derive expectations from the explicit composed host manifest.
-- Added schema-provider modules as the extensible ownership identity and a
-  closed capability audit separating provider, declaration category, and
-  statically linked native requirements without hardcoding package names.
-- Split the canonical schema into an explicit neutral core registry and a
-  conventional component schema owned by `gpui_components`; native generation
-  now composes the selected host from named schema modules.
-- Split the repository into the `gpui`, `gpui_components`, and `gpui_native`
-  packages in a coordinated Mix umbrella. Native consumers now select a fixed
-  complete RustlerPrecompiled host through `gpui_native`.
+- Split GPUI into the coordinated `gpui`, `gpui_components`, and `gpui_native`
+  packages. Applications now install conventional controls and the native host
+  explicitly instead of receiving both from `gpui`.
+- Replaced the monolithic schema with statically composed provider schemas:
+  `gpui` owns neutral primitives and specialized vanilla surfaces, while
+  `gpui_components` owns conventional control declarations.
+- Native consumers now select one complete immutable host, `:vanilla` or
+  `:gpui_component`, through `gpui_native`.
 
 ## 0.1.1
 
