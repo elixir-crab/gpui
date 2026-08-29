@@ -277,6 +277,7 @@ pub(crate) fn component_positive_integer_attr<'a>(
         _invalid => Err(rustler::Error::BadArg),
     }
 }
+#[allow(dead_code)]
 #[cfg(feature = "real-gpui")]
 pub(crate) fn component_optional_number_pair_attr<'a>(
     term: Term<'a>,
@@ -295,6 +296,7 @@ pub(crate) fn component_optional_number_pair_attr<'a>(
         Err(reason) => Err(reason),
     }
 }
+#[allow(dead_code)]
 #[cfg(feature = "real-gpui")]
 pub(crate) fn component_number_pair_attr<'a>(
     term: Term<'a>,
@@ -305,6 +307,7 @@ pub(crate) fn component_number_pair_attr<'a>(
         _missing_or_invalid => Err(rustler::Error::BadArg),
     }
 }
+#[allow(dead_code)]
 #[cfg(feature = "real-gpui")]
 pub(crate) fn component_string_list_attr<'a>(
     term: Term<'a>,
@@ -492,6 +495,7 @@ pub(crate) struct TextSurfaceNode {
     pub(crate) blur: Option<String>,
 }
 #[derive(Clone, Debug, NifMap)]
+#[allow(dead_code)]
 #[cfg(feature = "real-gpui")]
 pub(crate) struct RichTextRunNode {
     pub(crate) range: TextRange,
@@ -780,6 +784,7 @@ pub(crate) fn text_style_runs_attr<'a>(
         Err(reason) => Err(reason),
     }
 }
+#[allow(dead_code)]
 #[cfg(feature = "real-gpui")]
 pub(crate) fn decode_rich_text_runs<'a>(
     term: Term<'a>,

@@ -4,6 +4,9 @@
 
 ### Breaking changes
 
+- Moved immutable native projections into the application that owns each future
+  Rust crate: `apps/gpui/native` and `apps/gpui_components/native`, without a
+  redundant nested crate-name directory.
 - RustQ now emits immutable vanilla and gpui-component projections together
   into their future owner crates, with explicit registry arguments and no
   process environment selection or mutable host regeneration.

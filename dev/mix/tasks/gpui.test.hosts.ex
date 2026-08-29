@@ -29,8 +29,8 @@ defmodule Mix.Tasks.Gpui.Test.Hosts do
   end
 
   defp assert_generated_boundary!(:vanilla) do
-    schema = File.read!("apps/gpui_native/native/gpui_core/src/generated/schema.rs")
-    registry = File.read!("apps/gpui_native/native/gpui_core/src/generated/component_registry.rs")
+    schema = File.read!("apps/gpui/native/src/generated/schema.rs")
+    registry = File.read!("apps/gpui/native/src/generated/component_registry.rs")
 
     if String.contains?(schema, "ButtonComponentNode") or
          String.contains?(registry, "ComponentButton") do
@@ -39,7 +39,7 @@ defmodule Mix.Tasks.Gpui.Test.Hosts do
   end
 
   defp assert_generated_boundary!(:gpui_component) do
-    schema = File.read!("apps/gpui_native/native/gpui_components/src/generated/schema.rs")
+    schema = File.read!("apps/gpui_components/native/src/generated/schema.rs")
 
     unless String.contains?(schema, "ButtonComponentNode") do
       Mix.raise("gpui-component generated projection is missing conventional components")

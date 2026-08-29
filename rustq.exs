@@ -110,19 +110,19 @@ rust "apps/gpui_native/native/gpui/src/generated/rusty.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.Rusty)
 end
 
-rust "vanilla-schema", "apps/gpui_native/native/gpui_core/src/generated/schema.rs" do
+rust "vanilla-schema", "apps/gpui/native/src/generated/schema.rs" do
   GPUI.Codegen.Native.Projections.schema_items(:vanilla)
 end
 
-rust "vanilla-component-registry", "apps/gpui_native/native/gpui_core/src/generated/component_registry.rs" do
+rust "vanilla-component-registry", "apps/gpui/native/src/generated/component_registry.rs" do
   GPUI.Codegen.Native.Projections.registry_items(:vanilla)
 end
 
-rust "gpui-component-schema", "apps/gpui_native/native/gpui_components/src/generated/schema.rs" do
+rust "gpui-component-schema", "apps/gpui_components/native/src/generated/schema.rs" do
   GPUI.Codegen.Native.Projections.schema_items(:gpui_component)
 end
 
-rust "gpui-component-registry", "apps/gpui_native/native/gpui_components/src/generated/component_registry.rs" do
+rust "gpui-component-registry", "apps/gpui_components/native/src/generated/component_registry.rs" do
   GPUI.Codegen.Native.Projections.registry_items(:gpui_component)
 end
 

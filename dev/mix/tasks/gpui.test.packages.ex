@@ -55,13 +55,17 @@ defmodule Mix.Tasks.Gpui.Test.Packages do
 
   defp validate_package_contents!(packages) do
     assert_file!(packages.gpui, "lib/gpui.ex")
+    assert_file!(packages.gpui, "native/src/generated/schema.rs")
     assert_file!(packages.gpui_components, "lib/gpui/ui.ex")
+    assert_file!(packages.gpui_components, "native/src/generated/schema.rs")
     assert_file!(packages.gpui_native, "lib/gpui/native/nif.ex")
     assert_file!(packages.gpui_native, "native/gpui/Cargo.toml")
     assert_file!(packages.gpui_native, "native/gpui/Cargo.lock")
 
     reject_path!(packages.gpui, "codegen")
     reject_path!(packages.gpui, "dev")
+    reject_path!(packages.gpui, "native/target")
+    reject_path!(packages.gpui_components, "native/target")
     reject_path!(packages.gpui_native, "native/gpui/target")
 
     for package <- Map.values(packages),

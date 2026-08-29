@@ -32,11 +32,25 @@ defmodule GPUI.Codegen.Native.Projections do
       renderer_item(GPUI.Codegen.Native.Vanilla.RendererDispatch)
     ]
     |> List.flatten()
+    |> Enum.map(&allow_vanilla_dead_code/1)
   end
-
   @spec registry_items(:vanilla | :gpui_component) :: [AST.item()]
   def registry_items(:gpui_component), do: GPUI.Codegen.Native.Schema.registry_items()
   def registry_items(:vanilla), do: build_registry_items(GPUI.Codegen.Native.Vanilla.Registry)
+
+  defp allow_vanilla_dead_code(%AST.Function{name: name} = item)
+       when name in [
+              :component_optional_number_pair_attr,
+              :component_number_pair_attr,
+              :component_string_list_attr,
+              :decode_rich_text_runs
+            ],
+       do: %{item | attrs: [A.attr(:allow, [:dead_code]) | item.attrs]}
+
+  defp allow_vanilla_dead_code(%AST.Struct{name: :RichTextRunNode} = item),
+    do: %{item | attrs: [A.attr(:allow, [:dead_code]) | item.attrs]}
+
+  defp allow_vanilla_dead_code(item), do: item
 
   defp component_items(module, host) do
     components =

@@ -4,6 +4,8 @@
 
 ### Breaking changes
 
+- Added the owner-local `native/` source root for the future component Rust
+  crate and included its generated projection in the package payload.
 - Physically moved conventional native declarations into
   `GPUI.Components.Schema.Declarations`; component builders now validate their
   provider-owned component struct through the shared core validator.

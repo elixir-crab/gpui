@@ -4,6 +4,8 @@
 
 ### Breaking changes
 
+- Added the owner-local `native/` source root for the future `gpui_core` Rust
+  crate and included its generated projection in the package payload.
 - Removed the complete component-host ownership manifest from the isolated core
   package; core now knows only its own provider declarations and reserves the
   raw `ui_*` template namespace without enumerating optional providers.

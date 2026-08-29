@@ -29,7 +29,8 @@ defmodule GPUI.Components.MixProject do
       name: "gpui_components",
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
-      files: ~w(lib mix.exs README.md CHANGELOG.md LICENSE)
+      files: ~w(lib native mix.exs README.md CHANGELOG.md LICENSE),
+      exclude_patterns: [~r{^native/target(?:/|$)}]
     ]
   end
 
