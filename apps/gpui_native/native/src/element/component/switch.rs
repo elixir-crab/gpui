@@ -1,5 +1,5 @@
 use crate::element::ElementRenderContext;
-use crate::{gpui, style_to_core, SwitchComponentNode};
+use crate::{gpui, SwitchComponentNode};
 
 #[cfg(not(feature = "components"))]
 use super::render_component_fallback;
@@ -11,22 +11,13 @@ pub(crate) fn render(
 ) -> gpui::AnyElement {
     use gpui::{InteractiveElement, IntoElement, ParentElement, Role, StatefulInteractiveElement};
 
-    let style = style_to_core(node.style);
     let checked = node.checked;
     let change_event = node.change.clone();
     let key_host = context.runtime.component_host().clone();
     let window_id = context.window_id;
+    let owner = crate::switch_to_owner(node);
     let rendered = gpui_components::switch::render(
-        gpui_components::SwitchNode {
-            id: node.id,
-            label: node.label,
-            checked,
-            disabled: node.disabled,
-            loading: node.loading,
-            size: node.size,
-            change: node.change,
-            style,
-        },
+        owner,
         &mut gpui_components::switch::SwitchRenderContext {
             window_id,
             host: context.runtime.component_host().clone(),
