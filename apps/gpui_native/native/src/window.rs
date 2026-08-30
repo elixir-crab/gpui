@@ -1,7 +1,5 @@
 use crate::*;
 
-const MAX_SHORTCUT_BYTES: usize = 64;
-
 #[cfg(feature = "real-gpui")]
 pub(crate) type WindowCommandReply = std::sync::mpsc::SyncSender<Result<(), String>>;
 
@@ -18,7 +16,7 @@ pub(crate) struct CommandBinding {
 #[cfg(feature = "real-gpui")]
 impl CommandBinding {
     pub(crate) fn new(id: String, shortcut: String) -> Result<Self, &'static str> {
-        if id.is_empty() || id.len() > 128 || !valid_command_shortcut(&shortcut) {
+        if !gpui_core::window_codec::valid_command(&id, &shortcut) {
             return Err("invalid_command");
         }
 
@@ -44,38 +42,6 @@ impl CommandBinding {
 }
 
 #[cfg(feature = "real-gpui")]
-fn valid_command_shortcut(shortcut: &str) -> bool {
-    if shortcut.is_empty() || shortcut.len() > MAX_SHORTCUT_BYTES {
-        return false;
-    }
-
-    let parts = shortcut.split('-').collect::<Vec<_>>();
-    let Some((key, modifiers)) = parts.split_last() else {
-        return false;
-    };
-    let valid_key = key.len() == 1
-        && key
-            .bytes()
-            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit());
-    let expected = ["primary", "ctrl", "alt", "shift"];
-    let mut next_modifier = 0;
-    let mut activation_modifier = false;
-
-    for modifier in modifiers {
-        let Some(index) = expected.iter().position(|expected| expected == modifier) else {
-            return false;
-        };
-        if index < next_modifier {
-            return false;
-        }
-        next_modifier = index + 1;
-        activation_modifier |= matches!(*modifier, "primary" | "ctrl" | "alt");
-    }
-
-    !modifiers.is_empty() && activation_modifier && valid_key
-}
-
-#[cfg(feature = "real-gpui")]
 fn native_editing_shortcut(keystroke: &gpui::Keystroke) -> bool {
     (keystroke.modifiers.platform || keystroke.modifiers.control)
         && !keystroke.modifiers.alt
@@ -84,7 +50,7 @@ fn native_editing_shortcut(keystroke: &gpui::Keystroke) -> bool {
 
 #[cfg(all(test, feature = "real-gpui"))]
 mod command_tests {
-    use super::{native_editing_shortcut, valid_command_shortcut, CommandBinding};
+    use super::{native_editing_shortcut, CommandBinding};
 
     #[test]
     fn primary_shortcuts_use_gpui_platform_matching() {
@@ -95,14 +61,6 @@ mod command_tests {
 
         assert!(command.matches(&matching));
         assert!(!command.matches(&unmodified));
-    }
-
-    #[test]
-    fn malformed_native_shortcuts_are_rejected() {
-        assert!(valid_command_shortcut("primary-shift-r"));
-        assert!(!valid_command_shortcut("shift-r"));
-        assert!(!valid_command_shortcut("shift-primary-r"));
-        assert!(!valid_command_shortcut("primary-R"));
     }
 
     #[test]
