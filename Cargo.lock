@@ -2436,6 +2436,7 @@ dependencies = [
 name = "gpui_core"
 version = "0.1.1"
 dependencies = [
+ "gpui",
  "image",
  "ropey",
 ]

@@ -5,6 +5,10 @@ edition = "2021"
 license = "MIT"
 publish = false
 
+[features]
+default = []
+native-render = ["dep:zed_gpui"]
+
 [lib]
 name = "gpui_core"
 crate-type = ["rlib"]
@@ -12,3 +16,4 @@ crate-type = ["rlib"]
 [dependencies]
 image = { version = "0.25.10", default-features = false, features = ["bmp", "gif", "ico", "jpeg", "png", "tiff", "webp"] }
 ropey = { version = "=2.0.0-beta.1", features = ["metric_lines_lf", "metric_utf16"] }
+zed_gpui = { git = "https://github.com/zed-industries/zed", package = "gpui", optional = true }

@@ -360,19 +360,7 @@ pub(crate) fn render_image_primitive(
 
 #[cfg(feature = "real-gpui")]
 pub(crate) fn render_missing_resource_placeholder() -> gpui::AnyElement {
-    use gpui::{div, IntoElement, ParentElement, Styled};
-
-    div()
-        .flex()
-        .items_center()
-        .justify_center()
-        .border(gpui::px(1.0))
-        .border_color(gpui::rgb(0xcc3333))
-        .bg(gpui::rgb(0x332222))
-        .text_color(gpui::rgb(0xffaaaa))
-        .p(gpui::px(8.0))
-        .child("missing resource")
-        .into_any_element()
+    gpui_core::render::missing_resource_placeholder()
 }
 
 #[cfg(feature = "real-gpui")]
@@ -711,18 +699,12 @@ fn apply_container_motion(
 
 #[cfg(feature = "real-gpui")]
 fn motion_easing(easing: &str, delta: f32) -> f32 {
-    match easing {
-        "ease_in" => delta * delta * delta,
-        "ease_in_out" if delta < 0.5 => 4.0 * delta * delta * delta,
-        "ease_in_out" => 1.0 - (-2.0 * delta + 2.0).powi(3) / 2.0,
-        "ease_out" => 1.0 - (1.0 - delta).powi(3),
-        _ => delta,
-    }
+    gpui_core::render::motion_easing(easing, delta)
 }
 
 #[cfg(feature = "real-gpui")]
 fn lerp(from: f32, to: f32, delta: f32) -> f32 {
-    from + (to - from) * delta
+    gpui_core::render::lerp(from, to, delta)
 }
 
 #[cfg(all(test, feature = "real-gpui"))]

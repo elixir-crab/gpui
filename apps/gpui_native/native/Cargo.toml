@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 
 [features]
 default = ["gpui-component-host"]
-real-gpui = ["dep:zed_gpui", "dep:gpui_platform", "dep:futures", "dep:unicode-segmentation"]
+real-gpui = ["dep:zed_gpui", "gpui_core/native-render", "dep:gpui_platform", "dep:futures", "dep:unicode-segmentation"]
 desktop = ["real-gpui", "gpui_platform/font-kit", "gpui_platform/wayland", "gpui_platform/x11"]
 components = ["desktop", "dep:gpui-component", "dep:gpui-component-assets", "dep:gpui_components"]
 vanilla-host = ["desktop"]

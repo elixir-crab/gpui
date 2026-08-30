@@ -2,6 +2,8 @@
 
 pub mod image_decode;
 pub mod raster;
+#[cfg(feature = "native-render")]
+pub mod render;
 pub mod resource;
 pub mod text;
 pub mod transfer;
