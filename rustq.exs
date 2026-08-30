@@ -41,6 +41,7 @@ require_file("codegen/gpui/codegen/native/event_boundary.ex")
 require_file("codegen/gpui/codegen/native/events.ex")
 require_file("codegen/gpui/codegen/native/extensions.ex")
 require_file("codegen/gpui/codegen/native/style.ex")
+require_file("codegen/gpui/codegen/native/style_adapter.ex")
 require_file("codegen/gpui/codegen/native/test_boundary.ex")
 require_file("codegen/gpui/codegen/native/text_boundary.ex")
 require_file("codegen/gpui/codegen/native/text_types.ex")
@@ -64,6 +65,10 @@ end
 
 rust "apps/gpui_native/native/src/generated/disabled_window.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.DisabledWindow)
+end
+
+rust "native-style-adapter", "apps/gpui_native/native/src/generated/style_adapter.rs" do
+  GPUI.Codegen.Native.StyleAdapter.items()
 end
 
 rust "apps/gpui_native/native/src/generated/test_boundary.rs" do

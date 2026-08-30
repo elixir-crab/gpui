@@ -4,6 +4,7 @@
 pub enum Length {
     Auto,
     Pixels(f32),
+    Rems(f32),
     Fraction(f32),
 }
 #[derive(Clone, Debug, Default, PartialEq)]

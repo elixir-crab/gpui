@@ -14,6 +14,7 @@ defmodule GPUI.Codegen.Native.CoreStyle do
         variants: [
           %AST.EnumVariant{name: :Auto, tuple: []},
           %AST.EnumVariant{name: :Pixels, tuple: [A.type_path(:f32)]},
+          %AST.EnumVariant{name: :Rems, tuple: [A.type_path(:f32)]},
           %AST.EnumVariant{name: :Fraction, tuple: [A.type_path(:f32)]}
         ],
         derive: [:Clone, :Copy, :Debug, :PartialEq],

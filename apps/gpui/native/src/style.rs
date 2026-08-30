@@ -5,6 +5,7 @@ fn length(value: Length) -> gpui::Length {
     match value {
         Length::Auto => gpui::Length::Auto,
         Length::Pixels(value) => gpui::px(value).into(),
+        Length::Rems(value) => gpui::rems(value).into(),
         Length::Fraction(value) => gpui::relative(value).into(),
     }
 }
@@ -13,6 +14,7 @@ fn definite_length(value: Length) -> Option<gpui::DefiniteLength> {
     match value {
         Length::Auto => None,
         Length::Pixels(value) => Some(gpui::px(value).into()),
+        Length::Rems(value) => Some(gpui::rems(value).into()),
         Length::Fraction(value) => Some(gpui::relative(value)),
     }
 }

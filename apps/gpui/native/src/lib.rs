@@ -7,6 +7,8 @@ pub mod render;
 pub mod resource;
 #[cfg(feature = "native-render")]
 pub mod style;
+#[cfg(feature = "native-render")]
+pub mod style_wire;
 pub mod text;
 pub mod transfer;
 pub mod window_codec;
