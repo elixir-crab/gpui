@@ -3,6 +3,7 @@ use crate::*;
 pub(crate) mod component;
 #[cfg(feature = "components")]
 pub(crate) mod component_registry;
+#[cfg(feature = "components")]
 pub(crate) mod controlled;
 pub(crate) mod event;
 

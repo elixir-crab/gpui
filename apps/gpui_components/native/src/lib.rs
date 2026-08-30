@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 pub mod controlled;
+pub mod registry;
 
 #[cfg(feature = "native-render")]
 pub mod render;
