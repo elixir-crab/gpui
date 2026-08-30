@@ -1,6 +1,37 @@
 use crate::{Length, Style};
 use zed_gpui as gpui;
 
+impl From<Length> for gpui::Length {
+    fn from(value: Length) -> Self {
+        match value {
+            Length::Auto => gpui::Length::Auto,
+            Length::Pixels(value) => gpui::px(value).into(),
+            Length::Rems(value) => gpui::rems(value).into(),
+            Length::Fraction(value) => gpui::relative(value).into(),
+        }
+    }
+}
+
+impl From<Length> for gpui::DefiniteLength {
+    fn from(value: Length) -> Self {
+        match value {
+            Length::Auto => gpui::DefiniteLength::default(),
+            Length::Pixels(value) => gpui::px(value).into(),
+            Length::Rems(value) => gpui::rems(value).into(),
+            Length::Fraction(value) => gpui::relative(value),
+        }
+    }
+}
+
+mod generated {
+    use super::{gpui, Style};
+    use gpui::Styled;
+
+    include!("generated/style_application.rs");
+}
+
+pub use generated::apply;
+
 fn length(value: Length) -> gpui::Length {
     match value {
         Length::Auto => gpui::Length::Auto,

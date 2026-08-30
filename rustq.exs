@@ -32,6 +32,7 @@ require_file("codegen/gpui/codegen/native/component_contracts.ex")
 require_file("codegen/gpui/codegen/native/component_host_contract.ex")
 require_file("codegen/gpui/codegen/native/component_nodes.ex")
 require_file("codegen/gpui/codegen/native/core_style.ex")
+require_file("codegen/gpui/codegen/native/core_style_application.ex")
 require_file("codegen/gpui/codegen/native/components.ex")
 require_file("codegen/gpui/codegen/native/decoder.ex")
 require_file("codegen/gpui/codegen/native/disabled_window.ex")
@@ -121,6 +122,10 @@ end
 
 rust "gpui-core-style", "apps/gpui/native/src/generated/style.rs" do
   GPUI.Codegen.Native.CoreStyle.items()
+end
+
+rust "gpui-core-style-application", "apps/gpui/native/src/generated/style_application.rs" do
+  GPUI.Codegen.Native.CoreStyleApplication.items()
 end
 
 rust "vanilla-schema", "apps/gpui/native/src/generated/schema.rs" do
