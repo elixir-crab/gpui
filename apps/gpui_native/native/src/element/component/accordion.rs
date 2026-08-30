@@ -65,9 +65,8 @@ pub(crate) fn render(
                 .into_iter()
                 .filter_map(|index| item_ids.get(index).cloned())
                 .collect::<Vec<_>>();
-            runtime
-                .component_host()
-                .emit(gpui_components::host_contract::ComponentEvent::Change(
+            let _ = runtime.component_host().emit(
+                gpui_components::host_contract::ComponentEvent::Change(
                     gpui_components::host_contract::ComponentValueEvent {
                         envelope: gpui_components::host_contract::ComponentEventEnvelope {
                             window_id,
@@ -75,7 +74,8 @@ pub(crate) fn render(
                         },
                         value: gpui_components::host_contract::ComponentValue::Strings(values),
                     },
-                ));
+                ),
+            );
         });
     for (title, disabled, open, children) in items {
         element = element.item(move |item| {

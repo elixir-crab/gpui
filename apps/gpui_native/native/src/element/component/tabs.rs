@@ -214,7 +214,7 @@ fn emit_change(
     let Some(event) = event else {
         return;
     };
-    runtime
+    let _ = runtime
         .component_host()
         .emit(gpui_components::host_contract::ComponentEvent::Change(
             gpui_components::host_contract::ComponentValueEvent {

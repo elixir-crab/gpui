@@ -82,7 +82,7 @@ pub fn emit_change(host: &ComponentHost, window_id: u64, event: Option<&String>,
     let Some(event) = event else {
         return;
     };
-    host.emit(ComponentEvent::Change(ComponentValueEvent {
+    let _ = host.emit(ComponentEvent::Change(ComponentValueEvent {
         envelope: crate::host_contract::ComponentEventEnvelope {
             window_id,
             event: event.clone(),

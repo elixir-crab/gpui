@@ -1,6 +1,6 @@
 #[cfg(feature = "components")]
 use gpui_components::host_contract::{
-    ComponentEvent, ComponentEventSink, ComponentValue, ComponentValueEvent,
+    ComponentEvent, ComponentEventError, ComponentEventSink, ComponentValue, ComponentValueEvent,
 };
 
 #[cfg(feature = "components")]
@@ -17,7 +17,7 @@ impl NifComponentEventSink {
 
 #[cfg(feature = "components")]
 impl ComponentEventSink for NifComponentEventSink {
-    fn emit(&self, event: ComponentEvent) {
+    fn emit(&self, event: ComponentEvent) -> Result<(), ComponentEventError> {
         use crate::{push_event, EventValue, InputKind, NativeEvent};
 
         let native = match event {
@@ -33,8 +33,8 @@ impl ComponentEventSink for NifComponentEventSink {
                     ComponentValue::None => None,
                 },
             },
-            _event => return,
+            _event => return Ok(()),
         };
-        let _ = push_event(&self.runtime, native);
+        push_event(&self.runtime, native).map_err(|_error| ComponentEventError::QueueUnavailable)
     }
 }

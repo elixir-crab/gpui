@@ -57,8 +57,13 @@ impl ComponentEvent {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ComponentEventError {
+    QueueUnavailable,
+}
+
 pub trait ComponentEventSink: Send + Sync {
-    fn emit(&self, event: ComponentEvent);
+    fn emit(&self, event: ComponentEvent) -> Result<(), ComponentEventError>;
 }
 
 #[cfg(test)]
