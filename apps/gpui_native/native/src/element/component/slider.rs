@@ -30,14 +30,14 @@ pub(crate) fn render(
     node: SliderComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
-    use crate::element::component_registry::{ComponentSlider, SharedEvent, SliderConfig};
+    use crate::element::component_registry::SharedEvent;
     use crate::element::controlled::{ControlledBinding, SharedBinding};
-    use crate::{push_event, EventValue, InputKind, NativeEvent};
     use gpui::{
         AppContext, InteractiveElement, IntoElement, ParentElement, StatefulInteractiveElement,
         Styled,
     };
     use gpui_component::slider::{Slider, SliderEvent, SliderScale, SliderState};
+    use gpui_components::slider::{ComponentSlider, SliderConfig};
     use std::sync::{Arc, Mutex};
 
     let vertical = node.orientation.as_deref() == Some("vertical");
@@ -108,7 +108,7 @@ pub(crate) fn render(
                                 binding.push_pending(value);
                             })
                         });
-                        (InputKind::Change, event_name, value, true)
+                        (true, event_name, value, true)
                     }
                     SliderEvent::Release(value) => {
                         let value = slider_number(*value);
@@ -124,20 +124,24 @@ pub(crate) fn render(
                                 }
                             })
                             .unwrap_or(false);
-                        (InputKind::Release, event_name, value, track_pending)
+                        (false, event_name, value, track_pending)
                     }
                 };
 
                 if let Some(event_name) = event_name {
-                    let result = push_event(
-                        &runtime,
-                        NativeEvent::Input {
-                            kind,
+                    let value = gpui_components::host_contract::ComponentValueEvent {
+                        envelope: gpui_components::host_contract::ComponentEventEnvelope {
                             window_id,
                             event: event_name,
-                            value: Some(EventValue::Number(value)),
                         },
-                    );
+                        value: gpui_components::host_contract::ComponentValue::Number(value),
+                    };
+                    let event = if kind {
+                        gpui_components::host_contract::ComponentEvent::Change(value)
+                    } else {
+                        gpui_components::host_contract::ComponentEvent::Release(value)
+                    };
+                    let result = runtime.component_host().emit(event);
                     if result.is_err() && track_pending {
                         if let Ok(mut binding) = event_binding.lock() {
                             binding.pop_pending();
@@ -154,7 +158,7 @@ pub(crate) fn render(
                 binding,
                 release_event,
                 config,
-                _subscription: subscription,
+                subscription,
             },
         );
     }
@@ -205,10 +209,7 @@ pub(crate) fn render(
 
 #[cfg(feature = "components")]
 fn slider_number(value: gpui_component::slider::SliderValue) -> f64 {
-    match value {
-        gpui_component::slider::SliderValue::Single(value) => f64::from(value),
-        gpui_component::slider::SliderValue::Range(_start, end) => f64::from(end),
-    }
+    gpui_components::slider::number(value)
 }
 
 #[cfg(all(test, feature = "components"))]

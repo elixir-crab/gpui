@@ -15,9 +15,9 @@ use gpui_component::{
     menu::PopupMenu,
     searchable_list::{SearchableListDelegate, SearchableListItem},
     select::SelectState,
-    slider::SliderState,
     IndexPath,
 };
+use gpui_components::slider::ComponentSlider;
 use std::{
     collections::{HashMap, HashSet},
     hash::Hash,
@@ -176,36 +176,6 @@ pub(crate) struct ComponentCombobox {
     pub(crate) search_event: SharedEvent,
     pub(crate) query: SharedQuery,
     pub(crate) options: Vec<NativeSelectOption>,
-    pub(crate) _subscription: gpui::Subscription,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) struct SliderConfig {
-    pub(crate) min: f32,
-    pub(crate) max: f32,
-    pub(crate) step: f32,
-    pub(crate) logarithmic: bool,
-}
-
-impl SliderConfig {
-    pub(crate) fn accepts(self, value: f32) -> bool {
-        self.min.is_finite()
-            && self.max.is_finite()
-            && self.step.is_finite()
-            && value.is_finite()
-            && self.min < self.max
-            && self.step > 0.0
-            && value >= self.min
-            && value <= self.max
-            && (!self.logarithmic || self.min > 0.0)
-    }
-}
-
-pub(crate) struct ComponentSlider {
-    pub(crate) state: gpui::Entity<SliderState>,
-    pub(crate) binding: SharedBinding<f64>,
-    pub(crate) release_event: SharedEvent,
-    pub(crate) config: SliderConfig,
     pub(crate) _subscription: gpui::Subscription,
 }
 
