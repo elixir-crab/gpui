@@ -30,6 +30,7 @@ require_file("codegen/gpui/codegen/native/accessibility.ex")
 require_file("codegen/gpui/codegen/native/boundary.ex")
 require_file("codegen/gpui/codegen/native/component_contracts.ex")
 require_file("codegen/gpui/codegen/native/component_host_contract.ex")
+require_file("codegen/gpui/codegen/native/component_nodes.ex")
 require_file("codegen/gpui/codegen/native/components.ex")
 require_file("codegen/gpui/codegen/native/decoder.ex")
 require_file("codegen/gpui/codegen/native/disabled_window.ex")
@@ -122,6 +123,10 @@ end
 
 rust "gpui-component-host-contract", "apps/gpui_components/native/src/generated/host_contract.rs" do
   GPUI.Codegen.Native.ComponentHostContract.items()
+end
+
+rust "gpui-component-nodes", "apps/gpui_components/native/src/generated/nodes.rs" do
+  GPUI.Codegen.Native.ComponentNodes.items()
 end
 
 rust "gpui-component-schema", "apps/gpui_components/native/src/generated/schema.rs" do

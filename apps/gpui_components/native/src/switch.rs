@@ -2,16 +2,7 @@ use crate::host::ComponentHost;
 use crate::host_contract::{ComponentEvent, ComponentValue, ComponentValueEvent};
 use zed_gpui as gpui;
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct SwitchNode {
-    pub id: String,
-    pub label: String,
-    pub checked: bool,
-    pub disabled: bool,
-    pub loading: bool,
-    pub size: Option<String>,
-    pub change: Option<String>,
-}
+use crate::SwitchNode;
 
 pub struct SwitchRenderContext<'a> {
     pub window_id: u64,

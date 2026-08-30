@@ -19,7 +19,7 @@ pub(crate) fn render(
     let key_host = context.runtime.component_host().clone();
     let window_id = context.window_id;
     let rendered = gpui_components::switch::render(
-        gpui_components::switch::SwitchNode {
+        gpui_components::SwitchNode {
             id: node.id,
             label: node.label,
             checked,

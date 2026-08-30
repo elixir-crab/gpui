@@ -1,5 +1,7 @@
 #![forbid(unsafe_code)]
 
+include!("generated/nodes.rs");
+
 pub mod controlled;
 pub mod host;
 pub mod host_contract;
