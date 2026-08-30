@@ -8,13 +8,6 @@ use std::sync::{Arc, Mutex};
 #[cfg(feature = "components")]
 static NEXT_TRANSFER_SESSION_ID: AtomicU64 = AtomicU64::new(1);
 
-#[cfg(any(feature = "components", test))]
-const MAX_PATHS: usize = 64;
-#[cfg(any(feature = "components", test))]
-const MAX_PATH_BYTES: usize = 4_096;
-#[cfg(any(feature = "components", test))]
-const MAX_ALL_PATH_BYTES: usize = 262_144;
-
 #[cfg(feature = "components")]
 pub(crate) struct ComponentDropTarget {
     id: String,
@@ -259,23 +252,7 @@ fn terminate_session(
 fn bounded_path_strings<'a>(
     paths: impl IntoIterator<Item = &'a std::path::Path>,
 ) -> Option<Vec<String>> {
-    let mut result = Vec::new();
-    let mut total = 0;
-    for path in paths {
-        if result.len() >= MAX_PATHS {
-            return None;
-        }
-        let path = path.to_str()?;
-        let bytes = path.len();
-        if path.is_empty() || bytes > MAX_PATH_BYTES || total + bytes > MAX_ALL_PATH_BYTES {
-            return None;
-        }
-        if !result.iter().any(|existing| existing == path) {
-            total += bytes;
-            result.push(path.to_string());
-        }
-    }
-    Some(result)
+    gpui_core::transfer::bounded_path_strings(paths)
 }
 
 #[cfg(feature = "components")]
@@ -545,8 +522,8 @@ mod tests {
 
     #[test]
     fn duplicate_paths_do_not_consume_aggregate_limit_twice() {
-        let long = format!("/{}", "a".repeat(MAX_PATH_BYTES - 1));
-        let paths = (0..MAX_PATHS)
+        let long = format!("/{}", "a".repeat(gpui_core::transfer::MAX_PATH_BYTES - 1));
+        let paths = (0..gpui_core::transfer::MAX_PATHS)
             .map(|_| PathBuf::from(&long))
             .collect::<Vec<_>>();
         assert_eq!(

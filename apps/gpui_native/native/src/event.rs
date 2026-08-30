@@ -58,9 +58,6 @@ pub(crate) struct ElementBoundsGeometry {
     pub(crate) coordinate_space: String,
 }
 
-#[cfg(feature = "components")]
-pub(crate) const MAX_TRANSFER_TEXT_BYTES: usize = 1_048_576;
-
 #[cfg_attr(not(feature = "components"), allow(dead_code))]
 #[derive(Clone, Debug, PartialEq, rustler::NifMap)]
 pub(crate) struct TransferPayload {

@@ -129,7 +129,7 @@ pub(crate) fn start_file_read(
 
 #[cfg(any(feature = "components", test))]
 pub(crate) fn bounded_clipboard_text(text: Option<String>) -> Option<String> {
-    text.filter(|text| !text.is_empty() && text.len() <= crate::MAX_TRANSFER_TEXT_BYTES)
+    gpui_core::transfer::bounded_text(text)
 }
 
 #[cfg(any(feature = "components", test))]
@@ -175,7 +175,9 @@ mod tests {
         );
         assert_eq!(bounded_clipboard_text(Some(String::new())), None);
         assert_eq!(
-            bounded_clipboard_text(Some("x".repeat(crate::MAX_TRANSFER_TEXT_BYTES + 1))),
+            bounded_clipboard_text(Some(
+                "x".repeat(gpui_core::transfer::MAX_TRANSFER_TEXT_BYTES + 1),
+            )),
             None
         );
         assert_eq!(bounded_clipboard_text(None), None);
