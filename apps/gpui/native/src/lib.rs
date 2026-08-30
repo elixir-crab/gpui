@@ -3,6 +3,7 @@
 pub mod image_decode;
 pub mod raster;
 pub mod resource;
+pub mod text;
 pub mod transfer;
 pub mod window_codec;
 

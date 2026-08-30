@@ -2437,6 +2437,7 @@ name = "gpui_core"
 version = "0.1.1"
 dependencies = [
  "image",
+ "ropey",
 ]
 
 [[package]]
@@ -2555,7 +2556,6 @@ dependencies = [
  "gpui_platform",
  "image",
  "libc",
- "ropey",
  "rustler",
  "smallvec",
  "unicode-segmentation",

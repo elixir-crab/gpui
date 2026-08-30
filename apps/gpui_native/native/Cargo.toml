@@ -30,7 +30,6 @@ gpui-component = { git = "https://github.com/longbridge/gpui-component", rev = "
 gpui-component-assets = { git = "https://github.com/longbridge/gpui-component", rev = "5c5eb1db04dc1146bdec903a8ac74407bd6c2098", optional = true }
 image = { version = "0.25.10", default-features = false, features = ["bmp", "gif", "ico", "jpeg", "png", "tiff", "webp"] }
 futures = { version = "0.3", optional = true }
-ropey = { version = "=2.0.0-beta.1", features = ["metric_lines_lf", "metric_utf16"] }
 unicode-segmentation = { version = "1.12", optional = true }
 
 [dev-dependencies]
