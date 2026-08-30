@@ -8,6 +8,8 @@ defmodule GPUI.Codegen.Native.ComponentNodesTest do
 
     assert source =~ "pub struct SwitchNode"
     assert source =~ "pub struct SliderNode"
+    assert source =~ "pub struct RadioGroupNode"
+    assert source =~ "pub struct TabsNode"
     assert source =~ "pub change: Option<String>"
     refute source =~ "Term<"
     refute source =~ "NifMap"

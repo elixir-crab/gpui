@@ -30,9 +30,39 @@ defmodule GPUI.Codegen.Native.ComponentNodes do
           required(:release) => RustQ.Type.option(String.t())
         }
 
+  @type option_node :: %{
+          required(:label) => String.t(),
+          required(:value) => String.t(),
+          required(:disabled) => boolean()
+        }
+
+  @type radio_group_node :: %{
+          required(:id) => String.t(),
+          required(:label) => String.t(),
+          required(:value) => RustQ.Type.option(String.t()),
+          required(:options) => RustQ.Type.vec(RustQ.Type.path(:OptionNode)),
+          required(:orientation) => RustQ.Type.option(String.t()),
+          required(:size) => RustQ.Type.option(String.t()),
+          required(:disabled) => boolean(),
+          required(:change) => RustQ.Type.option(String.t())
+        }
+
+  @type tabs_node :: %{
+          required(:id) => String.t(),
+          required(:value) => RustQ.Type.option(String.t()),
+          required(:options) => RustQ.Type.vec(RustQ.Type.path(:OptionNode)),
+          required(:variant) => RustQ.Type.option(String.t()),
+          required(:size) => RustQ.Type.option(String.t()),
+          required(:disabled) => boolean(),
+          required(:menu) => boolean(),
+          required(:change) => RustQ.Type.option(String.t())
+        }
+
   @spec items() :: [RustQ.Rust.AST.item()]
   def items do
-    MetaAST.struct_type_items(__MODULE__, [:switch_node, :slider_node],
+    MetaAST.struct_type_items(
+      __MODULE__,
+      [:switch_node, :slider_node, :option_node, :radio_group_node, :tabs_node],
       derive: [:Clone, :Debug, :PartialEq],
       vis: :pub,
       field_vis: :pub,
