@@ -74,7 +74,7 @@ defmodule GPUI.Codegen.Native.Events do
   @moduledoc "Emits generated native event-value decoding and input-kind contracts."
 
   use RustQ.Meta,
-    rust_sources: ["apps/gpui_native/native/gpui/src/event.rs"]
+    rust_sources: ["apps/gpui_native/native/src/event.rs"]
 
   alias GPUI.Codegen.Native.EventDefinitions
   alias RustQ.Meta.AST, as: MetaAST

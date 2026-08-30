@@ -28,7 +28,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           key: release-check
-          workspaces: apps/gpui_native/native/gpui -> target
+          workspaces: . -> target
       - name: Install Rust security audit
         run: cargo install cargo-audit --locked
       - name: Install native dependencies
@@ -38,7 +38,7 @@ jobs:
       - name: Generate dependency inventory
         run: |
           mkdir -p release-inventory
-          cargo metadata --locked --format-version 1 --manifest-path apps/gpui_native/native/gpui/Cargo.toml > release-inventory/cargo-metadata.json
+          cargo metadata --locked --format-version 1 --manifest-path Cargo.toml > release-inventory/cargo-metadata.json
           mix deps.tree --format plain > release-inventory/mix-dependencies.txt
       - run: mix gpui.release.check
       - name: Upload dependency inventory

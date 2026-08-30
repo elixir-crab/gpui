@@ -120,7 +120,7 @@ end
 defmodule GPUI.Codegen.Native.Accessibility do
   @moduledoc "Emits the generated Rust accessibility contracts and AccessKit conversion items."
 
-  use RustQ.Meta, rust_sources: ["apps/gpui_native/native/gpui/src/element/mod.rs"]
+  use RustQ.Meta, rust_sources: ["apps/gpui_native/native/src/element/mod.rs"]
 
   alias GPUI.Codegen.Native.AccessibilityDefinitions
   alias RustQ.Meta.AST, as: MetaAST

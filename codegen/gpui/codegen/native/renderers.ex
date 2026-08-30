@@ -4,7 +4,7 @@ defmodule GPUI.Codegen.Native.Renderers do
   alias RustQ.Syn
   alias RustQ.Syn.Type
 
-  @source_root Path.expand("apps/gpui_native/native/gpui/src")
+  @source_root Path.expand("apps/gpui_native/native/src")
   @renderer_globs [
     Path.join(@source_root, "element/component.rs"),
     Path.join(@source_root, "element/component/**/*.rs")

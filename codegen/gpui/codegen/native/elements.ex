@@ -3,9 +3,9 @@ defmodule GPUI.Codegen.Native.Elements do
 
   use RustQ.Meta,
     rust_sources: [
-      "apps/gpui_native/native/gpui/src/nif.rs",
-      "apps/gpui_native/native/gpui/src/resource.rs",
-      "apps/gpui_native/native/gpui/src/element/mod.rs"
+      "apps/gpui_native/native/src/nif.rs",
+      "apps/gpui_native/native/src/resource.rs",
+      "apps/gpui_native/native/src/element/mod.rs"
     ]
 
   alias RustQ.Meta.AST, as: MetaAST

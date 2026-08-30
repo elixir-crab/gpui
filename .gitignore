@@ -23,6 +23,7 @@ erl_crash.dump
 *.ez
 
 # Ignore native Rust build artifacts.
+/target/
 /apps/gpui_native/native/*/target/
 /apps/gpui_native/test/support/desktop/drivers/linux/target/
 /support/tailwind/node_modules/

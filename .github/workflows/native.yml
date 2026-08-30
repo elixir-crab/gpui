@@ -71,7 +71,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: native-linux
-          workspaces: apps/gpui_native/native/gpui -> target
+          workspaces: . -> target
           save-if: false
       - name: Install native desktop dependencies
         run: >-
@@ -101,7 +101,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: native-linux
-          workspaces: apps/gpui_native/native/gpui -> target
+          workspaces: . -> target
           save-if: ${{ github.event_name == 'workflow_dispatch' && inputs.refresh_cache }}
       - name: Install native dependencies
         run: >-

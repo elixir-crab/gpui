@@ -13,12 +13,14 @@ crate-type = ["cdylib"]
 default = ["gpui-component-host"]
 real-gpui = ["dep:zed_gpui", "dep:gpui_platform", "dep:futures", "dep:unicode-segmentation"]
 desktop = ["real-gpui", "gpui_platform/font-kit", "gpui_platform/wayland", "gpui_platform/x11"]
-components = ["desktop", "dep:gpui-component", "dep:gpui-component-assets"]
+components = ["desktop", "dep:gpui-component", "dep:gpui-component-assets", "dep:gpui_components"]
 vanilla-host = ["desktop"]
 gpui-component-host = ["components"]
 native-test = ["gpui-component-host", "zed_gpui/test-support"]
 
 [dependencies]
+gpui_core = { path = "../../gpui/native" }
+gpui_components = { path = "../../gpui_components/native", optional = true }
 rustler = "0.38.0"
 # gpui-component uses the unqualified Zed source. Keep these source IDs identical
 # and pin the shared revision through Cargo.lock so all GPUI types are unified.
@@ -37,11 +39,3 @@ smallvec = "1"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 libc = "0.2"
-
-[patch.crates-io]
-async-process = { git = "https://github.com/zed-industries/async-process.git", rev = "0b6d6713570af61806e1e5cb40e0f757cb93fd9d" }
-
-[patch."https://github.com/zed-industries/zed"]
-# GPUI uses only `ztracing::instrument` through Apache-licensed `sum_tree`.
-# Replace Zed's GPL-only tracing facade with the upstream MIT/Apache `tracing` API.
-ztracing = { path = "compat/ztracing" }

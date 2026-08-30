@@ -29,6 +29,8 @@ defmodule GPUI.Dev.CargoMetadataTest do
 
     assert CargoMetadata.crate_types(graph, "gpui_nif") == [["cdylib"]]
     assert CargoMetadata.crate_types(graph, "gpui_core") == [["rlib"]]
+    assert CargoMetadata.package_ids(graph, "gpui_core") == ["core"]
+    assert CargoMetadata.unique_package_id!(graph, "gpui_nif") == "nif"
   end
 
   test "rejects missing and ambiguous package names" do
@@ -42,7 +44,7 @@ defmodule GPUI.Dev.CargoMetadataTest do
       })
 
     assert_raise ArgumentError, ~r/ambiguous/, fn ->
-      CargoMetadata.crate_types(graph, "duplicate")
+      CargoMetadata.unique_package_id!(graph, "duplicate")
     end
 
     assert_raise ArgumentError, ~r/missing/, fn ->

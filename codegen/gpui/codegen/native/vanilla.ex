@@ -22,7 +22,7 @@ end
 defmodule GPUI.Codegen.Native.Vanilla.Registry do
   @moduledoc false
   use RustQ.Meta,
-    rust_sources: ["apps/gpui_native/native/gpui/src/element/component_registry.rs"]
+    rust_sources: ["apps/gpui_native/native/src/element/component_registry.rs"]
 
   require GPUI.Codegen.Native.RegistryDefinitions
   GPUI.Codegen.Native.RegistryDefinitions.define_registry(:vanilla)

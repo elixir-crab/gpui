@@ -62,7 +62,7 @@ defmodule GPUI.Native.NIF do
     rustler_opts = [
       otp_app: :gpui_native,
       crate: "gpui_nif",
-      path: "native/gpui",
+      path: "native",
       base_url: "https://github.com/dannote/gpui/releases/download/gpui_native-v#{version}",
       version: version,
       targets: ["x86_64-unknown-linux-gnu"],

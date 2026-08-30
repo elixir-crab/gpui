@@ -108,7 +108,7 @@ defmodule GPUI.Umbrella.MixProject do
   end
 
   defp rust_fmt(args),
-    do: rust_cmd(["fmt", "--manifest-path", native_manifest()] ++ args)
+    do: rust_cmd(["fmt", "--all", "--manifest-path", native_manifest()] ++ args)
 
   defp rust_check(_args), do: rust_cmd(["check", "--manifest-path", native_manifest()])
   defp rust_clippy(_args), do: run_rust_clippy([])
@@ -135,7 +135,7 @@ defmodule GPUI.Umbrella.MixProject do
           feature_args ++ ["--", "-D", "warnings"]
       )
 
-  defp native_manifest, do: "apps/gpui_native/native/gpui/Cargo.toml"
+  defp native_manifest, do: "Cargo.toml"
   defp e2e_manifest, do: "apps/gpui_native/test/support/desktop/drivers/linux/Cargo.toml"
 
   defp rust_cmd(args) do

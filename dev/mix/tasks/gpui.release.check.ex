@@ -18,7 +18,7 @@ defmodule Mix.Tasks.Gpui.Release.Check do
 
       run!(
         "cargo",
-        ["audit", "--deny", "unsound", "--file", "apps/gpui_native/native/gpui/Cargo.lock"] ++
+        ["audit", "--deny", "unsound", "--file", "Cargo.lock"] ++
           Enum.flat_map(@acknowledged_rust_advisories, &["--ignore", &1])
       )
 
@@ -115,7 +115,7 @@ defmodule Mix.Tasks.Gpui.Release.Check do
           "--format-version",
           "1",
           "--manifest-path",
-          "apps/gpui_native/native/gpui/Cargo.toml"
+          "Cargo.toml"
         ]
       )
 

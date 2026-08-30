@@ -17,7 +17,7 @@ defmodule GPUI.Codegen.Native.EventBoundary do
     otp_app: :gpui_native,
     build: false,
     load: false,
-    rust_sources: ["apps/gpui_native/native/gpui/src/nif.rs"]
+    rust_sources: ["apps/gpui_native/native/src/nif.rs"]
 
   alias GPUI.Codegen.Native.EventBoundaryDefinitions
   alias RustQ.Type, as: R

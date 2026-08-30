@@ -60,7 +60,7 @@ defmodule GPUI.Dev.CargoMetadata do
     dependency_ids = graph |> package_ids(dependency) |> MapSet.new()
 
     graph
-    |> package_id!(package)
+    |> unique_package_id!(package)
     |> reachable_ids(graph)
     |> MapSet.disjoint?(dependency_ids)
     |> Kernel.not()
@@ -75,12 +75,14 @@ defmodule GPUI.Dev.CargoMetadata do
     |> Enum.map(&Map.fetch!(&1, "crate_types"))
   end
 
-  @doc "Returns one uniquely named package."
-  @spec package!(t(), String.t()) :: map()
-  def package!(%__MODULE__{} = graph, name),
-    do: Map.fetch!(graph.packages_by_id, package_id!(graph, name))
+  @doc "Returns all package IDs registered under a Cargo package name."
+  @spec package_ids(t(), String.t()) :: [package_id()]
+  def package_ids(%__MODULE__{} = graph, name),
+    do: Map.get(graph.package_ids_by_name, name, [])
 
-  defp package_id!(graph, name) do
+  @doc "Returns the unique package ID registered under a Cargo package name."
+  @spec unique_package_id!(t(), String.t()) :: package_id()
+  def unique_package_id!(%__MODULE__{} = graph, name) do
     case package_ids(graph, name) do
       [id] -> id
       [] -> raise ArgumentError, "Cargo package #{inspect(name)} is missing"
@@ -88,7 +90,10 @@ defmodule GPUI.Dev.CargoMetadata do
     end
   end
 
-  defp package_ids(graph, name), do: Map.get(graph.package_ids_by_name, name, [])
+  @doc "Returns one uniquely named package."
+  @spec package!(t(), String.t()) :: map()
+  def package!(%__MODULE__{} = graph, name),
+    do: Map.fetch!(graph.packages_by_id, unique_package_id!(graph, name))
 
   defp reachable_ids(root_id, graph) do
     walk([root_id], graph, MapSet.new())

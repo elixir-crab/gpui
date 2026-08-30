@@ -63,7 +63,7 @@ release artifacts pass.
 ## Source builds
 
 `gpui_native` packages the complete native workspace at
-`apps/gpui_native/native/gpui`. The repository pins Rust 1.95.0 in
+`apps/gpui_native/native`. The repository pins Rust 1.95.0 in
 `rust-toolchain.toml`.
 
 Force source compilation with:
@@ -143,7 +143,7 @@ retain the `GLIBC_2.35` ceiling.
 
 Zed's Apache-licensed `sum_tree` uses only the `ztracing::instrument` surface,
 but Zed declares its tracing facade as GPL-3. GPUI patches that facade with
-`apps/gpui_native/native/gpui/compat/ztracing`, which re-exports the upstream
+`apps/gpui_native/native/compat/ztracing`, which re-exports the upstream
 MIT/Apache `tracing` API. `gpui-component` is Apache-2.0.
 
 Native E2E remains a separate evidence layer. Release claims cover only

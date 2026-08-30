@@ -9,7 +9,7 @@ defmodule Mix.Tasks.Gpui.Test.Hosts do
   use Mix.Task
 
   @shortdoc "Checks vanilla and gpui-component native host compositions"
-  @manifest "apps/gpui_native/native/gpui/Cargo.toml"
+  @manifest "Cargo.toml"
 
   @hosts [
     vanilla: ["--no-default-features", "--features", "vanilla-host"],
@@ -24,7 +24,7 @@ defmodule Mix.Tasks.Gpui.Test.Hosts do
       Mix.shell().info("Checking #{host} native host")
       assert_generated_boundary!(host)
       assert_dependency_boundary!(host, feature_args)
-      cargo!(["check", "--manifest-path", @manifest] ++ feature_args)
+      cargo!(["check", "-p", "gpui_nif", "--locked", "--manifest-path", @manifest] ++ feature_args)
     end)
   end
 
@@ -49,13 +49,40 @@ defmodule Mix.Tasks.Gpui.Test.Hosts do
   defp assert_dependency_boundary!(host, feature_args) do
     graph = GPUI.Dev.CargoMetadata.load!(@manifest, feature_args)
 
+    assert_single_package_id!(graph, "gpui")
+    assert_single_package_id!(graph, "gpui_platform")
+    assert_crate_types!(graph)
+    assert_dependency!(graph, "gpui_nif", "gpui_core", host)
+
     case host do
       :vanilla ->
+        refute_dependency!(graph, "gpui_nif", "gpui_components", host)
         refute_dependency!(graph, "gpui_nif", "gpui-component", host)
 
       :gpui_component ->
+        assert_dependency!(graph, "gpui_nif", "gpui_components", host)
         assert_dependency!(graph, "gpui_nif", "gpui-component", host)
     end
+  end
+
+  defp assert_single_package_id!(graph, package) do
+    case GPUI.Dev.CargoMetadata.package_ids(graph, package) do
+      [_id] -> :ok
+      ids -> Mix.raise("expected one Cargo package ID for #{package}, got: #{inspect(ids)}")
+    end
+  end
+
+  defp assert_crate_types!(graph) do
+    expected = %{
+      "gpui_core" => [["rlib"]],
+      "gpui_components" => [["rlib"]],
+      "gpui_nif" => [["cdylib"]]
+    }
+
+    Enum.each(expected, fn {package, crate_types} ->
+      actual = GPUI.Dev.CargoMetadata.crate_types(graph, package)
+      if actual != crate_types, do: Mix.raise("unexpected crate types for #{package}: #{inspect(actual)}")
+    end)
   end
 
   defp assert_dependency!(graph, package, dependency, host) do

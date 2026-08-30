@@ -59,14 +59,14 @@ defmodule Mix.Tasks.Gpui.Test.Packages do
     assert_file!(packages.gpui_components, "lib/gpui/ui.ex")
     assert_file!(packages.gpui_components, "native/src/generated/schema.rs")
     assert_file!(packages.gpui_native, "lib/gpui/native/nif.ex")
-    assert_file!(packages.gpui_native, "native/gpui/Cargo.toml")
-    assert_file!(packages.gpui_native, "native/gpui/Cargo.lock")
+    assert_file!(packages.gpui_native, "native/Cargo.toml")
+    reject_path!(packages.gpui_native, "native/Cargo.lock")
 
     reject_path!(packages.gpui, "codegen")
     reject_path!(packages.gpui, "dev")
     reject_path!(packages.gpui, "native/target")
     reject_path!(packages.gpui_components, "native/target")
-    reject_path!(packages.gpui_native, "native/gpui/target")
+    reject_path!(packages.gpui_native, "native/target")
 
     for package <- Map.values(packages),
         forbidden <- ["rustq.exs", "mix.lock", "deps", "_build"] do

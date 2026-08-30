@@ -5,7 +5,7 @@ defmodule GPUI.Codegen.Native.RuntimeBoundary do
     otp_app: :gpui_native,
     build: false,
     load: false,
-    rust_sources: ["apps/gpui_native/native/gpui/src/nif.rs"]
+    rust_sources: ["apps/gpui_native/native/src/nif.rs"]
 
   alias RustQ.Type, as: R
 

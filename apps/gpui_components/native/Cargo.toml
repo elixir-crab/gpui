@@ -1,0 +1,13 @@
+[package]
+name = "gpui_components"
+version = "0.1.1"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[lib]
+name = "gpui_components"
+crate-type = ["rlib"]
+
+[dependencies]
+gpui_core = { path = "../../gpui/native" }

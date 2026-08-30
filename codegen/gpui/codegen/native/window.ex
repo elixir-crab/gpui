@@ -5,7 +5,7 @@ defmodule GPUI.Codegen.Native.Window do
     otp_app: :gpui_native,
     build: false,
     load: false,
-    rust_sources: ["apps/gpui_native/native/gpui/src/window_codec.rs"]
+    rust_sources: ["apps/gpui_native/native/src/window_codec.rs"]
 
   alias RustQ.Type, as: R
 
