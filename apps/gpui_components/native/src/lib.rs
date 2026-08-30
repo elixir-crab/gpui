@@ -1,5 +1,8 @@
 #![forbid(unsafe_code)]
 
+#[cfg(feature = "native-render")]
+pub mod render;
+
 /// Stable identity for the application-owned component implementation crate.
 pub const CRATE_ID: &str = "gpui_components";
 
