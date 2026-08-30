@@ -13,11 +13,20 @@ pub(crate) enum ImageData {
 pub(crate) fn decode_resource_ref(term: Term) -> NifResult<String> {
     let resource = decode_resource_ref_data(term)?;
 
-    if resource.resource_type != "raster" {
-        return Err(rustler::Error::Term(Box::new("unsupported_resource_type")));
-    }
+    gpui_core::resource::validate_raster_ref(&resource.resource_type, &resource.id)
+        .map_err(resource_ref_error)?;
 
     Ok(resource.id)
+}
+
+fn resource_ref_error(error: gpui_core::resource::ResourceRefError) -> rustler::Error {
+    use gpui_core::resource::ResourceRefError;
+
+    let reason = match error {
+        ResourceRefError::UnsupportedType => "unsupported_resource_type",
+        ResourceRefError::InvalidId => "invalid_resource_id",
+    };
+    rustler::Error::Term(Box::new(reason))
 }
 
 impl RasterData {
