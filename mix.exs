@@ -107,17 +107,15 @@ defmodule GPUI.Umbrella.MixProject do
     Mix.Task.run("rustq.gen", ["--check"])
   end
 
-  defp rust_fmt(args),
-    do: rust_cmd(["fmt", "--all", "--manifest-path", native_manifest()] ++ args)
-
-  defp rust_check(_args), do: rust_cmd(["check", "--manifest-path", native_manifest()])
+  defp rust_fmt(args), do: GPUI.Dev.NativeWorkspace.fmt!(args)
+  defp rust_check(_args), do: GPUI.Dev.NativeWorkspace.check_workspace!()
   defp rust_clippy(_args), do: run_rust_clippy([])
 
   defp rust_headless_clippy(_args),
-    do: run_rust_clippy(["--no-default-features", "--features", "real-gpui"])
+    do: run_rust_clippy(no_default_features: true, features: ["real-gpui"])
 
   defp rust_core_clippy(_args),
-    do: run_rust_clippy(["--no-default-features", "--features", "vanilla-host"])
+    do: run_rust_clippy(no_default_features: true, features: ["vanilla-host"])
 
   defp rust_e2e_fmt(args),
     do: rust_cmd(["fmt", "--manifest-path", e2e_manifest()] ++ args)
@@ -126,16 +124,11 @@ defmodule GPUI.Umbrella.MixProject do
     do: rust_cmd(["clippy", "--manifest-path", e2e_manifest(), "--", "-D", "warnings"])
 
   defp rust_test(_args),
-    do: rust_cmd(["test", "--manifest-path", native_manifest(), "--all-features", "--lib"])
+    do: GPUI.Dev.NativeWorkspace.test!(package: "gpui_nif", all_features: true)
 
-  defp run_rust_clippy(feature_args),
-    do:
-      rust_cmd(
-        ["clippy", "--manifest-path", native_manifest()] ++
-          feature_args ++ ["--", "-D", "warnings"]
-      )
+  defp run_rust_clippy(options),
+    do: GPUI.Dev.NativeWorkspace.clippy!([{:package, "gpui_nif"} | options])
 
-  defp native_manifest, do: "Cargo.toml"
   defp e2e_manifest, do: "apps/gpui_native/test/support/desktop/drivers/linux/Cargo.toml"
 
   defp rust_cmd(args) do

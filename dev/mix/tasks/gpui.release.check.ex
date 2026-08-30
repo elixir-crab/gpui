@@ -16,10 +16,8 @@ defmodule Mix.Tasks.Gpui.Release.Check do
       run!("mix", ["docs", "--warnings-as-errors"], fontconfig_env())
       run!("mix", ["hex.audit"])
 
-      run!(
-        "cargo",
-        ["audit", "--deny", "unsound", "--file", "Cargo.lock"] ++
-          Enum.flat_map(@acknowledged_rust_advisories, &["--ignore", &1])
+      GPUI.Dev.NativeWorkspace.audit!(
+        Enum.flat_map(@acknowledged_rust_advisories, &["--ignore", &1])
       )
 
       reject_gpl3_rust_dependencies!()
@@ -106,20 +104,7 @@ defmodule Mix.Tasks.Gpui.Release.Check do
   end
 
   defp reject_gpl3_rust_dependencies! do
-    {output, 0} =
-      System.cmd(
-        "cargo",
-        [
-          "metadata",
-          "--locked",
-          "--format-version",
-          "1",
-          "--manifest-path",
-          "Cargo.toml"
-        ]
-      )
-
-    packages = JSON.decode!(output)["packages"]
+    packages = GPUI.Dev.NativeWorkspace.metadata!()["packages"]
 
     forbidden =
       Enum.filter(packages, fn package ->

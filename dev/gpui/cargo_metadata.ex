@@ -17,16 +17,11 @@ defmodule GPUI.Dev.CargoMetadata do
         }
 
   @doc "Loads structured Cargo metadata for exact feature arguments."
-  @spec load!(Path.t(), [String.t()]) :: t()
-  def load!(manifest, feature_args \\ []) do
-    args =
-      ["metadata", "--locked", "--format-version", "1", "--manifest-path", manifest] ++
-        feature_args
-
-    case System.cmd("cargo", args, stderr_to_stdout: true) do
-      {output, 0} -> output |> JSON.decode!() |> new!()
-      {output, _status} -> raise "cargo #{Enum.join(args, " ")} failed:\n#{output}"
-    end
+  @spec load!([String.t()]) :: t()
+  def load!(feature_args \\ []) do
+    feature_args
+    |> GPUI.Dev.NativeWorkspace.metadata!()
+    |> new!()
   end
 
   @doc "Builds a typed graph from decoded Cargo metadata JSON."

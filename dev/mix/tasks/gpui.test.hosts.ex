@@ -9,7 +9,6 @@ defmodule Mix.Tasks.Gpui.Test.Hosts do
   use Mix.Task
 
   @shortdoc "Checks vanilla and gpui-component native host compositions"
-  @manifest "Cargo.toml"
 
   @hosts [
     vanilla: ["--no-default-features", "--features", "vanilla-host"],
@@ -24,9 +23,16 @@ defmodule Mix.Tasks.Gpui.Test.Hosts do
       Mix.shell().info("Checking #{host} native host")
       assert_generated_boundary!(host)
       assert_dependency_boundary!(host, feature_args)
-      cargo!(["check", "-p", "gpui_nif", "--locked", "--manifest-path", @manifest] ++ feature_args)
+      GPUI.Dev.NativeWorkspace.check!(
+        package: "gpui_nif",
+        no_default_features: true,
+        features: [host_feature(host)]
+      )
     end)
   end
+
+  defp host_feature(:vanilla), do: "vanilla-host"
+  defp host_feature(:gpui_component), do: "gpui-component-host"
 
   defp assert_generated_boundary!(:vanilla) do
     schema = File.read!("apps/gpui/native/src/generated/schema.rs")
@@ -47,7 +53,7 @@ defmodule Mix.Tasks.Gpui.Test.Hosts do
   end
 
   defp assert_dependency_boundary!(host, feature_args) do
-    graph = GPUI.Dev.CargoMetadata.load!(@manifest, feature_args)
+    graph = GPUI.Dev.CargoMetadata.load!(feature_args)
 
     assert_single_package_id!(graph, "gpui")
     assert_single_package_id!(graph, "gpui_platform")
@@ -96,18 +102,4 @@ defmodule Mix.Tasks.Gpui.Test.Hosts do
       Mix.raise("#{host} host unexpectedly resolves #{dependency}")
     end
   end
-
-  defp cargo!(args) do
-    {_output, status} =
-      System.cmd("cargo", args,
-        env: cargo_env(),
-        into: IO.stream(),
-        stderr_to_stdout: true
-      )
-
-    if status != 0, do: Mix.raise("cargo #{Enum.join(args, " ")} failed")
-  end
-
-  defp cargo_env,
-    do: [{"RUST_FONTCONFIG_DLOPEN", System.get_env("RUST_FONTCONFIG_DLOPEN", "1")}]
 end
