@@ -13,6 +13,8 @@ pub mod render;
 #[cfg(feature = "native-render")]
 pub mod slider;
 #[cfg(feature = "native-render")]
+pub mod style;
+#[cfg(feature = "native-render")]
 pub mod switch;
 
 /// Stable identity for the application-owned component implementation crate.

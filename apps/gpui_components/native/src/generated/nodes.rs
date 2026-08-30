@@ -8,6 +8,7 @@ pub struct OptionNode {
 }
 #[derive(Clone, Debug, PartialEq)]
 pub struct RadioGroupNode {
+    pub style: gpui_core::Style,
     pub id: String,
     pub label: String,
     pub value: Option<String>,
@@ -19,6 +20,7 @@ pub struct RadioGroupNode {
 }
 #[derive(Clone, Debug, PartialEq)]
 pub struct SliderNode {
+    pub style: gpui_core::Style,
     pub id: String,
     pub label: String,
     pub value: f64,
@@ -34,6 +36,7 @@ pub struct SliderNode {
 }
 #[derive(Clone, Debug, PartialEq)]
 pub struct SwitchNode {
+    pub style: gpui_core::Style,
     pub id: String,
     pub checked: bool,
     pub label: String,
@@ -44,6 +47,7 @@ pub struct SwitchNode {
 }
 #[derive(Clone, Debug, PartialEq)]
 pub struct TabsNode {
+    pub style: gpui_core::Style,
     pub id: String,
     pub value: Option<String>,
     pub options: Vec<OptionNode>,

@@ -6,6 +6,7 @@ defmodule GPUI.Codegen.Native.ComponentNodes do
   alias RustQ.Meta.AST, as: MetaAST
 
   @type switch_node :: %{
+          required(:style) => RustQ.Type.path({:gpui_core, :Style}),
           required(:id) => String.t(),
           required(:checked) => boolean(),
           required(:label) => String.t(),
@@ -16,6 +17,7 @@ defmodule GPUI.Codegen.Native.ComponentNodes do
         }
 
   @type slider_node :: %{
+          required(:style) => RustQ.Type.path({:gpui_core, :Style}),
           required(:id) => String.t(),
           required(:label) => String.t(),
           required(:value) => RustQ.Type.f64(),
@@ -37,6 +39,7 @@ defmodule GPUI.Codegen.Native.ComponentNodes do
         }
 
   @type radio_group_node :: %{
+          required(:style) => RustQ.Type.path({:gpui_core, :Style}),
           required(:id) => String.t(),
           required(:label) => String.t(),
           required(:value) => RustQ.Type.option(String.t()),
@@ -48,6 +51,7 @@ defmodule GPUI.Codegen.Native.ComponentNodes do
         }
 
   @type tabs_node :: %{
+          required(:style) => RustQ.Type.path({:gpui_core, :Style}),
           required(:id) => String.t(),
           required(:value) => RustQ.Type.option(String.t()),
           required(:options) => RustQ.Type.vec(RustQ.Type.path(:OptionNode)),

@@ -7,7 +7,7 @@ defmodule GPUI.Codegen.Native.StyleAdapterTest do
     source = GPUI.Codegen.Native.StyleAdapter.items() |> Rust.render_all()
 
     for spec <- GPUI.Schema.style_specs() do
-      assert length(Regex.scan(~r/style\.#{spec.field} = wire\.#{spec.field}/, source)) == 1
+      assert [_assignment] = Regex.scan(~r/style\.#{spec.field} = wire\.#{spec.field}/, source)
     end
 
     assert source =~ "gpui_core::style_wire::length"

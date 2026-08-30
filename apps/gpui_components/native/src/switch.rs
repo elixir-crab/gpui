@@ -23,6 +23,7 @@ pub fn render(node: SwitchNode, context: &mut SwitchRenderContext<'_>) -> Render
     use gpui::{IntoElement, ParentElement, Styled};
     use gpui_component::{h_flex, spinner::Spinner, switch::Switch, Disableable, Sizable};
 
+    let style = node.style.clone();
     let checked = node.checked;
     let unavailable = node.disabled || node.loading;
     let focus_handle = context
@@ -36,13 +37,17 @@ pub fn render(node: SwitchNode, context: &mut SwitchRenderContext<'_>) -> Render
     let mouse_host = context.host.clone();
     let change_event = node.change.clone();
     let window_id = context.window_id;
-    let mut element = Switch::new(node.id.clone())
-        .checked(checked)
-        .disabled(unavailable)
-        .on_click(move |checked, window, cx| {
-            mouse_focus.focus(window, cx);
-            emit_change(&mouse_host, window_id, change_event.as_ref(), *checked);
-        });
+    let element = crate::style::refine(
+        Switch::new(node.id.clone())
+            .checked(checked)
+            .disabled(unavailable)
+            .on_click(move |checked, window, cx| {
+                mouse_focus.focus(window, cx);
+                emit_change(&mouse_host, window_id, change_event.as_ref(), *checked);
+            }),
+        style,
+    );
+    let mut element = element;
     element = element.label(node.label.clone());
     element = match node.size.as_deref() {
         Some("xs") => element.xsmall(),
