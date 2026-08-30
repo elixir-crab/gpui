@@ -4,6 +4,7 @@
 pub enum ComponentValue {
     Boolean(bool),
     String(String),
+    Strings(Vec<String>),
     Number(f64),
     None,
 }

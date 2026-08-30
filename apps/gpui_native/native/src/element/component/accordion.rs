@@ -13,7 +13,6 @@ pub(crate) fn render(
     node: AccordionComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
-    use crate::{push_event, EventValue, InputKind, NativeEvent};
     use gpui::{InteractiveElement, IntoElement, ParentElement};
     use gpui_component::{accordion::Accordion, Sizable};
     use std::collections::HashSet;
@@ -66,15 +65,17 @@ pub(crate) fn render(
                 .into_iter()
                 .filter_map(|index| item_ids.get(index).cloned())
                 .collect::<Vec<_>>();
-            let _ = push_event(
-                &runtime,
-                NativeEvent::Input {
-                    kind: InputKind::Change,
-                    window_id,
-                    event: event.clone(),
-                    value: Some(EventValue::Strings(values)),
-                },
-            );
+            runtime
+                .component_host()
+                .emit(gpui_components::host_contract::ComponentEvent::Change(
+                    gpui_components::host_contract::ComponentValueEvent {
+                        envelope: gpui_components::host_contract::ComponentEventEnvelope {
+                            window_id,
+                            event: event.clone(),
+                        },
+                        value: gpui_components::host_contract::ComponentValue::Strings(values),
+                    },
+                ));
         });
     for (title, disabled, open, children) in items {
         element = element.item(move |item| {

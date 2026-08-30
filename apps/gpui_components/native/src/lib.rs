@@ -7,6 +7,8 @@ pub mod registry;
 
 #[cfg(feature = "native-render")]
 pub mod render;
+#[cfg(feature = "native-render")]
+pub mod switch;
 
 /// Stable identity for the application-owned component implementation crate.
 pub const CRATE_ID: &str = "gpui_components";

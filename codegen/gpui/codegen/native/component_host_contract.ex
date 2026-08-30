@@ -10,7 +10,13 @@ defmodule GPUI.Codegen.Native.ComponentHostContractDefinitions do
 
     quote do
       @type component_value ::
-              R.enum(boolean: [boolean()], string: [String.t()], number: [R.f64()], none: [])
+              R.enum(
+                boolean: [boolean()],
+                string: [String.t()],
+                strings: [R.vec(String.t())],
+                number: [R.f64()],
+                none: []
+              )
 
       @type component_event :: R.enum(unquote(variants))
     end

@@ -28,6 +28,7 @@ impl ComponentEventSink for NifComponentEventSink {
                 value: match value {
                     ComponentValue::Boolean(value) => Some(EventValue::Boolean(value)),
                     ComponentValue::String(value) => Some(EventValue::String(value)),
+                    ComponentValue::Strings(value) => Some(EventValue::Strings(value)),
                     ComponentValue::Number(value) => Some(EventValue::Number(value)),
                     ComponentValue::None => None,
                 },

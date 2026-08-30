@@ -7,134 +7,63 @@ use super::apply_component_styles;
 use super::render_component_fallback;
 
 #[cfg(feature = "components")]
-#[derive(Debug, PartialEq)]
-struct SwitchAccessibility {
-    label: String,
-    toggled: gpui::Toggled,
-}
-
-#[cfg(feature = "components")]
-fn switch_accessibility(label: String, checked: bool) -> SwitchAccessibility {
-    SwitchAccessibility {
-        label,
-        toggled: if checked {
-            gpui::Toggled::True
-        } else {
-            gpui::Toggled::False
-        },
-    }
-}
-
-#[cfg(feature = "components")]
 pub(crate) fn render(
     node: SwitchComponentNode,
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
-    use gpui::{
-        InteractiveElement, IntoElement, ParentElement, Role, StatefulInteractiveElement, Styled,
-    };
-    use gpui_component::{h_flex, spinner::Spinner, switch::Switch, Disableable, Sizable};
+    use gpui::{InteractiveElement, IntoElement, ParentElement, Role, StatefulInteractiveElement};
 
-    let runtime = context.runtime.clone();
-    let window_id = context.window_id;
-    let change_event = node.change.clone();
-    let key_runtime = runtime.clone();
-    let key_event = change_event.clone();
+    let style = node.style;
     let checked = node.checked;
-    let unavailable = node.disabled || node.loading;
-    let accessibility = switch_accessibility(node.label.clone(), checked);
-    let switch_id = node.id.clone();
-    let focus_handle = context
-        .window
-        .use_keyed_state(format!("{}-focus", node.id), context.cx, |_, cx| {
-            cx.focus_handle()
-        })
-        .read(context.cx)
-        .clone();
-    let mouse_focus = focus_handle.clone();
-    let mut element = Switch::new(switch_id.clone())
-        .checked(checked)
-        .disabled(unavailable)
-        .on_click(move |checked, window, cx| {
-            mouse_focus.focus(window, cx);
-            emit_change(&runtime, window_id, change_event.as_ref(), *checked);
-        });
-    element = element.label(node.label);
-    element = match node.size.as_deref() {
-        Some("xs") => element.xsmall(),
-        Some("sm") => element.small(),
-        Some("lg") => element.large(),
-        _ => element,
-    };
-    let element = apply_component_styles(element, node.style);
-    let mut content = h_flex().items_center().gap_2().child(element);
-    if node.loading {
-        let spinner = match node.size.as_deref() {
-            Some("xs") => Spinner::new().xsmall(),
-            Some("lg") => Spinner::new().large(),
-            _ => Spinner::new().small(),
-        };
-        content = content.child(spinner);
-    }
+    let change_event = node.change.clone();
+    let key_host = context.runtime.component_host().clone();
+    let window_id = context.window_id;
+    let rendered = gpui_components::switch::render(
+        gpui_components::switch::SwitchNode {
+            id: node.id,
+            label: node.label,
+            checked,
+            disabled: node.disabled,
+            loading: node.loading,
+            size: node.size,
+            change: node.change,
+        },
+        &mut gpui_components::switch::SwitchRenderContext {
+            window_id,
+            host: context.runtime.component_host().clone(),
+            window: context.window,
+            cx: context.cx,
+        },
+    );
+    let focus_handle = rendered.focus_handle;
+    let unavailable = rendered.unavailable;
+    let switch_id = rendered.id;
+    let element = apply_component_styles(gpui::div(), style)
+        .id(switch_id.clone())
+        .child(rendered.element);
 
-    let container = gpui::div().id(node.id);
-    crate::element::register_test_target(container, switch_id, Some(focus_handle.clone()), context)
+    crate::element::register_test_target(element, switch_id, Some(focus_handle.clone()), context)
         .role(Role::Switch)
-        .aria_label(accessibility.label)
-        .aria_toggled(accessibility.toggled)
+        .aria_label(rendered.label)
+        .aria_toggled(if checked {
+            gpui::Toggled::True
+        } else {
+            gpui::Toggled::False
+        })
         .track_focus(&focus_handle.tab_stop(!unavailable))
         .on_key_down(move |event, _window, cx| {
             if unavailable || !matches!(event.keystroke.key.as_str(), "enter" | "space") {
                 return;
             }
-            emit_change(&key_runtime, window_id, key_event.as_ref(), !checked);
+            gpui_components::switch::emit_change(
+                &key_host,
+                window_id,
+                change_event.as_ref(),
+                !checked,
+            );
             cx.stop_propagation();
         })
-        .child(content)
         .into_any_element()
-}
-
-#[cfg(feature = "components")]
-fn emit_change(
-    runtime: &crate::SharedRuntime,
-    window_id: u64,
-    event: Option<&String>,
-    value: bool,
-) {
-    let Some(event) = event else {
-        return;
-    };
-    runtime
-        .component_host()
-        .emit(gpui_components::host_contract::ComponentEvent::Change(
-            gpui_components::host_contract::ComponentValueEvent {
-                envelope: gpui_components::host_contract::ComponentEventEnvelope {
-                    window_id,
-                    event: event.clone(),
-                },
-                value: gpui_components::host_contract::ComponentValue::Boolean(value),
-            },
-        ));
-}
-
-#[cfg(all(test, feature = "components"))]
-mod tests {
-    use super::{switch_accessibility, SwitchAccessibility};
-
-    #[test]
-    fn accessibility_tracks_label_and_controlled_state() {
-        assert_eq!(
-            switch_accessibility("Notifications".to_string(), true),
-            SwitchAccessibility {
-                label: "Notifications".to_string(),
-                toggled: crate::gpui::Toggled::True,
-            }
-        );
-        assert_eq!(
-            switch_accessibility("Power".to_string(), false).label,
-            "Power"
-        );
-    }
 }
 
 #[cfg(not(feature = "components"))]

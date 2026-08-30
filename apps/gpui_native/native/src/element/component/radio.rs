@@ -184,20 +184,20 @@ fn emit_change(
     event: Option<&String>,
     value: &str,
 ) {
-    use crate::{push_event, EventValue, InputKind, NativeEvent};
-
     let Some(event) = event else {
         return;
     };
-    let _ = push_event(
-        runtime,
-        NativeEvent::Input {
-            kind: InputKind::Change,
-            window_id,
-            event: event.clone(),
-            value: Some(EventValue::String(value.to_string())),
-        },
-    );
+    runtime
+        .component_host()
+        .emit(gpui_components::host_contract::ComponentEvent::Change(
+            gpui_components::host_contract::ComponentValueEvent {
+                envelope: gpui_components::host_contract::ComponentEventEnvelope {
+                    window_id,
+                    event: event.clone(),
+                },
+                value: gpui_components::host_contract::ComponentValue::String(value.to_string()),
+            },
+        ));
 }
 
 #[cfg(all(test, feature = "components"))]
