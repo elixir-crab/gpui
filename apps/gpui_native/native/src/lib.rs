@@ -14,6 +14,8 @@ use std::{
 #[cfg(feature = "real-gpui")]
 use zed_gpui as gpui;
 
+#[cfg(feature = "components")]
+mod component_host;
 #[cfg(not(feature = "real-gpui"))]
 mod disabled;
 mod event;

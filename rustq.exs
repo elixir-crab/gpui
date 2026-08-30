@@ -19,6 +19,7 @@ require_file("apps/gpui/lib/gpui/text/rich_run.ex")
 require_file("apps/gpui/lib/gpui/schema/core.ex")
 require_file("apps/gpui/lib/gpui/schema/surfaces.ex")
 require_file("apps/gpui_components/lib/gpui/components/schema_declarations.ex")
+require_file("apps/gpui_components/lib/gpui/components/native_contract.ex")
 require_file("apps/gpui/lib/gpui/schema.ex")
 require_file("apps/gpui_components/lib/gpui/components/schema.ex")
 require_file("codegen/gpui/codegen/native/host.ex")
@@ -28,6 +29,7 @@ require_file("apps/gpui/lib/gpui/event.ex")
 require_file("codegen/gpui/codegen/native/accessibility.ex")
 require_file("codegen/gpui/codegen/native/boundary.ex")
 require_file("codegen/gpui/codegen/native/component_contracts.ex")
+require_file("codegen/gpui/codegen/native/component_host_contract.ex")
 require_file("codegen/gpui/codegen/native/components.ex")
 require_file("codegen/gpui/codegen/native/decoder.ex")
 require_file("codegen/gpui/codegen/native/disabled_window.ex")
@@ -116,6 +118,10 @@ end
 
 rust "vanilla-component-registry", "apps/gpui/native/src/generated/component_registry.rs" do
   GPUI.Codegen.Native.Projections.registry_items(:vanilla)
+end
+
+rust "gpui-component-host-contract", "apps/gpui_components/native/src/generated/host_contract.rs" do
+  GPUI.Codegen.Native.ComponentHostContract.items()
 end
 
 rust "gpui-component-schema", "apps/gpui_components/native/src/generated/schema.rs" do
