@@ -104,18 +104,17 @@ fn emit_change(
     let Some(event) = event else {
         return;
     };
-    let host = gpui_components::host::ComponentHost::new(std::sync::Arc::new(
-        crate::component_host::NifComponentEventSink::new(runtime.clone()),
-    ));
-    host.emit(gpui_components::host_contract::ComponentEvent::Change(
-        gpui_components::host_contract::ComponentValueEvent {
-            envelope: gpui_components::host_contract::ComponentEventEnvelope {
-                window_id,
-                event: event.clone(),
+    runtime
+        .component_host()
+        .emit(gpui_components::host_contract::ComponentEvent::Change(
+            gpui_components::host_contract::ComponentValueEvent {
+                envelope: gpui_components::host_contract::ComponentEventEnvelope {
+                    window_id,
+                    event: event.clone(),
+                },
+                value: gpui_components::host_contract::ComponentValue::Boolean(value),
             },
-            value: gpui_components::host_contract::ComponentValue::Boolean(value),
-        },
-    ));
+        ));
 }
 
 #[cfg(all(test, feature = "components"))]

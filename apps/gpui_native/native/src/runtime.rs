@@ -26,6 +26,8 @@ static GPUI_COMMANDS: OnceLock<mpsc::UnboundedSender<WindowCommand>> = OnceLock:
 
 pub(crate) struct RuntimeState {
     pub(crate) events: Mutex<Vec<NativeEvent>>,
+    #[cfg(feature = "components")]
+    component_host: OnceLock<gpui_components::host::ComponentHost>,
     #[cfg(feature = "real-gpui")]
     pub(crate) resources: Mutex<HashMap<String, RasterData>>,
     #[cfg(feature = "real-gpui")]
@@ -48,6 +50,8 @@ impl RuntimeState {
     pub(crate) fn new() -> Self {
         Self {
             events: Mutex::new(Vec::new()),
+            #[cfg(feature = "components")]
+            component_host: OnceLock::new(),
             #[cfg(feature = "real-gpui")]
             resources: Mutex::new(HashMap::new()),
             #[cfg(feature = "real-gpui")]
@@ -63,6 +67,15 @@ impl RuntimeState {
             #[cfg(feature = "real-gpui")]
             element_bounds: Mutex::new(HashMap::new()),
         }
+    }
+
+    #[cfg(feature = "components")]
+    pub(crate) fn component_host(self: &Arc<Self>) -> &gpui_components::host::ComponentHost {
+        self.component_host.get_or_init(|| {
+            gpui_components::host::ComponentHost::new(Arc::new(
+                crate::component_host::NifComponentEventSink::new(self.clone()),
+            ))
+        })
     }
 }
 
