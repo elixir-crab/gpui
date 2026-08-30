@@ -1,6 +1,6 @@
 #[cfg(feature = "components")]
 use gpui_components::host_contract::{
-    ComponentEvent, ComponentEventError, ComponentEventSink, ComponentValue, ComponentValueEvent,
+    ComponentEvent, ComponentEventError, ComponentEventSink, ComponentValueEvent,
 };
 
 #[cfg(feature = "components")]
@@ -31,18 +31,12 @@ impl ComponentEventSink for NifComponentEventSink {
 
 #[cfg(feature = "components")]
 fn value_event(kind: crate::InputKind, value: ComponentValueEvent) -> crate::NativeEvent {
-    use crate::{EventValue, NativeEvent};
+    use crate::NativeEvent;
 
     NativeEvent::Input {
         kind,
         window_id: value.envelope.window_id,
         event: value.envelope.event,
-        value: match value.value {
-            ComponentValue::Boolean(value) => Some(EventValue::Boolean(value)),
-            ComponentValue::String(value) => Some(EventValue::String(value)),
-            ComponentValue::Strings(value) => Some(EventValue::Strings(value)),
-            ComponentValue::Number(value) => Some(EventValue::Number(value)),
-            ComponentValue::None => None,
-        },
+        value: crate::component_value_to_event_value(value.value),
     }
 }

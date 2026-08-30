@@ -58,7 +58,11 @@ include!("generated/test_boundary.rs");
 include!("generated/text_types.rs");
 include!("generated/text_boundary.rs");
 include!("generated/event_boundary.rs");
+#[cfg(feature = "components")]
+use gpui_components::host_contract::ComponentValue;
+
 include!("generated/extensions.rs");
+include!("generated/component_event_transport.rs");
 include!("generated/component_adapters.rs");
 include!("generated/style_adapter.rs");
 #[cfg(not(feature = "real-gpui"))]

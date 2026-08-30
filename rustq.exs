@@ -31,6 +31,7 @@ require_file("codegen/gpui/codegen/native/boundary.ex")
 require_file("codegen/gpui/codegen/native/component_contracts.ex")
 require_file("codegen/gpui/codegen/native/component_host_contract.ex")
 require_file("codegen/gpui/codegen/native/component_adapters.ex")
+require_file("codegen/gpui/codegen/native/component_event_transport.ex")
 require_file("codegen/gpui/codegen/native/component_nodes.ex")
 require_file("codegen/gpui/codegen/native/core_style.ex")
 require_file("codegen/gpui/codegen/native/core_style_application.ex")
@@ -60,6 +61,10 @@ require_file("codegen/gpui/codegen/native/schema_types.ex")
 require_file("codegen/gpui/codegen/native/schema.ex")
 require_file("codegen/gpui/codegen/native/vanilla.ex")
 require_file("codegen/gpui/codegen/native/projections.ex")
+
+rust "native-component-event-transport", "apps/gpui_native/native/src/generated/component_event_transport.rs" do
+  GPUI.Codegen.Native.ComponentEventTransport.items()
+end
 
 rust "native-component-adapters", "apps/gpui_native/native/src/generated/component_adapters.rs" do
   GPUI.Codegen.Native.ComponentAdapters.items()
