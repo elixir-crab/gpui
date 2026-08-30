@@ -89,7 +89,7 @@ fn encode_text_buffer_error<'a>(env: Env<'a>, error: TextBufferError) -> NifResu
 }
 
 pub(crate) fn decode_image_impl<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
-    let (width, height, data) = match image_decode::decode(bytes.as_slice()) {
+    let (width, height, data) = match gpui_core::image_decode::decode(bytes.as_slice()) {
         Ok(decoded) => decoded,
         Err(_error) => return Ok((atoms::error(), "invalid_image").encode(env)),
     };

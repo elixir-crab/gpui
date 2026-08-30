@@ -123,8 +123,7 @@ defmodule GPUI.Umbrella.MixProject do
   defp rust_e2e_clippy(_args),
     do: rust_cmd(["clippy", "--manifest-path", e2e_manifest(), "--", "-D", "warnings"])
 
-  defp rust_test(_args),
-    do: GPUI.Dev.NativeWorkspace.test!(package: "gpui_nif", all_features: true)
+  defp rust_test(_args), do: GPUI.Dev.NativeWorkspace.test!(all_features: true)
 
   defp run_rust_clippy(options),
     do: GPUI.Dev.NativeWorkspace.clippy!([{:package, "gpui_nif"} | options])

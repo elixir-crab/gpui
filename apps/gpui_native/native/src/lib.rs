@@ -19,7 +19,6 @@ mod disabled;
 mod event;
 #[cfg(feature = "real-gpui")]
 mod host;
-mod image_decode;
 #[cfg(feature = "real-gpui")]
 mod input;
 mod native_test;

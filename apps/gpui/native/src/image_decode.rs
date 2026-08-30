@@ -2,7 +2,7 @@ const MAX_ENCODED_BYTES: usize = 100 * 1_024 * 1_024;
 const MAX_IMAGE_DIMENSION: u32 = 16_384;
 const MAX_DECODED_BYTES: u64 = 256 * 1_024 * 1_024;
 
-pub(crate) fn decode(bytes: &[u8]) -> Result<(u32, u32, Vec<u8>), image::ImageError> {
+pub fn decode(bytes: &[u8]) -> Result<(u32, u32, Vec<u8>), image::ImageError> {
     use image::{error::LimitError, error::LimitErrorKind, ImageError, ImageReader, Limits};
     use std::io::Cursor;
 
