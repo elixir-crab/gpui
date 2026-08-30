@@ -3,6 +3,7 @@
 include!("generated/nodes.rs");
 
 pub mod controlled;
+pub mod controls;
 pub mod host;
 pub mod host_contract;
 pub mod registry;

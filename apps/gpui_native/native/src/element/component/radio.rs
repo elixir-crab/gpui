@@ -184,20 +184,12 @@ fn emit_change(
     event: Option<&String>,
     value: &str,
 ) {
-    let Some(event) = event else {
-        return;
-    };
-    let _ = runtime
-        .component_host()
-        .emit(gpui_components::host_contract::ComponentEvent::Change(
-            gpui_components::host_contract::ComponentValueEvent {
-                envelope: gpui_components::host_contract::ComponentEventEnvelope {
-                    window_id,
-                    event: event.clone(),
-                },
-                value: gpui_components::host_contract::ComponentValue::String(value.to_string()),
-            },
-        ));
+    gpui_components::controls::emit_string_change(
+        runtime.component_host(),
+        window_id,
+        event,
+        value,
+    );
 }
 
 #[cfg(all(test, feature = "components"))]

@@ -88,7 +88,7 @@ pub(crate) fn render(
                         mouse_focus.focus(window, cx);
                     })
                     .on_key_down(move |event, window, cx| {
-                        let Some(target) = tab_key_target(
+                        let Some(target) = gpui_components::controls::tab_key_target(
                             event.keystroke.key.as_str(),
                             index,
                             key_focus_handles.len(),
@@ -167,7 +167,7 @@ pub(crate) fn render(
             let Some(current) = current else {
                 return;
             };
-            let Some(target) = tab_key_target(
+            let Some(target) = gpui_components::controls::tab_key_target(
                 event.keystroke.key.as_str(),
                 current,
                 group_key_values.len(),
@@ -189,47 +189,23 @@ pub(crate) fn render(
 }
 
 #[cfg(feature = "components")]
-fn tab_key_target(key: &str, current: usize, len: usize) -> Option<usize> {
-    if len == 0 {
-        return None;
-    }
-
-    match key {
-        "left" | "up" => Some((current + len - 1) % len),
-        "right" | "down" => Some((current + 1) % len),
-        "home" => Some(0),
-        "end" => Some(len - 1),
-        "enter" | "space" => Some(current),
-        _other => None,
-    }
-}
-
-#[cfg(feature = "components")]
 fn emit_change(
     runtime: &crate::SharedRuntime,
     window_id: u64,
     event: Option<&String>,
     value: &str,
 ) {
-    let Some(event) = event else {
-        return;
-    };
-    let _ = runtime
-        .component_host()
-        .emit(gpui_components::host_contract::ComponentEvent::Change(
-            gpui_components::host_contract::ComponentValueEvent {
-                envelope: gpui_components::host_contract::ComponentEventEnvelope {
-                    window_id,
-                    event: event.clone(),
-                },
-                value: gpui_components::host_contract::ComponentValue::String(value.to_string()),
-            },
-        ));
+    gpui_components::controls::emit_string_change(
+        runtime.component_host(),
+        window_id,
+        event,
+        value,
+    );
 }
 
 #[cfg(all(test, feature = "components"))]
 mod tests {
-    use super::tab_key_target;
+    use gpui_components::controls::tab_key_target;
 
     #[test]
     fn keyboard_navigation_wraps_and_supports_endpoints_and_activation() {
