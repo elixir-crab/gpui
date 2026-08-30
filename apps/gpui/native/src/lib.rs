@@ -5,9 +5,13 @@ pub mod raster;
 #[cfg(feature = "native-render")]
 pub mod render;
 pub mod resource;
+#[cfg(feature = "native-render")]
+pub mod style;
 pub mod text;
 pub mod transfer;
 pub mod window_codec;
+
+include!("generated/style.rs");
 
 mod generated_schema {
     #![allow(unexpected_cfgs)]
