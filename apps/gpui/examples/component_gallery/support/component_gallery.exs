@@ -6,47 +6,118 @@ defmodule Examples.ComponentGallery.View do
 
   @stories [
     %{
-      id: "actions",
-      group: "FOUNDATIONS",
-      title: "Buttons & feedback",
-      description:
-        "Action hierarchy, loading, destructive intent, progress, and clipboard behavior."
+      id: "welcome",
+      group: "Getting started",
+      title: "Introduction",
+      description: "Native components with state and events owned by an Elixir view process."
     },
     %{
-      id: "forms",
-      group: "FOUNDATIONS",
-      title: "Forms & selection",
-      description: "Controlled text, choice, toggle, range, and validation states."
+      id: "button",
+      group: "Components",
+      title: "Button",
+      description: "Action hierarchy, disabled state, and loading feedback."
     },
     %{
-      id: "overlays",
-      group: "INTERACTION",
-      title: "Overlays",
-      description: "Popover, tooltip, dialog, and menu behavior with controlled open state."
+      id: "progress",
+      group: "Components",
+      title: "Progress",
+      description: "Bounded progress with an accessible label."
     },
     %{
-      id: "motion",
-      group: "INTERACTION",
-      title: "Motion",
-      description: "Bounded native entrance motion driven by monotonic application tokens."
+      id: "input",
+      group: "Components",
+      title: "Input",
+      description: "Controlled text input and cleanable state."
     },
     %{
-      id: "navigation",
-      group: "INTERACTION",
-      title: "Navigation & disclosure",
-      description: "Tabs and accordions composed into compact application navigation."
+      id: "select",
+      group: "Components",
+      title: "Select & combobox",
+      description: "Fixed and searchable application-owned choices."
     },
     %{
-      id: "collections",
-      group: "DATA",
-      title: "Collections",
-      description: "Virtual lists, sortable tables, trees, and stable selection."
+      id: "checkbox",
+      group: "Components",
+      title: "Checkbox",
+      description: "A controlled boolean field."
     },
     %{
-      id: "code",
-      group: "DATA",
-      title: "Code & diffs",
-      description: "Monospaced source and unified diff presentation with line selection."
+      id: "switch",
+      group: "Components",
+      title: "Switch",
+      description: "Immediate preference state backed by Elixir assigns."
+    },
+    %{
+      id: "radio",
+      group: "Components",
+      title: "Radio group",
+      description: "Exclusive choices with disabled options."
+    },
+    %{
+      id: "slider",
+      group: "Components",
+      title: "Slider",
+      description: "A bounded numeric value controlled by the view."
+    },
+    %{
+      id: "popover",
+      group: "Overlays",
+      title: "Popover",
+      description: "Controlled lightweight content anchored to a trigger."
+    },
+    %{
+      id: "tooltip",
+      group: "Overlays",
+      title: "Tooltip",
+      description: "Delayed contextual help without application state."
+    },
+    %{
+      id: "dialog",
+      group: "Overlays",
+      title: "Dialog",
+      description: "Controlled modal presentation and focus management."
+    },
+    %{
+      id: "menu",
+      group: "Overlays",
+      title: "Dropdown menu",
+      description: "A bounded set of commands and checked states."
+    },
+    %{
+      id: "tabs",
+      group: "Navigation",
+      title: "Tabs",
+      description: "Roving focus and controlled section selection."
+    },
+    %{
+      id: "accordion",
+      group: "Navigation",
+      title: "Accordion",
+      description: "Multiple controlled disclosure sections."
+    },
+    %{
+      id: "virtual_list",
+      group: "Collections",
+      title: "Virtual list",
+      description: "Stable selection over a larger item set."
+    },
+    %{
+      id: "data_table",
+      group: "Collections",
+      title: "Data table",
+      description: "Sortable columns and controlled row selection."
+    },
+    %{
+      id: "tree",
+      group: "Collections",
+      title: "Tree",
+      description: "Hierarchical navigation with controlled expansion."
+    },
+    %{
+      id: "code_viewer",
+      group: "Collections",
+      title: "Code viewer",
+      description: "Selectable semantic lines in a unified diff."
     }
   ]
 
@@ -56,53 +127,55 @@ defmodule Examples.ComponentGallery.View do
     active = active_story(assigns.story, visible)
 
     ~GPUI"""
-    <div class="flex grow w-full" style={[background: {:rgb, 0xF8FAFC}]}>
-      <div class="flex flex-col w-[220px] gap-3 p-3" style={[background: {:rgb, 0x0B1220}]}>
-        <div class="flex items-center gap-3 p-2">
-          <div class="flex items-center justify-center w-[30px] h-[30px] rounded-md" style={[background: {:rgb, 0x2563EB}]}>
+    <div class="flex grow w-full bg-white">
+      <div class="flex flex-col w-[248px] min-h-0 border-r border-slate-200 bg-slate-50">
+        <div class="flex items-center gap-3 px-4 py-4 border-b border-slate-200">
+          <div class="flex items-center justify-center w-[28px] h-[28px] rounded-md bg-slate-900">
             <text class="text-white font-semibold">G</text>
           </div>
-          <div class="flex flex-col">
-            <text class="text-white font-semibold">GPUI for Elixir</text>
-            <text style={[color: {:rgb, 0x94A3B8}]}>Component gallery</text>
+          <div class="flex flex-col min-w-0">
+            <text class="font-semibold text-slate-900">GPUI Components</text>
+            <text class="text-sm text-slate-500">Elixir storybook</text>
           </div>
         </div>
 
-        <UI.input
-          id="gallery-search"
-          label="Search components"
-          value={assigns.query}
-          placeholder="Search stories"
-          cleanable={true}
-          phx-change="search_changed"
-        />
-
-        <div class="flex flex-col gap-2">
-          {story_navigation(visible, active.id)}
+        <div class="p-3">
+          <UI.input id="gallery-search" label="Search components" value={assigns.query} placeholder="Search…" cleanable={true} phx-change="search_changed" />
         </div>
 
-        <div class="flex grow" />
-        <div class="flex flex-col gap-1 p-3 rounded-lg" style={[background: {:rgb, 0x111827}]}>
-          <text class="text-white font-semibold">{length(@stories)} stories</text>
-          <text style={[color: {:rgb, 0x94A3B8}]}>One canonical place for native component states.</text>
-        </div>
+        <scroll class="flex grow min-h-0 px-2 pb-3">
+          <div class="flex flex-col gap-1">
+            {story_navigation(visible, active.id)}
+          </div>
+        </scroll>
       </div>
 
-      <div class="flex grow flex-col">
-        <div class="flex items-center justify-between px-4 py-2" style={[background: {:rgb, 0xFFFFFF}]}>
-          <div class="flex flex-col gap-1">
-            <text class="text-lg font-semibold" style={[color: {:rgb, 0x0F172A}]}>{active.title}</text>
-            <text class="text-sm" style={[color: {:rgb, 0x475569}]}>{active.description}</text>
+      <div class="flex grow min-w-0 flex-col bg-white">
+        <div class="flex items-start justify-between px-6 py-4 border-b border-slate-200">
+          <div class="flex flex-col gap-1 min-w-0">
+            <text class="text-xl font-semibold text-slate-900">{active.title}</text>
+            <text class="text-sm text-slate-500">{active.description}</text>
           </div>
-          <div class="flex items-center gap-3">
-            <text style={[color: {:rgb, 0x64748B}]}>Interactive, controlled state</text>
-            <UI.button id="reset-story" label="Reset story" phx-click="reset_story" />
-          </div>
+          <UI.button id="reset-story" label="Reset" variant="ghost" phx-click="reset_story" />
         </div>
 
-        <scroll class="flex grow p-3" style={[background: {:rgb, 0xE2E8F0}]}>
-          {story(active.id, assigns)}
+        <scroll class="flex grow min-h-0">
+          <div class="flex grow min-h-full p-8">
+            {story(active.id, assigns)}
+          </div>
         </scroll>
+
+        <div class="flex items-center justify-between px-4 py-2 border-t border-slate-200 bg-slate-50">
+          <div class="flex items-center gap-3">
+            <text class="text-sm text-slate-500">{length(@stories)} components</text>
+            <text class="text-sm text-slate-400">•</text>
+            <text class="text-sm text-slate-700">{active.title}</text>
+          </div>
+          <div class="flex items-center gap-3">
+            <text class="text-sm text-slate-500">Elixir event {assigns.event_count}</text>
+            <text class="text-sm text-slate-400">{assigns.last_event || "ready"}</text>
+          </div>
+        </div>
       </div>
     </div>
     """
@@ -115,81 +188,77 @@ defmodule Examples.ComponentGallery.View do
     story =
       if Enum.any?(visible, &(&1.id == assigns.story)), do: assigns.story, else: hd(visible).id
 
-    {:noreply, %{assigns | query: query, story: story}}
+    {:noreply, record(%{assigns | query: query, story: story}, "search_changed")}
   end
 
   def handle_event("story-" <> story, _event, assigns),
-    do: {:noreply, reset_story(%{assigns | story: story})}
+    do: {:noreply, record(%{assigns | story: story, overlay: nil}, "selected #{story}")}
 
-  def handle_event("reset_story", _event, assigns), do: {:noreply, reset_story(assigns)}
-  def handle_event("noop", _event, assigns), do: {:noreply, assigns}
+  def handle_event("reset_story", _event, assigns),
+    do: {:noreply, assigns |> reset_story() |> record("reset #{assigns.story}")}
+
+  def handle_event("noop", _event, assigns), do: {:noreply, record(assigns, "action")}
 
   def handle_event("name_changed", %{value: value}, assigns),
-    do: {:noreply, %{assigns | name: value}}
+    do: {:noreply, record(%{assigns | name: value}, "name_changed")}
 
   def handle_event("language_changed", %{value: value}, assigns),
-    do: {:noreply, %{assigns | language: value}}
+    do: {:noreply, record(%{assigns | language: value}, "language_changed")}
 
   def handle_event("framework_changed", %{value: value}, assigns),
-    do: {:noreply, %{assigns | framework: value}}
+    do: {:noreply, record(%{assigns | framework: value}, "framework_changed")}
+
+  def handle_event("reports_changed", %{value: value}, assigns),
+    do: {:noreply, record(%{assigns | reports: value}, "reports_changed")}
 
   def handle_event("notifications_changed", %{value: value}, assigns),
-    do: {:noreply, %{assigns | notifications: value}}
+    do: {:noreply, record(%{assigns | notifications: value}, "notifications_changed")}
 
   def handle_event("plan_changed", %{value: value}, assigns),
-    do: {:noreply, %{assigns | plan: value}}
+    do: {:noreply, record(%{assigns | plan: value}, "plan_changed")}
 
   def handle_event("volume_changed", %{value: value}, assigns),
-    do: {:noreply, %{assigns | volume: value}}
-
-  def handle_event("replay-motion", _event, assigns),
-    do: {:noreply, %{assigns | motion_request: assigns.motion_request + 1}}
-
-  def handle_event("motion_policy_changed", %{value: value}, assigns),
-    do: {:noreply, %{assigns | motion_policy: value}}
-
-  def handle_event("motion_easing_changed", %{value: value}, assigns),
-    do: {:noreply, %{assigns | motion_easing: value}}
+    do: {:noreply, record(%{assigns | volume: value}, "volume_changed")}
 
   def handle_event("tabs_changed", %{value: value}, assigns),
-    do: {:noreply, %{assigns | tab: value}}
+    do: {:noreply, record(%{assigns | tab: value}, "tabs_changed")}
 
   def handle_event("accordion_changed", %{value: value}, assigns),
-    do: {:noreply, %{assigns | expanded: value}}
+    do: {:noreply, record(%{assigns | expanded: value}, "accordion_changed")}
 
   def handle_event("overlay_changed", %{value: value}, assigns),
-    do: {:noreply, %{assigns | overlay: value}}
+    do: {:noreply, record(%{assigns | overlay: value}, "overlay_changed")}
 
   def handle_event("show-" <> overlay, _event, assigns),
-    do: {:noreply, %{assigns | overlay: overlay}}
+    do: {:noreply, record(%{assigns | overlay: overlay}, "opened #{overlay}")}
 
   def handle_event("menu_selected", %{value: value}, assigns),
-    do: {:noreply, %{assigns | menu_result: value, overlay: nil}}
+    do: {:noreply, record(%{assigns | menu_result: value, overlay: nil}, "menu: #{value}")}
 
   def handle_event("list_selected", %{value: value}, assigns),
-    do: {:noreply, %{assigns | list_selected: value}}
+    do: {:noreply, record(%{assigns | list_selected: value}, "selected #{value}")}
 
   def handle_event("table_selected", %{value: value}, assigns),
-    do: {:noreply, %{assigns | table_selected: value}}
+    do: {:noreply, record(%{assigns | table_selected: value}, "selected #{value}")}
 
   def handle_event("table_sorted", %{value: value}, assigns),
-    do: {:noreply, %{assigns | table_sort: value}}
+    do: {:noreply, record(%{assigns | table_sort: value}, "sorted #{value}")}
 
   def handle_event("tree_selected", %{value: value}, assigns),
-    do: {:noreply, %{assigns | tree_selected: value}}
+    do: {:noreply, record(%{assigns | tree_selected: value}, "selected #{value}")}
 
   def handle_event("tree_toggled", %{value: "lib"}, assigns),
-    do: {:noreply, %{assigns | tree_expanded: not assigns.tree_expanded}}
+    do: {:noreply, record(%{assigns | tree_expanded: not assigns.tree_expanded}, "toggled lib")}
 
   def handle_event("line_selected", %{value: value}, assigns),
-    do: {:noreply, %{assigns | line_selected: value}}
+    do: {:noreply, record(%{assigns | line_selected: value}, "selected #{value}")}
 
   defp story_navigation(stories, active) do
     stories
     |> Enum.group_by(& &1.group)
-    |> Enum.sort_by(fn {group, _stories} -> group_order(group) end)
-    |> Enum.flat_map(fn {group, stories} ->
-      [group_label(group) | Enum.map(stories, &story_button(&1, active))]
+    |> Enum.sort_by(fn {group, _} -> group_order(group) end)
+    |> Enum.flat_map(fn {group, entries} ->
+      [group_label(group) | Enum.map(entries, &story_button(&1, active))]
     end)
   end
 
@@ -197,7 +266,7 @@ defmodule Examples.ComponentGallery.View do
     assigns = %{group: group}
 
     ~GPUI"""
-    <text style={[color: {:rgb, 0x64748B}]}>{assigns.group}</text>
+    <text class="px-2 pt-3 pb-1 text-sm font-semibold text-slate-500">{assigns.group}</text>
     """
   end
 
@@ -205,240 +274,171 @@ defmodule Examples.ComponentGallery.View do
     assigns = %{story: story, active: story.id == active}
 
     ~GPUI"""
-    <UI.button
-      id={"story-" <> assigns.story.id}
-      label={assigns.story.title}
-      variant={if(assigns.active, do: "primary", else: "default")}
-      phx-click={"story-" <> assigns.story.id}
-    />
+    <UI.button id={"story-" <> assigns.story.id} label={assigns.story.title} variant={if(assigns.active, do: "secondary", else: "ghost")} phx-click={"story-" <> assigns.story.id} />
     """
   end
 
-  defp story("actions", assigns) do
-    assigns = %{assigns: assigns}
-
+  defp story("welcome", _assigns) do
     ~GPUI"""
-    <div class="flex grow flex-col gap-3">
-      {section("Action hierarchy", "Variants communicate priority without changing event semantics.", button_examples())}
-      {section("Progress & clipboard", "Feedback remains accessible and controlled by Elixir.", feedback_examples(assigns.assigns))}
-    </div>
-    """
-  end
-
-  defp story("forms", assigns) do
-    assigns = %{assigns: assigns}
-
-    ~GPUI"""
-    <div class="flex grow gap-3">
-      <div class="flex grow flex-col gap-3 p-3 rounded-md" style={[background: {:rgb, 0xFFFFFF}]}>
-        <text class="font-semibold" style={[color: {:rgb, 0x0F172A}]}>Profile controls</text>
-        <UI.input id="gallery-name" label="Display name" value={assigns.assigns.name} cleanable={true} phx-change="name_changed" />
-        <UI.select id="gallery-language" label="Language" value={assigns.assigns.language} options={[{"Elixir", "elixir"}, {"Rust", "rust"}]} phx-change="language_changed" />
-        <UI.combobox id="gallery-framework" label="Framework" value={assigns.assigns.framework} options={["Phoenix", "LiveView", "Ash"]} phx-change="framework_changed" />
-      </div>
-      <div class="flex grow flex-col gap-3">
-        {section("Preferences", "Boolean and exclusive choices.", preference_examples(assigns.assigns))}
-        {section("Range", "The value remains application-owned.", range_example(assigns.assigns))}
-      </div>
-    </div>
-    """
-  end
-
-  defp story("overlays", assigns) do
-    assigns = %{assigns: assigns}
-
-    ~GPUI"""
-    <div class="flex grow flex-col gap-5">
-      {section("Layered interaction", "Each overlay preserves focus and reports controlled state changes.", overlay_examples(assigns.assigns))}
-      <div class="flex p-4 rounded-lg" style={[background: {:rgb, 0xDBEAFE}]}>
-        <text style={[color: {:rgb, 0x1E3A8A}]}>Last menu action: {assigns.assigns.menu_result || "None yet"}</text>
-      </div>
-    </div>
-    """
-  end
-
-  defp story("motion", assigns) do
-    assigns = %{assigns: assigns}
-
-    ~GPUI"""
-    <div class="flex grow flex-col gap-4">
-      <div class="flex items-center gap-3 p-3 rounded-lg" style={[background: {:rgb, 0xFFFFFF}]}>
-        <UI.button id="replay-motion" label="Replay entrance" phx-click="replay_motion" />
-        <UI.select
-          id="motion-easing"
-          label="Easing"
-          value={assigns.assigns.motion_easing}
-          options={[{"Linear", "linear"}, {"Ease in", "ease_in"}, {"Ease out", "ease_out"}, {"Ease in/out", "ease_in_out"}]}
-          phx-change="motion_easing_changed"
-        />
-        <UI.select
-          id="motion-policy"
-          label="Policy"
-          value={assigns.assigns.motion_policy}
-          options={[{"Respect system", "respect_system"}, {"Disabled", "disabled"}]}
-          phx-change="motion_policy_changed"
-        />
-      </div>
-
-      <div
-        id="motion-preview"
-        class="flex flex-col w-[420px] gap-2 p-5 rounded-lg"
-        style={[background: {:rgb, 0xDBEAFE}]}
-        motion_request={assigns.assigns.motion_request}
-        motion_duration={240}
-        motion_easing={assigns.assigns.motion_easing}
-        motion_policy={assigns.assigns.motion_policy}
-        motion_from_opacity={0.0}
-        motion_from_y={12}
-      >
-        <text class="text-lg font-semibold" style={[color: {:rgb, 0x1E3A8A}]}>Snapshot-authoritative destination</text>
-        <text style={[color: {:rgb, 0x1E40AF}]}>The native display owns only transient opacity and translation.</text>
-        <text style={[color: {:rgb, 0x475569}]}>Request {assigns.assigns.motion_request}</text>
-      </div>
-    </div>
-    """
-  end
-
-  defp story("navigation", assigns) do
-    assigns = %{assigns: assigns}
-
-    ~GPUI"""
-    <div class="flex grow flex-col gap-5">
-      {section("Tabs", "Switch between application-owned sections.", tabs_example(assigns.assigns))}
-      {section("Disclosure", "Multiple accordion sections can remain expanded.", accordion_example(assigns.assigns))}
-    </div>
-    """
-  end
-
-  defp story("collections", assigns) do
-    assigns = %{assigns: assigns}
-
-    ~GPUI"""
-    <div class="flex grow gap-4">
-      <div class="flex flex-col w-[240px] h-[620px] p-3 rounded-lg" style={[background: {:rgb, 0xFFFFFF}]}>
-        <text class="font-semibold" style={[color: {:rgb, 0x0F172A}]}>Virtual list</text>
-        {virtual_list(assigns.assigns)}
-      </div>
-      <div class="flex grow flex-col h-[620px] p-3 rounded-lg" style={[background: {:rgb, 0xFFFFFF}]}>
-        <text class="font-semibold" style={[color: {:rgb, 0x0F172A}]}>Sortable table</text>
-        {data_table(assigns.assigns)}
-      </div>
-      <div class="flex flex-col w-[260px] h-[620px] p-3 rounded-lg" style={[background: {:rgb, 0xFFFFFF}]}>
-        <text class="font-semibold" style={[color: {:rgb, 0x0F172A}]}>Project tree</text>
-        {tree(assigns.assigns)}
-      </div>
-    </div>
-    """
-  end
-
-  defp story("code", assigns) do
-    assigns = %{assigns: assigns}
-
-    ~GPUI"""
-    <div class="flex grow flex-col gap-4 p-4 rounded-lg" style={[background: {:rgb, 0xFFFFFF}]}>
-      <div class="flex items-center justify-between">
-        <div class="flex flex-col">
-          <text class="text-lg font-semibold" style={[color: {:rgb, 0x0F172A}]}>lib/gpui/runtime.ex</text>
-          <text style={[color: {:rgb, 0x64748B}]}>Unified diff with semantic line kinds</text>
+    <div class="flex grow items-center justify-center">
+      <div class="flex flex-col w-[560px] gap-5">
+        <text class="text-3xl font-semibold text-slate-900">Native UI, ordinary Elixir</text>
+        <text class="text-lg text-slate-600">Choose one component from the sidebar. Every value is controlled by the view process; the native host owns only interaction mechanics.</text>
+        <div class="flex gap-3 border-t border-slate-200 pt-5">
+          <text class="text-sm text-slate-500">GPUI.Application</text><text class="text-sm text-slate-400">→</text>
+          <text class="text-sm text-slate-500">GPUI.View</text><text class="text-sm text-slate-400">→</text>
+          <text class="text-sm text-slate-500">GPUI Snapshot</text>
         </div>
-        <text style={[color: {:rgb, 0x2563EB}]}>Selected: {assigns.assigns.line_selected || "none"}</text>
       </div>
-      {code_viewer(assigns.assigns)}
     </div>
     """
   end
 
-  defp section(title, description, child) do
-    assigns = %{title: title, description: description, child: child}
+  defp story("button", _assigns), do: canvas("Button variants", button_examples())
+  defp story("progress", _assigns), do: canvas("Deployment", progress_example())
+  defp story("input", assigns), do: canvas("Profile", input_example(assigns))
+  defp story("select", assigns), do: canvas("Runtime", select_example(assigns))
+  defp story("checkbox", assigns), do: canvas("Reports", checkbox_example(assigns))
+  defp story("switch", assigns), do: canvas("Notifications", switch_example(assigns))
+  defp story("radio", assigns), do: canvas("Plan", radio_example(assigns))
+  defp story("slider", assigns), do: canvas("Volume", slider_example(assigns))
+  defp story("popover", assigns), do: canvas("Popover", popover_example(assigns))
+  defp story("tooltip", _assigns), do: canvas("Tooltip", tooltip_example())
+  defp story("dialog", assigns), do: canvas("Dialog", dialog_example(assigns))
+  defp story("menu", assigns), do: canvas("Dropdown menu", menu_example(assigns))
+  defp story("tabs", assigns), do: canvas("Tabs", tabs_example(assigns))
+  defp story("accordion", assigns), do: canvas("Accordion", accordion_example(assigns))
+
+  defp story("virtual_list", assigns),
+    do: collection_canvas("Virtual list", virtual_list(assigns), "w-[420px]")
+
+  defp story("data_table", assigns),
+    do: collection_canvas("Services", data_table(assigns), "w-[680px]")
+
+  defp story("tree", assigns), do: collection_canvas("Project files", tree(assigns), "w-[420px]")
+
+  defp story("code_viewer", assigns),
+    do: collection_canvas("lib/gpui/runtime.ex", code_viewer(assigns), "w-[760px]")
+
+  defp canvas(title, child) do
+    assigns = %{title: title, child: child}
 
     ~GPUI"""
-    <div class="flex flex-col gap-3 p-3 rounded-md" style={[background: {:rgb, 0xFFFFFF}]}>
-      <div class="flex flex-col">
-        <text class="font-semibold" style={[color: {:rgb, 0x0F172A}]}>{assigns.title}</text>
-        <text class="text-sm" style={[color: {:rgb, 0x64748B}]}>{assigns.description}</text>
+    <div class="flex grow items-start justify-center pt-10">
+      <div class="flex flex-col w-[620px] gap-5">
+        <text class="text-sm font-semibold text-slate-500">{assigns.title}</text>
+        <div class="flex flex-col gap-4 border border-slate-200 rounded-lg p-6 bg-white">{assigns.child}</div>
       </div>
-      {assigns.child}
+    </div>
+    """
+  end
+
+  defp collection_canvas(title, child, width) do
+    assigns = %{title: title, child: child, width: width}
+
+    ~GPUI"""
+    <div class="flex grow items-start justify-center pt-4">
+      <div class={"flex flex-col h-[580px] gap-3 " <> assigns.width}>
+        <text class="text-sm font-semibold text-slate-500">{assigns.title}</text>
+        <div class="flex grow min-h-0 border border-slate-200 rounded-lg p-3 bg-white">{assigns.child}</div>
+      </div>
     </div>
     """
   end
 
   defp button_examples do
     ~GPUI"""
-    <div class="flex flex-wrap gap-2">
-      <UI.button id="button-default" label="Default" />
-      <UI.button id="button-primary" label="Primary" variant="primary" />
-      <UI.button id="button-success" label="Success" variant="success" />
-      <UI.button id="button-warning" label="Warning" variant="warning" />
-      <UI.button id="button-danger" label="Delete" variant="danger" />
+    <div class="flex flex-wrap items-center gap-3">
+      <UI.button id="button-default" label="Default" phx-click="noop" />
+      <UI.button id="button-primary" label="Primary" variant="primary" phx-click="noop" />
+      <UI.button id="button-danger" label="Delete" variant="danger" phx-click="noop" />
       <UI.button id="button-loading" label="Saving" loading={true} />
       <UI.button id="button-disabled" label="Disabled" disabled={true} />
     </div>
     """
   end
 
-  defp feedback_examples(_assigns) do
+  defp progress_example do
     ~GPUI"""
-    <div class="flex items-center gap-3">
-      <div class="flex grow flex-col gap-2">
-        <div class="flex justify-between">
-          <text style={[color: {:rgb, 0x334155}]}>Deployment</text>
-          <text style={[color: {:rgb, 0x2563EB}]}>72%</text>
-        </div>
-        <UI.progress id="gallery-progress" label="Deployment progress" value={72} max={100} />
-      </div>
-      <UI.button id="copy-token" label="Copy token" clipboard_text="gpui_live_42" phx-clipboard-write="noop" />
-    </div>
+    <div class="flex flex-col gap-3"><div class="flex justify-between"><text>Release archive</text><text class="text-slate-500">72%</text></div><UI.progress id="gallery-progress" label="Deployment progress" value={72} max={100} /></div>
     """
   end
 
-  defp preference_examples(assigns) do
+  defp input_example(assigns) do
     assigns = %{assigns: assigns}
 
     ~GPUI"""
-    <div class="flex flex-col gap-4">
-      <UI.checkbox id="gallery-checkbox" label="Email reports" checked={true} phx-change="noop" />
-      <UI.switch id="gallery-switch" label="Desktop notifications" checked={assigns.assigns.notifications} phx-change="notifications_changed" />
-      <UI.radio_group id="gallery-plan" label="Plan" value={assigns.assigns.plan} options={[{"Free", "free"}, {"Team", "team"}, %{label: "Enterprise", value: "enterprise", disabled: true}]} orientation="horizontal" phx-change="plan_changed" />
-    </div>
+    <UI.input id="gallery-name" label="Display name" value={assigns.assigns.name} cleanable={true} phx-change="name_changed" />
     """
   end
 
-  defp range_example(assigns) do
+  defp select_example(assigns) do
     assigns = %{assigns: assigns}
 
     ~GPUI"""
-    <div class="flex flex-col gap-3">
-      <text style={[color: {:rgb, 0x334155}]}>Notification volume: {round(assigns.assigns.volume)}%</text>
-      <UI.slider id="gallery-volume" label="Notification volume" value={assigns.assigns.volume} min={0} max={100} step={5} phx-change="volume_changed" />
-    </div>
+    <div class="flex flex-col gap-4"><UI.select id="gallery-language" label="Language" value={assigns.assigns.language} options={[{"Elixir", "elixir"}, {"Rust", "rust"}]} phx-change="language_changed" /><UI.combobox id="gallery-framework" label="Framework" value={assigns.assigns.framework} options={["Phoenix", "LiveView", "Ash"]} phx-change="framework_changed" /></div>
     """
   end
 
-  defp overlay_examples(assigns) do
+  defp checkbox_example(assigns) do
     assigns = %{assigns: assigns}
 
     ~GPUI"""
-    <div class="flex flex-wrap gap-3">
-      <Overlay.popover id="gallery-popover" label="Quick profile" open={assigns.assigns.overlay == "popover"} phx-change="overlay_changed">
-        <:trigger><UI.button id="show-popover" label="Popover" phx-click="show-popover" /></:trigger>
-        <:content><div class="flex flex-col gap-2 p-2"><text class="font-semibold">Ada Lovelace</text><text>Platform engineer</text></div></:content>
-      </Overlay.popover>
-      <Overlay.tooltip id="gallery-tooltip" delay={100}>
-        <:trigger><UI.button id="tooltip-trigger" label="Hover for tooltip" /></:trigger>
-        <:content>Runs on the native GPUI renderer</:content>
-      </Overlay.tooltip>
-      <UI.button id="show-dialog" label="Open dialog" variant="primary" phx-click="show-dialog" />
-      <Overlay.dialog id="gallery-dialog" open={assigns.assigns.overlay == "dialog"} title="Create workspace" width={420} phx-change="overlay_changed">
-        <:content><div class="flex flex-col gap-3 p-2"><UI.input id="dialog-name" label="Workspace name" value="Observatory" phx-change="noop" /><UI.button id="dialog-create" label="Create workspace" variant="primary" phx-click="noop" /></div></:content>
-      </Overlay.dialog>
-      <Overlay.dropdown_menu id="gallery-menu" label="Workspace actions" open={assigns.assigns.overlay == "menu"} phx-change="overlay_changed" phx-select="menu_selected">
-        <:trigger><UI.button id="show-menu" label="Actions menu" phx-click="show-menu" /></:trigger>
-        <:item value="duplicate">Duplicate</:item>
-        <:item value="pin" checked={true}>Pinned</:item>
-        <:item value="archive">Archive</:item>
-        <:item value="delete" disabled={true}>Delete permanently</:item>
-      </Overlay.dropdown_menu>
-    </div>
+    <UI.checkbox id="gallery-checkbox" label="Email weekly reports" checked={assigns.assigns.reports} phx-change="reports_changed" />
+    """
+  end
+
+  defp switch_example(assigns) do
+    assigns = %{assigns: assigns}
+
+    ~GPUI"""
+    <UI.switch id="gallery-switch" label="Desktop notifications" checked={assigns.assigns.notifications} phx-change="notifications_changed" />
+    """
+  end
+
+  defp radio_example(assigns) do
+    assigns = %{assigns: assigns}
+
+    ~GPUI"""
+    <UI.radio_group id="gallery-plan" label="Plan" value={assigns.assigns.plan} options={[{"Free", "free"}, {"Team", "team"}, %{label: "Enterprise", value: "enterprise", disabled: true}]} orientation="horizontal" phx-change="plan_changed" />
+    """
+  end
+
+  defp slider_example(assigns) do
+    assigns = %{assigns: assigns}
+
+    ~GPUI"""
+    <div class="flex flex-col gap-3"><text>Notification volume: {round(assigns.assigns.volume)}%</text><UI.slider id="gallery-volume" label="Notification volume" value={assigns.assigns.volume} min={0} max={100} step={5} phx-change="volume_changed" /></div>
+    """
+  end
+
+  defp popover_example(assigns) do
+    assigns = %{assigns: assigns}
+
+    ~GPUI"""
+    <Overlay.popover id="gallery-popover" label="Runtime process" open={assigns.assigns.overlay == "popover"} phx-change="overlay_changed"><:trigger><UI.button id="show-popover" label="Inspect process" phx-click="show-popover" /></:trigger><:content><div class="flex flex-col gap-1 p-2"><text class="font-semibold">Examples.ComponentGallery.View</text><text class="text-slate-500">Authoritative state: Elixir process</text></div></:content></Overlay.popover>
+    """
+  end
+
+  defp tooltip_example do
+    ~GPUI"""
+    <Overlay.tooltip id="gallery-tooltip" delay={100}><:trigger><UI.button id="tooltip-trigger" label="Hover for details" /></:trigger><:content>Rendered by the native GPUI host</:content></Overlay.tooltip>
+    """
+  end
+
+  defp dialog_example(assigns) do
+    assigns = %{assigns: assigns}
+
+    ~GPUI"""
+    <div><UI.button id="show-dialog" label="Open dialog" variant="primary" phx-click="show-dialog" /><Overlay.dialog id="gallery-dialog" open={assigns.assigns.overlay == "dialog"} title="Create workspace" width={420} phx-change="overlay_changed"><:content><div class="flex flex-col gap-3 p-2"><UI.input id="dialog-name" label="Workspace name" value="Observatory" phx-change="noop" /><UI.button id="dialog-create" label="Create workspace" variant="primary" phx-click="noop" /></div></:content></Overlay.dialog></div>
+    """
+  end
+
+  defp menu_example(assigns) do
+    assigns = %{assigns: assigns}
+
+    ~GPUI"""
+    <div class="flex items-center gap-4"><Overlay.dropdown_menu id="gallery-menu" label="Workspace actions" open={assigns.assigns.overlay == "menu"} phx-change="overlay_changed" phx-select="menu_selected"><:trigger><UI.button id="show-menu" label="Actions" phx-click="show-menu" /></:trigger><:item value="duplicate">Duplicate</:item><:item value="pin" checked={true}>Pinned</:item><:item value="archive">Archive</:item><:item value="delete" disabled={true}>Delete permanently</:item></Overlay.dropdown_menu><text class="text-sm text-slate-500">{assigns.assigns.menu_result || "No command selected"}</text></div>
     """
   end
 
@@ -446,10 +446,7 @@ defmodule Examples.ComponentGallery.View do
     assigns = %{assigns: assigns}
 
     ~GPUI"""
-    <div class="flex flex-col gap-4">
-      <UI.tabs id="gallery-tabs" value={assigns.assigns.tab} options={[{"Overview", "overview"}, {"Activity", "activity"}, {"Settings", "settings"}]} variant="underline" phx-change="tabs_changed" />
-      <div class="flex p-4 rounded-md" style={[background: {:rgb, 0xEFF6FF}]}><text style={[color: {:rgb, 0x1E3A8A}]}>Current section: {assigns.assigns.tab}</text></div>
-    </div>
+    <div class="flex flex-col gap-5"><UI.tabs id="gallery-tabs" value={assigns.assigns.tab} options={[{"Overview", "overview"}, {"Activity", "activity"}, {"Settings", "settings"}]} variant="underline" phx-change="tabs_changed" /><text class="text-slate-600">Selected section: {assigns.assigns.tab}</text></div>
     """
   end
 
@@ -457,20 +454,16 @@ defmodule Examples.ComponentGallery.View do
     assigns = %{assigns: assigns}
 
     ~GPUI"""
-    <UI.accordion id="gallery-accordion" expanded={assigns.assigns.expanded} multiple={true} phx-change="accordion_changed">
-      <UI.accordion_item id="account" title="Account"><text>Identity, sessions, and connected devices.</text></UI.accordion_item>
-      <UI.accordion_item id="billing" title="Billing"><text>Invoices and usage thresholds.</text></UI.accordion_item>
-      <UI.accordion_item id="security" title="Security"><text>Passkeys and recovery settings.</text></UI.accordion_item>
-    </UI.accordion>
+    <UI.accordion id="gallery-accordion" expanded={assigns.assigns.expanded} multiple={true} phx-change="accordion_changed"><UI.accordion_item id="account" title="Account"><text>Identity, sessions, and connected devices.</text></UI.accordion_item><UI.accordion_item id="billing" title="Billing"><text>Invoices and usage thresholds.</text></UI.accordion_item><UI.accordion_item id="security" title="Security"><text>Passkeys and recovery settings.</text></UI.accordion_item></UI.accordion>
     """
   end
 
   defp virtual_list(assigns) do
     items =
-      Enum.map(1..30, fn number ->
+      Enum.map(1..100, fn number ->
         UI.virtual_list_item(%{
           id: "item-#{number}",
-          children: ["Build artifact #{String.pad_leading(to_string(number), 2, "0")}"]
+          children: ["Build artifact #{String.pad_leading(to_string(number), 3, "0")}"]
         })
       end)
 
@@ -488,12 +481,12 @@ defmodule Examples.ComponentGallery.View do
 
   defp data_table(assigns) do
     columns = [
-      UI.table_column(%{id: "service", label: "Service", width: 150, sortable: true}),
-      UI.table_column(%{id: "status", label: "Status", width: 110}),
+      UI.table_column(%{id: "service", label: "Service", width: 180, sortable: true}),
+      UI.table_column(%{id: "status", label: "Status", width: 140}),
       UI.table_column(%{
         id: "latency",
         label: "Latency",
-        width: 100,
+        width: 120,
         align: "right",
         sortable: true
       })
@@ -624,9 +617,14 @@ defmodule Examples.ComponentGallery.View do
   end
 
   defp active_story(id, stories), do: Enum.find(stories, &(&1.id == id)) || hd(stories)
-  defp group_order("FOUNDATIONS"), do: 0
-  defp group_order("INTERACTION"), do: 1
-  defp group_order("DATA"), do: 2
+  defp group_order("Getting started"), do: 0
+  defp group_order("Components"), do: 1
+  defp group_order("Overlays"), do: 2
+  defp group_order("Navigation"), do: 3
+  defp group_order("Collections"), do: 4
+
+  defp record(assigns, event),
+    do: %{assigns | event_count: assigns.event_count + 1, last_event: event}
 
   defp reset_story(assigns) do
     Map.merge(assigns, %{
@@ -635,12 +633,10 @@ defmodule Examples.ComponentGallery.View do
       name: "Ada Lovelace",
       language: "elixir",
       framework: "Phoenix",
+      reports: true,
       notifications: true,
       plan: "team",
       volume: 65.0,
-      motion_request: 1,
-      motion_policy: "respect_system",
-      motion_easing: "ease_out",
       tab: "overview",
       expanded: ["account"],
       list_selected: nil,
@@ -658,22 +654,22 @@ defmodule Examples.ComponentGallery.App do
 
   @impl GPUI.Application
   def mount(args) do
-    story = args |> Map.new() |> Map.get(:story, "actions")
+    story = args |> Map.new() |> Map.get(:story, "welcome")
 
     assigns = %{
       story: story,
       query: "",
+      event_count: 0,
+      last_event: nil,
       overlay: nil,
       menu_result: nil,
       name: "Ada Lovelace",
       language: "elixir",
       framework: "Phoenix",
+      reports: true,
       notifications: true,
       plan: "team",
       volume: 65.0,
-      motion_request: 1,
-      motion_policy: "respect_system",
-      motion_easing: "ease_out",
       tab: "overview",
       expanded: ["account"],
       list_selected: nil,
@@ -687,7 +683,7 @@ defmodule Examples.ComponentGallery.App do
     {:ok,
      [
        window "GPUI Component Gallery" do
-         size(1280, 820)
+         size(1180, 760)
          root(Examples.ComponentGallery.View, assigns)
        end
      ]}

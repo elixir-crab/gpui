@@ -13,15 +13,16 @@ defmodule GPUI.VisualScenariosTest do
     assert scenario.title() == "GPUI Component Gallery"
 
     assert Enum.map(scenario.captures(), & &1.name) == [
-             "actions",
-             "forms",
-             "overlays",
-             "collections",
-             "code"
+             "welcome",
+             "button",
+             "radio",
+             "dialog",
+             "data-table",
+             "code-viewer"
            ]
 
     runtime = start_runtime!(scenario.app(), args: scenario.args(:dark))
-    assert %{story: "actions", overlay: nil} = assigns(runtime)
+    assert %{story: "welcome", overlay: nil} = assigns(runtime)
   end
 
   test "getting-started scenarios expose deterministic polished states" do

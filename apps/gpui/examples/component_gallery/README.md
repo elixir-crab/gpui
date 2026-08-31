@@ -1,24 +1,24 @@
 # GPUI Component Gallery
 
-The gallery is the canonical interactive reference for native controls exposed
-by GPUI for Elixir. It groups controlled variants into searchable stories
-instead of spreading one component across many standalone demo applications.
+The gallery follows the upstream `gpui-component` storybook structure: a
+searchable sidebar, one component per story, one focused canvas, and a compact
+status bar. It is reference material rather than a pretend dashboard.
 
 ```bash
 RUST_FONTCONFIG_DLOPEN=1 mix run examples/component_gallery/run.exs
 ```
 
-Open a story directly:
+Open one component directly:
 
 ```bash
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/component_gallery/run.exs -- collections
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/component_gallery/run.exs -- radio
 ```
 
 Use state-preserving source reload while editing:
 
 ```bash
-RUST_FONTCONFIG_DLOPEN=1 mix gpui.dev examples/component_gallery/run.exs -- forms
+RUST_FONTCONFIG_DLOPEN=1 mix gpui.dev examples/component_gallery/run.exs -- tabs
 ```
 
-Available story IDs are `actions`, `forms`, `overlays`, `navigation`,
-`collections`, and `code`.
+The small status bar is the Elixir-specific addition: it reports the active
+story and the latest event handled by the authoritative view process.

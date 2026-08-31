@@ -33,15 +33,15 @@ be loaded and tested through `GPUI.Test` without opening native windows.
 
 ## Component gallery
 
-The canonical native-component reference is a searchable story gallery. It
-combines controls, overlays, navigation, collections, trees, and code/diff
-presentation in one interactive application:
+The canonical native-component reference follows the upstream
+`gpui-component` storybook: a searchable sidebar and one focused component per
+story, with controlled state and event ownership kept in Elixir:
 
 ```bash
 RUST_FONTCONFIG_DLOPEN=1 mix run examples/component_gallery/run.exs
 ```
 
-Pass a story ID after `--` to open it directly. See
+Pass a component ID after `--` to open it directly. See
 [`component_gallery/README.md`](component_gallery/README.md) for available
 stories and the live-reload workflow.
 

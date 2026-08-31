@@ -1,6 +1,6 @@
 Code.require_file("support/component_gallery.exs", __DIR__)
 
-story = List.first(System.argv()) || "actions"
+story = List.first(System.argv()) || "welcome"
 runtime = Examples.ComponentGallery.Runtime
 
 {:ok, _runtime} =

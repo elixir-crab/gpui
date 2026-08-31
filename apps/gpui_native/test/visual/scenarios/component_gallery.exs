@@ -10,7 +10,7 @@ defmodule GPUITest.Visual.ComponentGallery.Scenario do
   def app, do: Examples.ComponentGallery.App
 
   @impl GPUI.Dev.Visual.Scenario
-  def args(_theme), do: %{story: "actions"}
+  def args(_theme), do: %{story: "welcome"}
 
   @impl GPUI.Dev.Visual.Scenario
   def title, do: "GPUI Component Gallery"
@@ -18,11 +18,12 @@ defmodule GPUITest.Visual.ComponentGallery.Scenario do
   @impl GPUI.Dev.Visual.Scenario
   def captures do
     [
-      %{name: "actions"},
-      %{name: "forms", actions: [click("story-forms")]},
-      %{name: "overlays", actions: [click("story-overlays"), click("show-dialog")]},
-      %{name: "collections", actions: [click("story-collections")]},
-      %{name: "code", actions: [click("story-code")]}
+      %{name: "welcome"},
+      %{name: "button", actions: [click("story-button")]},
+      %{name: "radio", actions: [click("story-radio")]},
+      %{name: "dialog", actions: [click("story-dialog"), click("show-dialog")]},
+      %{name: "data-table", actions: [click("story-data_table")]},
+      %{name: "code-viewer", actions: [click("story-code_viewer")]}
     ]
   end
 
