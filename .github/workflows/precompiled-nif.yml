@@ -57,16 +57,16 @@ jobs:
         with:
           project-name: gpui_nif
           project-version: ${{ steps.version.outputs.version }}
-          project-dir: apps/gpui_native/native
+          project-dir: .
           target: x86_64-unknown-linux-gnu
           nif-version: "2.15"
           variant: ${{ matrix.host }}
           cargo-args: >-
-            --locked --manifest-path ../../../../Cargo.toml
+            --locked --manifest-path Cargo.toml
             --package gpui_nif --no-default-features
             --features ${{ matrix.cargo_features }}
 
-      - name: Verify release archive names
+      - name: Verify release archive name
         shell: bash
         env:
           VERSION: ${{ steps.version.outputs.version }}

@@ -82,7 +82,7 @@ include!("generated/window.rs");
 #[cfg(feature = "components")]
 include!("generated/schema.rs");
 #[cfg(not(feature = "components"))]
-include!("../../../gpui/native/src/generated/schema.rs");
+include!("generated/vanilla_schema.rs");
 
 #[cfg(feature = "real-gpui")]
 mod element;

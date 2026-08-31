@@ -26,8 +26,8 @@ defmodule GPUI.Native.PrecompiledConfigurationTest do
   test "build workflow provides one exact Cargo feature set per archive variant" do
     workflow = File.read!(@workflow)
 
-    assert workflow =~ "project-dir: apps/gpui_native/native"
-    assert workflow =~ "--manifest-path ../../../../Cargo.toml"
+    assert workflow =~ "project-dir: ."
+    assert workflow =~ "--manifest-path Cargo.toml"
     assert workflow =~ "variant: ${{ matrix.host }}"
     assert workflow =~ "host: vanilla"
     assert workflow =~ "cargo_features: vanilla-host"

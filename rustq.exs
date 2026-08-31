@@ -162,6 +162,14 @@ rust "gpui-component-registry", "apps/gpui_components/native/src/generated/compo
   GPUI.Codegen.Native.Projections.registry_items(:gpui_component)
 end
 
+rust "vanilla-native-schema", "apps/gpui_native/native/src/generated/vanilla_schema.rs" do
+  GPUI.Codegen.Native.Projections.schema_items(:vanilla)
+end
+
+rust "vanilla-native-component-registry", "apps/gpui_native/native/src/generated/vanilla_component_registry.rs" do
+  GPUI.Codegen.Native.Projections.registry_items(:vanilla)
+end
+
 rust "native-schema", "apps/gpui_native/native/src/generated/schema.rs" do
   GPUI.Codegen.Native.Schema.items()
 end

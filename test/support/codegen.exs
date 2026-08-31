@@ -1,5 +1,4 @@
-repository_root = Path.expand("../..", __DIR__)
-codegen_root = Path.join(repository_root, "codegen/gpui/codegen/native")
+codegen_root = GPUI.Dev.Paths.codegen_native()
 
 for file <- ~w(
   accessibility.ex

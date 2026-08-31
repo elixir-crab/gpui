@@ -251,9 +251,15 @@ pub(crate) struct ComponentRegistry {
 }
 
 #[cfg(feature = "components")]
-include!("../generated/component_registry.rs");
+include!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/src/generated/component_registry.rs"
+));
 #[cfg(not(feature = "components"))]
-include!("../../../../gpui/native/src/generated/component_registry.rs");
+include!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/src/generated/vanilla_component_registry.rs"
+));
 
 impl ComponentRegistry {
     pub(crate) fn editable_input_focused(&self, window: &gpui::Window, cx: &gpui::App) -> bool {

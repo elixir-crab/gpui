@@ -3,7 +3,7 @@ defmodule Mix.Tasks.Gpui.Test.E2e do
   use Mix.Task
 
   @shortdoc "Runs local GPUI desktop E2E tests"
-  @project_root Path.expand("../../../apps/gpui_native", __DIR__)
+  @project_root GPUI.Dev.Paths.app(:gpui_native)
   @macos_driver Path.join(@project_root, "test/support/desktop/drivers/macos")
 
   @impl Mix.Task

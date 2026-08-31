@@ -3,15 +3,16 @@ defmodule GPUI.MixProject do
 
   @version "0.2.0-dev"
   @source_url "https://github.com/dannote/gpui"
+  @umbrella_root __DIR__ |> Path.dirname() |> Path.dirname()
 
   def project do
     [
       app: :gpui,
       version: @version,
-      build_path: "../../_build",
-      config_path: "../../config/config.exs",
-      deps_path: "../../deps",
-      lockfile: "../../mix.lock",
+      build_path: Path.join(@umbrella_root, "_build"),
+      config_path: Path.join(@umbrella_root, "config/config.exs"),
+      deps_path: Path.join(@umbrella_root, "deps"),
+      lockfile: Path.join(@umbrella_root, "mix.lock"),
       elixir: "~> 1.20",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
