@@ -1,43 +1,26 @@
 Code.require_file("analysis.exs", __DIR__)
 
-defmodule Examples.ImagePalette.View do
+defmodule Examples.ImageLab.View do
   use GPUI.View
 
-  alias Examples.ImagePalette.Analysis
+  alias Examples.ImageLab.Analysis
   alias GPUI.ResourceRef
   alias GPUI.UI
 
   @impl GPUI.View
   def render(assigns) do
     ~GPUI"""
-    <div class="flex flex-col w-[1000px] h-[720px] bg-slate-900">
-      <div class="flex flex-col gap-3 p-5" style={[background: {:rgb, 0x1E293B}]}>
-        <div class="flex flex-col gap-1">
-          <text class="text-white text-2xl font-semibold">Image palette</text>
-          <text style={[color: {:rgb, 0x94A3B8}]}>Decode an image, inspect its dominant colors, and export CSS variables.</text>
-        </div>
-        <div class="flex items-center gap-3">
-          <UI.button
-            id="image-file-picker"
-            label={picker_label(assigns.status)}
-            file_prompt="Choose an image"
-            file_max_bytes={25 * 1_024 * 1_024}
-            phx-file-read="image_file_selected"
-          />
-          {cancel_button(assigns)}
-          <text style={[color: {:rgb, 0x94A3B8}]}>{source_label(assigns)}</text>
-        </div>
-        {progress(assigns)}
+    <div class="flex w-full h-full min-h-0 flex-col bg-white">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">
+        <div class="flex flex-col"><text class="text-lg font-semibold text-slate-900">Image Lab</text><text class="text-sm text-slate-500">{source_label(assigns)}</text></div>
+        <div class="flex items-center gap-2"><UI.button id="image-file-picker" label="Open image" file_prompt="Choose an image" file_max_bytes={25 * 1_024 * 1_024} phx-file-read="image_file_selected" />{cancel_button(assigns)}<UI.button id="export-palette" label={export_label(assigns.status)} variant="primary" disabled={not palette_interactive?(assigns) or String.trim(assigns.export_path) == ""} phx-click="export_palette" /></div>
       </div>
-
-      <div class="flex h-[540px]">
-        <div class="flex items-center justify-center w-[620px] h-[540px] p-5" style={[background: {:rgb, 0x0F172A}]}>
-          {preview(assigns)}
-        </div>
-        <div class="flex flex-col w-[380px] h-[540px] gap-3 p-5" style={[background: {:rgb, 0x111827}]}>
-          {palette_panel(assigns)}
-        </div>
+      {progress(assigns)}
+      <div class="flex grow min-h-0">
+        <div class="flex grow min-w-0 items-center justify-center p-6 bg-slate-100">{preview(assigns)}</div>
+        <scroll class="flex w-[360px] min-h-0 border-l border-slate-200 p-4 bg-white">{palette_panel(assigns)}</scroll>
       </div>
+      {palette_strip(assigns)}
     </div>
     """
   end
@@ -169,19 +152,18 @@ defmodule Examples.ImagePalette.View do
 
   defp progress(%{status: :loading} = assigns) do
     ~GPUI"""
-    <UI.progress
-      id="image-progress"
-      label={assigns.stage}
-      value={assigns.progress}
-      max={100}
-      class="w-[880px]"
-    />
+    <div class="flex items-center justify-between px-4 py-2 border-b border-slate-200 bg-white">
+      <text class="text-sm text-slate-500">{assigns.stage}</text>
+      <UI.progress id="image-progress" label={assigns.stage} value={assigns.progress} max={100} class="w-[360px]" />
+    </div>
     """
   end
 
   defp progress(assigns) do
     ~GPUI"""
-    <text style={[color: status_color(assigns.status)]}>{status_text(assigns)}</text>
+    <div class="flex items-center px-4 py-2 border-b border-slate-200 bg-white">
+      <text class="text-sm text-slate-500">{status_text(assigns)}</text>
+    </div>
     """
   end
 
@@ -214,23 +196,29 @@ defmodule Examples.ImagePalette.View do
 
   defp palette_panel(%{palette: []} = assigns) do
     ~GPUI"""
-    <div class="flex flex-col gap-3">
-      <text class="text-white text-xl font-semibold">Dominant colors</text>
-      <text style={[color: {:rgb, 0x94A3B8}]}>{palette_empty_text(assigns.status)}</text>
+    <div class="flex flex-col w-full gap-4">
+      <div class="flex flex-col gap-1"><text class="font-semibold text-slate-900">File</text><text class="text-sm text-slate-500">{source_label(assigns)}</text><text class="text-sm text-slate-500">{dimensions(assigns)}</text></div>
+      <div class="flex flex-col gap-3 border-t border-slate-200 pt-4">
+        <text class="font-semibold text-slate-900">Dominant colors</text>
+        <text class="text-sm text-slate-500">{palette_empty_text(assigns.status)}</text>
+      </div>
     </div>
     """
   end
 
   defp palette_panel(assigns) do
     ~GPUI"""
-    <div class="flex flex-col gap-3">
-      <text class="text-white text-xl font-semibold">Dominant colors</text>
-      <div class="flex flex-col gap-1">
-        {Enum.map(assigns.palette, &swatch(&1, assigns))}
+    <div class="flex flex-col w-full gap-4">
+      <div class="flex flex-col gap-1"><text class="font-semibold text-slate-900">File</text><text class="text-sm text-slate-500">{source_label(assigns)}</text><text class="text-sm text-slate-500">{dimensions(assigns)}</text></div>
+      <div class="flex flex-col gap-3 border-t border-slate-200 pt-4">
+        <text class="font-semibold text-slate-900">Dominant colors</text>
+        <div class="flex flex-col gap-1">
+          {Enum.map(assigns.palette, &swatch(&1, assigns))}
+        </div>
+        {selected_color(assigns)}
       </div>
-      {selected_color(assigns)}
-      <div class="flex flex-col gap-2">
-        <text style={[color: {:rgb, 0x94A3B8}]}>Application-side CSS path</text>
+      <div class="flex flex-col gap-2 border-t border-slate-200 pt-4">
+        <text class="text-sm text-slate-500">CSS export path</text>
         <UI.input
           id="export-path"
           label="CSS export path"
@@ -239,20 +227,7 @@ defmodule Examples.ImagePalette.View do
           phx-change="export_path_changed"
         />
         <div class="flex gap-2">
-          <UI.button
-            id="export-palette"
-            label={export_label(assigns.status)}
-            variant="primary"
-            disabled={not palette_interactive?(assigns) or String.trim(assigns.export_path) == ""}
-            phx-click="export_palette"
-          />
-          <UI.button
-            id="copy-palette-css"
-            label="Copy CSS"
-            clipboard_text={Analysis.css(assigns.palette)}
-            disabled={not palette_interactive?(assigns)}
-            phx-clipboard-write="palette_copied"
-          />
+          <UI.button id="copy-palette-css" label="Copy CSS" clipboard_text={Analysis.css(assigns.palette)} disabled={not palette_interactive?(assigns)} phx-clipboard-write="palette_copied" />
         </div>
         <text style={[color: status_color(assigns.status)]}>{status_text(assigns)}</text>
       </div>
@@ -299,9 +274,33 @@ defmodule Examples.ImagePalette.View do
   defp palette_interactive?(assigns),
     do: assigns.palette != [] and assigns.status not in [:loading, :exporting]
 
+  defp dimensions(%{image_width: width, image_height: height}) when is_integer(width) and is_integer(height),
+    do: "#{width} × #{height} pixels"
+
+  defp dimensions(_assigns), do: "No decoded dimensions"
+
+  defp palette_strip(%{palette: []}) do
+    ~GPUI"""
+    <UI.status_bar id="image-lab-status"><UI.status_item id="image-lab-empty-status" side="left"><text class="text-sm text-slate-500">No palette</text></UI.status_item></UI.status_bar>
+    """
+  end
+
+  defp palette_strip(assigns) do
+    strip_assigns = %{palette: assigns.palette, stage: status_text(assigns)}
+
+    ~GPUI"""
+    <UI.status_bar id="image-lab-status"><UI.status_item id="image-lab-palette" side="left">{Enum.map(strip_assigns.palette, &palette_chip/1)}</UI.status_item><UI.status_item id="image-lab-stage" side="right"><text class="text-sm text-slate-500">{strip_assigns.stage}</text></UI.status_item></UI.status_bar>
+    """
+  end
+
+  defp palette_chip(color) do
+    chip = %{color: color}
+    ~GPUI"""
+    <div class="flex items-center gap-1"><div class="w-[16px] h-[16px] rounded-sm" style={[background: {:rgb, color_rgb(chip.color)}]} /><text class="text-sm text-slate-500">{chip.color.hex}</text></div>
+    """
+  end
+
   defp color_rgb(color), do: color.red * 65_536 + color.green * 256 + color.blue
-  defp picker_label(:loading), do: "Choose replacement"
-  defp picker_label(_status), do: "Choose image"
   defp source_label(%{source_name: nil}), do: "No image selected"
   defp source_label(assigns), do: assigns.source_name
   defp export_label(:exporting), do: "Exporting…"
@@ -322,8 +321,17 @@ defmodule Examples.ImagePalette.View do
   defp status_text(assigns), do: assigns.stage
 end
 
-defmodule Examples.ImagePalette.App do
+defmodule Examples.ImageLab.App do
   use GPUI.Application
+
+  @impl GPUI.Application
+  def identity do
+    GPUI.Application.Identity.new!(
+      id: "dev.gpui.image-lab",
+      name: "Image Lab",
+      icon: GPUI.Application.Icon.new!(source: "priv/branding/image-lab", description: "Image Lab application icon")
+    )
+  end
 
   @impl GPUI.Application
   def mount(args) do
@@ -336,10 +344,10 @@ defmodule Examples.ImagePalette.App do
 
     {:ok,
      [
-       window "Image Palette" do
-         size(1000, 720)
+       window "Image Lab" do
+         size(1120, 760)
 
-         root(Examples.ImagePalette.View,
+         root(Examples.ImageLab.View,
            path: path,
            export_path: Map.get(args, :export_path, "palette.css"),
            status: if(result, do: :ready, else: :idle),
@@ -359,10 +367,10 @@ defmodule Examples.ImagePalette.App do
   end
 end
 
-defmodule Examples.ImagePalette.Coordinator do
+defmodule Examples.ImageLab.Coordinator do
   use GenServer
 
-  alias Examples.ImagePalette.Analysis
+  alias Examples.ImageLab.Analysis
   alias GPUI.Runtime
   alias GPUI.Runtime.Update
 
@@ -437,7 +445,7 @@ defmodule Examples.ImagePalette.Coordinator do
           {:image_loaded, job_id, result.width, result.height, result.palette}
         )
 
-      notify(state.owner, {:image_palette, :loaded, job_id})
+      notify(state.owner, {:image_lab, :loaded, job_id})
       {:noreply, %{state | load_task: finish_task(state.load_task)}}
     else
       {:noreply, state}
@@ -447,7 +455,7 @@ defmodule Examples.ImagePalette.Coordinator do
   def handle_info({:image_failed, job_id, message}, state) do
     if active_job?(state.load_task, job_id) do
       {:ok, _snapshot} = Runtime.send_view(state.runtime, 1, {:image_failed, job_id, message})
-      notify(state.owner, {:image_palette, :failed, job_id, message})
+      notify(state.owner, {:image_lab, :failed, job_id, message})
       {:noreply, %{state | load_task: finish_task(state.load_task)}}
     else
       {:noreply, state}
@@ -457,7 +465,7 @@ defmodule Examples.ImagePalette.Coordinator do
   def handle_info({:palette_exported, path}, state) do
     if state.export_task do
       {:ok, _snapshot} = Runtime.send_view(state.runtime, 1, {:palette_exported, path})
-      notify(state.owner, {:image_palette, :exported, path})
+      notify(state.owner, {:image_lab, :exported, path})
       {:noreply, %{state | export_task: finish_task(state.export_task)}}
     else
       {:noreply, state}
@@ -467,7 +475,7 @@ defmodule Examples.ImagePalette.Coordinator do
   def handle_info({:palette_export_failed, message}, state) do
     if state.export_task do
       {:ok, _snapshot} = Runtime.send_view(state.runtime, 1, {:palette_export_failed, message})
-      notify(state.owner, {:image_palette, :export_failed, message})
+      notify(state.owner, {:image_lab, :export_failed, message})
       {:noreply, %{state | export_task: finish_task(state.export_task)}}
     else
       {:noreply, state}
@@ -524,7 +532,7 @@ defmodule Examples.ImagePalette.Coordinator do
 
   defp cancel_load(state) do
     job_id = state.load_task.job_id
-    notify(state.owner, {:image_palette, :cancelled, job_id})
+    notify(state.owner, {:image_lab, :cancelled, job_id})
     %{state | load_task: cancel_task(state.load_task)}
   end
 
@@ -599,7 +607,7 @@ defmodule Examples.ImagePalette.Coordinator do
   defp maybe_report_task_exit(_state, _kind, :normal), do: :ok
 
   defp maybe_report_task_exit(state, kind, reason),
-    do: notify(state.owner, {:image_palette, :task_exit, kind, reason})
+    do: notify(state.owner, {:image_lab, :task_exit, kind, reason})
 
   defp load_error(path, :invalid_image), do: "#{path} is not a supported image"
   defp load_error(path, reason), do: file_error(path, reason)
@@ -608,7 +616,7 @@ defmodule Examples.ImagePalette.Coordinator do
   defp notify(owner, message), do: send(owner, message)
 end
 
-defmodule Examples.ImagePalette.Supervisor do
+defmodule Examples.ImageLab.Supervisor do
   use Supervisor
 
   def start_link(opts), do: Supervisor.start_link(__MODULE__, opts)
@@ -616,7 +624,7 @@ defmodule Examples.ImagePalette.Supervisor do
   @impl Supervisor
   def init(opts) do
     task_supervisor =
-      Keyword.get(opts, :task_supervisor, Examples.ImagePalette.TaskSupervisor)
+      Keyword.get(opts, :task_supervisor, Examples.ImageLab.TaskSupervisor)
 
     coordinator_opts =
       opts
@@ -625,7 +633,7 @@ defmodule Examples.ImagePalette.Supervisor do
 
     children = [
       {Task.Supervisor, name: task_supervisor},
-      {Examples.ImagePalette.Coordinator, coordinator_opts}
+      {Examples.ImageLab.Coordinator, coordinator_opts}
     ]
 
     Supervisor.init(children, strategy: :rest_for_one)

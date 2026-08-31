@@ -1,11 +1,11 @@
-GPUITest.Examples.load!(:image_palette)
+GPUITest.Examples.load!(:image_lab)
 
-defmodule GPUI.ImagePaletteExampleTest do
+defmodule GPUI.ImageLabExampleTest do
   use GPUI.Test, async: false
 
-  alias Examples.ImagePalette.Analysis
-  alias Examples.ImagePalette.App
-  alias Examples.ImagePalette.Coordinator
+  alias Examples.ImageLab.Analysis
+  alias Examples.ImageLab.App
+  alias Examples.ImageLab.Coordinator
 
   test "extracts a deterministic palette and bounded preview" do
     result = Analysis.analyze(source_raster(), colors: 3)
@@ -40,7 +40,7 @@ defmodule GPUI.ImagePaletteExampleTest do
     )
 
     file_select(runtime, "image_file_selected", "colors.bmp", "encoded")
-    assert_receive {:image_palette, :loaded, 1}
+    assert_receive {:image_lab, :loaded, 1}
 
     assert %{
              status: :ready,
@@ -61,7 +61,7 @@ defmodule GPUI.ImagePaletteExampleTest do
 
     assert_receive {:css_written, "/tmp/palette.css", css}
     assert css =~ "--palette-1: #FF0000"
-    assert_receive {:image_palette, :exported, "/tmp/palette.css"}
+    assert_receive {:image_lab, :exported, "/tmp/palette.css"}
     assert %{status: :exported, stage: "Saved /tmp/palette.css"} = assigns(runtime)
 
     click(runtime, "palette_copied")
@@ -69,7 +69,7 @@ defmodule GPUI.ImagePaletteExampleTest do
 
     click(runtime, "export_palette")
     assert_receive {:css_written, "/tmp/palette.css", _css}
-    assert_receive {:image_palette, :exported, "/tmp/palette.css"}
+    assert_receive {:image_lab, :exported, "/tmp/palette.css"}
   end
 
   test "disables retained palette actions while a replacement is loading" do
@@ -115,7 +115,7 @@ defmodule GPUI.ImagePaletteExampleTest do
     monitor = Process.monitor(task_pid)
 
     click(runtime, "cancel_load")
-    assert_receive {:image_palette, :cancelled, 1}
+    assert_receive {:image_lab, :cancelled, 1}
     assert_receive {:DOWN, ^monitor, :process, ^task_pid, :killed}
     assert %{status: :idle, stage: "Analysis cancelled", job_id: 2} = assigns(runtime)
 
@@ -161,7 +161,7 @@ defmodule GPUI.ImagePaletteExampleTest do
 
     file_select(runtime, "image_file_selected", "second.bmp", "second")
     assert_receive {:DOWN, ^monitor, :process, ^first_task, :killed}
-    assert_receive {:image_palette, :loaded, 2}
+    assert_receive {:image_lab, :loaded, 2}
 
     assert %{status: :ready, source_name: "second.bmp", palette: [%{hex: "#0000FF"}]} =
              assigns(runtime)
@@ -189,7 +189,7 @@ defmodule GPUI.ImagePaletteExampleTest do
     )
 
     click(runtime, "load_image")
-    assert_receive {:image_palette, :failed, 1, message}
+    assert_receive {:image_lab, :failed, 1, message}
     assert message =~ "no such file or directory"
     assert %{status: :error, error: ^message} = assigns(runtime)
   end

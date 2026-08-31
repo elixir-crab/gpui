@@ -1,4 +1,4 @@
-defmodule Examples.ImagePalette.Analysis do
+defmodule Examples.ImageLab.Analysis do
   @moduledoc false
 
   import Bitwise

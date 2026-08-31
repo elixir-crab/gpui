@@ -78,10 +78,10 @@ work, extracts deterministic dominant colors, installs a bounded raster
 resource, reports progress, and exports CSS variables:
 
 ```bash
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/image_palette/run.exs -- path/to/image.png
+RUST_FONTCONFIG_DLOPEN=1 mix run examples/image_lab/run.exs -- path/to/image.png
 ```
 
-See [`image_palette/README.md`](image_palette/README.md) for its worker and
+See [`image_lab/README.md`](image_lab/README.md) for its worker and
 analysis architecture.
 
 ## Feature examples

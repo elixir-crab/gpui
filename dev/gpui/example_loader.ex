@@ -10,7 +10,7 @@ defmodule GPUI.Dev.ExampleLoader do
     events: "examples/getting_started/support/events.exs",
     focus_timer: "examples/getting_started/support/focus_timer.exs",
     hello_window: "examples/getting_started/support/hello_window.exs",
-    image_palette: "examples/image_palette/support/image_palette.exs",
+    image_lab: "examples/image_lab/support/image_lab.exs",
     multiple_windows: "examples/getting_started/support/multiple_windows.exs",
     music_library: "examples/music_library/support/music_library.exs",
     presentation_primitives: "examples/features/presentation_primitives.exs",

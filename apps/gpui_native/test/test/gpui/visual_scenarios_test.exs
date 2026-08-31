@@ -1,5 +1,5 @@
 for scenario <-
-      ~w(beam_control_room component_gallery controlled_form elixir_workbench focus_timer hello_window image_palette music_library) do
+      ~w(beam_control_room component_gallery controlled_form elixir_workbench focus_timer hello_window image_lab music_library) do
   GPUI.Dev.Visual.ScenarioLoader.load!(scenario)
 end
 
@@ -85,11 +85,11 @@ defmodule GPUI.VisualScenariosTest do
              workbench_runtime |> tree() |> find!(id: "workbench-code")
   end
 
-  test "image palette scenario uses fixed raster data and controlled selection" do
-    scenario = GPUITest.Visual.ImagePalette.Scenario
+  test "Image Lab scenario uses fixed raster data and controlled selection" do
+    scenario = GPUITest.Visual.ImageLab.Scenario
 
     assert [
-             %{name: "palette-ready"},
+             %{name: "ready"},
              %{name: "selected-color", actions: [selection]},
              %{name: "copied-css", actions: [copied]},
              %{name: "loading-replacement", actions: [load, progress]},

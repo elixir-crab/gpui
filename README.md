@@ -139,7 +139,7 @@ and [UI components](apps/gpui/guides/ui/components.md).
 | [Elixir Workbench](apps/gpui/examples/elixir_workbench/README.md) | Trees, code and diff views, split panes, overlays, clipboard, and logs |
 | [BEAM Control Room](apps/gpui/examples/beam_control_room/README.md) | Supervised runtime sampling driving controlled native views |
 | [Afterglow](apps/gpui/examples/music_library/README.md) | A polished consumer UI with native controls and responsive layout |
-| [Image Palette](apps/gpui/examples/image_palette/README.md) | Display-side file reads, image decoding, and bounded raster resources |
+| [Image Lab](apps/gpui/examples/image_lab/README.md) | Display-side file reads, image decoding, and bounded raster resources |
 | [Component Gallery](apps/gpui/examples/component_gallery/README.md) | Canonical component states, combinations, and accessibility behavior |
 
 Run the `gpui.dev` Mix task with the larger examples for state-preserving

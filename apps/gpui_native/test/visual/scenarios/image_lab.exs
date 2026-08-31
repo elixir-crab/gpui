@@ -1,9 +1,9 @@
-GPUITest.Examples.load!(:image_palette)
+GPUITest.Examples.load!(:image_lab)
 
-defmodule GPUITest.Visual.ImagePalette.Scenario do
+defmodule GPUITest.Visual.ImageLab.Scenario do
   @behaviour GPUI.Dev.Visual.Scenario
 
-  alias Examples.ImagePalette.Analysis
+  alias Examples.ImageLab.Analysis
 
   @colors [
     {0x0F, 0x17, 0x2A},
@@ -15,10 +15,10 @@ defmodule GPUITest.Visual.ImagePalette.Scenario do
   ]
 
   @impl GPUI.Dev.Visual.Scenario
-  def id, do: :image_palette
+  def id, do: :image_lab
 
   @impl GPUI.Dev.Visual.Scenario
-  def app, do: Examples.ImagePalette.App
+  def app, do: Examples.ImageLab.App
 
   @impl GPUI.Dev.Visual.Scenario
   def args(_theme) do
@@ -30,12 +30,12 @@ defmodule GPUITest.Visual.ImagePalette.Scenario do
   end
 
   @impl GPUI.Dev.Visual.Scenario
-  def title, do: "Image Palette"
+  def title, do: "Image Lab"
 
   @impl GPUI.Dev.Visual.Scenario
   def captures do
     [
-      %{name: "palette-ready"},
+      %{name: "ready"},
       %{
         name: "selected-color",
         actions: [

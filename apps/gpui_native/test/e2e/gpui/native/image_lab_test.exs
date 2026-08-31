@@ -1,10 +1,10 @@
-GPUITest.Examples.load!(:image_palette)
+GPUITest.Examples.load!(:image_lab)
 
-defmodule GPUI.Native.ImagePaletteE2ETest do
+defmodule GPUI.Native.ImageLabE2ETest do
   use GPUI.Test, desktop: true
 
-  alias Examples.ImagePalette.App
-  alias Examples.ImagePalette.Coordinator
+  alias Examples.ImageLab.App
+  alias Examples.ImageLab.Coordinator
 
   @moduletag :e2e
 
@@ -33,7 +33,7 @@ defmodule GPUI.Native.ImagePaletteE2ETest do
       )
     )
 
-    native_window_id = Desktop.window!(desktop, "Image Palette")
+    native_window_id = Desktop.window!(desktop, "Image Lab")
     Desktop.await_frame!(desktop, runtime, 1, native_window_id)
 
     GPUI.Runtime.dispatch_event(runtime, %{
@@ -42,7 +42,7 @@ defmodule GPUI.Native.ImagePaletteE2ETest do
       event: "load_image"
     })
 
-    assert_receive {:image_palette, :loaded, 1}, 5_000
+    assert_receive {:image_lab, :loaded, 1}, 5_000
     Desktop.await_frame!(desktop, runtime, 1, native_window_id)
 
     assert %{
@@ -58,7 +58,7 @@ defmodule GPUI.Native.ImagePaletteE2ETest do
       event: "export_palette"
     })
 
-    assert_receive {:image_palette, :exported, ^export}
+    assert_receive {:image_lab, :exported, ^export}
     assert File.read!(export) =~ "--palette-1: #"
     assert Process.alive?(runtime)
   end
