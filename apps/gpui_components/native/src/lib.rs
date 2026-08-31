@@ -6,6 +6,8 @@ pub mod controlled;
 pub mod controls;
 pub mod host;
 pub mod host_contract;
+#[cfg(feature = "native-render")]
+pub mod radio;
 pub mod registry;
 #[cfg(feature = "native-render")]
 pub mod rendered_control;
