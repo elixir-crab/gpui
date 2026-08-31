@@ -22,60 +22,173 @@ fn render_children(
 }
 
 #[cfg(feature = "components")]
+#[derive(Clone)]
+struct AccessibleSidebarItem {
+    visual: gpui_component::sidebar::SidebarMenuItem,
+    id: String,
+    label: String,
+    active: bool,
+    disabled: bool,
+    event: Option<String>,
+    runtime: crate::SharedRuntime,
+    window_id: u64,
+    focus: gpui::FocusHandle,
+}
+
+#[cfg(feature = "components")]
+impl gpui_component::Collapsible for AccessibleSidebarItem {
+    fn collapsed(mut self, collapsed: bool) -> Self {
+        self.visual = gpui_component::Collapsible::collapsed(self.visual, collapsed);
+        self
+    }
+
+    fn is_collapsed(&self) -> bool {
+        gpui_component::Collapsible::is_collapsed(&self.visual)
+    }
+}
+
+#[cfg(feature = "components")]
+impl gpui_component::sidebar::SidebarItem for AccessibleSidebarItem {
+    fn render(
+        self,
+        id: impl Into<gpui::ElementId>,
+        window: &mut gpui::Window,
+        cx: &mut gpui::App,
+    ) -> impl gpui::IntoElement {
+        use gpui::{InteractiveElement, IntoElement, ParentElement};
+
+        let visual = self.visual.render(id, window, cx).into_any_element();
+        let accessibility = crate::AccessibilitySemantics {
+            role: Some(crate::AccessibilityRole::Button),
+            label: Some(self.label),
+            selected: Some(self.active),
+            disabled: self.disabled,
+            ..Default::default()
+        };
+        let wrapper = gpui::div()
+            .id(format!("{}-accessible", self.id))
+            .child(visual);
+
+        match self.event {
+            Some(event) => crate::element::event::attach_accessible_action_target(
+                wrapper,
+                self.id,
+                event,
+                accessibility,
+                self.runtime,
+                self.window_id,
+                self.focus,
+            ),
+            None => crate::element::apply_accessibility_semantics(wrapper, accessibility),
+        }
+    }
+}
+
+#[cfg(feature = "components")]
 fn sidebar_item(
     node: SidebarItemComponentNode,
     context: &ElementRenderContext<'_, '_>,
-) -> gpui_component::sidebar::SidebarMenuItem {
+) -> AccessibleSidebarItem {
     use gpui_component::sidebar::SidebarMenuItem;
 
     let runtime = context.runtime.clone();
     let window_id = context.window_id;
-    let event = node.click;
-
-    SidebarMenuItem::new(node.label)
+    let event = node.click.clone();
+    let visual_event = node.click;
+    let visual_runtime = runtime.clone();
+    let label = node.label.clone();
+    let visual = SidebarMenuItem::new(node.label)
         .active(node.active)
         .disable(node.disabled)
         .on_click(move |_click, _window, _cx| {
-            if let Some(event) = event.as_ref() {
-                let _ = crate::push_event(
-                    &runtime,
-                    crate::NativeEvent::Click {
-                        window_id,
-                        event: event.clone(),
-                    },
-                );
+            if let Some(event) = visual_event.as_ref() {
+                crate::element::event::emit_click_event(&visual_runtime, window_id, event);
             }
-        })
+        });
+
+    AccessibleSidebarItem {
+        visual,
+        id: node.id,
+        label,
+        active: node.active,
+        disabled: node.disabled,
+        event,
+        runtime,
+        window_id,
+        focus: context.cx.focus_handle(),
+    }
+}
+
+#[cfg(feature = "components")]
+#[derive(Clone)]
+struct AccessibleSidebarMenu {
+    items: Vec<AccessibleSidebarItem>,
+}
+
+#[cfg(feature = "components")]
+impl gpui_component::Collapsible for AccessibleSidebarMenu {
+    fn collapsed(mut self, collapsed: bool) -> Self {
+        self.items = self
+            .items
+            .into_iter()
+            .map(|item| gpui_component::Collapsible::collapsed(item, collapsed))
+            .collect();
+        self
+    }
+
+    fn is_collapsed(&self) -> bool {
+        false
+    }
+}
+
+#[cfg(feature = "components")]
+impl gpui_component::sidebar::SidebarItem for AccessibleSidebarMenu {
+    fn render(
+        self,
+        id: impl Into<gpui::ElementId>,
+        window: &mut gpui::Window,
+        cx: &mut gpui::App,
+    ) -> impl gpui::IntoElement {
+        use gpui::{IntoElement, ParentElement, Styled};
+
+        let id: gpui::ElementId = id.into();
+        gpui_component::v_flex()
+            .gap_2()
+            .children(self.items.into_iter().enumerate().map(|(index, item)| {
+                item.render(format!("{id}-{index}"), window, cx)
+                    .into_any_element()
+            }))
+    }
 }
 
 #[cfg(feature = "components")]
 fn sidebar_menu(
     node: SidebarMenuComponentNode,
     context: &ElementRenderContext<'_, '_>,
-) -> gpui_component::sidebar::SidebarMenu {
-    use gpui_component::sidebar::SidebarMenu;
-
+) -> AccessibleSidebarMenu {
     let items = node.children.into_iter().filter_map(|child| match child {
         ElementNode::SidebarItemComponent(item) => Some(sidebar_item(item, context)),
         _ => None,
     });
 
-    SidebarMenu::new().children(items)
+    AccessibleSidebarMenu {
+        items: items.collect(),
+    }
 }
 
 #[cfg(feature = "components")]
 fn sidebar_group(
     node: SidebarGroupComponentNode,
     context: &ElementRenderContext<'_, '_>,
-) -> gpui_component::sidebar::SidebarGroup<gpui_component::sidebar::SidebarMenu> {
-    use gpui_component::sidebar::{SidebarGroup, SidebarMenu};
+) -> gpui_component::sidebar::SidebarGroup<AccessibleSidebarMenu> {
+    use gpui_component::sidebar::SidebarGroup;
 
     let menus = node.children.into_iter().filter_map(|child| match child {
         ElementNode::SidebarMenuComponent(menu) => Some(sidebar_menu(menu, context)),
         _ => None,
     });
 
-    SidebarGroup::<SidebarMenu>::new(node.label).children(menus)
+    SidebarGroup::<AccessibleSidebarMenu>::new(node.label).children(menus)
 }
 
 #[cfg(feature = "components")]
@@ -84,7 +197,7 @@ pub(crate) fn render_sidebar_component(
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     use gpui::{IntoElement, ParentElement};
-    use gpui_component::sidebar::{Sidebar, SidebarCollapsible, SidebarGroup, SidebarMenu};
+    use gpui_component::sidebar::{Sidebar, SidebarCollapsible, SidebarGroup};
 
     let side = if node.side.as_deref() == Some("right") {
         gpui_component::Side::Right
@@ -98,7 +211,7 @@ pub(crate) fn render_sidebar_component(
     };
 
     let mut header = None;
-    let mut groups: Vec<SidebarGroup<SidebarMenu>> = Vec::new();
+    let mut groups: Vec<SidebarGroup<AccessibleSidebarMenu>> = Vec::new();
     for child in node.children {
         match child {
             ElementNode::SidebarHeaderComponent(header_node) => {

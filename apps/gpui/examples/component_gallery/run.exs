@@ -1,6 +1,6 @@
 Code.require_file("support/component_gallery.exs", __DIR__)
 
-story = List.first(System.argv()) || "welcome"
+story = Enum.find(System.argv(), &(&1 != "--")) || "welcome"
 runtime = Examples.ComponentGallery.Runtime
 
 {:ok, _runtime} =

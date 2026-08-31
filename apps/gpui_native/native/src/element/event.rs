@@ -1,5 +1,47 @@
 use crate::*;
 
+#[cfg(all(feature = "real-gpui", feature = "components"))]
+pub(crate) fn attach_accessible_action_target(
+    element: gpui::Stateful<gpui::Div>,
+    test_id: String,
+    event: String,
+    accessibility: super::AccessibilitySemantics,
+    runtime: SharedRuntime,
+    window_id: u64,
+    focus: gpui::FocusHandle,
+) -> gpui::Stateful<gpui::Div> {
+    use gpui::{AccessibleAction, InteractiveElement, StatefulInteractiveElement};
+
+    let enabled = !accessibility.disabled;
+    let mut element = super::apply_accessibility_semantics(element, accessibility);
+    element = element.debug_selector(|| test_id.clone());
+    let focus = focus.tab_stop(enabled);
+    if enabled {
+        if let Ok(mut handles) = runtime.focus_handles.lock() {
+            handles.insert((window_id, test_id), focus.clone());
+        }
+        element = element.track_focus(&focus);
+
+        let keyboard_runtime = runtime.clone();
+        let keyboard_event = event.clone();
+        element = element
+            .key_context("GPUIAccessibleControl")
+            .tab_index(0)
+            .focus_visible(|style| style.border_2().border_color(gpui::rgb(0x60a5fa)))
+            .on_key_down(move |key, _window, cx| {
+                if matches!(key.keystroke.key.as_str(), "enter" | "space") {
+                    emit_click_event(&keyboard_runtime, window_id, &keyboard_event);
+                    cx.stop_propagation();
+                }
+            })
+            .on_a11y_action(AccessibleAction::Click, move |_data, _window, _cx| {
+                emit_click_event(&runtime, window_id, &event);
+            });
+    }
+
+    element
+}
+
 #[cfg(feature = "real-gpui")]
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn apply_click_event(
@@ -74,7 +116,7 @@ pub(crate) fn apply_click_event(
 }
 
 #[cfg(feature = "real-gpui")]
-fn emit_click_event(runtime: &SharedRuntime, window_id: u64, event: &str) {
+pub(crate) fn emit_click_event(runtime: &SharedRuntime, window_id: u64, event: &str) {
     let _ = push_event(
         runtime,
         NativeEvent::Click {
@@ -148,6 +190,18 @@ mod tests {
     use super::emit_click_event;
     use crate::{event::NativeEvent, runtime::RuntimeState, AccessibilityRole};
     use std::sync::Arc;
+
+    #[test]
+    fn accessible_action_attachment_uses_the_shared_click_event_path() {
+        let runtime = Arc::new(RuntimeState::new());
+        emit_click_event(&runtime, 9, "open-settings");
+
+        let events = runtime.events.lock().expect("event queue");
+        assert!(matches!(
+            events.as_slice(),
+            [NativeEvent::Click { window_id: 9, event }] if event == "open-settings"
+        ));
+    }
 
     #[test]
     fn generated_role_policy_only_tab_stops_simple_activation_controls() {
