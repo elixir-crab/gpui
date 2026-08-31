@@ -59,7 +59,7 @@ defmodule Examples.ComponentGallery.Stories.CodeViewer do
         selected: state.selected,
         reveal: state.selected,
         item_height: 34,
-        max_columns: 110,
+        max_columns: 72,
         "phx-change": "story:code_viewer:selected",
         class: "grow",
         children: lines

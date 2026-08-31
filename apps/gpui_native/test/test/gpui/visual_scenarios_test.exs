@@ -15,9 +15,22 @@ defmodule GPUI.VisualScenariosTest do
     assert Enum.map(scenario.captures(), & &1.name) == [
              "welcome",
              "button",
+             "progress",
+             "input",
+             "select",
+             "checkbox",
+             "switch",
              "radio",
+             "slider",
+             "popover",
+             "tooltip",
              "dialog",
+             "menu",
+             "tabs",
+             "accordion",
+             "virtual-list",
              "data-table",
+             "tree",
              "code-viewer"
            ]
 

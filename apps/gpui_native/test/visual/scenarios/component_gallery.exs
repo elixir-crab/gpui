@@ -20,9 +20,22 @@ defmodule GPUITest.Visual.ComponentGallery.Scenario do
     [
       %{name: "welcome"},
       %{name: "button", actions: [click("story-button")]},
+      %{name: "progress", actions: [click("story-progress")]},
+      %{name: "input", actions: [click("story-input")]},
+      %{name: "select", actions: [click("story-select")]},
+      %{name: "checkbox", actions: [click("story-checkbox")]},
+      %{name: "switch", actions: [click("story-switch")]},
       %{name: "radio", actions: [click("story-radio")]},
-      %{name: "dialog", actions: [click("story-dialog"), click("show-dialog")]},
+      %{name: "slider", actions: [click("story-slider")]},
+      %{name: "popover", actions: [click("story-popover"), click("story:popover:open")]},
+      %{name: "tooltip", actions: [click("story-tooltip")]},
+      %{name: "dialog", actions: [click("story-dialog"), click("story:dialog:open")]},
+      %{name: "menu", actions: [click("story-menu"), click("story:menu:open")]},
+      %{name: "tabs", actions: [click("story-tabs")]},
+      %{name: "accordion", actions: [click("story-accordion")]},
+      %{name: "virtual-list", actions: [click("story-virtual_list")]},
       %{name: "data-table", actions: [click("story-data_table")]},
+      %{name: "tree", actions: [click("story-tree")]},
       %{name: "code-viewer", actions: [click("story-code_viewer")]}
     ]
   end
