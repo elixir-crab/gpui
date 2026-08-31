@@ -6,9 +6,9 @@ defmodule GettingStarted.FocusTimer.View do
   @impl GPUI.View
   def render(assigns) do
     ~GPUI"""
-    <div class="flex flex-col items-center justify-center w-[480px] h-[360px] gap-4 p-8 bg-slate-900">
-      <text class="text-white text-xl font-semibold">Focus session</text>
-      <text class="text-white text-3xl">{format_time(assigns.remaining)}</text>
+    <div class="flex grow flex-col items-center justify-center gap-4 p-8">
+      <text class="text-xl font-semibold">Focus session</text>
+      <text class="text-3xl">{format_time(assigns.remaining)}</text>
       <UI.progress
         id="focus-progress"
         label="Session progress"
@@ -16,7 +16,7 @@ defmodule GettingStarted.FocusTimer.View do
         max={assigns.duration}
         class="w-[320px]"
       />
-      <text style={[color: status_color(assigns.status)]}>{status_label(assigns.status)}</text>
+      <text class="text-sm text-slate-500">{status_label(assigns.status)}</text>
       <div class="flex gap-3">
         <UI.button id="start" label={start_label(assigns.status)} variant="primary" phx-click="start" />
         <UI.button id="pause" label="Pause" disabled={assigns.status != :running} phx-click="pause" />
@@ -64,10 +64,6 @@ defmodule GettingStarted.FocusTimer.View do
   defp status_label(:paused), do: "Paused"
   defp status_label(:complete), do: "Session complete"
 
-  defp status_color(:running), do: {:rgb, 0x7DD3FC}
-  defp status_color(:paused), do: {:rgb, 0xFBBF24}
-  defp status_color(:complete), do: {:rgb, 0x86EFAC}
-  defp status_color(_status), do: {:rgb, 0xCBD5E1}
 end
 
 defmodule GettingStarted.FocusTimer.App do

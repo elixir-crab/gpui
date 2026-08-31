@@ -5,31 +5,18 @@ scripts.
 
 ## Getting started
 
-Run these in order from the repository root:
+The five small lessons introduce one concept at a time:
 
 ```bash
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/01_hello_window.exs
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/02_focus_timer.exs
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/03_settings_form.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/01_hello_window.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/02_events.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/03_supervised_updates.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/04_controlled_form.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/05_multiple_windows.exs
 ```
 
-For iterative UI work, replace `mix run` with `mix gpui.dev`. The development
-runner recompiles explicitly watched Elixir source files and rerenders the open
-window while preserving its current assigns:
-
-```bash
-RUST_FONTCONFIG_DLOPEN=1 mix gpui.dev examples/getting_started/03_settings_form.exs
-```
-
-Native, schema, mount/default-state, and window-topology changes still require a
-restart.
-
-1. **Hello Window** introduces views, applications, and OTP supervision.
-2. **Focus Timer** adds controlled events and updates from a supervised worker.
-3. **Settings Form** combines form controls, dynamic styling, and a dialog.
-
-The modules are separated into `getting_started/support/` so the examples can
-be loaded and tested through `GPUI.Test` without opening native windows.
+See [`getting_started/README.md`](getting_started/README.md) for the learning
+sequence and live-reload workflow.
 
 ## Component gallery
 

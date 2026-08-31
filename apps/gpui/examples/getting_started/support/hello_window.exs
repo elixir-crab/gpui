@@ -4,10 +4,8 @@ defmodule GettingStarted.HelloWindow.View do
   @impl GPUI.View
   def render(_assigns) do
     ~GPUI"""
-    <div class="flex grow flex-col items-center justify-center w-full gap-4 p-8 bg-slate-900">
-      <text class="text-white text-3xl font-semibold">Hello from the BEAM</text>
-      <text class="text-lg" style={[color: {:rgb, 0xCBD5E1}]}>Elixir owns the state. GPUI draws the window.</text>
-      <text class="text-green-500">● Runtime connected</text>
+    <div class="flex grow items-center justify-center p-8">
+      <text class="text-2xl font-semibold">Hello, GPUI</text>
     </div>
     """
   end
@@ -21,7 +19,7 @@ defmodule GettingStarted.HelloWindow.App do
     {:ok,
      [
        window "Hello GPUI" do
-         size(520, 320)
+         size(420, 240)
          root(GettingStarted.HelloWindow.View)
        end
      ]}

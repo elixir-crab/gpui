@@ -34,9 +34,11 @@ RUST_FONTCONFIG_DLOPEN=1 mix compile
 The getting-started examples form a short progression:
 
 ```bash
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/01_hello_window.exs
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/02_focus_timer.exs
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/03_settings_form.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/01_hello_window.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/02_events.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/03_supervised_updates.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/04_controlled_form.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/05_multiple_windows.exs
 ```
 
 - **Hello Window** introduces a view, an application, and supervision.

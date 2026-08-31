@@ -1,5 +1,5 @@
 # Run from the GPUI repository with:
-#   RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/01_hello_window.exs
+#   RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/01_hello_window.exs
 
 Code.require_file("support/hello_window.exs", __DIR__)
 

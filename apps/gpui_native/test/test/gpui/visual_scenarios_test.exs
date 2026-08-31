@@ -1,5 +1,5 @@
 for scenario <-
-      ~w(beam_observatory component_gallery elixir_workbench focus_timer hello_window image_palette music_library settings_form) do
+      ~w(beam_observatory component_gallery controlled_form elixir_workbench focus_timer hello_window image_palette music_library) do
   GPUI.Dev.Visual.ScenarioLoader.load!(scenario)
 end
 
@@ -48,10 +48,9 @@ defmodule GPUI.VisualScenariosTest do
              "complete"
            ]
 
-    assert Enum.map(GPUITest.Visual.SettingsForm.Scenario.captures(), & &1.name) == [
-             "settings",
-             "unsaved-paper-theme",
-             "review-dialog"
+    assert Enum.map(GPUITest.Visual.ControlledForm.Scenario.captures(), & &1.name) == [
+             "saved",
+             "validation-error"
            ]
   end
 

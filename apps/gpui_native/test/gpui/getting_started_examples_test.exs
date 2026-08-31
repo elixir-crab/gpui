@@ -1,30 +1,34 @@
-for example <- ~w(hello_window focus_timer settings_form)a do
+for example <- ~w(hello_window events focus_timer controlled_form multiple_windows)a do
   GPUITest.Examples.load!(example)
 end
 
 defmodule GPUI.GettingStartedExamplesTest do
   use GPUI.Test, async: true
 
-  test "hello window renders a useful runtime status" do
+  test "window lesson renders one declarative view" do
     runtime = start_runtime!(GettingStarted.HelloWindow.App)
 
-    assert %{title: "Hello GPUI"} = window_snapshot(runtime)
-    assert %{type: :viewport, children: [%{type: :div, children: children}]} = tree(runtime)
-    assert Enum.any?(children, &match?(%{type: :text, children: ["● Runtime connected"]}, &1))
+    assert %{title: "Hello GPUI", size: [420, 240]} = window_snapshot(runtime)
+    assert %{type: :text, children: ["Hello, GPUI"]} = runtime |> tree() |> find!(type: :text)
   end
 
-  test "focus timer handles controls and OTP ticks" do
+  test "events lesson keeps counter state in Elixir" do
+    runtime = start_runtime!(GettingStarted.Events.App)
+
+    assert %{count: 0} = assigns(runtime)
+    click(runtime, "increment")
+    click(runtime, "increment")
+    click(runtime, "decrement")
+    assert %{count: 1} = assigns(runtime)
+  end
+
+  test "supervised updates lesson receives worker messages" do
     runtime = start_runtime!(GettingStarted.FocusTimer.App, args: %{seconds: 2})
 
     ticker =
       start_supervised!(
         {GettingStarted.FocusTimer.Ticker, runtime: runtime, interval: :timer.hours(1)}
       )
-
-    assert %{remaining: 2, status: :ready} = assigns(runtime)
-
-    assert %{type: :ui_progress, attrs: %{value: 0, max: 2}} =
-             runtime |> tree() |> find!(id: "focus-progress")
 
     click(runtime, "start")
     send(ticker, :tick)
@@ -33,60 +37,30 @@ defmodule GPUI.GettingStartedExamplesTest do
 
     send_view(runtime, :tick)
     assert %{remaining: 0, status: :complete} = assigns(runtime)
-
-    assert %{attrs: %{value: 2, max: 2}} =
-             runtime |> tree() |> find!(id: "focus-progress")
-
-    click(runtime, "start")
-    assert %{remaining: 2, status: :running} = assigns(runtime)
-    click(runtime, "pause")
-    click(runtime, "reset")
-    assert %{remaining: 2, status: :ready} = assigns(runtime)
   end
 
-  test "settings form validates, requests focus, and confirms changes" do
-    runtime = start_runtime!(GettingStarted.SettingsForm.App)
+  test "controlled form owns values and validation" do
+    runtime = start_runtime!(GettingStarted.ControlledForm.App)
 
     change(runtime, "name_changed", "")
-    click(runtime, "review")
+    click(runtime, "save")
+    assert %{error: "Enter a display name.", status: "Not saved"} = assigns(runtime)
 
-    assert %{
-             dialog_open: false,
-             errors: %{name: "Enter a display name."},
-             validation_started: true,
-             name_focus_request: 1
-           } = assigns(runtime)
-
-    assert runtime
-           |> tree()
-           |> all(type: :text)
-           |> Enum.any?(&match?(%{children: ["Error: Enter a display name."]}, &1))
-
-    submit(runtime, "review_submitted", "Grace Hopper")
-    select(runtime, "preview_changed", "paper")
+    change(runtime, "name_changed", "Grace Hopper")
     change(runtime, "notifications_changed", false)
-    select(runtime, "density_changed", "compact")
-    change(runtime, "volume_changed", 40.0)
+    click(runtime, "save")
 
-    assert %{
-             name: "Grace Hopper",
-             preview: "paper",
-             notifications: false,
-             density: "compact",
-             volume: 40.0,
-             saved: false
-           } = assigns(runtime)
+    assert %{name: "Grace Hopper", notifications: false, error: nil, status: "Saved"} =
+             assigns(runtime)
+  end
 
-    assert %{dialog_open: true, errors: %{}} = assigns(runtime)
+  test "multiple-window lesson changes declarative topology" do
+    runtime = start_runtime!(GettingStarted.MultipleWindows.App)
 
-    assert runtime
-           |> tree()
-           |> all(type: :text)
-           |> Enum.any?(fn %{children: children} ->
-             Enum.join(children) == "Notification volume: 40%"
-           end)
-
-    click(runtime, "apply")
-    assert %{dialog_open: false, saved: true} = assigns(runtime)
+    assert [%{key: "main"}] = snapshot(runtime).windows
+    click(runtime, "toggle_details")
+    assert [%{key: "main"}, %{key: "details"}] = snapshot(runtime).windows
+    click(runtime, "toggle_details", window_id: 1)
+    assert [%{key: "main"}] = snapshot(runtime).windows
   end
 end

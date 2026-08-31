@@ -63,9 +63,11 @@ second application state system.
 Run the progressive examples from the repository:
 
 ```bash
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/01_hello_window.exs
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/02_focus_timer.exs
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/03_settings_form.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/01_hello_window.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/02_events.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/03_supervised_updates.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/04_controlled_form.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/05_multiple_windows.exs
 ```
 
 See [Your first application](guides/getting-started/first-application.md) for supervision,

@@ -2,13 +2,13 @@
 #   GPUI_APP_PORT=5050 mix run examples/remote/app_server.exs
 
 project_root = Mix.Project.project_file() |> Path.dirname()
-Code.require_file(Path.join(project_root, "examples/getting_started/support/settings_form.exs"))
+Code.require_file(Path.join(project_root, "examples/getting_started/support/controlled_form.exs"))
 
 port = System.get_env("GPUI_APP_PORT", "5050") |> String.to_integer()
 
 {:ok, _server} =
   GPUI.Remote.Server.start_link(
-    app: GettingStarted.SettingsForm.App,
+    app: GettingStarted.ControlledForm.App,
     port: port
   )
 
