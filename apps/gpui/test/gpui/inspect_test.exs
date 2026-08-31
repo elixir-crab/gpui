@@ -23,6 +23,13 @@ defmodule GPUI.InspectTest do
     assert inspect(raster) == "#GPUI.Raster<1x2 rgba8 bytes=12 stride=8>"
   end
 
+  test "inspects typed icon sources" do
+    icon = GPUI.Application.Icon.new!(source: "priv/branding/demo", description: "Demo icon")
+
+    assert inspect(icon) ==
+             ~s(#GPUI.Application.Icon<source="priv/branding/demo" description="Demo icon">)
+  end
+
   test "inspects window specs by root module instead of assigns" do
     window = %GPUI.WindowSpec{
       id: 1,

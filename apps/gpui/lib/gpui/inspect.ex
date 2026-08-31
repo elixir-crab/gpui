@@ -131,6 +131,22 @@ defimpl Inspect, for: GPUI.Application.Identity do
   end
 end
 
+defimpl Inspect, for: GPUI.Application.Icon do
+  import Inspect.Algebra
+
+  def inspect(icon, opts) do
+    concat([
+      "#GPUI.Application.Icon<source=",
+      to_doc(icon.source, opts),
+      if(icon.description,
+        do: concat([" description=", to_doc(icon.description, opts)]),
+        else: empty()
+      ),
+      ">"
+    ])
+  end
+end
+
 defimpl Inspect, for: GPUI.WindowSpec do
   import Inspect.Algebra
 

@@ -522,9 +522,10 @@ pub(crate) fn run_gpui(
         cx.spawn(async move |cx| {
             let _window_closed_subscription = window_closed_subscription;
             let mut windows = HashMap::<WindowKey, ManagedWindow>::new();
+            let mut identity: Option<(String, String)> = None;
 
             while let Some(command) = commands.next().await {
-                cx.update(|cx| handle_window_command(command, &mut windows, cx));
+                cx.update(|cx| handle_window_command(command, &mut windows, &mut identity, cx));
             }
         })
         .detach();
@@ -538,6 +539,7 @@ pub(crate) fn run_gpui(
 fn handle_window_command(
     command: WindowCommand,
     windows: &mut HashMap<WindowKey, ManagedWindow>,
+    identity: &mut Option<(String, String)>,
     cx: &mut gpui::App,
 ) {
     match command {
@@ -645,8 +647,19 @@ fn handle_window_command(
             name,
             reply,
         } => {
-            cx.set_app_identity(&identifier, &name);
-            send_reply(reply, Ok(()));
+            let requested = (identifier, name);
+            let result = match identity {
+                Some(existing) if existing != &requested => {
+                    Err("application_identity_conflict".to_string())
+                }
+                Some(_existing) => Ok(()),
+                None => {
+                    cx.set_app_identity(&requested.0, &requested.1);
+                    *identity = Some(requested);
+                    Ok(())
+                }
+            };
+            send_reply(reply, result);
         }
         WindowCommand::SetTheme { mode, reply } => {
             let result = set_component_theme(mode, windows, cx);

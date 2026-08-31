@@ -178,8 +178,14 @@ defmodule GPUI.Display.Native do
 
   defp initialize_identity(%GPUI.Application.Identity{id: id, name: name}) do
     case GPUI.Native.set_app_identity(id, name) do
-      {:ok, _value} -> :ok
-      {:error, reason} -> {:error, {:application_identity_failed, reason}}
+      {:ok, _value} ->
+        :ok
+
+      {:error, "application_identity_conflict"} ->
+        {:error, {:application_identity_conflict, %{id: id, name: name}}}
+
+      {:error, reason} ->
+        {:error, {:application_identity_failed, reason}}
     end
   end
 

@@ -33,7 +33,7 @@ defmodule GPUI.RuntimeTest do
       GPUI.Application.Identity.new!(
         id: "dev.gpui.identified",
         name: "Identified GPUI",
-        icon: "priv/branding/identified"
+        icon: GPUI.Application.Icon.new!(source: "priv/branding/identified")
       )
     end
 

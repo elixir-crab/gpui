@@ -10,7 +10,7 @@ defmodule GPUI.Application.Identity do
   @enforce_keys [:id, :name]
   defstruct [:id, :name, :icon]
 
-  @type t :: %__MODULE__{id: String.t(), name: String.t(), icon: String.t() | nil}
+  @type t :: %__MODULE__{id: String.t(), name: String.t(), icon: GPUI.Application.Icon.t() | nil}
 
   @spec new!(keyword() | map()) :: t()
   def new!(attrs) do
@@ -29,9 +29,12 @@ defmodule GPUI.Application.Identity do
       raise ArgumentError, "application identity name must be non-empty UTF-8 text"
     end
 
-    unless is_nil(icon) or (is_binary(icon) and icon != "" and byte_size(icon) <= 1_024) do
-      raise ArgumentError, "application identity icon must be a bounded asset path or nil"
+    unless is_nil(icon) or match?(%GPUI.Application.Icon{}, icon) do
+      raise ArgumentError,
+            "application identity icon must be a GPUI.Application.Icon value or nil"
     end
+
+    if icon, do: GPUI.Application.Icon.validate!(icon)
 
     identity
   end
