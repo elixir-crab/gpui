@@ -6,12 +6,14 @@ defmodule GPUI.Dev.CargoMetadata do
   human-readable `cargo tree` output.
   """
 
+  alias GPUI.Dev.CargoMetadata.{Document, Node, Package, Resolve}
+
   @enforce_keys [:packages_by_id, :package_ids_by_name, :dependencies_by_id]
   defstruct [:packages_by_id, :package_ids_by_name, :dependencies_by_id]
 
   @type package_id :: String.t()
   @type t :: %__MODULE__{
-          packages_by_id: %{package_id() => map()},
+          packages_by_id: %{package_id() => Package.t()},
           package_ids_by_name: %{String.t() => [package_id()]},
           dependencies_by_id: %{package_id() => MapSet.t(package_id())}
         }
@@ -24,20 +26,18 @@ defmodule GPUI.Dev.CargoMetadata do
     |> new!()
   end
 
-  @doc "Builds a typed graph from decoded Cargo metadata JSON."
-  @spec new!(map()) :: t()
-  def new!(%{"packages" => packages, "resolve" => %{"nodes" => nodes}})
-      when is_list(packages) and is_list(nodes) do
-    packages_by_id = Map.new(packages, &{Map.fetch!(&1, "id"), &1})
+  @doc "Builds a typed graph from decoded Cargo metadata."
+  @spec new!(Document.t()) :: t()
+  def new!(%Document{packages: packages, resolve: %Resolve{nodes: nodes}}) do
+    packages_by_id = Map.new(packages, &{&1.id, &1})
 
     package_ids_by_name =
       packages
-      |> Enum.group_by(&Map.fetch!(&1, "name"), &Map.fetch!(&1, "id"))
+      |> Enum.group_by(& &1.name, & &1.id)
 
     dependencies_by_id =
-      Map.new(nodes, fn node ->
-        dependencies = node |> Map.fetch!("deps") |> Enum.map(&Map.fetch!(&1, "pkg"))
-        {Map.fetch!(node, "id"), MapSet.new(dependencies)}
+      Map.new(nodes, fn %Node{id: id, deps: dependencies} ->
+        {id, dependencies |> Enum.map(& &1.pkg) |> MapSet.new()}
       end)
 
     %__MODULE__{
@@ -66,8 +66,7 @@ defmodule GPUI.Dev.CargoMetadata do
   def crate_types(%__MODULE__{} = graph, package) do
     graph
     |> package!(package)
-    |> Map.fetch!("targets")
-    |> Enum.map(&Map.fetch!(&1, "crate_types"))
+    |> then(fn %Package{targets: targets} -> Enum.map(targets, & &1.crate_types) end)
   end
 
   @doc "Returns all package IDs registered under a Cargo package name."
@@ -86,7 +85,7 @@ defmodule GPUI.Dev.CargoMetadata do
   end
 
   @doc "Returns one uniquely named package."
-  @spec package!(t(), String.t()) :: map()
+  @spec package!(t(), String.t()) :: Package.t()
   def package!(%__MODULE__{} = graph, name),
     do: Map.fetch!(graph.packages_by_id, unique_package_id!(graph, name))
 

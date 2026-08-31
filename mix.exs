@@ -40,6 +40,7 @@ defmodule GPUI.Umbrella.MixProject do
       {:credo, "~> 1.0", runtime: false},
       {:ex_doc, "~> 0.40.3", runtime: false},
       {:rustq, "~> 1.0.0-rc.6", runtime: false},
+      {:json_codec, "~> 0.2.3", runtime: false, override: true},
       {:igniter, "~> 0.8.2"}
     ]
   end

@@ -65,6 +65,8 @@ defmodule GPUI.Native.MixProject do
   defp deps do
     [
       {:gpui, "== #{@version}", in_umbrella: true, hex: :gpui},
+      {:gpui_components, "== #{@version}", in_umbrella: true, hex: :gpui_components},
+      {:json_codec, "~> 0.2.3", only: [:dev, :test, :release], runtime: false},
       {:rustler, "~> 0.38.0", runtime: false},
       {:rustler_precompiled, "~> 0.9"}
     ]

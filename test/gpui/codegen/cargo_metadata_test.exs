@@ -2,18 +2,19 @@ defmodule GPUI.Dev.CargoMetadataTest do
   use ExUnit.Case, async: true
 
   alias GPUI.Dev.CargoMetadata
+  alias GPUI.Dev.CargoMetadata.{Dependency, Document, Node, Package, Resolve, Target}
 
   test "traverses structured resolved dependencies and exposes crate types" do
     graph =
-      CargoMetadata.new!(%{
-        "packages" => [
+      CargoMetadata.new!(%Document{
+        packages: [
           package("nif", "gpui_nif", [["cdylib"]]),
           package("core", "gpui_core", [["rlib"]]),
           package("component", "gpui_components", [["rlib"]]),
           package("upstream", "gpui-component", [["lib"]])
         ],
-        "resolve" => %{
-          "nodes" => [
+        resolve: %Resolve{
+          nodes: [
             node("nif", ["core", "component"]),
             node("component", ["core", "upstream"]),
             node("core", []),
@@ -35,12 +36,12 @@ defmodule GPUI.Dev.CargoMetadataTest do
 
   test "rejects missing and ambiguous package names" do
     graph =
-      CargoMetadata.new!(%{
-        "packages" => [
+      CargoMetadata.new!(%Document{
+        packages: [
           package("one", "duplicate", [["rlib"]]),
           package("two", "duplicate", [["rlib"]])
         ],
-        "resolve" => %{"nodes" => [node("one", []), node("two", [])]}
+        resolve: %Resolve{nodes: [node("one", []), node("two", [])]}
       })
 
     assert_raise ArgumentError, ~r/ambiguous/, fn ->
@@ -53,14 +54,15 @@ defmodule GPUI.Dev.CargoMetadataTest do
   end
 
   defp package(id, name, crate_types) do
-    %{
-      "id" => id,
-      "name" => name,
-      "targets" => Enum.map(crate_types, &%{"crate_types" => &1})
+    %Package{
+      id: id,
+      name: name,
+      version: "0.1.0",
+      targets: Enum.map(crate_types, &%Target{crate_types: &1})
     }
   end
 
   defp node(id, dependencies) do
-    %{"id" => id, "deps" => Enum.map(dependencies, &%{"pkg" => &1})}
+    %Node{id: id, deps: Enum.map(dependencies, &%Dependency{pkg: &1})}
   end
 end

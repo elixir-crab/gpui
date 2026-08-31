@@ -104,16 +104,16 @@ defmodule Mix.Tasks.Gpui.Release.Check do
   end
 
   defp reject_gpl3_rust_dependencies! do
-    packages = GPUI.Dev.NativeWorkspace.metadata!()["packages"]
+    packages = GPUI.Dev.NativeWorkspace.metadata!().packages
 
     forbidden =
       Enum.filter(packages, fn package ->
-        Regex.match?(~r/(?:A?GPL)-3(?:\.0)?(?:-or-later)?/, package["license"] || "")
+        Regex.match?(~r/(?:A?GPL)-3(?:\.0)?(?:-or-later)?/, package.license || "")
       end)
 
     if forbidden != [] do
       details =
-        Enum.map_join(forbidden, ", ", &"#{&1["name"]} #{&1["version"]} (#{&1["license"]})")
+        Enum.map_join(forbidden, ", ", &"#{&1.name} #{&1.version} (#{&1.license})")
 
       Mix.raise("GPL-3 Rust dependencies are not allowed in the MIT native artifact: #{details}")
     end

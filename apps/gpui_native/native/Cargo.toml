@@ -38,3 +38,12 @@ smallvec = "1"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 libc = "0.2"
+
+# These patches are declared here, rather than only in the repository workspace,
+# so an unpacked gpui_native Hex package has the same dependency identities when
+# it is compiled from source beside its gpui and gpui_components dependencies.
+[patch.crates-io]
+async-process = { git = "https://github.com/zed-industries/async-process.git", rev = "0b6d6713570af61806e1e5cb40e0f757cb93fd9d" }
+
+[patch."https://github.com/zed-industries/zed"]
+ztracing = { path = "compat/ztracing" }

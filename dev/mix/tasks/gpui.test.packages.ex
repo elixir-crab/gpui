@@ -23,6 +23,7 @@ defmodule Mix.Tasks.Gpui.Test.Packages do
     try do
       unpacked = build_packages!(root, packages)
       validate_package_contents!(unpacked)
+      validate_native_source_graphs!(unpacked)
       validate_consumer!(workdir, "gpui_consumer", [:gpui], unpacked)
       validate_consumer!(workdir, "components_consumer", [:gpui, :gpui_components], unpacked)
 
@@ -71,6 +72,49 @@ defmodule Mix.Tasks.Gpui.Test.Packages do
     for package <- Map.values(packages),
         forbidden <- ["rustq.exs", "mix.lock", "deps", "_build"] do
       reject_path!(package, forbidden)
+    end
+  end
+
+  defp validate_native_source_graphs!(packages) do
+    manifest = Path.join(packages.gpui_native, "native/Cargo.toml")
+
+    for {host, feature} <- [vanilla: "vanilla-host", gpui_component: "gpui-component-host"] do
+      metadata =
+        GPUI.Dev.NativeWorkspace.metadata_for_manifest!(manifest, [
+          "--no-default-features",
+          "--features",
+          feature
+        ])
+
+      graph = GPUI.Dev.CargoMetadata.new!(metadata)
+      GPUI.Dev.NativeWorkspace.check_manifest!(manifest,
+        no_default_features: true,
+        features: feature
+      )
+
+      assert_native_dependency!(graph, "gpui_core", host)
+
+      case host do
+        :vanilla ->
+          refute_native_dependency!(graph, "gpui_components", host)
+          refute_native_dependency!(graph, "gpui-component", host)
+
+        :gpui_component ->
+          assert_native_dependency!(graph, "gpui_components", host)
+          assert_native_dependency!(graph, "gpui-component", host)
+      end
+    end
+  end
+
+  defp assert_native_dependency!(graph, dependency, host) do
+    unless GPUI.Dev.CargoMetadata.depends_on?(graph, "gpui_nif", dependency) do
+      Mix.raise("unpacked #{host} source graph is missing #{dependency}")
+    end
+  end
+
+  defp refute_native_dependency!(graph, dependency, host) do
+    if GPUI.Dev.CargoMetadata.depends_on?(graph, "gpui_nif", dependency) do
+      Mix.raise("unpacked #{host} source graph unexpectedly resolves #{dependency}")
     end
   end
 

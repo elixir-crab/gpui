@@ -23,11 +23,20 @@ defmodule GPUI.Dev.NativeWorkspace do
   ]
 
   @doc "Returns decoded Cargo metadata for the requested feature graph."
-  @spec metadata!([String.t()]) :: map()
+  @spec metadata!([String.t()]) :: GPUI.Dev.CargoMetadata.Document.t()
   def metadata!(feature_args \\ []) do
     ["metadata", "--format-version", "1" | feature_args]
     |> output!()
-    |> JSON.decode!()
+    |> decode_metadata!()
+  end
+
+  @doc "Returns decoded Cargo metadata for an explicit manifest outside the workspace."
+  @spec metadata_for_manifest!(Path.t(), [String.t()]) :: GPUI.Dev.CargoMetadata.Document.t()
+  def metadata_for_manifest!(manifest, feature_args \\ []) do
+    ["metadata", "--format-version", "1" | feature_args]
+    |> external_manifest_args(manifest)
+    |> command_output!()
+    |> decode_metadata!()
   end
 
   @doc "Checks the complete native workspace."
@@ -37,6 +46,14 @@ defmodule GPUI.Dev.NativeWorkspace do
   @doc "Checks a package with an exact feature selection."
   @spec check!([option()]) :: :ok
   def check!(options \\ []), do: stream!(["check" | selection_args(options)])
+
+  @doc "Checks a package rooted at an explicit manifest outside the workspace."
+  @spec check_manifest!(Path.t(), [option()]) :: :ok
+  def check_manifest!(manifest, options \\ []) do
+    ["check" | selection_args(options)]
+    |> external_manifest_args(manifest)
+    |> command_stream!()
+  end
 
   @doc "Runs library tests for a package or the workspace."
   @spec test!([option()]) :: :ok
@@ -60,17 +77,27 @@ defmodule GPUI.Dev.NativeWorkspace do
   @doc false
   @spec output!([String.t()]) :: String.t()
   def output!(args) do
-    command_args = workspace_args(args)
+    args
+    |> workspace_args()
+    |> command_output!()
+  end
 
-    case System.cmd("cargo", command_args, stderr_to_stdout: true, env: cargo_env()) do
+  defp command_output!(command_args) do
+    case System.cmd("cargo", command_args, env: cargo_env()) do
       {output, 0} -> output
       {output, _status} -> raise "cargo #{Enum.join(command_args, " ")} failed:\n#{output}"
     end
   end
 
-  defp stream!(args, options \\ []) do
-    command_args = workspace_args(args, options)
+  defp decode_metadata!(json), do: GPUI.Dev.CargoMetadata.Document.decode!(json)
 
+  defp stream!(args, options \\ []) do
+    args
+    |> workspace_args(options)
+    |> command_stream!()
+  end
+
+  defp command_stream!(command_args) do
     {_, status} =
       System.cmd("cargo", command_args,
         env: cargo_env(),
@@ -98,6 +125,10 @@ defmodule GPUI.Dev.NativeWorkspace do
       {cargo_args, []} -> cargo_args ++ global_args
       {cargo_args, rustc_args} -> cargo_args ++ global_args ++ rustc_args
     end
+  end
+
+  defp external_manifest_args(args, manifest) do
+    args ++ ["--manifest-path", Path.expand(manifest)]
   end
 
   defp selection_args(options) do
