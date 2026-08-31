@@ -35,6 +35,33 @@ defmodule GPUI.InspectTest do
              "#GPUI.WindowSpec<id=1 key=nil title=\"Counter\" size={320, 240} root=GPUI.InspectTest>"
   end
 
+  test "bounds inspection for snapshots, updates, text, and transfers" do
+    snapshot = %GPUI.Snapshot{windows: [%{}], resources: %{"image" => %{}}}
+    update = %GPUI.Runtime.Update{revision: 4, events: [%{type: :click}], snapshot: snapshot}
+
+    text = %GPUI.Text.Snapshot{
+      revision: 3,
+      text: String.duplicate("x", 500),
+      selections: [],
+      can_undo: true,
+      can_redo: false
+    }
+
+    payload =
+      GPUI.Transfer.Payload.new(
+        text: String.duplicate("secret", 20),
+        external_paths: ["/private/file"]
+      )
+
+    assert inspect(snapshot) == "#GPUI.Snapshot<windows=1 resources=1>"
+    assert inspect(update) == "#GPUI.Runtime.Update<revision=4 events=1 windows=1>"
+
+    assert inspect(text) ==
+             "#GPUI.Text.Snapshot<revision=3 bytes=500 selections=0 undo=true redo=false>"
+
+    assert inspect(payload) == "#GPUI.Transfer.Payload<text_bytes=120 external_paths=1>"
+  end
+
   test "inspects transport wrappers without dumping sockets" do
     listener = %GPUI.Remote.Transport.TCP.Listener{socket: :hidden, mode: :tcp}
     conn = %GPUI.Remote.Transport.TCP.Connection{socket: :hidden, mode: :ssl}

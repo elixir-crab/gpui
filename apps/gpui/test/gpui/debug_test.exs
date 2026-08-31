@@ -21,8 +21,8 @@ defmodule GPUI.DebugTest do
       ]
     }
 
-    assert %{type: :ui_button} = GPUI.Debug.find(tree, id: "save")
-    assert Enum.map(GPUI.Debug.path(tree, id: "save"), & &1.type) == [:viewport, :div, :ui_button]
+    assert %{type: :ui_button} = GPUI.Tree.find(tree, id: "save")
+    assert Enum.map(GPUI.Tree.path(tree, id: "save"), & &1.type) == [:viewport, :div, :ui_button]
 
     assert GPUI.Debug.format_tree(tree) ==
              "viewport\n  └─ div#shell\n    └─ ui_button#save \"Save\" [disabled]\n    └─ text \"Hello\"\n"

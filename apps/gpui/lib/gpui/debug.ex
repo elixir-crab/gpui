@@ -10,16 +10,6 @@ defmodule GPUI.Debug do
   def tree(%{type: _type} = tree, _opts), do: tree
   def tree(runtime, opts), do: runtime |> Runtime.snapshot() |> tree(opts)
 
-  @doc "Finds the first element matching the supplied selector."
-  @spec find(GenServer.server() | Snapshot.t() | map(), keyword()) :: map() | nil
-  def find(source, selector) when is_list(selector) do
-    source |> tree() |> walk() |> Enum.find(&matches?(&1, selector))
-  end
-
-  @doc "Returns the root-to-element path for the first matching element."
-  @spec path(GenServer.server() | Snapshot.t() | map(), keyword()) :: [map()] | nil
-  def path(source, selector) when is_list(selector), do: find_path(tree(source), selector, [])
-
   @doc "Formats a bounded, human-readable tree."
   @spec format_tree(GenServer.server() | Snapshot.t() | map(), keyword()) :: String.t()
   def format_tree(source, opts \\ []) do
@@ -51,32 +41,6 @@ defmodule GPUI.Debug do
 
     window || raise ArgumentError, "snapshot window not found: #{inspect(selector)}"
   end
-
-  defp walk(%{type: _type} = node),
-    do: [node | Enum.flat_map(Map.get(node, :children, []), &walk/1)]
-
-  defp walk(_leaf), do: []
-
-  defp matches?(node, selector) do
-    Enum.all?(selector, fn
-      {:type, value} -> node.type == value
-      {:id, value} -> attr(node, :id) == value
-      {:label, value} -> attr(node, :label) == value
-      {name, value} -> attr(node, name) == value
-    end)
-  end
-
-  defp find_path(%{type: _type} = node, selector, ancestors) do
-    path = ancestors ++ [node]
-
-    if matches?(node, selector) do
-      path
-    else
-      Enum.find_value(Map.get(node, :children, []), &find_path(&1, selector, path))
-    end
-  end
-
-  defp find_path(_leaf, _selector, _ancestors), do: nil
 
   defp format_node(%{type: _type} = node, depth, max_depth, max_children) do
     line = [
@@ -134,5 +98,4 @@ defmodule GPUI.Debug do
   defp truncate(value) when byte_size(value) > 80, do: binary_part(value, 0, 77) <> "…"
   defp truncate(value), do: value
   defp flag(attrs, name), do: if(Map.get(attrs, name) == true, do: Atom.to_string(name))
-  defp attr(node, name), do: node |> Map.get(:attrs, %{}) |> Map.get(name)
 end

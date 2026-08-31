@@ -24,6 +24,62 @@ defimpl Inspect, for: GPUI.Element do
   defp optional_label(label, opts), do: concat([" label=", to_doc(label, opts)])
 end
 
+defimpl Inspect, for: GPUI.Text.Buffer do
+  import Inspect.Algebra
+
+  def inspect(_buffer, _opts), do: concat(["#GPUI.Text.Buffer<resource>"])
+end
+
+defimpl Inspect, for: GPUI.Text.Snapshot do
+  import Inspect.Algebra
+
+  def inspect(snapshot, _opts) do
+    concat([
+      "#GPUI.Text.Snapshot<revision=",
+      to_string(snapshot.revision),
+      " bytes=",
+      to_string(byte_size(snapshot.text)),
+      " selections=",
+      to_string(length(snapshot.selections)),
+      " undo=",
+      to_string(snapshot.can_undo),
+      " redo=",
+      to_string(snapshot.can_redo),
+      ">"
+    ])
+  end
+end
+
+defimpl Inspect, for: GPUI.Transfer.Payload do
+  import Inspect.Algebra
+
+  def inspect(payload, _opts) do
+    concat([
+      "#GPUI.Transfer.Payload<text_bytes=",
+      to_string(if(payload.text, do: byte_size(payload.text), else: 0)),
+      " external_paths=",
+      to_string(length(payload.external_paths)),
+      ">"
+    ])
+  end
+end
+
+defimpl Inspect, for: GPUI.Runtime.Update do
+  import Inspect.Algebra
+
+  def inspect(update, _opts) do
+    concat([
+      "#GPUI.Runtime.Update<revision=",
+      to_string(update.revision),
+      " events=",
+      to_string(length(update.events)),
+      " windows=",
+      to_string(length(update.snapshot.windows)),
+      ">"
+    ])
+  end
+end
+
 defimpl Inspect, for: GPUI.Raster do
   import Inspect.Algebra
 

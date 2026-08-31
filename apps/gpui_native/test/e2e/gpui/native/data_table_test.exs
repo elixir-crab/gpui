@@ -173,7 +173,7 @@ defmodule GPUI.Native.DataTableE2ETest do
     Desktop.capture_fixture!(desktop, native_window_id, "data-table")
 
     snapshot = GPUI.Runtime.snapshot(runtime)
-    rows = snapshot |> GPUI.Test.tree() |> GPUI.Test.all(type: :ui_table_row)
+    rows = snapshot |> GPUI.Test.tree() |> GPUI.Tree.all(type: :ui_table_row)
     assert Enum.count_until(rows, 33) <= 32
     assert Enum.any?(rows, &match?(%{attrs: %{id: "target"}}, &1))
 

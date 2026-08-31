@@ -71,7 +71,10 @@ defmodule GPUI.Test do
             import GPUITest.Desktop, only: [start_runtime!: 2]
           end
         else
-          quote do: import(GPUI.Test)
+          quote do
+            import GPUI.Test
+            import GPUI.Tree, only: [all: 2, find: 2, find!: 2, path: 2]
+          end
         end
       )
 
@@ -320,25 +323,6 @@ defmodule GPUI.Test do
   def search(runtime, event, query, opts \\ []),
     do: dispatch_value(runtime, :search, event, query, opts)
 
-  @doc "Returns every element in a tree matching the given attributes."
-  @spec all(Element.t() | map(), keyword()) :: [Element.t() | map()]
-  def all(tree, selector) when is_list(selector) do
-    tree
-    |> walk()
-    |> Enum.filter(&matches?(&1, selector))
-  end
-
-  @doc "Returns the first element matching the given attributes, or nil."
-  @spec find(Element.t() | map(), keyword()) :: Element.t() | map() | nil
-  def find(tree, selector) when is_list(selector), do: tree |> all(selector) |> List.first()
-
-  @doc "Returns the first matching element or raises."
-  @spec find!(Element.t() | map(), keyword()) :: Element.t() | map()
-  def find!(tree, selector) when is_list(selector) do
-    find(tree, selector) ||
-      raise ArgumentError, "no GPUI element matches #{inspect(selector)}"
-  end
-
   defp session_opts!(_name, true), do: []
   defp session_opts!(_name, opts) when is_list(opts), do: opts
   defp session_opts!(_name, nil), do: nil
@@ -380,26 +364,5 @@ defmodule GPUI.Test do
     runtime
     |> window_snapshot(Keyword.get(opts, :window, :first))
     |> Map.fetch!(:id)
-  end
-
-  defp walk(%Element{children: children} = element),
-    do: [element | Enum.flat_map(children, &walk/1)]
-
-  defp walk(%{type: _type, children: children} = element),
-    do: [element | Enum.flat_map(children, &walk/1)]
-
-  defp walk(_primitive), do: []
-
-  defp matches?(%Element{type: type, attrs: attrs}, selector),
-    do: matches_attributes?(type, Map.new(attrs), selector)
-
-  defp matches?(%{type: type, attrs: attrs}, selector),
-    do: matches_attributes?(type, Map.new(attrs), selector)
-
-  defp matches_attributes?(type, attrs, selector) do
-    Enum.all?(selector, fn
-      {:type, expected} -> type == expected
-      {key, expected} -> Map.get(attrs, key) == expected
-    end)
   end
 end

@@ -148,7 +148,7 @@ defmodule GPUI.Native.TreeE2ETest do
       runtime
       |> GPUI.Runtime.snapshot()
       |> GPUI.Test.tree()
-      |> GPUI.Test.all(type: :ui_tree_item)
+      |> GPUI.Tree.all(type: :ui_tree_item)
 
     assert Enum.count(loaded_items) <= 32
     assert Enum.any?(loaded_items, &match?(%{attrs: %{id: "target"}}, &1))
