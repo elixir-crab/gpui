@@ -30,6 +30,10 @@ defmodule GPUI.Native.Generated do
         :erlang.nif_error(:nif_not_loaded)
       end
 
+      def set_app_identity(_identifier, _name) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
       def start_runtime do
         :erlang.nif_error(:nif_not_loaded)
       end

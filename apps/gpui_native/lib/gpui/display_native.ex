@@ -78,7 +78,10 @@ defmodule GPUI.Display.Native do
 
   @impl GenServer
   def init(opts) do
+    identity = Keyword.get(opts, :application_identity)
+
     with :ok <- native_compiled(),
+         :ok <- initialize_identity(identity),
          {:ok, runtime} <- GPUI.Native.start_runtime(),
          :ok <- initialize_theme(runtime, Keyword.get(opts, :theme)) do
       {:ok, %{runtime: runtime, windows: %{}, resources: %{}}}
@@ -168,6 +171,15 @@ defmodule GPUI.Display.Native do
       {:error,
        {:native_not_compiled,
         "set `config :gpui_native, build_native: true` outside renderer-independent test environments"}}
+    end
+  end
+
+  defp initialize_identity(nil), do: :ok
+
+  defp initialize_identity(%GPUI.Application.Identity{id: id, name: name}) do
+    case GPUI.Native.set_app_identity(id, name) do
+      {:ok, _value} -> :ok
+      {:error, reason} -> {:error, {:application_identity_failed, reason}}
     end
   end
 

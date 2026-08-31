@@ -31,6 +31,8 @@ defmodule GPUI.Runtime do
   @sync_retry_interval 50
 
   @type state :: %{
+          application: module(),
+          identity: GPUI.Application.Identity.t() | nil,
           session: pid(),
           display: pid(),
           display_module: module(),
@@ -48,6 +50,10 @@ defmodule GPUI.Runtime do
       GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
     end
   end
+
+  @doc "Returns stable runtime topology and synchronization information."
+  @spec info(GenServer.server()) :: map()
+  def info(runtime), do: GenServer.call(runtime, :info, @call_timeout)
 
   @doc "Returns the runtime session's declarative windows."
   @spec windows(GenServer.server()) :: [GPUI.WindowSpec.t()]
@@ -122,18 +128,27 @@ defmodule GPUI.Runtime do
 
   @impl GenServer
   def init(opts) do
+    app = Keyword.fetch!(opts, :app)
+    identity = GPUI.Application.identity(app)
     display_module = Keyword.get(opts, :display, GPUI.Display.Native)
     display_opts = Keyword.get(opts, :display_opts, [])
+
+    display_opts =
+      if identity,
+        do: Keyword.put_new(display_opts, :application_identity, identity),
+        else: display_opts
 
     with {:ok, poll_interval} <- GPUI.Polling.interval(opts),
          {:ok, session} <-
            GPUI.Session.start_link(
-             app: Keyword.fetch!(opts, :app),
+             app: app,
              args: Keyword.get(opts, :args, [])
            ),
          {:ok, display} <- start_display(display_module, display_opts),
          :ok <- sync_initial_snapshot(display_module, display, session) do
       state = %{
+        application: app,
+        identity: identity,
         session: session,
         display: display,
         display_module: display_module,
@@ -158,6 +173,21 @@ defmodule GPUI.Runtime do
   end
 
   @impl GenServer
+  def handle_call(:info, _from, state) do
+    windows = GPUI.Session.windows(state.session)
+
+    {:reply,
+     %{
+       application: state.application,
+       identity: state.identity,
+       session: state.session,
+       display: state.display_module,
+       windows: length(windows),
+       revision: state.revision,
+       synchronized?: not state.unsynchronized?
+     }, state}
+  end
+
   def handle_call(:windows, _from, state),
     do: {:reply, GPUI.Session.windows(state.session), state}
 

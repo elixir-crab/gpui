@@ -8,7 +8,7 @@ defmodule GPUI.InspectTest do
       children: ["hello", "world"]
     }
 
-    assert inspect(element) == "#GPUI.Element<:div attrs=2 children=2>"
+    assert inspect(element) == "#GPUI.Element<:div#root attrs=2 children=2>"
   end
 
   test "inspects rasters without dumping binary data" do

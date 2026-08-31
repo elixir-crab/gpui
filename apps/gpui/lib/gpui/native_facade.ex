@@ -30,6 +30,10 @@ defmodule GPUI.Native.Facade do
         apply(GPUI.Native.backend(), :host_info, [])
       end
 
+      def set_app_identity(_identifier, _name) do
+        apply(GPUI.Native.backend(), :set_app_identity, [_identifier, _name])
+      end
+
       def start_runtime() do
         apply(GPUI.Native.backend(), :start_runtime, [])
       end

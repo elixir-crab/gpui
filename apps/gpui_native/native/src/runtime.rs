@@ -126,7 +126,7 @@ impl Drop for RuntimeResource {
 }
 
 #[cfg(feature = "real-gpui")]
-fn gpui_command_sender() -> Result<mpsc::UnboundedSender<WindowCommand>, &'static str> {
+pub(crate) fn gpui_command_sender() -> Result<mpsc::UnboundedSender<WindowCommand>, &'static str> {
     if let Some(sender) = GPUI_COMMANDS.get() {
         return if sender.is_closed() {
             Err("gpui_runtime_stopped")

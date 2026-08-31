@@ -13,6 +13,41 @@ pub(crate) fn host_info_impl<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
     Ok((atoms::ok(), host).encode(env))
 }
 
+#[cfg(feature = "real-gpui")]
+pub(crate) fn set_app_identity_impl<'a>(
+    env: Env<'a>,
+    identifier: String,
+    name: String,
+) -> NifResult<Term<'a>> {
+    let sender = crate::runtime::gpui_command_sender()
+        .map_err(|reason| rustler::Error::Term(Box::new(reason)))?;
+    let (reply, receiver) = std::sync::mpsc::sync_channel(1);
+    sender
+        .unbounded_send(WindowCommand::SetAppIdentity {
+            identifier,
+            name,
+            reply,
+        })
+        .map_err(|_| rustler::Error::Term(Box::new("gpui_runtime_stopped")))?;
+
+    encode_command_result(
+        env,
+        receiver
+            .recv()
+            .map_err(|_| "gpui_runtime_stopped".to_string())
+            .and_then(|result| result),
+    )
+}
+
+#[cfg(not(feature = "real-gpui"))]
+pub(crate) fn set_app_identity_impl<'a>(
+    env: Env<'a>,
+    _identifier: String,
+    _name: String,
+) -> NifResult<Term<'a>> {
+    Ok((atoms::ok(), atoms::ok()).encode(env))
+}
+
 pub(crate) fn text_buffer_new_impl<'a>(
     env: Env<'a>,
     text: String,

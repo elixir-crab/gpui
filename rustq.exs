@@ -206,6 +206,8 @@ generate "native-stubs", "apps/gpui/lib/gpui/native_generated.ex" do
           text_buffer_redo:
             MetaAST.function!(GPUI.Codegen.Native.TextBoundary, :text_buffer_redo),
           host_info: MetaAST.function!(GPUI.Codegen.Native.RuntimeBoundary, :host_info),
+          set_app_identity:
+            MetaAST.function!(GPUI.Codegen.Native.RuntimeBoundary, :set_app_identity),
           start_runtime:
             MetaAST.function!(GPUI.Codegen.Native.RuntimeBoundary, :start_runtime),
           stop_runtime: MetaAST.function!(GPUI.Codegen.Native.RuntimeBoundary, :stop_runtime),

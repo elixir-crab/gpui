@@ -25,6 +25,40 @@ defmodule GPUI.RuntimeTest do
       do: {:noreply, %{assigns | name: name}}
   end
 
+  defmodule IdentifiedApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def identity do
+      GPUI.Application.Identity.new!(
+        id: "dev.gpui.identified",
+        name: "Identified GPUI",
+        icon: "priv/branding/identified"
+      )
+    end
+
+    @impl GPUI.Application
+    def mount(_args) do
+      {:ok, [window("Identity", do: root(HelloView, name: "Identity"))]}
+    end
+  end
+
+  test "exposes stable application identity and runtime topology" do
+    runtime =
+      start_supervised!(
+        {GPUI.Runtime, app: IdentifiedApp, display: GPUI.Test.Display, poll_interval: nil}
+      )
+
+    assert %{
+             application: IdentifiedApp,
+             identity: %GPUI.Application.Identity{id: "dev.gpui.identified"},
+             display: GPUI.Test.Display,
+             windows: 1,
+             revision: 0,
+             synchronized?: true
+           } = GPUI.Runtime.info(runtime)
+  end
+
   defmodule DemoApp do
     use GPUI.Application
 

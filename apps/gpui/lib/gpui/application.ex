@@ -12,6 +12,9 @@ defmodule GPUI.Application do
 
   @doc "Builds the initial renderer-independent window set for a session."
   @callback mount(term()) :: {:ok, [WindowSpec.t()]}
+  @callback identity() :: GPUI.Application.Identity.t()
+
+  @optional_callbacks identity: 0
 
   defmacro __using__(_opts) do
     quote do
@@ -36,6 +39,14 @@ defmodule GPUI.Application do
           start: {GPUI.Runtime, :start_link, [Keyword.put(opts, :app, __MODULE__)]}
         }
       end
+    end
+  end
+
+  @doc "Returns and validates an application's declared identity, when present."
+  @spec identity(module()) :: GPUI.Application.Identity.t() | nil
+  def identity(app) when is_atom(app) do
+    if function_exported?(app, :identity, 0) do
+      app.identity() |> GPUI.Application.Identity.validate!()
     end
   end
 

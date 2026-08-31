@@ -5,6 +5,15 @@
 fn host_info<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
     host_info_impl(env)
 }
+#[rustler::nif]
+#[allow(unused_variables)]
+fn set_app_identity<'a>(
+    env: Env<'a>,
+    identifier: String,
+    name: String,
+) -> NifResult<Term<'a>> {
+    set_app_identity_impl(env, identifier, name)
+}
 #[rustler::nif(schedule = "DirtyIo")]
 #[allow(unused_variables)]
 fn start_runtime<'a>(env: Env<'a>) -> NifResult<Term<'a>> {

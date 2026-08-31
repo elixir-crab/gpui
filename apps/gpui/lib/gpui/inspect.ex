@@ -2,9 +2,14 @@ defimpl Inspect, for: GPUI.Element do
   import Inspect.Algebra
 
   def inspect(element, opts) do
+    id = element.attrs |> Keyword.get(:id) |> optional_id()
+    label = element.attrs |> Keyword.get(:label) |> optional_label(opts)
+
     concat([
       "#GPUI.Element<",
       to_doc(element.type, opts),
+      id,
+      label,
       " attrs=",
       to_string(length(element.attrs)),
       " children=",
@@ -12,6 +17,11 @@ defimpl Inspect, for: GPUI.Element do
       ">"
     ])
   end
+
+  defp optional_id(nil), do: ""
+  defp optional_id(id), do: "##{id}"
+  defp optional_label(nil, _opts), do: ""
+  defp optional_label(label, opts), do: concat([" label=", to_doc(label, opts)])
 end
 
 defimpl Inspect, for: GPUI.Raster do
@@ -34,6 +44,35 @@ defimpl Inspect, for: GPUI.Raster do
 
   defp stride(nil), do: ""
   defp stride(stride), do: " stride=#{stride}"
+end
+
+defimpl Inspect, for: GPUI.Snapshot do
+  import Inspect.Algebra
+
+  def inspect(snapshot, _opts) do
+    concat([
+      "#GPUI.Snapshot<windows=",
+      to_string(length(snapshot.windows)),
+      " resources=",
+      to_string(map_size(snapshot.resources)),
+      ">"
+    ])
+  end
+end
+
+defimpl Inspect, for: GPUI.Application.Identity do
+  import Inspect.Algebra
+
+  def inspect(identity, opts) do
+    concat([
+      "#GPUI.Application.Identity<id=",
+      to_doc(identity.id, opts),
+      " name=",
+      to_doc(identity.name, opts),
+      if(identity.icon, do: concat([" icon=", to_doc(identity.icon, opts)]), else: empty()),
+      ">"
+    ])
+  end
 end
 
 defimpl Inspect, for: GPUI.WindowSpec do

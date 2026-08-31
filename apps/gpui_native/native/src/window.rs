@@ -465,6 +465,11 @@ pub(crate) enum WindowCommand {
         runtime_id: u64,
         reply: Option<WindowCommandReply>,
     },
+    SetAppIdentity {
+        identifier: String,
+        name: String,
+        reply: WindowCommandReply,
+    },
     SetTheme {
         mode: NativeThemeMode,
         reply: WindowCommandReply,
@@ -634,6 +639,14 @@ fn handle_window_command(
             if let Some(reply) = reply {
                 send_reply(reply, result);
             }
+        }
+        WindowCommand::SetAppIdentity {
+            identifier,
+            name,
+            reply,
+        } => {
+            cx.set_app_identity(&identifier, &name);
+            send_reply(reply, Ok(()));
         }
         WindowCommand::SetTheme { mode, reply } => {
             let result = set_component_theme(mode, windows, cx);
