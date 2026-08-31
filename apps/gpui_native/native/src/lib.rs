@@ -24,6 +24,8 @@ mod host;
 #[cfg(feature = "real-gpui")]
 mod input;
 mod native_test;
+#[cfg(feature = "components")]
+mod rendered_control;
 #[cfg(feature = "real-gpui")]
 mod resource;
 mod runtime;

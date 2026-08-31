@@ -7,6 +7,8 @@ pub mod controls;
 pub mod host;
 pub mod host_contract;
 pub mod registry;
+#[cfg(feature = "native-render")]
+pub mod rendered_control;
 
 #[cfg(feature = "native-render")]
 pub mod render;
