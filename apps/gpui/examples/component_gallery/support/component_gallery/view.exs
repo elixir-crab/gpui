@@ -46,7 +46,7 @@ defmodule Examples.ComponentGallery.View do
           </UI.status_item>
           <UI.status_item id="gallery-status-right" side="right">
             <text class="text-sm text-slate-500">Elixir event {assigns.event_count}</text>
-            <text class="text-sm text-slate-400">{assigns.last_event || "ready"}</text>
+            <text class="text-sm text-slate-600">{assigns.last_event || "ready"}</text>
           </UI.status_item>
         </UI.status_bar>
       </div>

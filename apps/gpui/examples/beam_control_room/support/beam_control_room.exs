@@ -66,7 +66,7 @@ defmodule Examples.BeamControlRoom.View do
         {stat("ETS", length(assigns.tables))}
         {stat("Ports", assigns.ports)}
         <div class="flex grow" />
-        <text class={if(assigns.paused, do: "text-sm text-amber-600", else: "text-sm text-green-600")}>{if(assigns.paused, do: "PAUSED", else: "LIVE")}</text>
+        <text class={if(assigns.paused, do: "text-sm text-amber-700", else: "text-sm text-green-700")}>{if(assigns.paused, do: "PAUSED", else: "LIVE")}</text>
       </div>
 
       <div class="flex grow min-h-0">

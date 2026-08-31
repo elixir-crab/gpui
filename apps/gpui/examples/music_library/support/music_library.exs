@@ -18,19 +18,19 @@ defmodule Examples.MusicLibrary.View do
           </div>
           <div class="flex flex-col">
             <text class="text-white text-lg font-semibold">Afterglow</text>
-            <text style={[color: {:rgb, 0x64748B}]}>Music library</text>
+            <text style={[color: {:rgb, 0x94A3B8}]}>Music library</text>
           </div>
         </div>
 
         <div class="flex flex-col gap-2">
-          <text style={[color: {:rgb, 0x64748B}]}>LIBRARY</text>
+          <text style={[color: {:rgb, 0x94A3B8}]}>LIBRARY</text>
           {nav_item("Songs", "songs", assigns.section)}
           {nav_item("Albums", "albums", assigns.section)}
           {nav_item("Artists", "artists", assigns.section)}
         </div>
 
         <div class="flex flex-col gap-2">
-          <text style={[color: {:rgb, 0x64748B}]}>PLAYLISTS</text>
+          <text style={[color: {:rgb, 0x94A3B8}]}>PLAYLISTS</text>
           {nav_item("Evening focus", "focus", assigns.section)}
           {nav_item("Quiet mornings", "morning", assigns.section)}
           {nav_item("Night drive", "drive", assigns.section)}
@@ -39,7 +39,7 @@ defmodule Examples.MusicLibrary.View do
         <div class="flex grow" />
         <div class="flex flex-col gap-2 p-3 rounded-lg" style={[background: {:rgb, 0x111827}]}>
           <text class="text-white font-semibold">Local collection</text>
-          <text style={[color: {:rgb, 0x64748B}]}>{length(assigns.tracks)} songs · 1 hr 9 min</text>
+          <text style={[color: {:rgb, 0x94A3B8}]}>{length(assigns.tracks)} songs · 1 hr 9 min</text>
           <div class="flex justify-between">
             <text class="text-white font-semibold">Library indexed</text>
             <text style={[color: {:rgb, 0xA78BFA}]}>92%</text>
@@ -162,7 +162,7 @@ defmodule Examples.MusicLibrary.View do
     ~GPUI"""
     <div class="flex grow flex-col items-center justify-center gap-2">
       <text class="text-white text-lg font-semibold">No matching songs</text>
-      <text style={[color: {:rgb, 0x64748B}]}>Try a different title, artist, or album.</text>
+      <text style={[color: {:rgb, 0x94A3B8}]}>Try a different title, artist, or album.</text>
     </div>
     """
   end
@@ -198,7 +198,7 @@ defmodule Examples.MusicLibrary.View do
         album_art(track),
         track_identity(track),
         text_cell(track.album, 0x94A3B8),
-        text_cell(track.year, 0x64748B),
+        text_cell(track.year, 0x94A3B8),
         text_cell(track.duration, 0xCBD5E1),
         UI.button(%{
           id: "play-track-" <> track.id,
@@ -263,7 +263,7 @@ defmodule Examples.MusicLibrary.View do
     ~GPUI"""
     <div class="flex flex-col gap-2 p-4 rounded-lg" style={[background: {:rgb, 0x111827}]}>
       <text class="text-white font-semibold">Track details</text>
-      <text style={[color: {:rgb, 0x64748B}]}>Select a track to inspect it.</text>
+      <text style={[color: {:rgb, 0x94A3B8}]}>Select a track to inspect it.</text>
     </div>
     """
   end
@@ -440,7 +440,7 @@ defmodule Examples.MusicLibrary.App do
         "5:06",
         "2024",
         "PS",
-        0xEA580C,
+        0xC2410C,
         4
       ),
       track(
@@ -462,7 +462,7 @@ defmodule Examples.MusicLibrary.App do
         "4:44",
         "2026",
         "SW",
-        0x0891B2,
+        0x0E7490,
         2
       ),
       track(
@@ -484,7 +484,7 @@ defmodule Examples.MusicLibrary.App do
         "3:22",
         "2026",
         "WS",
-        0x059669,
+        0x047857,
         0
       )
     ]

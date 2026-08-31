@@ -170,8 +170,8 @@ defmodule Examples.ImageLab.View do
   defp preview(%{image: nil, status: :error} = assigns) do
     ~GPUI"""
     <div class="flex flex-col items-center gap-2 p-5">
-      <text class="text-white text-xl">Unable to load image</text>
-      <text style={[color: {:rgb, 0xFCA5A5}]}>{assigns.error}</text>
+      <text class="text-xl text-slate-900">Unable to load image</text>
+      <text class="text-red-700">{assigns.error}</text>
     </div>
     """
   end
@@ -179,8 +179,8 @@ defmodule Examples.ImageLab.View do
   defp preview(%{image: nil}) do
     ~GPUI"""
     <div class="flex flex-col items-center gap-2 p-5">
-      <text class="text-white text-xl">No image loaded</text>
-      <text style={[color: {:rgb, 0x94A3B8}]}>Choose a local image to begin.</text>
+      <text class="text-xl text-slate-900">No image loaded</text>
+      <text class="text-slate-500">Choose a local image to begin.</text>
     </div>
     """
   end
@@ -189,7 +189,7 @@ defmodule Examples.ImageLab.View do
     ~GPUI"""
     <div class="flex flex-col items-center gap-3">
       <img raster={assigns.image} label="Loaded image preview" />
-      <text style={[color: {:rgb, 0x94A3B8}]}>{assigns.image_width} × {assigns.image_height} pixels</text>
+      <text class="text-sm text-slate-600">{assigns.image_width} × {assigns.image_height} pixels</text>
     </div>
     """
   end
@@ -252,7 +252,7 @@ defmodule Examples.ImageLab.View do
         disabled={assigns.disabled}
         phx-click={"select_color:" <> assigns.color.hex}
       />
-      <text style={[color: {:rgb, 0x94A3B8}]}>{assigns.color.count} samples</text>
+      <text class="text-sm text-slate-600">{assigns.color.count} samples</text>
     </div>
     """
   end
@@ -262,7 +262,7 @@ defmodule Examples.ImageLab.View do
     selected_assigns = %{color: color}
 
     ~GPUI"""
-    <text style={[color: {:rgb, 0x94A3B8}]}>{selected_color_label(selected_assigns.color)}</text>
+    <text class="text-sm text-slate-600">{selected_color_label(selected_assigns.color)}</text>
     """
   end
 
@@ -309,7 +309,7 @@ defmodule Examples.ImageLab.View do
   defp palette_empty_text(_status), do: "Load an image to generate a palette."
   defp status_color(:error), do: {:rgb, 0xFCA5A5}
   defp status_color(status) when status in [:copied, :exported], do: {:rgb, 0x86EFAC}
-  defp status_color(_status), do: {:rgb, 0x94A3B8}
+  defp status_color(_status), do: {:rgb, 0x475569}
 
   defp status_text(%{error: error}) when is_binary(error), do: error
   defp status_text(%{status: :idle, stage: stage}), do: stage

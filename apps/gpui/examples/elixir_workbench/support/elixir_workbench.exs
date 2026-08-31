@@ -22,7 +22,7 @@ defmodule Examples.ElixirWorkbench.View do
     <div class="flex grow flex-col w-full bg-[#0A1220]">
       <div class="flex items-center justify-between px-3 py-2 bg-[#111C2E]">
         <div class="flex items-center gap-3">
-          <div class="flex items-center justify-center w-[28px] h-[28px] rounded-sm bg-[#F97316]"><text class="text-white font-semibold">E</text></div>
+          <div class="flex items-center justify-center w-[28px] h-[28px] rounded-sm bg-[#C2410C]"><text class="text-white font-semibold">E</text></div>
           <div class="flex min-w-0 flex-col"><text class="text-white font-semibold">Elixir Workbench</text><text class="truncate text-[#94A3B8]">{assigns.repository.name} · {assigns.repository.branch}</text></div>
         </div>
         <div class="flex items-center gap-3">
@@ -48,7 +48,7 @@ defmodule Examples.ElixirWorkbench.View do
           <div class="flex flex-col h-[650px]">{repository_tree(entries, selected_id, assigns.expanded)}</div>
           <div class="flex flex-col gap-2 p-3 bg-[#111C2E]">
             <div class="flex justify-between"><text class="text-white">Working tree</text><text class="text-[#F59E0B]">{assigns.repository.counts.changed} changed</text></div>
-            <text class="truncate text-[#64748B]">{assigns.repository.counts.total} tracked and untracked files</text>
+            <text class="truncate text-[#94A3B8]">{assigns.repository.counts.total} tracked and untracked files</text>
           </div>
         </div>
 
@@ -220,7 +220,7 @@ defmodule Examples.ElixirWorkbench.View do
 
   defp empty_console do
     ~GPUI"""
-    <div class="flex grow items-center justify-center"><text class="text-[#64748B]">Console cleared</text></div>
+    <div class="flex grow items-center justify-center"><text class="text-[#94A3B8]">Console cleared</text></div>
     """
   end
 
@@ -249,7 +249,7 @@ defmodule Examples.ElixirWorkbench.View do
     assigns = %{label: label, value: value}
 
     ~GPUI"""
-    <div class="flex min-w-0 flex-col gap-1"><text class="text-[#64748B]">{assigns.label}</text><text class="truncate text-white">{assigns.value}</text></div>
+    <div class="flex min-w-0 flex-col gap-1"><text class="text-[#94A3B8]">{assigns.label}</text><text class="truncate text-white">{assigns.value}</text></div>
     """
   end
 
