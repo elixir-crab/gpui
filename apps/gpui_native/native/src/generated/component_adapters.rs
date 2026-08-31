@@ -33,3 +33,35 @@ pub(crate) fn slider_to_owner(wire: SliderComponentNode) -> gpui_components::Sli
         release: wire.release,
     }
 }
+#[cfg(feature = "components")]
+#[allow(dead_code)]
+pub(crate) fn radio_group_to_owner(
+    wire: RadioGroupComponentNode,
+) -> gpui_components::RadioGroupNode {
+    gpui_components::RadioGroupNode {
+        style: style_to_core(wire.style),
+        id: wire.id,
+        label: wire.label,
+        value: wire.value,
+        orientation: wire.orientation,
+        size: wire.size,
+        disabled: wire.disabled,
+        change: wire.change,
+        options: radio_options_to_owner(wire.options),
+    }
+}
+#[cfg(feature = "components")]
+#[allow(dead_code)]
+pub(crate) fn tabs_to_owner(wire: TabsComponentNode) -> gpui_components::TabsNode {
+    gpui_components::TabsNode {
+        style: style_to_core(wire.style),
+        id: wire.id,
+        value: wire.value,
+        variant: wire.variant,
+        size: wire.size,
+        disabled: wire.disabled,
+        menu: wire.menu,
+        change: wire.change,
+        options: select_options_to_owner(wire.options),
+    }
+}

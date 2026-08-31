@@ -19,7 +19,9 @@ defmodule GPUI.Codegen.Native.ComponentAdapters do
       :reverse,
       :change,
       :release
-    ]
+    ],
+    radio_group: [:id, :label, :value, :orientation, :size, :disabled, :change],
+    tabs: [:id, :value, :variant, :size, :disabled, :menu, :change]
   ]
 
   @spec items() :: [AST.item()]
@@ -33,7 +35,8 @@ defmodule GPUI.Codegen.Native.ComponentAdapters do
 
     owner_fields =
       [style: A.call(:style_to_core, [A.field(A.var(:wire), :style)])] ++
-        Enum.map(fields, &{&1, A.field(A.var(:wire), &1)})
+        Enum.map(fields, &{&1, A.field(A.var(:wire), &1)}) ++
+        option_field(name)
 
     %AST.Function{
       name: String.to_atom("#{name}_to_owner"),
@@ -44,6 +47,14 @@ defmodule GPUI.Codegen.Native.ComponentAdapters do
       attrs: [A.attr(:cfg, feature: "components"), A.allow_attr(:dead_code)]
     }
   end
+
+  defp option_field(:radio_group),
+    do: [options: A.call(:radio_options_to_owner, [A.field(A.var(:wire), :options)])]
+
+  defp option_field(:tabs),
+    do: [options: A.call(:select_options_to_owner, [A.field(A.var(:wire), :options)])]
+
+  defp option_field(_name), do: []
 
   defp type_name(name, suffix),
     do: name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>(suffix) |> String.to_atom()

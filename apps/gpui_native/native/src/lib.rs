@@ -16,6 +16,10 @@ use zed_gpui as gpui;
 
 #[cfg(feature = "components")]
 mod component_host;
+#[cfg(feature = "components")]
+mod component_options;
+#[cfg(feature = "components")]
+use component_options::{radio_options_to_owner, select_options_to_owner};
 #[cfg(not(feature = "real-gpui"))]
 mod disabled;
 mod event;
