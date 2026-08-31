@@ -59,6 +59,14 @@ defmodule GPUI.UI do
     tree_item_options: :ui_tree_item,
     code_viewer_options: :ui_code_viewer,
     code_line_options: :ui_code_line,
+    sidebar_options: :ui_sidebar,
+    sidebar_header_options: :ui_sidebar_header,
+    sidebar_group_options: :ui_sidebar_group,
+    sidebar_menu_options: :ui_sidebar_menu,
+    sidebar_item_options: :ui_sidebar_item,
+    status_bar_options: :ui_status_bar,
+    status_item_options: :ui_status_item,
+    separator_options: :ui_separator,
     tabs_options: :ui_tabs,
     slider_options: :ui_slider,
     split_options: :ui_split
@@ -733,6 +741,47 @@ defmodule GPUI.UI do
       {nil, assigns} -> assigns
       {value, assigns} -> Map.put_new(assigns, key, value)
     end
+  end
+
+  @doc "Builds a themed GPUI Component sidebar."
+  @spec sidebar(sidebar_options()) :: Element.t()
+  def sidebar(assigns) when is_map(assigns) do
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_sidebar)
+    component(:ui_sidebar, assigns)
+  end
+
+  @doc "Builds the header region of a sidebar."
+  @spec sidebar_header(sidebar_header_options()) :: Element.t()
+  def sidebar_header(assigns) when is_map(assigns), do: component(:ui_sidebar_header, assigns)
+
+  @doc "Builds a labelled sidebar item group."
+  @spec sidebar_group(sidebar_group_options()) :: Element.t()
+  def sidebar_group(assigns) when is_map(assigns), do: component(:ui_sidebar_group, assigns)
+
+  @doc "Builds a sidebar menu containing sidebar items."
+  @spec sidebar_menu(sidebar_menu_options()) :: Element.t()
+  def sidebar_menu(assigns) when is_map(assigns), do: component(:ui_sidebar_menu, assigns)
+
+  @doc "Builds a left-aligned sidebar navigation item."
+  @spec sidebar_item(sidebar_item_options()) :: Element.t()
+  def sidebar_item(assigns) when is_map(assigns), do: component(:ui_sidebar_item, assigns)
+
+  @doc "Builds a themed bottom status bar."
+  @spec status_bar(status_bar_options()) :: Element.t()
+  def status_bar(assigns) when is_map(assigns), do: component(:ui_status_bar, assigns)
+
+  @doc "Places children in a named status-bar region."
+  @spec status_item(status_item_options()) :: Element.t()
+  def status_item(assigns) when is_map(assigns) do
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_status_item)
+    component(:ui_status_item, assigns)
+  end
+
+  @doc "Builds a horizontal or vertical themed separator."
+  @spec separator(separator_options()) :: Element.t()
+  def separator(assigns) when is_map(assigns) do
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_separator)
+    component(:ui_separator, assigns)
   end
 
   @doc """

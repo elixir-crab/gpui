@@ -22,7 +22,7 @@ defmodule GPUI.VisualScenariosTest do
            ]
 
     runtime = start_runtime!(scenario.app(), args: scenario.args(:dark))
-    assert %{story: "welcome", overlay: nil} = assigns(runtime)
+    assert %{story: "welcome", story_states: %{"welcome" => %{}}} = assigns(runtime)
   end
 
   test "getting-started scenarios expose deterministic polished states" do

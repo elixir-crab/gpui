@@ -22,6 +22,8 @@ pub(crate) mod radio;
 #[cfg(feature = "components")]
 pub(crate) mod rich_text;
 #[cfg(feature = "components")]
+pub(crate) mod shell;
+#[cfg(feature = "components")]
 pub(crate) mod slider;
 #[cfg(feature = "components")]
 pub(crate) mod split;

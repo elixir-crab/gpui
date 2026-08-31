@@ -13,12 +13,14 @@ defmodule GPUI.ComponentGalleryExampleTest do
     assert %{type: :ui_progress} = runtime |> tree() |> find!(id: "gallery-progress")
 
     click(runtime, "story-input")
-    change(runtime, "name_changed", "Grace Hopper")
-    assert %{story: "input", name: "Grace Hopper", last_event: "name_changed"} = assigns(runtime)
+    change(runtime, "story:input:changed", "Grace Hopper")
+
+    assert %{story: "input", story_states: %{"input" => %{name: "Grace Hopper"}}} =
+             assigns(runtime)
 
     click(runtime, "story-select")
-    select(runtime, "language_changed", "rust")
-    assert %{story: "select", language: "rust"} = assigns(runtime)
+    select(runtime, "story:select:language", "rust")
+    assert %{story: "select", story_states: %{"select" => %{language: "rust"}}} = assigns(runtime)
 
     change(runtime, "search_changed", "diff")
     assert %{story: "code_viewer", query: "diff"} = assigns(runtime)
@@ -28,9 +30,9 @@ defmodule GPUI.ComponentGalleryExampleTest do
   test "shows overlay stories independently" do
     runtime = start_runtime!(Examples.ComponentGallery.App, args: %{story: "dialog"})
 
-    click(runtime, "show-dialog")
+    click(runtime, "story:dialog:open")
 
-    assert %{story: "dialog", overlay: "dialog", last_event: "opened dialog"} = assigns(runtime)
+    assert %{story: "dialog", story_states: %{"dialog" => %{open: true}}} = assigns(runtime)
 
     assert %{type: :ui_dialog, attrs: %{open: true}} =
              runtime |> tree() |> find!(id: "gallery-dialog")
@@ -39,22 +41,24 @@ defmodule GPUI.ComponentGalleryExampleTest do
   test "keeps navigation and collection state in the view process" do
     runtime = start_runtime!(Examples.ComponentGallery.App, args: %{story: "tabs"})
 
-    select(runtime, "tabs_changed", "settings")
+    select(runtime, "story:tabs:changed", "settings")
     click(runtime, "story-accordion")
-    change(runtime, "accordion_changed", ["account", "security"])
+    change(runtime, "story:accordion:changed", ["account", "security"])
     click(runtime, "story-virtual_list")
-    change(runtime, "list_selected", "item-12")
+    change(runtime, "story:virtual_list:selected", "item-12")
     click(runtime, "story-data_table")
-    change(runtime, "table_selected", "events")
+    change(runtime, "story:data_table:selected", "events")
     click(runtime, "story-tree")
-    change(runtime, "tree_selected", "runtime")
+    change(runtime, "story:tree:selected", "runtime")
 
     assert %{
-             tab: "settings",
-             expanded: ["account", "security"],
-             list_selected: "item-12",
-             table_selected: "events",
-             tree_selected: "runtime"
+             story_states: %{
+               "tabs" => %{value: "settings"},
+               "accordion" => %{expanded: ["account", "security"]},
+               "virtual_list" => %{selected: "item-12"},
+               "data_table" => %{selected: "events"},
+               "tree" => %{selected: "runtime"}
+             }
            } = assigns(runtime)
   end
 end

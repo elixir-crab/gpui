@@ -47,6 +47,14 @@ pub enum GeneratedComponentKind {
     TreeItemComponent,
     CodeViewerComponent,
     CodeLineComponent,
+    SidebarComponent,
+    SidebarHeaderComponent,
+    SidebarGroupComponent,
+    SidebarMenuComponent,
+    SidebarItemComponent,
+    StatusBarComponent,
+    StatusItemComponent,
+    SeparatorComponent,
     TabsComponent,
     SliderComponent,
     Unknown,
@@ -3530,6 +3538,210 @@ pub(crate) fn decode_generated_code_line_component<'a>(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct SidebarComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) side: Option<String>,
+    pub(crate) collapsed: bool,
+    pub(crate) collapsible: Option<String>,
+    pub(crate) children: Vec<ElementNode>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_sidebar_component<'a>(
+    term: Term<'a>,
+) -> NifResult<SidebarComponentNode> {
+    Ok(SidebarComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        side: match component_enum_attr(term, atoms::side(), &vec!["left", "right"])? {
+            Some(value) => Some(value),
+            None => Some("left".to_string()),
+        },
+        collapsed: component_bool_attr(term, atoms::collapsed())?.unwrap_or(false),
+        collapsible: match component_enum_attr(
+            term,
+            atoms::collapsible(),
+            &vec!["none", "icon", "offcanvas"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("none".to_string()),
+        },
+        children: decode_children(term)?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct SidebarHeaderComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) children: Vec<ElementNode>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_sidebar_header_component<'a>(
+    term: Term<'a>,
+) -> NifResult<SidebarHeaderComponentNode> {
+    Ok(SidebarHeaderComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        children: decode_children(term)?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct SidebarGroupComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) label: String,
+    pub(crate) children: Vec<ElementNode>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_sidebar_group_component<'a>(
+    term: Term<'a>,
+) -> NifResult<SidebarGroupComponentNode> {
+    Ok(SidebarGroupComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        label: component_required_string_attr(term, atoms::label())?,
+        children: decode_children(term)?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct SidebarMenuComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) children: Vec<ElementNode>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_sidebar_menu_component<'a>(
+    term: Term<'a>,
+) -> NifResult<SidebarMenuComponentNode> {
+    Ok(SidebarMenuComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        children: decode_children(term)?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct SidebarItemComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) label: String,
+    pub(crate) active: bool,
+    pub(crate) disabled: bool,
+    pub(crate) click: Option<String>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_sidebar_item_component<'a>(
+    term: Term<'a>,
+) -> NifResult<SidebarItemComponentNode> {
+    Ok(SidebarItemComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        label: component_required_string_attr(term, atoms::label())?,
+        active: component_bool_attr(term, atoms::active())?.unwrap_or(false),
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        click: component_string_attr(term, atoms::phx_click())?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct StatusBarComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) children: Vec<ElementNode>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_status_bar_component<'a>(
+    term: Term<'a>,
+) -> NifResult<StatusBarComponentNode> {
+    Ok(StatusBarComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        children: decode_children(term)?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct StatusItemComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) side: Option<String>,
+    pub(crate) children: Vec<ElementNode>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_status_item_component<'a>(
+    term: Term<'a>,
+) -> NifResult<StatusItemComponentNode> {
+    Ok(StatusItemComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        side: match component_enum_attr(
+            term,
+            atoms::side(),
+            &vec!["left", "center", "right"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("center".to_string()),
+        },
+        children: decode_children(term)?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct SeparatorComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) orientation: Option<String>,
+    pub(crate) dashed: bool,
+    pub(crate) label: Option<String>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_separator_component<'a>(
+    term: Term<'a>,
+) -> NifResult<SeparatorComponentNode> {
+    Ok(SeparatorComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        orientation: match component_enum_attr(
+            term,
+            atoms::orientation(),
+            &vec!["horizontal", "vertical"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("horizontal".to_string()),
+        },
+        dashed: component_bool_attr(term, atoms::dashed())?.unwrap_or(false),
+        label: component_string_attr(term, atoms::label())?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct TabsComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -3663,6 +3875,14 @@ pub(crate) enum ElementNode {
     TreeItemComponent(TreeItemComponentNode),
     CodeViewerComponent(CodeViewerComponentNode),
     CodeLineComponent(CodeLineComponentNode),
+    SidebarComponent(SidebarComponentNode),
+    SidebarHeaderComponent(SidebarHeaderComponentNode),
+    SidebarGroupComponent(SidebarGroupComponentNode),
+    SidebarMenuComponent(SidebarMenuComponentNode),
+    SidebarItemComponent(SidebarItemComponentNode),
+    StatusBarComponent(StatusBarComponentNode),
+    StatusItemComponent(StatusItemComponentNode),
+    SeparatorComponent(SeparatorComponentNode),
     TabsComponent(TabsComponentNode),
     SliderComponent(SliderComponentNode),
     Image(ImageNode),
@@ -3720,6 +3940,14 @@ pub enum GeneratedElementTag {
     UiTreeItem,
     UiCodeViewer,
     UiCodeLine,
+    UiSidebar,
+    UiSidebarHeader,
+    UiSidebarGroup,
+    UiSidebarMenu,
+    UiSidebarItem,
+    UiStatusBar,
+    UiStatusItem,
+    UiSeparator,
     UiTabs,
     UiSlider,
     Unknown,
@@ -3776,6 +4004,14 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_tree_item" => GeneratedElementTag::UiTreeItem,
         "ui_code_viewer" => GeneratedElementTag::UiCodeViewer,
         "ui_code_line" => GeneratedElementTag::UiCodeLine,
+        "ui_sidebar" => GeneratedElementTag::UiSidebar,
+        "ui_sidebar_header" => GeneratedElementTag::UiSidebarHeader,
+        "ui_sidebar_group" => GeneratedElementTag::UiSidebarGroup,
+        "ui_sidebar_menu" => GeneratedElementTag::UiSidebarMenu,
+        "ui_sidebar_item" => GeneratedElementTag::UiSidebarItem,
+        "ui_status_bar" => GeneratedElementTag::UiStatusBar,
+        "ui_status_item" => GeneratedElementTag::UiStatusItem,
+        "ui_separator" => GeneratedElementTag::UiSeparator,
         "ui_tabs" => GeneratedElementTag::UiTabs,
         "ui_slider" => GeneratedElementTag::UiSlider,
         _ => GeneratedElementTag::Unknown,
@@ -3861,6 +4097,22 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::UiTreeItem => GeneratedComponentKind::TreeItemComponent,
         GeneratedElementTag::UiCodeViewer => GeneratedComponentKind::CodeViewerComponent,
         GeneratedElementTag::UiCodeLine => GeneratedComponentKind::CodeLineComponent,
+        GeneratedElementTag::UiSidebar => GeneratedComponentKind::SidebarComponent,
+        GeneratedElementTag::UiSidebarHeader => {
+            GeneratedComponentKind::SidebarHeaderComponent
+        }
+        GeneratedElementTag::UiSidebarGroup => {
+            GeneratedComponentKind::SidebarGroupComponent
+        }
+        GeneratedElementTag::UiSidebarMenu => {
+            GeneratedComponentKind::SidebarMenuComponent
+        }
+        GeneratedElementTag::UiSidebarItem => {
+            GeneratedComponentKind::SidebarItemComponent
+        }
+        GeneratedElementTag::UiStatusBar => GeneratedComponentKind::StatusBarComponent,
+        GeneratedElementTag::UiStatusItem => GeneratedComponentKind::StatusItemComponent,
+        GeneratedElementTag::UiSeparator => GeneratedComponentKind::SeparatorComponent,
         GeneratedElementTag::UiTabs => GeneratedComponentKind::TabsComponent,
         GeneratedElementTag::UiSlider => GeneratedComponentKind::SliderComponent,
         GeneratedElementTag::Unknown => GeneratedComponentKind::Unknown,
@@ -4032,6 +4284,38 @@ pub(crate) fn decode_generated_element_node<'a>(
             decode_generated_code_line_component(term)
                 .map(|node| ElementNode::CodeLineComponent(node))
         }
+        GeneratedComponentKind::SidebarComponent => {
+            decode_generated_sidebar_component(term)
+                .map(|node| ElementNode::SidebarComponent(node))
+        }
+        GeneratedComponentKind::SidebarHeaderComponent => {
+            decode_generated_sidebar_header_component(term)
+                .map(|node| ElementNode::SidebarHeaderComponent(node))
+        }
+        GeneratedComponentKind::SidebarGroupComponent => {
+            decode_generated_sidebar_group_component(term)
+                .map(|node| ElementNode::SidebarGroupComponent(node))
+        }
+        GeneratedComponentKind::SidebarMenuComponent => {
+            decode_generated_sidebar_menu_component(term)
+                .map(|node| ElementNode::SidebarMenuComponent(node))
+        }
+        GeneratedComponentKind::SidebarItemComponent => {
+            decode_generated_sidebar_item_component(term)
+                .map(|node| ElementNode::SidebarItemComponent(node))
+        }
+        GeneratedComponentKind::StatusBarComponent => {
+            decode_generated_status_bar_component(term)
+                .map(|node| ElementNode::StatusBarComponent(node))
+        }
+        GeneratedComponentKind::StatusItemComponent => {
+            decode_generated_status_item_component(term)
+                .map(|node| ElementNode::StatusItemComponent(node))
+        }
+        GeneratedComponentKind::SeparatorComponent => {
+            decode_generated_separator_component(term)
+                .map(|node| ElementNode::SeparatorComponent(node))
+        }
         GeneratedComponentKind::TabsComponent => {
             decode_generated_tabs_component(term)
                 .map(|node| ElementNode::TabsComponent(node))
@@ -4163,6 +4447,30 @@ pub(crate) fn render_generated_component_node(
         }
         ElementNode::CodeLineComponent(node) => {
             element::component::code_viewer::render_line(node, context)
+        }
+        ElementNode::SidebarComponent(node) => {
+            element::component::shell::render_sidebar_component(node, context)
+        }
+        ElementNode::SidebarHeaderComponent(node) => {
+            element::component::shell::render_sidebar_header_component(node, context)
+        }
+        ElementNode::SidebarGroupComponent(node) => {
+            element::component::shell::render_sidebar_group_component(node, context)
+        }
+        ElementNode::SidebarMenuComponent(node) => {
+            element::component::shell::render_sidebar_menu_component(node, context)
+        }
+        ElementNode::SidebarItemComponent(node) => {
+            element::component::shell::render_sidebar_item_component(node, context)
+        }
+        ElementNode::StatusBarComponent(node) => {
+            element::component::shell::render_status_bar_component(node, context)
+        }
+        ElementNode::StatusItemComponent(node) => {
+            element::component::shell::render_status_item_component(node, context)
+        }
+        ElementNode::SeparatorComponent(node) => {
+            element::component::shell::render_separator_component(node, context)
         }
         ElementNode::TabsComponent(node) => {
             element::component::tabs::render(node, context)

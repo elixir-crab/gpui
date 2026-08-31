@@ -10,5 +10,12 @@ runtime = Examples.ComponentGallery.Runtime
     args: %{story: story}
   )
 
+files =
+  [
+    Path.join(__DIR__, "support/component_gallery.exs")
+    | Path.wildcard(Path.join(__DIR__, "support/component_gallery/**/*.exs"))
+  ]
+  |> Enum.uniq()
+
 IO.puts("GPUI Component Gallery is running. Press Ctrl+C twice to exit.")
-GPUI.Dev.wait(runtime, files: [Path.join(__DIR__, "support/component_gallery.exs")])
+GPUI.Dev.wait(runtime, files: files)

@@ -18,6 +18,9 @@ defmodule GPUI.Components.FullSchemaTest do
     assert Registry.provider!(registry, :ui_button) == GPUI.Components.Schema.Declarations
     assert Registry.provider!(registry, :ui_paint) == GPUI.Schema.Surfaces
     assert Registry.component!(registry, :ui_input).required_events == [:"phx-change"]
+    assert Registry.component!(registry, :ui_sidebar_item).kind == :sidebar_item_component
+    assert Registry.component!(registry, :ui_status_bar).children
+    assert Registry.component!(registry, :ui_separator).children == false
     assert Registry.component!(registry, :text_surface).required_events == []
   end
 

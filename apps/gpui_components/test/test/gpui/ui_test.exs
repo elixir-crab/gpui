@@ -502,6 +502,41 @@ defmodule GPUI.UITest do
     end
   end
 
+  test "builds themed shell components with bounded contracts" do
+    item = UI.sidebar_item(%{id: "button", label: "Button", active: true, "phx-click": "show"})
+    menu = UI.sidebar_menu(%{id: "components-menu", children: [item]})
+    group = UI.sidebar_group(%{id: "components", label: "Components", children: [menu]})
+
+    assert %Element{type: :ui_sidebar, attrs: sidebar_attrs, children: [^group]} =
+             UI.sidebar(%{id: "navigation", collapsible: "none", children: [group]})
+
+    assert sidebar_attrs[:side] == "left"
+    assert sidebar_attrs[:collapsed] == false
+    assert sidebar_attrs[:collapsible] == "none"
+
+    left = UI.status_item(%{id: "left", side: "left", children: ["Ready"]})
+    right = UI.status_item(%{id: "right", side: "right", children: ["Elixir"]})
+
+    assert %Element{type: :ui_status_bar, children: [^left, ^right]} =
+             UI.status_bar(%{id: "status", children: [left, right]})
+
+    assert %Element{type: :ui_separator, attrs: separator_attrs} =
+             UI.separator(%{id: "divider", orientation: "vertical"})
+
+    assert separator_attrs[:orientation] == "vertical"
+    assert separator_attrs[:dashed] == false
+  end
+
+  test "rejects invalid shell component values" do
+    assert_raise ArgumentError, fn ->
+      UI.sidebar(%{id: "navigation", collapsible: "sometimes", children: []})
+    end
+
+    assert_raise ArgumentError, fn ->
+      UI.status_item(%{id: "status", side: "edge", children: []})
+    end
+  end
+
   test "builds a neutral external-path drop target" do
     child = %Element{type: :text, children: ["Drop files"]}
 
