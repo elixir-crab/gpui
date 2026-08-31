@@ -18,7 +18,7 @@ deterministic test display, or a native display on another machine.
 GPUI is private and unreleased. Current platform evidence targets Linux x86-64
 under X11; Apple silicon macOS and x86-64 Windows are source-build development
 targets. Internal APIs may change directly while the architecture is being
-built. See [Platform support and development status](guides/internals/platform-support.md).
+built. See [Platform support and development status](apps/gpui/guides/internals/platform-support.md).
 
 ## Write native UI like Elixir
 
@@ -63,12 +63,12 @@ second application state system.
 Run the progressive examples from the repository:
 
 ```bash
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/01_hello_window.exs
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/02_focus_timer.exs
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/getting_started/03_settings_form.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/01_hello_window.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/02_focus_timer.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/getting_started/03_settings_form.exs
 ```
 
-See [Your first application](guides/getting-started/first-application.md) for supervision,
+See [Your first application](apps/gpui/guides/getting-started/first-application.md) for supervision,
 controlled components, event handling, and native prerequisites.
 
 ## Why GPUI
@@ -103,9 +103,9 @@ deterministic without Rust or a display server. The remote protocol can keep
 the authoritative session on one machine while another presents its native
 windows. Dynamic multi-window topology remains snapshot-driven in every mode.
 
-See [Sessions, snapshots, and displays](guides/concepts/sessions-snapshots-and-displays.md),
-[Remote displays](guides/remote/remote-displays.md), and
-[Testing GPUI applications](guides/testing/overview.md).
+See [Sessions, snapshots, and displays](apps/gpui/guides/concepts/sessions-snapshots-and-displays.md),
+[Remote displays](apps/gpui/guides/remote/remote-displays.md), and
+[Testing GPUI applications](apps/gpui/guides/testing/overview.md).
 
 ## Highlights
 
@@ -125,23 +125,23 @@ See [Sessions, snapshots, and displays](guides/concepts/sessions-snapshots-and-d
   schema. Handwritten Rust is reserved for platform integration,
   reconciliation, and latency-sensitive native mechanics.
 
-Read more in [Editable text internals](guides/internals/editable-text-internals.md),
-[Accessibility internals](guides/internals/accessibility.md),
-and [UI components](guides/ui/components.md).
+Read more in [Editable text internals](apps/gpui/guides/internals/editable-text-internals.md),
+[Accessibility internals](apps/gpui/guides/internals/accessibility.md),
+and [UI components](apps/gpui/guides/ui/components.md).
 
 ## Examples
 
 | Example | What it demonstrates |
 | --- | --- |
-| [Rich transcript](examples/features/rich_transcript.exs) | Variable-height virtualization, selectable rich text, links, and a native composer |
-| [Elixir Workbench](examples/elixir_workbench/README.md) | Trees, code and diff views, split panes, overlays, clipboard, and logs |
-| [BEAM Observatory](examples/beam_observatory/README.md) | Supervised runtime sampling driving controlled native views |
-| [Afterglow](examples/music_library/README.md) | A polished consumer UI with native controls and responsive layout |
-| [Image Palette](examples/image_palette/README.md) | Display-side file reads, image decoding, and bounded raster resources |
-| [Component Gallery](examples/component_gallery/README.md) | Canonical component states, combinations, and accessibility behavior |
+| [Rich transcript](apps/gpui/examples/features/rich_transcript.exs) | Variable-height virtualization, selectable rich text, links, and a native composer |
+| [Elixir Workbench](apps/gpui/examples/elixir_workbench/README.md) | Trees, code and diff views, split panes, overlays, clipboard, and logs |
+| [BEAM Observatory](apps/gpui/examples/beam_observatory/README.md) | Supervised runtime sampling driving controlled native views |
+| [Afterglow](apps/gpui/examples/music_library/README.md) | A polished consumer UI with native controls and responsive layout |
+| [Image Palette](apps/gpui/examples/image_palette/README.md) | Display-side file reads, image decoding, and bounded raster resources |
+| [Component Gallery](apps/gpui/examples/component_gallery/README.md) | Canonical component states, combinations, and accessibility behavior |
 
 Run the `gpui.dev` Mix task with the larger examples for state-preserving
-Elixir source reload. See the [examples index](examples/README.md) for the
+Elixir source reload. See the [examples index](apps/gpui/examples/README.md) for the
 complete catalog.
 
 ## Packages
@@ -196,28 +196,28 @@ artifact is loaded; the component-capable artifact statically links its
 renderer rather than attaching a second native library at runtime.
 Renderer-independent sessions, remote servers, and `GPUI.Test`
 require neither Rust nor a native library or display server. See
-[Native builds and deployment](guides/deployment/native-builds.md).
+[Native builds and deployment](apps/gpui/guides/deployment/native-builds.md).
 
 
 ## Documentation
 
-- [Documentation home](guides/documentation.md)
-- [Your first application](guides/getting-started/first-application.md)
-- [UI components](guides/ui/components.md)
-- [Templates and elements](guides/ui/templates-and-elements.md)
-- [Forms and controls](guides/ui/forms-and-controls.md)
-- [Collections and data views](guides/ui/collections-and-data-views.md)
-- [Text and editing](guides/ui/text-and-editing.md)
-- [Editable text surfaces](guides/ui/editable-text.md)
-- [Layout, styling, and presentation](guides/ui/layout-styling-and-presentation.md)
-- [Presentation primitives](guides/ui/presentation-primitives.md)
-- [Commands and keyboard shortcuts](guides/ui/commands-and-shortcuts.md)
-- [Overlays and menus](guides/ui/overlays-and-menus.md)
-- [Testing GPUI applications](guides/testing/overview.md)
-- [Application tests](guides/testing/application-tests.md)
-- [Deterministic native tests](guides/testing/native-tests.md)
-- [Desktop E2E and visual evidence](guides/testing/desktop-e2e.md)
-- [Platform support and development status](guides/internals/platform-support.md)
+- [Documentation home](apps/gpui/guides/documentation.md)
+- [Your first application](apps/gpui/guides/getting-started/first-application.md)
+- [UI components](apps/gpui/guides/ui/components.md)
+- [Templates and elements](apps/gpui/guides/ui/templates-and-elements.md)
+- [Forms and controls](apps/gpui/guides/ui/forms-and-controls.md)
+- [Collections and data views](apps/gpui/guides/ui/collections-and-data-views.md)
+- [Text and editing](apps/gpui/guides/ui/text-and-editing.md)
+- [Editable text surfaces](apps/gpui/guides/ui/editable-text.md)
+- [Layout, styling, and presentation](apps/gpui/guides/ui/layout-styling-and-presentation.md)
+- [Presentation primitives](apps/gpui/guides/ui/presentation-primitives.md)
+- [Commands and keyboard shortcuts](apps/gpui/guides/ui/commands-and-shortcuts.md)
+- [Overlays and menus](apps/gpui/guides/ui/overlays-and-menus.md)
+- [Testing GPUI applications](apps/gpui/guides/testing/overview.md)
+- [Application tests](apps/gpui/guides/testing/application-tests.md)
+- [Deterministic native tests](apps/gpui/guides/testing/native-tests.md)
+- [Desktop E2E and visual evidence](apps/gpui/guides/testing/desktop-e2e.md)
+- [Platform support and development status](apps/gpui/guides/internals/platform-support.md)
 - [API reference](https://hexdocs.pm/gpui/api-reference.html)
 
 ## Development
@@ -237,7 +237,7 @@ Clippy, native unit tests, Dialyzer, Credo, duplication, and architecture
 checks. Hosted push validation splits the renderer-independent and native
 checks; the full native interaction and release-package suite is an explicit
 `Release candidate` workflow rather than a scheduled or per-push job. See
-[Testing GPUI applications](guides/testing/overview.md) for native
+[Testing GPUI applications](apps/gpui/guides/testing/overview.md) for native
 Xvfb/Lavapipe interaction coverage.
 
 ## License
