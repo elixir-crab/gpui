@@ -1,0 +1,38 @@
+defmodule GPUI.Native.PrecompiledConfigurationTest do
+  use ExUnit.Case, async: true
+
+  @loader "apps/gpui_native/lib/gpui/native/nif.ex"
+  @package "apps/gpui_native/mix.exs"
+  @workflow ".github/workflows/precompiled-nif.yml"
+
+  test "uses the RustlerPrecompiled module identity for checksums" do
+    loader = File.read!(@loader)
+    package = File.read!(@package)
+
+    assert loader =~ "checksum-Elixir.GPUI.Native.NIF.exs"
+    assert package =~ "checksum-Elixir.GPUI.Native.NIF.exs"
+    refute loader =~ "checksum-Elixir.GPUI.Native.exs"
+    refute package =~ "checksum-Elixir.GPUI.Native.exs"
+  end
+
+  test "selects coordinated release assets and both named variants" do
+    loader = File.read!(@loader)
+
+    assert loader =~ ~S[/releases/download/v#{version}]
+    assert loader =~ ~s(vanilla: fn -> host == :vanilla end)
+    assert loader =~ ~s("gpui-component": fn -> host == :gpui_component end)
+  end
+
+  test "build workflow provides one exact Cargo feature set per archive variant" do
+    workflow = File.read!(@workflow)
+
+    assert workflow =~ "variant: ${{ matrix.host }}"
+    assert workflow =~ "host: vanilla"
+    assert workflow =~ "cargo_features: vanilla-host"
+    assert workflow =~ "host: gpui-component"
+    assert workflow =~ "cargo_features: gpui-component-host"
+    assert workflow =~ "--no-default-features"
+    assert workflow =~ "checksum-Elixir.GPUI.Native.NIF.exs"
+    assert workflow =~ "rustler_precompiled.download GPUI.Native.NIF --all --print"
+  end
+end

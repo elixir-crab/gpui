@@ -15,7 +15,7 @@ defmodule GPUI.Native.NIF do
   if @compiled do
     version = Mix.Project.config()[:version]
     project_root = __DIR__ |> Path.dirname() |> Path.dirname() |> Path.dirname()
-    checksum = Path.join(project_root, "checksum-Elixir.GPUI.Native.exs")
+    checksum = Path.join(project_root, "checksum-Elixir.GPUI.Native.NIF.exs")
     system_architecture = :erlang.system_info(:system_architecture) |> List.to_string()
 
     precompiled_target? =
@@ -63,7 +63,7 @@ defmodule GPUI.Native.NIF do
       otp_app: :gpui_native,
       crate: "gpui_nif",
       path: "native",
-      base_url: "https://github.com/dannote/gpui/releases/download/gpui_native-v#{version}",
+      base_url: "https://github.com/dannote/gpui/releases/download/v#{version}",
       version: version,
       targets: ["x86_64-unknown-linux-gnu"],
       nif_versions: ["2.15"],

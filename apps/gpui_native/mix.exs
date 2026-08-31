@@ -49,8 +49,8 @@ defmodule GPUI.Native.MixProject do
     files = ~w(lib native mix.exs README.md CHANGELOG.md LICENSE)
 
     files =
-      if File.exists?("checksum-Elixir.GPUI.Native.exs"),
-        do: ["checksum-Elixir.GPUI.Native.exs" | files],
+      if File.exists?("checksum-Elixir.GPUI.Native.NIF.exs"),
+        do: ["checksum-Elixir.GPUI.Native.NIF.exs" | files],
         else: files
 
     [

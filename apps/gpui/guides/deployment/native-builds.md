@@ -113,7 +113,7 @@ that backend cannot open a platform window.
 
 ## Precompiled release flow
 
-The package tag `gpui_native-vVERSION` builds both host variants through
+The coordinated package tag `vVERSION` builds both host variants through
 `.github/workflows/precompiled-nif.yml`. Release archives include the host in
 the RustlerPrecompiled variant suffix: `--vanilla` or `--gpui-component`.
 Checksums cover compressed `.tar.gz` bytes.
