@@ -1,14 +1,14 @@
-GPUITest.Examples.load!(:beam_observatory)
+GPUITest.Examples.load!(:beam_control_room)
 
-defmodule GPUI.BeamObservatoryEtsSourceTest do
+defmodule GPUI.BeamControlRoomEtsSourceTest do
   use GPUI.Test, async: false
 
-  alias Examples.BeamObservatory.EtsApp, as: App
-  alias Examples.BeamObservatory.EtsModel, as: Model
-  alias Examples.BeamObservatory.EtsSource, as: Source
+  alias Examples.BeamControlRoom.EtsApp, as: App
+  alias Examples.BeamControlRoom.EtsModel, as: Model
+  alias Examples.BeamControlRoom.EtsSource, as: Source
 
-  @source Examples.BeamObservatory.TestEtsSource
-  @task_supervisor Examples.BeamObservatory.TestEtsTaskSupervisor
+  @source Examples.BeamControlRoom.TestEtsSource
+  @task_supervisor Examples.BeamControlRoom.TestEtsTaskSupervisor
 
   test "slices, filters, sorts, and preserves distant table selection" do
     tables =

@@ -1,11 +1,11 @@
 Code.require_file("process_source.exs", __DIR__)
 Code.require_file("ets_source.exs", __DIR__)
 
-defmodule Examples.BeamObservatory.Sampler do
+defmodule Examples.BeamControlRoom.Sampler do
   use GenServer
 
-  alias Examples.BeamObservatory.EtsModel, as: Model
-  alias Examples.BeamObservatory.ProcessSource, as: Collector
+  alias Examples.BeamControlRoom.EtsModel, as: Model
+  alias Examples.BeamControlRoom.ProcessSource, as: Collector
 
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts)
 
@@ -46,7 +46,7 @@ defmodule Examples.BeamObservatory.Sampler do
   end
 end
 
-defmodule Examples.BeamObservatory.View do
+defmodule Examples.BeamControlRoom.View do
   use GPUI.View
 
   alias GPUI.UI
@@ -64,7 +64,7 @@ defmodule Examples.BeamObservatory.View do
             <text class="text-white font-semibold">B</text>
           </div>
           <div class="flex flex-col gap-1">
-            <text class="text-white text-lg font-semibold">BEAM Observatory</text>
+            <text class="text-white text-lg font-semibold">BEAM Control Room</text>
             <text class="text-[#94A3B8]">Runtime health · sampled {assigns.sampled_at}</text>
           </div>
         </div>
@@ -327,21 +327,21 @@ defmodule Examples.BeamObservatory.View do
       |> String.reverse()
 end
 
-defmodule Examples.BeamObservatory.App do
+defmodule Examples.BeamControlRoom.App do
   use GPUI.Application
 
   @impl GPUI.Application
   def mount(args) do
     snapshot =
-      args |> Map.new() |> Map.get_lazy(:snapshot, &Examples.BeamObservatory.Sampler.snapshot/0)
+      args |> Map.new() |> Map.get_lazy(:snapshot, &Examples.BeamControlRoom.Sampler.snapshot/0)
 
     {:ok,
      [
-       window "BEAM Observatory" do
+       window "BEAM Control Room" do
          size(1440, 860)
 
          root(
-           Examples.BeamObservatory.View,
+           Examples.BeamControlRoom.View,
            Map.merge(snapshot, %{paused: false, query: "", selected_pid: nil})
          )
        end

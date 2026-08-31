@@ -137,7 +137,7 @@ and [UI components](guides/ui/components.md).
 | --- | --- |
 | [Rich transcript](examples/features/rich_transcript.exs) | Variable-height virtualization, selectable rich text, links, and a native composer |
 | [Elixir Workbench](examples/elixir_workbench/README.md) | Trees, code and diff views, split panes, overlays, clipboard, and logs |
-| [BEAM Observatory](examples/beam_observatory/README.md) | Supervised runtime sampling driving controlled native views |
+| [BEAM Control Room](examples/beam_control_room/README.md) | Supervised runtime sampling driving controlled native views |
 | [Afterglow](examples/music_library/README.md) | A polished consumer UI with native controls and responsive layout |
 | [Image Palette](examples/image_palette/README.md) | Display-side file reads, image decoding, and bounded raster resources |
 | [Component Gallery](examples/component_gallery/README.md) | Canonical component states, combinations, and accessibility behavior |

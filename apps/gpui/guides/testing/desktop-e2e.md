@@ -100,7 +100,7 @@ RUST_FONTCONFIG_DLOPEN=1 mix gpui.visual.capture \
   --output tmp/gpui-visual-dark
 
 RUST_FONTCONFIG_DLOPEN=1 mix gpui.visual.capture \
-  --scenario beam_observatory \
+  --scenario beam_control_room \
   --theme dark \
   --output tmp/beam-observatory-visual
 

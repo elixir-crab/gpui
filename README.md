@@ -137,7 +137,7 @@ and [UI components](apps/gpui/guides/ui/components.md).
 | --- | --- |
 | [Rich transcript](apps/gpui/examples/features/rich_transcript.exs) | Variable-height virtualization, selectable rich text, links, and a native composer |
 | [Elixir Workbench](apps/gpui/examples/elixir_workbench/README.md) | Trees, code and diff views, split panes, overlays, clipboard, and logs |
-| [BEAM Observatory](apps/gpui/examples/beam_observatory/README.md) | Supervised runtime sampling driving controlled native views |
+| [BEAM Control Room](apps/gpui/examples/beam_control_room/README.md) | Supervised runtime sampling driving controlled native views |
 | [Afterglow](apps/gpui/examples/music_library/README.md) | A polished consumer UI with native controls and responsive layout |
 | [Image Palette](apps/gpui/examples/image_palette/README.md) | Display-side file reads, image decoding, and bounded raster resources |
 | [Component Gallery](apps/gpui/examples/component_gallery/README.md) | Canonical component states, combinations, and accessibility behavior |

@@ -1,19 +1,19 @@
-GPUITest.Examples.load!(:beam_observatory)
+GPUITest.Examples.load!(:beam_control_room)
 
-defmodule GPUITest.Visual.BeamObservatory.Scenario do
+defmodule GPUITest.Visual.BeamControlRoom.Scenario do
   @behaviour GPUI.Dev.Visual.Scenario
 
   @impl GPUI.Dev.Visual.Scenario
-  def id, do: :beam_observatory
+  def id, do: :beam_control_room
 
   @impl GPUI.Dev.Visual.Scenario
-  def app, do: Examples.BeamObservatory.App
+  def app, do: Examples.BeamControlRoom.App
 
   @impl GPUI.Dev.Visual.Scenario
   def args(_theme), do: %{snapshot: snapshot()}
 
   @impl GPUI.Dev.Visual.Scenario
-  def title, do: "BEAM Observatory"
+  def title, do: "BEAM Control Room"
 
   @impl GPUI.Dev.Visual.Scenario
   def captures do

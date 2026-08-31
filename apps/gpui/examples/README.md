@@ -45,17 +45,17 @@ RUST_FONTCONFIG_DLOPEN=1 mix run examples/music_library/run.exs
 See [`music_library/README.md`](music_library/README.md) for the controlled
 playback state and deterministic catalog.
 
-## BEAM Observatory
+## BEAM Control Room
 
-BEAM Observatory consolidates process and ETS inspection into one runtime
-health application with summary metrics, a declarative memory map, pressure
-signals, hot-process drill-down, and ranked tables:
+BEAM Control Room is the OTP-specific operations example. A supervised sampler
+feeds a primary process table with process drill-down, VM memory, scheduler
+pressure, ports, and ETS ownership:
 
 ```bash
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/beam_observatory/run.exs
+RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/beam_control_room/run.exs
 ```
 
-See [`beam_observatory/README.md`](beam_observatory/README.md) for its sampling
+See [`beam_control_room/README.md`](beam_control_room/README.md) for its sampling
 and state model.
 
 ## Elixir Workbench

@@ -1,4 +1,4 @@
-defmodule Examples.BeamObservatory.ProcessView do
+defmodule Examples.BeamControlRoom.ProcessView do
   use GPUI.View
 
   alias GPUI.UI
@@ -329,13 +329,13 @@ defmodule Examples.BeamObservatory.ProcessView do
   end
 end
 
-defmodule Examples.BeamObservatory.ProcessApp do
+defmodule Examples.BeamControlRoom.ProcessApp do
   use GPUI.Application
 
   @impl GPUI.Application
   def mount(args) do
     args = Map.new(args)
-    processes = Map.get_lazy(args, :processes, &Examples.BeamObservatory.ProcessSource.collect/0)
+    processes = Map.get_lazy(args, :processes, &Examples.BeamControlRoom.ProcessSource.collect/0)
 
     {:ok,
      [
@@ -344,7 +344,7 @@ defmodule Examples.BeamObservatory.ProcessApp do
          shortcut("toggle_pause", "primary-p")
          shortcut("focus_process_filter", "primary-f")
 
-         root(Examples.BeamObservatory.ProcessView,
+         root(Examples.BeamControlRoom.ProcessView,
            processes: processes,
            selected_pid: nil,
            filter: "",
@@ -357,7 +357,7 @@ defmodule Examples.BeamObservatory.ProcessApp do
   end
 end
 
-defmodule Examples.BeamObservatory.ProcessSource do
+defmodule Examples.BeamControlRoom.ProcessSource do
   use GenServer
 
   @fields [

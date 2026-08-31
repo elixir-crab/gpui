@@ -1,15 +1,15 @@
-GPUITest.Examples.load!(:beam_observatory)
+GPUITest.Examples.load!(:beam_control_room)
 
-defmodule GPUI.BeamObservatoryExampleTest do
+defmodule GPUI.BeamControlRoomExampleTest do
   use GPUI.Test, async: true
 
   test "presents runtime health and drills into hot processes" do
     sample = sample()
-    runtime = start_runtime!(Examples.BeamObservatory.App, args: %{snapshot: sample})
+    runtime = start_runtime!(Examples.BeamControlRoom.App, args: %{snapshot: sample})
 
-    assert %{title: "BEAM Observatory", size: [1440, 860]} = window_snapshot(runtime)
+    assert %{title: "BEAM Control Room", size: [1320, 820]} = window_snapshot(runtime)
     assert %{run_queue: 2, schedulers: 8, paused: false} = assigns(runtime)
-    assert %{type: :ui_data_table} = runtime |> tree() |> find!(id: "observatory-processes")
+    assert %{type: :ui_data_table} = runtime |> tree() |> find!(id: "control-room-processes")
 
     change(runtime, "process_selected", "<0.50.0>")
     assert %{selected_pid: "<0.50.0>"} = assigns(runtime)
@@ -24,15 +24,15 @@ defmodule GPUI.BeamObservatoryExampleTest do
   end
 
   test "pauses sampling and reconciles terminated selections" do
-    runtime = start_runtime!(Examples.BeamObservatory.App, args: %{snapshot: sample()})
+    runtime = start_runtime!(Examples.BeamControlRoom.App, args: %{snapshot: sample()})
 
     change(runtime, "process_selected", "<0.50.0>")
     click(runtime, "toggle-pause")
-    send_view(runtime, {:observatory_snapshot, %{sample() | processes: []}})
+    send_view(runtime, {:control_room_snapshot, %{sample() | processes: []}})
     assert %{paused: true, selected_pid: "<0.50.0>"} = assigns(runtime)
 
     click(runtime, "toggle-pause")
-    send_view(runtime, {:observatory_snapshot, %{sample() | processes: []}})
+    send_view(runtime, {:control_room_snapshot, %{sample() | processes: []}})
     assert %{paused: false, selected_pid: nil, processes: []} = assigns(runtime)
   end
 

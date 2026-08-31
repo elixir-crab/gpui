@@ -4,7 +4,7 @@ defmodule GPUI.Dev.ExampleLoader do
   @project_root GPUI.Dev.Paths.app(:gpui)
 
   @sources %{
-    beam_observatory: "examples/beam_observatory/support/beam_observatory.exs",
+    beam_control_room: "examples/beam_control_room/support/beam_control_room.exs",
     component_gallery: "examples/component_gallery/support/component_gallery.exs",
     elixir_workbench: "examples/elixir_workbench/support/elixir_workbench.exs",
     events: "examples/getting_started/support/events.exs",

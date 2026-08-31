@@ -1,4 +1,4 @@
-defmodule Examples.BeamObservatory.EtsModel do
+defmodule Examples.BeamControlRoom.EtsModel do
   @moduledoc false
 
   @max_tables 10_000
@@ -151,12 +151,12 @@ defmodule Examples.BeamObservatory.EtsModel do
   defp selected_entry(entries, id), do: Enum.find(entries, &(&1.id == id))
 end
 
-defmodule Examples.BeamObservatory.EtsSource do
+defmodule Examples.BeamControlRoom.EtsSource do
   @moduledoc false
 
   use GenServer
 
-  alias Examples.BeamObservatory.EtsModel, as: Model
+  alias Examples.BeamControlRoom.EtsModel, as: Model
 
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
 
@@ -266,10 +266,10 @@ defmodule Examples.BeamObservatory.EtsSource do
   defp table_source(opts), do: Keyword.get(opts, :table_source, &Model.scan_tables/0)
 end
 
-defmodule Examples.BeamObservatory.EtsView do
+defmodule Examples.BeamControlRoom.EtsView do
   use GPUI.View
 
-  alias Examples.BeamObservatory.EtsModel, as: Model
+  alias Examples.BeamControlRoom.EtsModel, as: Model
   alias GPUI.UI
 
   @impl GPUI.View
@@ -356,7 +356,7 @@ defmodule Examples.BeamObservatory.EtsView do
 
   def handle_event("refresh_tables", _event, assigns) do
     if source = GenServer.whereis(assigns.source),
-      do: Examples.BeamObservatory.EtsSource.refresh(source)
+      do: Examples.BeamControlRoom.EtsSource.refresh(source)
 
     {:noreply, assigns}
   end
@@ -380,7 +380,7 @@ defmodule Examples.BeamObservatory.EtsView do
       |> Map.put(:status, :loading)
 
     if source = GenServer.whereis(assigns.source) do
-      Examples.BeamObservatory.EtsSource.request(source, request(assigns))
+      Examples.BeamControlRoom.EtsSource.request(source, request(assigns))
     end
 
     {:noreply, assigns}
@@ -512,13 +512,13 @@ defmodule Examples.BeamObservatory.EtsView do
   defp initial_range, do: %{first: 0, last: 48}
 end
 
-defmodule Examples.BeamObservatory.EtsApp do
+defmodule Examples.BeamControlRoom.EtsApp do
   use GPUI.Application
 
   @impl GPUI.Application
   def mount(args) do
     args = Map.new(args)
-    request = Examples.BeamObservatory.EtsModel.initial_request()
+    request = Examples.BeamControlRoom.EtsModel.initial_request()
 
     {:ok,
      [
@@ -526,9 +526,9 @@ defmodule Examples.BeamObservatory.EtsApp do
          size(1280, 760)
 
          root(
-           Examples.BeamObservatory.EtsView,
+           Examples.BeamControlRoom.EtsView,
            Map.merge(request, %{
-             source: Map.get(args, :source, Examples.BeamObservatory.EtsSource),
+             source: Map.get(args, :source, Examples.BeamControlRoom.EtsSource),
              tables: [],
              table_total: 0,
              table_offset: 0,
@@ -546,7 +546,7 @@ defmodule Examples.BeamObservatory.EtsApp do
   end
 end
 
-defmodule Examples.BeamObservatory.EtsSupervisor do
+defmodule Examples.BeamControlRoom.EtsSupervisor do
   @moduledoc false
 
   use Supervisor
@@ -555,18 +555,18 @@ defmodule Examples.BeamObservatory.EtsSupervisor do
 
   @impl Supervisor
   def init(opts) do
-    source = Keyword.get(opts, :source, Examples.BeamObservatory.EtsSource)
+    source = Keyword.get(opts, :source, Examples.BeamControlRoom.EtsSource)
     task_supervisor = Module.concat(source, TaskSupervisor)
 
     children = [
       {Task.Supervisor, name: task_supervisor},
-      {Examples.BeamObservatory.EtsSource,
+      {Examples.BeamControlRoom.EtsSource,
        runtime: Keyword.fetch!(opts, :runtime),
        name: source,
        task_supervisor: task_supervisor,
        interval: Keyword.get(opts, :interval, 2_000),
        table_source:
-         Keyword.get(opts, :table_source, &Examples.BeamObservatory.EtsModel.scan_tables/0)}
+         Keyword.get(opts, :table_source, &Examples.BeamControlRoom.EtsModel.scan_tables/0)}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

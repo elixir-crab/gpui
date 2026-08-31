@@ -1,10 +1,10 @@
-GPUITest.Examples.load!(:beam_observatory)
+GPUITest.Examples.load!(:beam_control_room)
 
-defmodule GPUI.BeamObservatoryProcessSourceTest do
+defmodule GPUI.BeamControlRoomProcessSourceTest do
   use GPUI.Test, async: true
 
-  alias Examples.BeamObservatory.ProcessApp, as: App
-  alias Examples.BeamObservatory.ProcessSource, as: Collector
+  alias Examples.BeamControlRoom.ProcessApp, as: App
+  alias Examples.BeamControlRoom.ProcessSource, as: Collector
 
   test "filters, sorts, and inspects real process-shaped data" do
     runtime = start_runtime!(App, args: %{processes: processes()})

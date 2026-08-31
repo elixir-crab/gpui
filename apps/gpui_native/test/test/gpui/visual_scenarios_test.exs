@@ -1,5 +1,5 @@
 for scenario <-
-      ~w(beam_observatory component_gallery controlled_form elixir_workbench focus_timer hello_window image_palette music_library) do
+      ~w(beam_control_room component_gallery controlled_form elixir_workbench focus_timer hello_window image_palette music_library) do
   GPUI.Dev.Visual.ScenarioLoader.load!(scenario)
 end
 
@@ -54,20 +54,20 @@ defmodule GPUI.VisualScenariosTest do
            ]
   end
 
-  test "consolidated Observatory and Workbench scenarios cover their product surfaces" do
-    observatory = GPUITest.Visual.BeamObservatory.Scenario
+  test "Control Room and Workbench scenarios cover their product surfaces" do
+    control_room = GPUITest.Visual.BeamControlRoom.Scenario
 
-    assert Enum.map(observatory.captures(), & &1.name) == [
+    assert Enum.map(control_room.captures(), & &1.name) == [
              "runtime-health",
              "selected-process",
              "filtered-processes"
            ]
 
-    observatory_runtime = start_runtime!(observatory.app(), args: observatory.args(:dark))
-    assert %{run_queue: 2, schedulers: 8, paused: false} = assigns(observatory_runtime)
+    control_room_runtime = start_runtime!(control_room.app(), args: control_room.args(:dark))
+    assert %{run_queue: 2, schedulers: 8, paused: false} = assigns(control_room_runtime)
 
     assert %{type: :ui_data_table} =
-             observatory_runtime |> tree() |> find!(id: "observatory-processes")
+             control_room_runtime |> tree() |> find!(id: "control-room-processes")
 
     workbench = GPUITest.Visual.ElixirWorkbench.Scenario
 
