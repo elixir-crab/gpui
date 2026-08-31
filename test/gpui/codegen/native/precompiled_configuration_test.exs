@@ -34,7 +34,21 @@ defmodule GPUI.Native.PrecompiledConfigurationTest do
     assert workflow =~ "host: gpui-component"
     assert workflow =~ "cargo_features: gpui-component-host"
     assert workflow =~ "--no-default-features"
+
+    assert workflow =~
+             ~S|libgpui_nif-v${VERSION}-nif-2.15-x86_64-unknown-linux-gnu--${HOST}.so.tar.gz|
+
+    assert workflow =~ "GLIBC_[0-9]+\\.[0-9]+"
     assert workflow =~ "checksum-Elixir.GPUI.Native.NIF.exs"
     assert workflow =~ "rustler_precompiled.download GPUI.Native.NIF --all --print"
+  end
+
+  test "defines clean no-Cargo validation for both published hosts" do
+    task = File.read!("dev/mix/tasks/gpui.test.precompiled.ex")
+
+    assert task =~ ~S|defp parse_host!("vanilla"), do: :vanilla|
+    assert task =~ ~S|defp parse_host!("gpui_component"), do: :gpui_component|
+    assert task =~ ~S|{"CARGO", Path.join(System.tmp_dir!(), "gpui-no-cargo")}|
+    assert task =~ "GPUI.Native.host_info()"
   end
 end

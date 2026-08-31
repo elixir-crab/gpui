@@ -22,6 +22,7 @@ defmodule GPUI.Umbrella.MixProject do
         "gpui.test.codegen": :test,
         "gpui.test.hosts": :test,
         "gpui.test.packages": :test,
+        "gpui.test.precompiled": :release,
         "gpui.release.check": :release,
         "gpui.test.e2e": :e2e,
         "gpui.test.mode_switch": :dev,

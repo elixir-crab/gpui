@@ -66,6 +66,30 @@ jobs:
             --package gpui_nif --no-default-features
             --features ${{ matrix.cargo_features }}
 
+      - name: Verify release archive names
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          HOST: ${{ matrix.host }}
+          FILE_NAME: ${{ steps.build.outputs.file-name }}
+        run: |
+          expected="libgpui_nif-v${VERSION}-nif-2.15-x86_64-unknown-linux-gnu--${HOST}.so.tar.gz"
+          test "$FILE_NAME" = "$expected"
+
+      - name: Verify GLIBC compatibility ceiling
+        shell: bash
+        env:
+          ARCHIVE: ${{ steps.build.outputs.file-path }}
+        run: |
+          extract="$(mktemp -d)"
+          tar -xzf "$ARCHIVE" -C "$extract"
+          newer="$(find "$extract" -type f -exec objdump -T {} \; | grep -oE 'GLIBC_[0-9]+\.[0-9]+' | sort -Vu | awk -F_ '$2 > 2.35' || true)"
+          if [[ -n "$newer" ]]; then
+            echo "Artifact requires unsupported GLIBC versions:" >&2
+            echo "$newer" >&2
+            exit 1
+          fi
+
       - name: Attest host archive
         if: ${{ !github.event.repository.private }}
         uses: actions/attest@v4
