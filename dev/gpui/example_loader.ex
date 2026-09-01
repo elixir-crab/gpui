@@ -12,7 +12,6 @@ defmodule GPUI.Dev.ExampleLoader do
     hello_window: "examples/getting_started/support/hello_window.exs",
     image_lab: "examples/image_lab/support/image_lab.exs",
     multiple_windows: "examples/getting_started/support/multiple_windows.exs",
-    music_library: "examples/music_library/support/music_library.exs",
     pipeline_monitor: "examples/pipeline_monitor/support/pipeline_monitor.exs",
     presentation_primitives: "examples/features/presentation_primitives.exs",
     resource_ref_image: "examples/features/support/resource_ref_image.exs",

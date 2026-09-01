@@ -5,7 +5,7 @@ defmodule GPUI.Examples.ContrastTest do
   @light_background 0xFFFFFF
 
   for scenario <-
-        ~w(beam_control_room component_gallery controlled_form elixir_workbench focus_timer hello_window image_lab music_library pipeline_monitor)a do
+        ~w(beam_control_room component_gallery controlled_form elixir_workbench focus_timer hello_window image_lab pipeline_monitor)a do
     GPUI.Dev.Visual.ScenarioLoader.load!(scenario)
   end
 

@@ -32,19 +32,6 @@ Pass a component ID after `--` to open it directly. See
 [`component_gallery/README.md`](component_gallery/README.md) for available
 stories and the live-reload workflow.
 
-## Music library
-
-Afterglow presents a polished desktop music collection with sidebar navigation,
-controlled search and sorting, a virtualized track list, track details, and a
-complete now-playing control bar:
-
-```bash
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/music_library/run.exs
-```
-
-See [`music_library/README.md`](music_library/README.md) for the controlled
-playback state and deterministic catalog.
-
 ## BEAM Control Room
 
 BEAM Control Room is the OTP-specific operations example. A supervised sampler

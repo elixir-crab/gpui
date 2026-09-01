@@ -1,5 +1,5 @@
 for scenario <-
-      ~w(beam_control_room component_gallery controlled_form elixir_workbench focus_timer hello_window image_lab music_library pipeline_monitor) do
+      ~w(beam_control_room component_gallery controlled_form elixir_workbench focus_timer hello_window image_lab pipeline_monitor) do
   GPUI.Dev.Visual.ScenarioLoader.load!(scenario)
 end
 

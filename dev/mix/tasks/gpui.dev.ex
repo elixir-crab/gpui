@@ -6,7 +6,7 @@ defmodule Mix.Tasks.Gpui.Dev do
   @moduledoc """
   Runs an example script with GPUI development source reloading enabled.
 
-      mix gpui.dev apps/gpui/examples/music_library/run.exs
+      mix gpui.dev apps/gpui/examples/beam_control_room/run.exs
       mix gpui.dev apps/gpui/examples/image_lab/run.exs -- path/to/image.png
 
   The script must call `GPUI.Dev.wait/2` with its runtime and source files.
@@ -27,7 +27,7 @@ defmodule Mix.Tasks.Gpui.Dev do
 
       [] ->
         Mix.raise(
-          "expected an example script, for example: mix gpui.dev apps/gpui/examples/music_library/run.exs"
+          "expected an example script, for example: mix gpui.dev apps/gpui/examples/beam_control_room/run.exs"
         )
     end
   end
