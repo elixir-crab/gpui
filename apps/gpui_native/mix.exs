@@ -60,7 +60,7 @@ defmodule GPUI.Native.MixProject do
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
       files: files,
-      exclude_patterns: [~r{^native/target(?:/|$)}]
+      exclude_patterns: [~r{^native/(?:target|gpui/target)(?:/|$)}]
     ]
   end
 
