@@ -38,6 +38,19 @@ defmodule GPUI.Native.PrecompiledConfigurationTest do
     assert workflow =~
              ~S|libgpui_nif-v${VERSION}-nif-2.15-x86_64-unknown-linux-gnu--${HOST}.so.tar.gz|
 
+    setup_index =
+      workflow
+      |> :binary.match("- name: Set up Elixir for compatibility check")
+      |> elem(0)
+
+    check_index =
+      workflow
+      |> :binary.match("- name: Verify GLIBC compatibility ceiling")
+      |> elem(0)
+
+    assert setup_index < check_index
+    assert workflow =~ ~s(deps-command: "true")
+    assert workflow =~ "working-directory: dev/release_tools"
     assert workflow =~ "mix gpui.release.glibc.check"
     assert workflow =~ "--max-version 2.35"
     assert workflow =~ "checksum-Elixir.GPUI.Native.NIF.exs"
