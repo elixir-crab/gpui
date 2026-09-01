@@ -1,0 +1,6 @@
+[build]
+rustc-wrapper = ".githooks/rustc-wrapper"
+incremental = false
+
+[env]
+ZCCACHE_PATH_REMAP = { value = "auto", force = false }

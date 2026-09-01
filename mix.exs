@@ -8,6 +8,7 @@ defmodule GPUI.Umbrella.MixProject do
       apps_path: "apps",
       version: @version,
       start_permanent: Mix.env() == :prod,
+      elixirc_options: [check_cwd: false],
       deps: deps(),
       aliases: aliases()
     ]

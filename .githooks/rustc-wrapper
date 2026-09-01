@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+compiler="${1:-}"
+
+# Cargo invokes wrappers as `wrapper clippy-driver rustc ...` for Clippy.
+# zccache's explicit compiler wrapper does not accept that nested driver form.
+if [[ "$(basename "$compiler")" == "clippy-driver" ]]; then
+  exec "$@"
+fi
+
+if command -v zccache >/dev/null 2>&1; then
+  exec zccache wrap "$@"
+fi
+
+# Cargo passes the real rustc executable as the first wrapper argument.
+exec "$@"

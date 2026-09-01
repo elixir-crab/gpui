@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(git rev-parse --show-toplevel)"
+common_dir="$(git rev-parse --git-common-dir)"
+if [[ "$common_dir" != /* ]]; then
+  common_dir="$root/$common_dir"
+fi
+main="$(cd "$common_dir/.." && pwd -P)"
+
+if [[ "$root" == "$main" ]]; then
+  exit 0
+fi
+
+clone_tree() {
+  local name="$1"
+  local source="$main/$name"
+  local destination="$root/$name"
+
+  if [[ ! -e "$source" || -e "$destination" ]]; then
+    return
+  fi
+
+  echo "Seeding $name from the canonical worktree"
+  mkdir -p "$(dirname "$destination")"
+
+  # APFS and compatible filesystems provide cheap copy-on-write clones.
+  if cp -cR "$source" "$destination" 2>/dev/null; then
+    return
+  fi
+
+  # GNU cp supports reflinks on Linux filesystems such as btrfs and XFS.
+  if cp --reflink=auto -a "$source" "$destination" 2>/dev/null; then
+    return
+  fi
+
+  cp -a "$source" "$destination"
+}
+
+clone_tree deps
+clone_tree _build

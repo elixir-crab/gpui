@@ -14,6 +14,7 @@ defmodule GPUI.MixProject do
       deps_path: Path.join(@umbrella_root, "deps"),
       lockfile: Path.join(@umbrella_root, "mix.lock"),
       elixir: "~> 1.20",
+      elixirc_options: [check_cwd: false],
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
