@@ -83,7 +83,12 @@ jobs:
         run: |
           extract="$(mktemp -d)"
           tar -xzf "$ARCHIVE" -C "$extract"
-          newer="$(find "$extract" -type f -exec objdump -T {} \; | grep -oE 'GLIBC_[0-9]+\.[0-9]+' | sort -Vu | awk -F_ '$2 > 2.35' || true)"
+          newer="$(
+            find "$extract" -type f -exec objdump -T {} \; |
+              grep -oE 'GLIBC_[0-9]+\.[0-9]+' |
+              sort -Vu |
+              awk -F'[_.]' '$2 > 2 || ($2 == 2 && $3 > 35)'
+          )"
           if [[ -n "$newer" ]]; then
             echo "Artifact requires unsupported GLIBC versions:" >&2
             echo "$newer" >&2
