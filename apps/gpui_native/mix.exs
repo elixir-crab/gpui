@@ -2,7 +2,7 @@ defmodule GPUI.Native.MixProject do
   use Mix.Project
 
   @version "0.2.0-rc.1"
-  @source_url "https://github.com/dannote/gpui"
+  @source_url "https://github.com/elixir-crab/gpui"
   @umbrella_root __DIR__ |> Path.dirname() |> Path.dirname()
 
   def project do
