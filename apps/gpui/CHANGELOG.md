@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.0-rc.1 - 2026-09-02
+
 ### Breaking changes
 
 - Moved conventional controls and native loading into the separately installed
@@ -11,6 +13,23 @@
   providers.
 - Raw `ui_*` tags remain internal template syntax and must be authored through
   their public component builders.
+
+### Added
+
+- Added first-class application identity and typed icon metadata with
+  deterministic process-wide conflict handling.
+- Added bounded runtime information, rendered-tree formatting, and shared
+  `GPUI.Tree` query functions for debugging and tests.
+- Added focused examples for declarative events, supervised updates, controlled
+  forms, multiple windows, BEAM inspection, image analysis, and supervised
+  pipelines.
+
+### Changed
+
+- Consolidated renderer-independent application, session, snapshot, text,
+  transfer, resource, accessibility, and style contracts in `gpui`.
+- Reworked examples around distinct Elixir and OTP behavior and enforced
+  readable explicit text contrast.
 
 ## 0.1.1
 

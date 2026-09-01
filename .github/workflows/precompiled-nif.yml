@@ -16,6 +16,9 @@ jobs:
     name: NIF 2.15 - x86_64 Linux (${{ matrix.host }})
     runs-on: ubuntu-22.04
     timeout-minutes: 60
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
     strategy:
       fail-fast: false
       matrix:
@@ -41,13 +44,18 @@ jobs:
           prefix-key: rustler-precompiled
           shared-key: x86_64-unknown-linux-gnu-2.15-${{ matrix.host }}
 
+      - name: Set up Elixir for release metadata
+        uses: elixir-vibe/actions/setup-elixir@v1
+        with:
+          otp-version: "29.0.2"
+          elixir-version: "1.20.2"
+          deps-command: "true"
+          restore-plt-cache: "false"
+
       - name: Read package version
         id: version
-        shell: bash
-        run: |
-          version="$(grep -m1 -E '^  @version "[^"]+"' apps/gpui_native/mix.exs | cut -d'"' -f2)"
-          test -n "$version"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+        working-directory: dev/release_tools
+        run: mix gpui.release.version.show --package gpui_native --github-output
 
       - name: Build host archive
         id: build
@@ -109,6 +117,10 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          prerelease: ${{ steps.version.outputs.prerelease }}
+          make_latest: false
+          name: v${{ steps.version.outputs.version }}
+          tag_name: ${{ github.ref_name }}
           files: ${{ steps.build.outputs.file-path }}
 
   checksum:
@@ -149,7 +161,20 @@ jobs:
           name: rustler-precompiled-checksum
           path: apps/gpui_native/checksum-Elixir.GPUI.Native.NIF.exs
 
-      - name: Publish checksum manifest
+      - name: Prepare canonical release notes
+        working-directory: dev/release_tools
+        run: >-
+          mix gpui.release.changelog.extract
+          --changelog ../../CHANGELOG.md
+          --version "${{ needs.build_release.outputs.version }}"
+          --output ../../release-notes.md
+
+      - name: Publish checksum and canonical release metadata
         uses: softprops/action-gh-release@v2
         with:
+          name: v${{ needs.build_release.outputs.version }}
+          tag_name: ${{ github.ref_name }}
+          prerelease: ${{ needs.build_release.outputs.prerelease }}
+          make_latest: false
+          body_path: release-notes.md
           files: apps/gpui_native/checksum-Elixir.GPUI.Native.NIF.exs

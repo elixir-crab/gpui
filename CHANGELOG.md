@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.0-rc.1 - 2026-09-02
+
 ### Breaking changes
 
 - Split GPUI into the coordinated `gpui`, `gpui_components`, and `gpui_native`
@@ -12,6 +14,36 @@
   `gpui_components` owns conventional control declarations.
 - Native consumers now select one complete immutable host, `:vanilla` or
   `:gpui_component`, through `gpui_native`.
+
+### Added
+
+- Added first-class application identity, typed icon metadata, and deterministic
+  process-wide identity conflict handling.
+- Added bounded runtime information, rendered-tree inspection, formatting, and
+  shared tree-query APIs for development and application testing.
+- Added focused examples for events, supervised updates, controlled forms,
+  multiple windows, BEAM process inspection, image analysis, component stories,
+  and supervised pipeline processing.
+- Added accessible sidebar, status-bar, separator, switch, slider, radio,
+  collection, text, overlay, and native-window behavior across the declarative
+  component catalog.
+
+### Changed
+
+- Native rendering is distributed across package-owned `gpui_core`,
+  `gpui_components`, and `gpui_nif` crates while retaining one statically
+  composed NIF and one GPUI type universe.
+- Reworked the example suite around distinct Elixir and OTP use cases, with
+  readable text contrast and bounded application-owned state.
+- Improved package source builds so unpacked Hex packages resolve both native
+  hosts from their coordinated package sources.
+
+### Compatibility
+
+- Added separate x86-64 Linux precompiled NIFs for the vanilla and
+  `gpui-component` hosts, targeting NIF ABI 2.15 and GLIBC 2.35 or older.
+- Supported targets may load verified precompiled hosts without Cargo or a Rust
+  toolchain; other targets retain source-build support.
 
 ## 0.1.1
 

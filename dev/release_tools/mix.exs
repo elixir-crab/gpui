@@ -11,7 +11,9 @@ defmodule GPUI.ReleaseTools.MixProject do
       elixir: "~> 1.20",
       elixirc_paths: [
         Path.expand("../gpui/release", __DIR__),
-        Path.expand("../mix/tasks/gpui/release/glibc", __DIR__)
+        Path.expand("../mix/tasks/gpui/release/changelog", __DIR__),
+        Path.expand("../mix/tasks/gpui/release/glibc", __DIR__),
+        Path.expand("../mix/tasks/gpui/release/version", __DIR__)
       ],
       deps: []
     ]

@@ -1,7 +1,7 @@
 defmodule GPUI.Umbrella.MixProject do
   use Mix.Project
 
-  @version "0.2.0-dev"
+  @version "0.2.0-rc.1"
 
   def project do
     [
