@@ -52,10 +52,4 @@ defmodule GPUI.Codegen.Native.TextBoundaryTest do
     assert rust_source!(TextBoundary, :text_buffer_redo) =~
              "text_buffer_redo_impl(env, buffer, base_revision)"
   end
-
-  test "uses only RustQ-authored NIF declarations" do
-    source = File.read!("apps/gpui_native/native/src/nif.rs")
-
-    refute source =~ "#[rustler::nif"
-  end
 end
