@@ -1,5 +1,5 @@
 for scenario <-
-      ~w(beam_control_room component_gallery controlled_form elixir_workbench focus_timer hello_window image_lab pipeline_monitor) do
+      ~w(beam_control_room component_gallery controlled_form focus_timer hello_window image_lab pipeline_monitor) do
   GPUI.Dev.Visual.ScenarioLoader.load!(scenario)
 end
 
@@ -54,7 +54,7 @@ defmodule GPUI.VisualScenariosTest do
            ]
   end
 
-  test "Control Room and Workbench scenarios cover their product surfaces" do
+  test "Control Room scenario covers its product surface" do
     control_room = GPUITest.Visual.BeamControlRoom.Scenario
 
     assert Enum.map(control_room.captures(), & &1.name) == [
@@ -68,21 +68,6 @@ defmodule GPUI.VisualScenariosTest do
 
     assert %{type: :ui_data_table} =
              control_room_runtime |> tree() |> find!(id: "control-room-processes")
-
-    workbench = GPUITest.Visual.ElixirWorkbench.Scenario
-
-    assert Enum.map(workbench.captures(), & &1.name) == [
-             "repository-and-console",
-             "selected-diff",
-             "command-palette"
-           ]
-
-    workbench_runtime = start_runtime!(workbench.app(), args: workbench.args(:dark))
-    assert %{selected_id: "file:README.md", command_open: false} = assigns(workbench_runtime)
-    assert %{type: :ui_tree} = workbench_runtime |> tree() |> find!(id: "workbench-tree")
-
-    assert %{type: :ui_code_viewer} =
-             workbench_runtime |> tree() |> find!(id: "workbench-code")
   end
 
   test "Image Lab scenario uses fixed raster data and controlled selection" do

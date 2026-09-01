@@ -6,7 +6,6 @@ defmodule GPUI.Dev.ExampleLoader do
   @sources %{
     beam_control_room: "examples/beam_control_room/support/beam_control_room.exs",
     component_gallery: "examples/component_gallery/support/component_gallery.exs",
-    elixir_workbench: "examples/elixir_workbench/support/elixir_workbench.exs",
     events: "examples/getting_started/support/events.exs",
     focus_timer: "examples/getting_started/support/focus_timer.exs",
     hello_window: "examples/getting_started/support/hello_window.exs",

@@ -45,20 +45,7 @@ RUST_FONTCONFIG_DLOPEN=1 mix run apps/gpui/examples/beam_control_room/run.exs
 See [`beam_control_room/README.md`](beam_control_room/README.md) for its sampling
 and state model.
 
-## Elixir Workbench
-
-Elixir Workbench combines repository navigation, source and diff presentation,
-runtime logs, diagnostics, clipboard actions, and a command dialog into one
-split-pane developer tool:
-
-```bash
-RUST_FONTCONFIG_DLOPEN=1 mix run examples/elixir_workbench/run.exs -- path/to/repository
-```
-
-See [`elixir_workbench/README.md`](elixir_workbench/README.md) for its composed
-feature set.
-
-## Image palette
+## Image Lab
 
 The image palette application decodes a local image in supervised background
 work, extracts deterministic dominant colors, installs a bounded raster

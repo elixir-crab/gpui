@@ -71,9 +71,9 @@ Display-side file pickers read bounded bytes on the client and send those bytes
 with an operation ID; they never claim that a client-local path is readable by
 the application server. Clipboard buttons likewise write to the display
 client's clipboard. Application-side filesystem work has the opposite
-semantics: paths identify files on the application server. Elixir Workbench
-makes that distinction explicit instead of presenting a server-local directory
-as a remote-client directory. Source-backed virtual-list range requests also
+semantics: paths identify files on the application server. Applications must
+label that distinction explicitly instead of presenting a server-local
+directory as a remote-client directory. Source-backed virtual-list range requests also
 originate on the display and cross the same event channel, allowing the server
 to return only an overscanned slice.
 
