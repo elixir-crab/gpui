@@ -1,12 +1,12 @@
-defmodule GPUI.Dev.GlibcTest do
+defmodule GPUI.Dev.Release.GlibcTest do
   use ExUnit.Case, async: true
 
   test "parses and compares multi-digit GLIBC versions as integer tuples" do
     output = "GLIBC_2.9 GLIBC_2.35 GLIBC_2.36 GLIBC_3.0 GLIBC_2.9"
 
-    assert GPUI.Dev.Glibc.required_versions(output) == [{2, 9}, {2, 35}, {2, 36}, {3, 0}]
-    assert GPUI.Dev.Glibc.parse_version!("2.35") == {2, 35}
-    assert_raise ArgumentError, fn -> GPUI.Dev.Glibc.parse_version!("2") end
+    assert GPUI.Dev.Release.Glibc.required_versions(output) == [{2, 9}, {2, 35}, {2, 36}, {3, 0}]
+    assert GPUI.Dev.Release.Glibc.parse_version!("2.35") == {2, 35}
+    assert_raise ArgumentError, fn -> GPUI.Dev.Release.Glibc.parse_version!("2") end
   end
 
   test "accepts an archive at the ceiling and rejects a newer requirement" do
@@ -20,12 +20,12 @@ defmodule GPUI.Dev.GlibcTest do
       echo '000 GLIBC_2.35'
       """)
 
-    assert :ok = GPUI.Dev.Glibc.check_archive!(archive, max: {2, 35}, objdump: script)
+    assert :ok = GPUI.Dev.Release.Glibc.check_archive!(archive, max: {2, 35}, objdump: script)
 
     File.write!(script, "#!/bin/sh\necho '000 GLIBC_2.36'\n")
 
     assert_raise Mix.Error, ~r/requires GLIBC_2.36, exceeding supported GLIBC_2.35/, fn ->
-      GPUI.Dev.Glibc.check_archive!(archive, max: "2.35", objdump: script)
+      GPUI.Dev.Release.Glibc.check_archive!(archive, max: "2.35", objdump: script)
     end
   end
 
@@ -34,7 +34,7 @@ defmodule GPUI.Dev.GlibcTest do
     on_exit(fn -> File.rm_rf!(Path.dirname(archive)) end)
 
     assert_raise Mix.Error, ~r/contains no dynamic library/, fn ->
-      GPUI.Dev.Glibc.check_archive!(archive, max: "2.35", objdump: "/usr/bin/true")
+      GPUI.Dev.Release.Glibc.check_archive!(archive, max: "2.35", objdump: "/usr/bin/true")
     end
   end
 

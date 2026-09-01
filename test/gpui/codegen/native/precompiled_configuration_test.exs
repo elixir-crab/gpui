@@ -45,7 +45,7 @@ defmodule GPUI.Native.PrecompiledConfigurationTest do
   end
 
   test "defines clean no-Cargo validation for both published hosts" do
-    task = File.read!("dev/mix/tasks/gpui.test.precompiled.ex")
+    task = File.read!("dev/mix/tasks/gpui/test/precompiled.ex")
 
     assert task =~ ~S|defp parse_host!("vanilla"), do: :vanilla|
     assert task =~ ~S|defp parse_host!("gpui_component"), do: :gpui_component|

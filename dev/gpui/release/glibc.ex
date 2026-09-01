@@ -1,4 +1,4 @@
-defmodule GPUI.Dev.Glibc do
+defmodule GPUI.Dev.Release.Glibc do
   @moduledoc false
 
   @type version :: {non_neg_integer(), non_neg_integer()}
