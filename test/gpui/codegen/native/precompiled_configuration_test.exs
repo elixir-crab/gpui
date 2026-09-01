@@ -38,7 +38,7 @@ defmodule GPUI.Native.PrecompiledConfigurationTest do
     assert workflow =~
              ~S|libgpui_nif-v${VERSION}-nif-2.15-x86_64-unknown-linux-gnu--${HOST}.so.tar.gz|
 
-    assert workflow =~ "mix gpui.release.check.glibc"
+    assert workflow =~ "mix gpui.release.glibc.check"
     assert workflow =~ "--max-version 2.35"
     assert workflow =~ "checksum-Elixir.GPUI.Native.NIF.exs"
     assert workflow =~ "rustler_precompiled.download GPUI.Native.NIF --all --print"

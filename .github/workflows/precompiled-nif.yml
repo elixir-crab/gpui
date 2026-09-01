@@ -76,19 +76,12 @@ jobs:
           expected="libgpui_nif-v${VERSION}-nif-2.15-x86_64-unknown-linux-gnu--${HOST}.so.tar.gz"
           test "$FILE_NAME" = "$expected"
 
-      - name: Set up Elixir for compatibility check
-        uses: elixir-vibe/actions/setup-elixir@v1
-        with:
-          otp-version: "29.0.2"
-          elixir-version: "1.20.2"
-          cache-prefix: precompiled-glibc-${{ matrix.host }}
-          restore-plt-cache: "false"
-
       - name: Verify GLIBC compatibility ceiling
+        working-directory: dev/release_tools
         env:
-          ARCHIVE: ${{ steps.build.outputs.file-path }}
+          ARCHIVE: ${{ github.workspace }}/${{ steps.build.outputs.file-path }}
         run: >-
-          mix gpui.release.check.glibc
+          mix gpui.release.glibc.check
           --archive "$ARCHIVE"
           --max-version 2.35
 

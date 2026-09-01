@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.Gpui.Release.Check.Glibc do
+defmodule Mix.Tasks.Gpui.Release.Glibc.Check do
   @moduledoc "Checks a RustlerPrecompiled archive against a maximum GLIBC version."
 
   use Mix.Task
