@@ -81,7 +81,7 @@ jobs:
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          deps-command: "true"
+          cache-prefix: precompiled-glibc-${{ matrix.host }}
           restore-plt-cache: "false"
 
       - name: Verify GLIBC compatibility ceiling
