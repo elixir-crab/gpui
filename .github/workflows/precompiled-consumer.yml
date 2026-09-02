@@ -26,4 +26,8 @@ jobs:
           elixir-version: "1.20.2"
           cache-prefix: precompiled-consumer-v1
           restore-plt-cache: "false"
+      - name: Install native runtime dependencies
+        run: >-
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends
+          libxkbcommon0 libxkbcommon-x11-0
       - run: mix gpui.test.precompiled --host ${{ matrix.host }}
