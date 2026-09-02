@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- Added Apple silicon macOS precompiled NIFs for the vanilla and
+  `gpui-component` hosts.
+
 ## 0.2.0-rc.1 - 2026-09-02
 
 ### Breaking changes

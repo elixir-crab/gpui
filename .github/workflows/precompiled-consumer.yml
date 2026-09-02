@@ -8,13 +8,25 @@ permissions:
 
 jobs:
   consumer:
-    name: No-Cargo consumer (${{ matrix.host }})
-    runs-on: ubuntu-22.04
-    timeout-minutes: 30
+    name: No-Cargo consumer (${{ matrix.target }}, ${{ matrix.host }})
     strategy:
       fail-fast: false
       matrix:
-        host: [vanilla, gpui_component]
+        include:
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            host: vanilla
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            host: gpui_component
+          - os: macos-14
+            target: aarch64-apple-darwin
+            host: vanilla
+          - os: macos-14
+            target: aarch64-apple-darwin
+            host: gpui_component
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     env:
       MIX_ENV: release
       GPUI_SKIP_NATIVE: "1"
@@ -24,9 +36,10 @@ jobs:
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          cache-prefix: precompiled-consumer-v1
+          cache-prefix: precompiled-consumer-v2-${{ matrix.target }}-${{ matrix.host }}
           restore-plt-cache: "false"
       - name: Install native runtime dependencies
+        if: runner.os == 'Linux'
         run: >-
           sudo apt-get update && sudo apt-get install -y --no-install-recommends
           libxkbcommon0 libxkbcommon-x11-0

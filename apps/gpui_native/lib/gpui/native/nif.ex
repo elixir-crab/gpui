@@ -19,12 +19,26 @@ defmodule GPUI.Native.NIF do
     system_architecture = :erlang.system_info(:system_architecture) |> List.to_string()
 
     precompiled_target? =
-      String.starts_with?(system_architecture, "x86_64") and
-        String.contains?(system_architecture, "linux") and
-        not String.contains?(system_architecture, "musl")
+      Enum.any?(
+        [
+          "aarch64-apple-darwin",
+          "x86_64-unknown-linux-gnu"
+        ],
+        &String.contains?(system_architecture, &1)
+      )
+
+    source_checkout? =
+      project_root
+      |> Path.join("../..")
+      |> Path.expand()
+      |> Path.join(".git")
+      |> File.dir?()
+
+    release_metadata? = Mix.env() == :release and source_checkout?
 
     force_build? =
-      System.get_env("GPUI_BUILD_FROM_SOURCE") in ["1", "true"] or
+      (source_checkout? and not release_metadata?) or
+        System.get_env("GPUI_BUILD_FROM_SOURCE") in ["1", "true"] or
         not precompiled_target? or not File.exists?(checksum)
 
     host =
@@ -65,9 +79,13 @@ defmodule GPUI.Native.NIF do
       path: "native",
       base_url: "https://github.com/elixir-crab/gpui/releases/download/v#{version}",
       version: version,
-      targets: ["x86_64-unknown-linux-gnu"],
+      targets: ["aarch64-apple-darwin", "x86_64-unknown-linux-gnu"],
       nif_versions: ["2.15"],
       variants: %{
+        "aarch64-apple-darwin" => [
+          vanilla: fn -> host == :vanilla end,
+          "gpui-component": fn -> host == :gpui_component end
+        ],
         "x86_64-unknown-linux-gnu" => [
           vanilla: fn -> host == :vanilla end,
           "gpui-component": fn -> host == :gpui_component end

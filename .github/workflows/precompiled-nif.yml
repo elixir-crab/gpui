@@ -13,8 +13,8 @@ permissions:
 
 jobs:
   build_release:
-    name: NIF 2.15 - x86_64 Linux (${{ matrix.host }})
-    runs-on: ubuntu-22.04
+    name: NIF 2.15 - ${{ matrix.target }} (${{ matrix.host }})
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -23,18 +23,31 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - host: vanilla
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-22.04
+            host: vanilla
             cargo_features: vanilla-host
-          - host: gpui-component
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-22.04
+            host: gpui-component
+            cargo_features: gpui-component-host
+          - target: aarch64-apple-darwin
+            os: macos-14
+            host: vanilla
+            cargo_features: vanilla-host
+          - target: aarch64-apple-darwin
+            os: macos-14
+            host: gpui-component
             cargo_features: gpui-component-host
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@1.95.0
         with:
-          target: x86_64-unknown-linux-gnu
+          target: ${{ matrix.target }}
 
       - name: Install native dependencies
+        if: runner.os == 'Linux'
         run: >-
           sudo apt-get update && sudo apt-get install -y --no-install-recommends
           libxkbcommon-dev libxkbcommon-x11-dev
@@ -42,7 +55,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           prefix-key: rustler-precompiled
-          shared-key: x86_64-unknown-linux-gnu-2.15-${{ matrix.host }}
+          shared-key: ${{ matrix.target }}-2.15-${{ matrix.host }}
 
       - name: Set up Elixir for release metadata
         uses: elixir-vibe/actions/setup-elixir@v1
@@ -66,7 +79,7 @@ jobs:
           project-name: gpui_nif
           project-version: ${{ steps.version.outputs.version }}
           project-dir: .
-          target: x86_64-unknown-linux-gnu
+          target: ${{ matrix.target }}
           nif-version: "2.15"
           variant: ${{ matrix.host }}
           cargo-args: >-
@@ -79,9 +92,14 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
           HOST: ${{ matrix.host }}
+          TARGET: ${{ matrix.target }}
           FILE_NAME: ${{ steps.build.outputs.file-name }}
         run: |
-          expected="libgpui_nif-v${VERSION}-nif-2.15-x86_64-unknown-linux-gnu--${HOST}.so.tar.gz"
+          case "$TARGET" in
+            *-apple-darwin) extension="dylib" ;;
+            *) extension="so" ;;
+          esac
+          expected="libgpui_nif-v${VERSION}-nif-2.15-${TARGET}--${HOST}.${extension}.tar.gz"
           test "$FILE_NAME" = "$expected"
 
       - name: Set up Elixir for compatibility check
@@ -93,6 +111,7 @@ jobs:
           restore-plt-cache: "false"
 
       - name: Verify GLIBC compatibility ceiling
+        if: runner.os == 'Linux'
         working-directory: dev/release_tools
         env:
           ARCHIVE: ${{ github.workspace }}/${{ steps.build.outputs.file-path }}
@@ -100,6 +119,20 @@ jobs:
           mix gpui.release.glibc.check
           --archive "$ARCHIVE"
           --max-version 2.35
+
+      - name: Verify macOS archive architecture and linkage
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          ARCHIVE: ${{ steps.build.outputs.file-path }}
+        run: |
+          set -euo pipefail
+          directory="$(mktemp -d)"
+          tar -xzf "$ARCHIVE" -C "$directory"
+          library="$(find "$directory" -type f -name '*.dylib' -print -quit)"
+          test -n "$library"
+          file "$library" | grep -q 'arm64'
+          otool -L "$library"
 
       - name: Attest host archive
         if: ${{ !github.event.repository.private }}

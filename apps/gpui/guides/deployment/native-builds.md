@@ -50,14 +50,14 @@ stubs/facade are committed before release.
 Source builds and native window lifecycle behavior are validated on:
 
 - `x86_64-unknown-linux-gnu` under X11 with Xvfb and Mesa Lavapipe;
-- Apple silicon macOS with AppKit on ERTS's original process main thread;
+- `aarch64-apple-darwin` with AppKit on ERTS's original process main thread;
 - `x86_64-pc-windows-msvc` with the dedicated native GUI-thread host.
 
-The published precompiled release target remains
-`x86_64-unknown-linux-gnu`. Linux release artifacts are built on Ubuntu 22.04
-and must not require GLIBC symbols newer than `GLIBC_2.35`; binaries built on a
-newer development host are not release artifacts. Other targets remain
-source-build development targets until their full interaction suites and
+Published precompiled hosts target `x86_64-unknown-linux-gnu` and
+`aarch64-apple-darwin`. Linux release artifacts are built on Ubuntu 22.04 and
+must not require GLIBC symbols newer than `GLIBC_2.35`; macOS archives are
+built and load-tested on Apple silicon runners. Intel macOS and Windows remain
+source-build development targets until matching native runtime evidence and
 release artifacts pass.
 
 ## Source builds
