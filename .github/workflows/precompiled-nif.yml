@@ -81,6 +81,7 @@ jobs:
           project-dir: .
           target: ${{ matrix.target }}
           nif-version: "2.15"
+          use-cross: false
           variant: ${{ matrix.host }}
           cargo-args: >-
             --locked --manifest-path Cargo.toml
@@ -95,11 +96,7 @@ jobs:
           TARGET: ${{ matrix.target }}
           FILE_NAME: ${{ steps.build.outputs.file-name }}
         run: |
-          case "$TARGET" in
-            *-apple-darwin) extension="dylib" ;;
-            *) extension="so" ;;
-          esac
-          expected="libgpui_nif-v${VERSION}-nif-2.15-${TARGET}--${HOST}.${extension}.tar.gz"
+          expected="libgpui_nif-v${VERSION}-nif-2.15-${TARGET}--${HOST}.so.tar.gz"
           test "$FILE_NAME" = "$expected"
 
       - name: Set up Elixir for compatibility check
@@ -129,7 +126,7 @@ jobs:
           set -euo pipefail
           directory="$(mktemp -d)"
           tar -xzf "$ARCHIVE" -C "$directory"
-          library="$(find "$directory" -type f -name '*.dylib' -print -quit)"
+          library="$(find "$directory" -type f -name '*.so' -print -quit)"
           test -n "$library"
           file "$library" | grep -q 'arm64'
           otool -L "$library"
