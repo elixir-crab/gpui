@@ -1,0 +1,29 @@
+name: Validate precompiled consumers
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  consumer:
+    name: No-Cargo consumer (${{ matrix.host }})
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        host: [vanilla, gpui_component]
+    env:
+      MIX_ENV: release
+      GPUI_SKIP_NATIVE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: elixir-vibe/actions/setup-elixir@v1
+        with:
+          otp-version: "29.0.2"
+          elixir-version: "1.20.2"
+          cache-prefix: precompiled-consumer-v1
+          restore-plt-cache: "false"
+      - run: mix gpui.test.precompiled --host ${{ matrix.host }}
