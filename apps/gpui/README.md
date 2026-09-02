@@ -15,10 +15,10 @@ and rendered with
 One declarative application can run against a local native display, a
 deterministic test display, or a native display on another machine.
 
-GPUI 0.2.0-rc.1 is being prepared as the first public release candidate.
-Current precompiled platform support targets Linux x86-64 under X11; Apple
-silicon macOS and x86-64 Windows are source-build development targets. APIs may
-still change before 0.2.0. See
+GPUI 0.2.0-rc.1 is the first public release candidate. Current precompiled
+platform support targets Linux x86-64 under X11; Apple silicon macOS and x86-64
+Windows are source-build development targets. APIs may still change before
+0.2.0. See
 [Platform support and development status](guides/internals/platform-support.md).
 
 ## Write native UI like Elixir
