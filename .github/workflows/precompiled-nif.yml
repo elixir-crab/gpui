@@ -25,22 +25,18 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-22.04
-            use_cross: true
             host: vanilla
             cargo_features: vanilla-host
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-22.04
-            use_cross: true
             host: gpui-component
             cargo_features: gpui-component-host
           - target: aarch64-apple-darwin
             os: macos-14
-            use_cross: false
             host: vanilla
             cargo_features: vanilla-host
           - target: aarch64-apple-darwin
             os: macos-14
-            use_cross: false
             host: gpui-component
             cargo_features: gpui-component-host
     steps:
@@ -85,7 +81,7 @@ jobs:
           project-dir: .
           target: ${{ matrix.target }}
           nif-version: "2.15"
-          use-cross: ${{ matrix.use_cross }}
+          use-cross: ${{ matrix.use-cross }}
           variant: ${{ matrix.host }}
           cargo-args: >-
             --locked --manifest-path Cargo.toml
