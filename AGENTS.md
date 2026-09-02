@@ -40,12 +40,19 @@ mix ci
   have been published successfully.
 - Commit the checksum manifest as a follow-up commit on `main`. Do not retag
   that commit; it does not need a release tag.
+- Generate the manifest with the official
+  `mix rustler_precompiled.download GPUI.Native.NIF --all --print` flow. If that
+  command fails, stop and fix the package compilation or metadata path; do not
+  introduce an ad hoc checksum format or generator.
+- Run precompiled consumer validation on a runner matching the published target.
+  The current archives target x86-64 Linux GNU, so macOS cannot prove the
+  no-Cargo loading path and may legitimately select source fallback.
 - Publish `gpui_native` from the checksum-bearing follow-up commit while keeping
   the same package version as the immutable tagged artifacts.
 - If tagged artifacts, checksums, or release metadata are wrong, abandon that
   release version and prepare the next release candidate or patch version.
   Never repair a published release by moving its tag.
-- Before publishing `gpui_native`, run both no-Cargo consumer checks:
+- Before publishing `gpui_native`, run both no-Cargo consumer checks on Linux:
   `mix gpui.test.precompiled --host vanilla` and
   `mix gpui.test.precompiled --host gpui_component`.
 - Publish coordinated Hex packages in dependency order: `gpui`, then
