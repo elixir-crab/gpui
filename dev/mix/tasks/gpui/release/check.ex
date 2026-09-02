@@ -10,9 +10,12 @@ defmodule Mix.Tasks.Gpui.Release.Check do
   def run(_args) do
     root = File.cwd!()
 
-    gpui_dir = Path.join([root, "apps", "gpui"])
+    docs_env = dev_env() ++ fontconfig_env()
+    run!("mix", ["deps.get"], docs_env, root)
+    run!("mix", ["deps.compile", "ex_doc"], docs_env, root)
 
-    run!("mix", ["docs", "--warnings-as-errors"], fontconfig_env(), gpui_dir)
+    gpui_dir = Path.join([root, "apps", "gpui"])
+    run!("mix", ["docs", "--warnings-as-errors"], docs_env, gpui_dir)
 
     Enum.each(@packages, fn package ->
       package_dir = Path.join([root, "apps", package])
@@ -59,5 +62,5 @@ defmodule Mix.Tasks.Gpui.Release.Check do
   defp fontconfig_env,
     do: [{"RUST_FONTCONFIG_DLOPEN", System.get_env("RUST_FONTCONFIG_DLOPEN", "1")}]
 
-  defp dev_env, do: [{"MIX_ENV", "dev"}]
+  defp dev_env, do: [{"MIX_ENV", "dev"}, {"GPUI_SKIP_NATIVE", "1"}]
 end
