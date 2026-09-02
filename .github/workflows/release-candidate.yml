@@ -35,10 +35,10 @@ jobs:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
           cache-prefix: release-candidate-quality-v2
-      - name: Install native dependencies
+      - name: Install quality dependencies
         run: >-
           sudo apt-get update && sudo apt-get install -y --no-install-recommends
-          libxkbcommon-dev libxkbcommon-x11-dev
+          inotify-tools libxkbcommon-dev libxkbcommon-x11-dev
       - run: mix ci.checks
       - run: mix gpui.test.codegen
 
