@@ -34,12 +34,13 @@ jobs:
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          cache-prefix: release-candidate-quality
+          cache-prefix: release-candidate-quality-v2
       - name: Install native dependencies
         run: >-
           sudo apt-get update && sudo apt-get install -y --no-install-recommends
           libxkbcommon-dev libxkbcommon-x11-dev
-      - run: mix ci
+      - run: mix ci.checks
+      - run: mix gpui.test.codegen
 
   native-e2e:
     runs-on: ubuntu-24.04
@@ -58,7 +59,7 @@ jobs:
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          cache-prefix: release-candidate-e2e
+          cache-prefix: release-candidate-e2e-v2
           restore-plt-cache: "false"
       - name: Install native E2E dependencies
         run: >-
@@ -128,7 +129,7 @@ jobs:
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          cache-prefix: release-candidate-macos
+          cache-prefix: release-candidate-macos-v2
           restore-plt-cache: "false"
       - name: Select full Xcode toolchain
         run: sudo xcode-select --switch /Applications/Xcode.app
@@ -153,7 +154,7 @@ jobs:
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          cache-prefix: release-candidate-package
+          cache-prefix: release-candidate-package-v2
           restore-plt-cache: "false"
       - name: Install Rust security audit
         run: cargo install cargo-audit --locked

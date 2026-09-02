@@ -66,7 +66,7 @@ jobs:
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          cache-prefix: mode-switch-linux
+          cache-prefix: mode-switch-linux-v2
       - name: Restore native dependency cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -96,7 +96,7 @@ jobs:
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          cache-prefix: native-quality
+          cache-prefix: native-quality-v2
       - name: Restore stable native dependency cache
         uses: Swatinem/rust-cache@v2
         with:

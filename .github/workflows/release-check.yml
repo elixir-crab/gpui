@@ -23,7 +23,7 @@ jobs:
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          cache-prefix: release-check
+          cache-prefix: release-check-v2
           restore-plt-cache: "false"
       - uses: Swatinem/rust-cache@v2
         with:

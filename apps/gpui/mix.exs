@@ -43,7 +43,7 @@ defmodule GPUI.MixProject do
   defp deps do
     [
       {:file_system, "~> 1.0"},
-      {:phoenix_live_view, "~> 1.2.6"},
+      {:phoenix_live_view, "~> 1.2.8"},
       {:safe_rpc, "~> 0.1.14"},
       {:ex_doc, "~> 0.40.3", only: :dev, runtime: false}
     ]
@@ -102,10 +102,13 @@ defmodule GPUI.MixProject do
         Core: [
           GPUI,
           GPUI.Application,
+          GPUI.Application.Identity,
+          GPUI.Application.Icon,
           GPUI.Command,
           GPUI.Snapshot,
           GPUI.Runtime,
           GPUI.Runtime.Update,
+          GPUI.Tree,
           GPUI.View
         ],
         "Advanced infrastructure": [GPUI.Session],
@@ -161,6 +164,10 @@ defmodule GPUI.MixProject do
       GPUI.Accessibility,
       GPUI.Native,
       GPUI.Application,
+      GPUI.Application.Identity,
+      GPUI.Application.Icon,
+      GPUI.Schema,
+      GPUI.Schema.Registry,
       GPUI.Schema.Component,
       GPUI.Schema.Extension,
       GPUI.Schema.Extension.Support,
@@ -169,6 +176,7 @@ defmodule GPUI.MixProject do
       GPUI.Snapshot,
       GPUI.Runtime,
       GPUI.Runtime.Update,
+      GPUI.Tree,
       GPUI.View,
       GPUI.Text.Buffer,
       GPUI.Text.Position,
