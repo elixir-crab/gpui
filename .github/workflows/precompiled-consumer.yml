@@ -56,7 +56,7 @@ jobs:
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          cache-prefix: precompiled-consumer-v3-${{ matrix.target }}-${{ matrix.host }}
+          cache-prefix: precompiled-consumer-rc2-${{ matrix.target }}-${{ matrix.host }}
           restore-plt-cache: "false"
       - name: Install native runtime dependencies
         if: runner.os == 'Linux'
