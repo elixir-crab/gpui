@@ -34,7 +34,11 @@ defmodule GPUI.Dev.Release.ArchiveTest do
     archive = archive!("0.2.0-rc.2", "aarch64-apple-darwin", :gpui_component, "native")
     on_exit(fn -> File.rm_rf!(Path.dirname(archive)) end)
 
-    file = executable!("file", "#!/bin/sh\necho 'Mach-O 64-bit dynamically linked shared library arm64'\n")
+    file =
+      executable!(
+        "file",
+        "#!/bin/sh\necho 'Mach-O 64-bit dynamically linked shared library arm64'\n"
+      )
 
     otool =
       executable!("otool", """
@@ -82,7 +86,16 @@ defmodule GPUI.Dev.Release.ArchiveTest do
     library = Path.join(directory, "gpui_nif#{extension}")
     File.write!(library, contents)
     archive = Path.join(directory, name)
-    :ok = :erl_tar.create(String.to_charlist(archive), [String.to_charlist(library)], [:compressed])
+
+    File.cd!(directory, fn ->
+      :ok =
+        :erl_tar.create(
+          String.to_charlist(archive),
+          [String.to_charlist(Path.basename(library))],
+          [:compressed]
+        )
+    end)
+
     archive
   end
 
@@ -96,7 +109,12 @@ defmodule GPUI.Dev.Release.ArchiveTest do
   end
 
   defp temp_dir!(name) do
-    path = Path.join(System.tmp_dir!(), "gpui-archive-test-#{name}-#{System.unique_integer([:positive])}")
+    path =
+      Path.join(
+        System.tmp_dir!(),
+        "gpui-archive-test-#{name}-#{System.unique_integer([:positive])}"
+      )
+
     File.mkdir_p!(path)
     path
   end
