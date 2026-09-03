@@ -53,12 +53,13 @@ Source builds and native window lifecycle behavior are validated on:
 - `aarch64-apple-darwin` with AppKit on ERTS's original process main thread;
 - `x86_64-pc-windows-msvc` with the dedicated native GUI-thread host.
 
-Published precompiled hosts target `x86_64-unknown-linux-gnu` and
-`aarch64-apple-darwin`. Linux release artifacts are built on Ubuntu 22.04 and
-must not require GLIBC symbols newer than `GLIBC_2.35`; macOS archives are
-built and load-tested on Apple silicon runners. Intel macOS and Windows remain
-source-build development targets until matching native runtime evidence and
-release artifacts pass.
+Published precompiled hosts target `x86_64-unknown-linux-gnu`,
+`aarch64-apple-darwin`, and `x86_64-pc-windows-msvc`. Linux release artifacts
+are built on Ubuntu 22.04 and must not require GLIBC symbols newer than
+`GLIBC_2.35`; macOS archives are built and load-tested on Apple silicon;
+Windows archives are built with MSVC and load-tested on x86-64 Windows. Intel
+macOS remains a source-build development target until matching native runtime
+evidence and release artifacts pass.
 
 ## Source builds
 

@@ -1,4 +1,6 @@
 [build]
+# Windows cannot execute the repository's Bash wrapper. Maintainers and CI can
+# override this with CARGO_BUILD_RUSTC_WRAPPER="" for native MSVC builds.
 rustc-wrapper = ".githooks/rustc-wrapper"
 incremental = false
 

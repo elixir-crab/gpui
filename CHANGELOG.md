@@ -4,8 +4,8 @@
 
 ### Added
 
-- Added Apple silicon macOS precompiled NIFs for both the vanilla and
-  `gpui-component` hosts.
+- Added Apple silicon macOS and x86-64 Windows MSVC precompiled NIFs for both
+  the vanilla and `gpui-component` hosts.
 
 ## 0.2.0-rc.1 - 2026-09-02
 

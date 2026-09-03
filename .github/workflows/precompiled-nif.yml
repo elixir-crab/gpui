@@ -39,6 +39,14 @@ jobs:
             os: macos-14
             host: gpui-component
             cargo_features: gpui-component-host
+          - target: x86_64-pc-windows-msvc
+            os: windows-2022
+            host: vanilla
+            cargo_features: vanilla-host
+          - target: x86_64-pc-windows-msvc
+            os: windows-2022
+            host: gpui-component
+            cargo_features: gpui-component-host
     steps:
       - uses: actions/checkout@v4
 
@@ -74,6 +82,7 @@ jobs:
         id: build
         uses: philss/rustler-precompiled-action@v1.1.4
         env:
+          CARGO_BUILD_RUSTC_WRAPPER: ""
           RUST_FONTCONFIG_DLOPEN: "1"
         with:
           project-name: gpui_nif
@@ -96,7 +105,11 @@ jobs:
           TARGET: ${{ matrix.target }}
           FILE_NAME: ${{ steps.build.outputs.file-name }}
         run: |
-          expected="libgpui_nif-v${VERSION}-nif-2.15-${TARGET}--${HOST}.so.tar.gz"
+          case "$TARGET" in
+            *-pc-windows-*) prefix=""; extension="dll" ;;
+            *) prefix="lib"; extension="so" ;;
+          esac
+          expected="${prefix}gpui_nif-v${VERSION}-nif-2.15-${TARGET}--${HOST}.${extension}.tar.gz"
           test "$FILE_NAME" = "$expected"
 
       - name: Set up Elixir for compatibility check
@@ -130,6 +143,22 @@ jobs:
           test -n "$library"
           file "$library" | grep -q 'arm64'
           otool -L "$library"
+
+      - name: Verify Windows archive architecture and dependencies
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          ARCHIVE: ${{ steps.build.outputs.file-path }}
+        run: |
+          $directory = Join-Path $env:RUNNER_TEMP ([guid]::NewGuid())
+          New-Item -ItemType Directory $directory | Out-Null
+          tar -xzf $env:ARCHIVE -C $directory
+          $library = Get-ChildItem $directory -Filter *.dll | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $library) { throw "archive contains no DLL" }
+          $dumpbin = Get-Command dumpbin.exe -ErrorAction Stop
+          $headers = & $dumpbin.Source /headers $library
+          if ($headers -notmatch "8664 machine \(x64\)") { throw "DLL is not x86-64" }
+          & $dumpbin.Source /dependents $library
 
       - name: Attest host archive
         if: ${{ !github.event.repository.private }}

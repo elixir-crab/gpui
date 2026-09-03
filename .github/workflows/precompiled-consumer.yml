@@ -25,6 +25,12 @@ jobs:
           - os: macos-14
             target: aarch64-apple-darwin
             host: gpui_component
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            host: vanilla
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            host: gpui_component
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     env:
@@ -32,6 +38,10 @@ jobs:
       GPUI_SKIP_NATIVE: "1"
     steps:
       - uses: actions/checkout@v4
+      - name: Disable Unix Rust wrapper on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Add-Content $env:GITHUB_ENV 'CARGO_BUILD_RUSTC_WRAPPER='
       - uses: elixir-vibe/actions/setup-elixir@v1
         with:
           otp-version: "29.0.2"

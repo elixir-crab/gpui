@@ -140,6 +140,13 @@ defmodule GPUI.Dev.NativeWorkspace do
     |> OptionParser.to_argv(switches: @selection_switches)
   end
 
-  defp cargo_env,
-    do: [{"RUST_FONTCONFIG_DLOPEN", System.get_env("RUST_FONTCONFIG_DLOPEN", "1")}]
+  defp cargo_env do
+    env = [{"RUST_FONTCONFIG_DLOPEN", System.get_env("RUST_FONTCONFIG_DLOPEN", "1")}]
+
+    if match?({:win32, _}, :os.type()) do
+      [{"CARGO_BUILD_RUSTC_WRAPPER", ""} | env]
+    else
+      env
+    end
+  end
 end

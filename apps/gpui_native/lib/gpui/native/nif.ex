@@ -22,6 +22,7 @@ defmodule GPUI.Native.NIF do
       Enum.any?(
         [
           "aarch64-apple-darwin",
+          "x86_64-pc-windows-msvc",
           "x86_64-unknown-linux-gnu"
         ],
         &String.contains?(system_architecture, &1)
@@ -79,10 +80,18 @@ defmodule GPUI.Native.NIF do
       path: "native",
       base_url: "https://github.com/elixir-crab/gpui/releases/download/v#{version}",
       version: version,
-      targets: ["aarch64-apple-darwin", "x86_64-unknown-linux-gnu"],
+      targets: [
+        "aarch64-apple-darwin",
+        "x86_64-pc-windows-msvc",
+        "x86_64-unknown-linux-gnu"
+      ],
       nif_versions: ["2.15"],
       variants: %{
         "aarch64-apple-darwin" => [
+          vanilla: fn -> host == :vanilla end,
+          "gpui-component": fn -> host == :gpui_component end
+        ],
+        "x86_64-pc-windows-msvc" => [
           vanilla: fn -> host == :vanilla end,
           "gpui-component": fn -> host == :gpui_component end
         ],
