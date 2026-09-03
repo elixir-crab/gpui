@@ -1,5 +1,5 @@
 defmodule GPUI.Dev.NativeWorkspaceTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias GPUI.Dev.NativeWorkspace
 

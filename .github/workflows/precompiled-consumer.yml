@@ -56,7 +56,7 @@ jobs:
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          cache-prefix: precompiled-consumer-v2-${{ matrix.target }}-${{ matrix.host }}
+          cache-prefix: precompiled-consumer-v3-${{ matrix.target }}-${{ matrix.host }}
           restore-plt-cache: "false"
       - name: Install native runtime dependencies
         if: runner.os == 'Linux'
@@ -70,11 +70,7 @@ jobs:
           TARGET: ${{ matrix.target }}
           HOST: ${{ matrix.host }}
           RUSTLER_PRECOMPILED_GLOBAL_CACHE_PATH: ${{ github.workspace }}/.precompiled-cache
-        run: >-
-          mix gpui.test.precompiled.stage
-          --archive-root "$ARCHIVE_ROOT"
-          --target "$TARGET"
-          --host "$HOST"
+        run: mix do compile --force, gpui.test.precompiled.stage
       - run: mix gpui.test.precompiled --host ${{ matrix.host }}
         env:
           RUSTLER_PRECOMPILED_GLOBAL_CACHE_PATH: ${{ github.workspace }}/.precompiled-cache

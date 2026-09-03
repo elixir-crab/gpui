@@ -9,9 +9,9 @@ defmodule Mix.Tasks.Gpui.Test.Precompiled.Stage do
   @impl Mix.Task
   def run(args) do
     {options, []} = OptionParser.parse!(args, strict: @switches)
-    archive_root = Keyword.fetch!(options, :archive_root)
-    target = Keyword.fetch!(options, :target)
-    host = Keyword.fetch!(options, :host)
+    archive_root = Keyword.get(options, :archive_root) || System.fetch_env!("ARCHIVE_ROOT")
+    target = Keyword.get(options, :target) || System.fetch_env!("TARGET")
+    host = Keyword.get(options, :host) || System.fetch_env!("HOST")
     host_atom = parse_host!(host)
     version = Mix.Project.config() |> Keyword.fetch!(:version)
     archive_name = GPUI.Dev.Release.Archive.archive_name(version, target, host_atom)

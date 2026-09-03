@@ -18,15 +18,7 @@ defmodule GPUI.Native.NIF do
     checksum = Path.join(project_root, "checksum-Elixir.GPUI.Native.NIF.exs")
     system_architecture = :erlang.system_info(:system_architecture) |> List.to_string()
 
-    precompiled_target? =
-      Enum.any?(
-        [
-          "aarch64-apple-darwin",
-          "x86_64-pc-windows-msvc",
-          "x86_64-unknown-linux-gnu"
-        ],
-        &String.contains?(system_architecture, &1)
-      )
+    precompiled_target? = GPUI.Native.Target.precompiled?(system_architecture)
 
     source_checkout? =
       project_root
