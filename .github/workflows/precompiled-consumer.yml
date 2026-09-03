@@ -21,43 +21,37 @@ jobs:
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             host: vanilla
-            artifact: libgpui_nif-v0.2.0-rc.1-nif-2.15-x86_64-unknown-linux-gnu--vanilla.so.tar.gz
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             host: gpui_component
-            artifact: libgpui_nif-v0.2.0-rc.1-nif-2.15-x86_64-unknown-linux-gnu--gpui-component.so.tar.gz
           - os: macos-14
             target: aarch64-apple-darwin
             host: vanilla
-            artifact: libgpui_nif-v0.2.0-rc.1-nif-2.15-aarch64-apple-darwin--vanilla.so.tar.gz
           - os: macos-14
             target: aarch64-apple-darwin
             host: gpui_component
-            artifact: libgpui_nif-v0.2.0-rc.1-nif-2.15-aarch64-apple-darwin--gpui-component.so.tar.gz
           - os: windows-2022
             target: x86_64-pc-windows-msvc
             host: vanilla
-            artifact: gpui_nif-v0.2.0-rc.1-nif-2.15-x86_64-pc-windows-msvc--vanilla.dll.tar.gz
           - os: windows-2022
             target: x86_64-pc-windows-msvc
             host: gpui_component
-            artifact: gpui_nif-v0.2.0-rc.1-nif-2.15-x86_64-pc-windows-msvc--gpui-component.dll.tar.gz
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     env:
       MIX_ENV: release
       GPUI_SKIP_NATIVE: "1"
+      CARGO_BUILD_RUSTC_WRAPPER: ""
     steps:
       - uses: actions/checkout@v4
-      - name: Download untagged host archive
+      - name: Download untagged host archives
         if: inputs.run_id != ''
         uses: actions/download-artifact@v4
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ inputs.run_id }}
-          name: ${{ matrix.artifact }}
-          path: precompiled-artifact
+          path: precompiled-artifacts
       - uses: elixir-vibe/actions/setup-elixir@v1
         with:
           otp-version: "29.0.2"
@@ -72,12 +66,14 @@ jobs:
       - name: Stage untagged archive and checksum
         if: inputs.run_id != ''
         env:
-          ARCHIVE: ${{ github.workspace }}/precompiled-artifact/${{ matrix.artifact }}
+          ARCHIVE_ROOT: ${{ github.workspace }}/precompiled-artifacts
+          TARGET: ${{ matrix.target }}
           HOST: ${{ matrix.host }}
           RUSTLER_PRECOMPILED_GLOBAL_CACHE_PATH: ${{ github.workspace }}/.precompiled-cache
         run: >-
           mix gpui.test.precompiled.stage
-          --archive "$ARCHIVE"
+          --archive-root "$ARCHIVE_ROOT"
+          --target "$TARGET"
           --host "$HOST"
       - run: mix gpui.test.precompiled --host ${{ matrix.host }}
         env:
