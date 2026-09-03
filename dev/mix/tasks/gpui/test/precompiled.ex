@@ -26,13 +26,23 @@ defmodule Mix.Tasks.Gpui.Test.Precompiled do
     end
 
     workdir =
-      Path.join(System.tmp_dir!(), "gpui-precompiled-#{host}-#{System.unique_integer([:positive])}")
+      Path.join(
+        System.tmp_dir!(),
+        "gpui-precompiled-#{host}-#{System.unique_integer([:positive])}"
+      )
 
     try do
       packages = build_packages!(root, Path.join(workdir, "packages"))
       validate_consumer!(Path.join(workdir, "consumer"), host, packages)
     after
-      File.rm_rf!(workdir)
+      cleanup(workdir)
+    end
+  end
+
+  defp cleanup(path) do
+    case File.rm_rf(path) do
+      {:ok, _files} -> :ok
+      {:error, _reason, _file} -> :ok
     end
   end
 
