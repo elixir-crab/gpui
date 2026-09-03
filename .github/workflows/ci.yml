@@ -34,7 +34,7 @@ jobs:
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          cache-prefix: checks-v2
+          cache-prefix: checks-rc2
           restore-plt-cache: "false"
       - name: Install file watcher dependency
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends inotify-tools
