@@ -1,7 +1,7 @@
 defmodule GPUI.Components.MixProject do
   use Mix.Project
 
-  @version "0.2.0-rc.1"
+  @version "0.2.0-rc.2"
   @source_url "https://github.com/elixir-crab/gpui"
   @umbrella_root __DIR__ |> Path.dirname() |> Path.dirname()
 

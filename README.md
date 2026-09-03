@@ -15,10 +15,8 @@ and rendered with
 One declarative application can run against a local native display, a
 deterministic test display, or a native display on another machine.
 
-GPUI 0.2.0-rc.1 is the first public release candidate. Current precompiled
-platform support targets Linux x86-64 under X11; Apple silicon macOS and x86-64
-Windows are source-build development targets. APIs may still change before
-0.2.0. See
+GPUI 0.2.0-rc.2 is being prepared with precompiled Linux, Apple silicon macOS,
+and x86-64 Windows hosts. APIs may still change before 0.2.0. See
 [Platform support and development status](apps/gpui/guides/internals/platform-support.md).
 
 ## Write native UI like Elixir
@@ -168,7 +166,7 @@ For a renderer-independent application or remote server:
 ```elixir
 def deps do
   [
-    {:gpui, "== 0.2.0-rc.1"}
+    {:gpui, "== 0.2.0-rc.2"}
   ]
 end
 ```
@@ -178,9 +176,9 @@ For a native application using conventional controls:
 ```elixir
 def deps do
   [
-    {:gpui, "== 0.2.0-rc.1"},
-    {:gpui_components, "== 0.2.0-rc.1"},
-    {:gpui_native, "== 0.2.0-rc.1"}
+    {:gpui, "== 0.2.0-rc.2"},
+    {:gpui_components, "== 0.2.0-rc.2"},
+    {:gpui_native, "== 0.2.0-rc.2"}
   ]
 end
 ```

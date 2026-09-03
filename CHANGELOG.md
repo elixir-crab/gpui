@@ -2,10 +2,17 @@
 
 ## Unreleased
 
+## 0.2.0-rc.2 - 2026-09-03
+
 ### Added
 
-- Added Apple silicon macOS and x86-64 Windows MSVC precompiled NIFs for both
-  the vanilla and `gpui-component` hosts.
+- Added precompiled NIFs for Apple silicon macOS and x86-64 Windows MSVC, with
+  both vanilla and `gpui-component` hosts available on every precompiled target.
+
+### Compatibility
+
+- Added no-Cargo precompiled loading for Apple silicon macOS and x86-64 Windows
+  alongside the existing x86-64 GNU/Linux support.
 
 ## 0.2.0-rc.1 - 2026-09-02
 
