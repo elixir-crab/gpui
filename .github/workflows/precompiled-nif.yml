@@ -103,7 +103,6 @@ jobs:
           ARCHIVE: ${{ github.workspace }}/${{ steps.build.outputs.file-path }}
         run: >-
           mix gpui.release.archive.check
-          --archive "$ARCHIVE"
           --target "${{ matrix.target }}"
           --host "${{ matrix.host }}"
           --version "${{ steps.version.outputs.version }}"

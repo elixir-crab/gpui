@@ -10,7 +10,9 @@ defmodule Mix.Tasks.Gpui.Release.Archive.Check do
   def run(args) do
     {options, []} = OptionParser.parse!(args, strict: @switches)
 
-    GPUI.Dev.Release.Archive.check!(Keyword.fetch!(options, :archive),
+    archive = Keyword.get(options, :archive) || System.fetch_env!("ARCHIVE")
+
+    GPUI.Dev.Release.Archive.check!(archive,
       target: Keyword.fetch!(options, :target),
       host: parse_host!(Keyword.fetch!(options, :host)),
       version: Keyword.fetch!(options, :version)
