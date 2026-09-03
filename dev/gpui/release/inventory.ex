@@ -5,7 +5,10 @@ defmodule GPUI.Dev.Release.Inventory do
   def write!(directory) do
     File.mkdir_p!(directory)
 
-    cargo = GPUI.Dev.NativeWorkspace.output!(["metadata", "--format-version", "1"])
+    cargo =
+      GPUI.Dev.NativeWorkspace
+      |> apply(:output!, [["metadata", "--format-version", "1"]])
+
     File.write!(Path.join(directory, "cargo-metadata.json"), cargo)
 
     shell = Mix.shell()
