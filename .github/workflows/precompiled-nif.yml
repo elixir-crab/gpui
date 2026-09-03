@@ -155,10 +155,15 @@ jobs:
           tar -xzf $env:ARCHIVE -C $directory
           $library = Get-ChildItem $directory -Filter *.dll | Select-Object -First 1 -ExpandProperty FullName
           if (-not $library) { throw "archive contains no DLL" }
-          $dumpbin = Get-Command dumpbin.exe -ErrorAction Stop
-          $headers = & $dumpbin.Source /headers $library
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+          $installation = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $dumpbin = Get-ChildItem (Join-Path $installation "VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe") |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1 -ExpandProperty FullName
+          if (-not $dumpbin) { throw "dumpbin was not found" }
+          $headers = & $dumpbin /headers $library
           if ($headers -notmatch "8664 machine \(x64\)") { throw "DLL is not x86-64" }
-          & $dumpbin.Source /dependents $library
+          & $dumpbin /dependents $library
 
       - name: Attest host archive
         if: ${{ !github.event.repository.private }}
