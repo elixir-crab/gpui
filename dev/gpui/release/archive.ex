@@ -133,6 +133,7 @@ defmodule GPUI.Dev.Release.Archive do
 
     installation
     |> Path.join("VC/Tools/MSVC/*/bin/Hostx64/x64/dumpbin.exe")
+    |> String.replace("\\", "/")
     |> Path.wildcard()
     |> Enum.sort(:desc)
     |> List.first()
