@@ -155,7 +155,12 @@ defmodule GPUI.Dev.Release.Archive do
     {_prefix, extension} = library_name_parts(target)
 
     libraries =
-      Path.wildcard(Path.join(directory, "**/*.#{extension}")) |> Enum.filter(&File.regular?/1)
+      directory
+      |> Path.join("**/*")
+      |> Path.wildcard(match_dot: true)
+      |> Enum.filter(
+        &(File.regular?(&1) and String.downcase(Path.extname(&1)) == ".#{extension}")
+      )
 
     case libraries do
       [library] -> library
