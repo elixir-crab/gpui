@@ -6,6 +6,37 @@ defmodule Mix.Tasks.Gpui.Test.E2e do
   @project_root GPUI.Dev.Paths.app(:gpui_native)
   @macos_driver Path.join(@project_root, "test/support/desktop/drivers/macos")
 
+  @linux_groups [
+    {"rich text and transcript", ~w(
+       apps/gpui_native/test/e2e/gpui/native/rich_text_test.exs
+       apps/gpui_native/test/e2e/gpui/native/rich_transcript_test.exs
+       apps/gpui_native/test/e2e/gpui/native/composer_transcript_test.exs
+       apps/gpui_native/test/e2e/gpui/native/virtual_collection_test.exs
+     )},
+    {"editable text", ~w(
+       apps/gpui_native/test/e2e/gpui/native/text_surface_test.exs
+       apps/gpui_native/test/e2e/gpui/native/text_style_run_test.exs
+     )},
+    {"overlays and topology", ~w(
+       apps/gpui_native/test/e2e/gpui/native/overlay_test.exs
+       apps/gpui_native/test/e2e/gpui/native/multi_window_topology_test.exs
+     )},
+    {"remote display", ~w(apps/gpui_native/test/e2e/gpui/remote)},
+    {"native controls and examples", ~w(
+       apps/gpui_native/test/e2e/gpui/native/code_viewer_test.exs
+       apps/gpui_native/test/e2e/gpui/native/components_test.exs
+       apps/gpui_native/test/e2e/gpui/native/data_table_test.exs
+       apps/gpui_native/test/e2e/gpui/native/display_controls_test.exs
+       apps/gpui_native/test/e2e/gpui/native/form_controls_test.exs
+       apps/gpui_native/test/e2e/gpui/native/image_lab_test.exs
+       apps/gpui_native/test/e2e/gpui/native/interactivity_test.exs
+       apps/gpui_native/test/e2e/gpui/native/lifecycle_test.exs
+       apps/gpui_native/test/e2e/gpui/native/split_test.exs
+       apps/gpui_native/test/e2e/gpui/native/tree_test.exs
+       apps/gpui_native/test/e2e/gpui/native/virtual_list_test.exs
+     )}
+  ]
+
   @impl Mix.Task
   def run(args) do
     case :os.type() do
@@ -14,8 +45,7 @@ defmodule Mix.Tasks.Gpui.Test.E2e do
       platform -> Mix.raise("local desktop E2E is unsupported on #{inspect(platform)}")
     end
 
-    test_args = if args == [], do: ["test/e2e"], else: args
-    run_tests!(test_args)
+    run_tests!(args)
   end
 
   defp prepare_macos! do
@@ -38,26 +68,51 @@ defmodule Mix.Tasks.Gpui.Test.E2e do
     Enum.each(["xvfb-run", "dbus-run-session", "xdotool"], &ensure_executable!/1)
   end
 
+  defp run_tests!([]) do
+    case :os.type() do
+      {:unix, :darwin} -> run!("mix", test_command(["apps/gpui_native/test/e2e"]), macos_env())
+      {:unix, _name} -> run_linux_groups!()
+    end
+  end
+
   defp run_tests!(test_args) do
-    command = ["test", "--only", "e2e" | test_args]
+    command = test_command(test_args)
 
     case :os.type() do
-      {:unix, :darwin} -> run!("mix", command, [{"MIX_ENV", "e2e"}])
+      {:unix, :darwin} -> run!("mix", command, macos_env())
       {:unix, _name} -> run_linux_tests!(command)
     end
   end
 
-  defp run_linux_tests!(command) do
-    args = ["-a", "dbus-run-session", "--", "mix" | command]
+  defp run_linux_groups! do
+    failures =
+      Enum.count(@linux_groups, fn {name, paths} ->
+        Mix.shell().info("Native E2E: #{name}")
+        run_linux_tests(test_command(paths)) != 0
+      end)
 
-    env = [
+    if failures > 0, do: Mix.raise("#{failures} native E2E groups failed")
+  end
+
+  defp run_linux_tests!(command) do
+    if run_linux_tests(command) != 0, do: Mix.raise("native E2E tests failed")
+  end
+
+  defp run_linux_tests(command) do
+    args = ["-a", "dbus-run-session", "--", "mix" | command]
+    run("xvfb-run", args, linux_env())
+  end
+
+  defp test_command(paths), do: ["test", "--only", "e2e" | paths]
+  defp macos_env, do: [{"MIX_ENV", "e2e"}]
+
+  defp linux_env do
+    [
       {"MIX_ENV", "e2e"},
       {"RUST_FONTCONFIG_DLOPEN", "1"},
       {"LIBGL_ALWAYS_SOFTWARE", "1"},
       {"GALLIUM_DRIVER", "llvmpipe"}
     ]
-
-    run!("xvfb-run", args, env)
   end
 
   defp ensure_macos_permission!(name, expression) do
@@ -74,6 +129,11 @@ defmodule Mix.Tasks.Gpui.Test.E2e do
   end
 
   defp run!(executable, args, env \\ []) do
+    if run(executable, args, env) != 0,
+      do: Mix.raise("#{executable} #{Enum.join(args, " ")} failed")
+  end
+
+  defp run(executable, args, env) do
     {_output, status} =
       System.cmd(executable, args,
         into: IO.stream(),
@@ -81,6 +141,6 @@ defmodule Mix.Tasks.Gpui.Test.E2e do
         env: env
       )
 
-    if status != 0, do: Mix.raise("#{executable} #{Enum.join(args, " ")} failed")
+    status
   end
 end

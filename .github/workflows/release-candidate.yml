@@ -68,49 +68,8 @@ jobs:
           mesa-vulkan-drivers vulkan-tools xdotool xvfb
       - name: Verify Lavapipe under Xvfb
         run: xvfb-run -a vulkaninfo --summary
-      - name: Run isolated native ExUnit groups
-        shell: bash
-        run: |
-          set -uo pipefail
-          failures=0
-          run_group() {
-            local name="$1"
-            shift
-            echo "::group::Native E2E: ${name}"
-            if ! xvfb-run -a dbus-run-session -- mix test --only e2e "$@"; then
-              failures=1
-            fi
-            echo "::endgroup::"
-          }
-
-          run_group "rich text and transcript" \
-            apps/gpui_native/test/e2e/gpui/native/rich_text_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/rich_transcript_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/composer_transcript_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/virtual_collection_test.exs
-          run_group "editable text" \
-            apps/gpui_native/test/e2e/gpui/native/text_surface_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/text_style_run_test.exs
-          run_group "overlays and topology" \
-            apps/gpui_native/test/e2e/gpui/native/overlay_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/multi_window_topology_test.exs
-          run_group "remote display" apps/gpui_native/test/e2e/gpui/remote
-          run_group "native controls and examples" \
-            apps/gpui_native/test/e2e/gpui/native/code_viewer_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/components_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/data_table_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/display_controls_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/elixir_workbench_log_source_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/elixir_workbench_repository_source_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/form_controls_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/image_palette_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/interactivity_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/lifecycle_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/split_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/tree_test.exs \
-            apps/gpui_native/test/e2e/gpui/native/virtual_list_test.exs
-
-          exit "$failures"
+      - name: Run native E2E suite
+        run: mix gpui.test.e2e
 
   macos-native:
     runs-on: macos-15

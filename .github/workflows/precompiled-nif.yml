@@ -97,73 +97,16 @@ jobs:
             --package gpui_nif --no-default-features
             --features ${{ matrix.cargo_features }}
 
-      - name: Verify release archive name
-        shell: bash
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-          HOST: ${{ matrix.host }}
-          TARGET: ${{ matrix.target }}
-          FILE_NAME: ${{ steps.build.outputs.file-name }}
-        run: |
-          case "$TARGET" in
-            *-pc-windows-*) prefix=""; extension="dll" ;;
-            *) prefix="lib"; extension="so" ;;
-          esac
-          expected="${prefix}gpui_nif-v${VERSION}-nif-2.15-${TARGET}--${HOST}.${extension}.tar.gz"
-          test "$FILE_NAME" = "$expected"
-
-      - name: Set up Elixir for compatibility check
-        uses: elixir-vibe/actions/setup-elixir@v1
-        with:
-          otp-version: "29.0.2"
-          elixir-version: "1.20.2"
-          deps-command: "true"
-          restore-plt-cache: "false"
-
-      - name: Verify GLIBC compatibility ceiling
-        if: runner.os == 'Linux'
+      - name: Verify release archive
         working-directory: dev/release_tools
         env:
           ARCHIVE: ${{ github.workspace }}/${{ steps.build.outputs.file-path }}
         run: >-
-          mix gpui.release.glibc.check
+          mix gpui.release.archive.check
           --archive "$ARCHIVE"
-          --max-version 2.35
-
-      - name: Verify macOS archive architecture and linkage
-        if: runner.os == 'macOS'
-        shell: bash
-        env:
-          ARCHIVE: ${{ steps.build.outputs.file-path }}
-        run: |
-          set -euo pipefail
-          directory="$(mktemp -d)"
-          tar -xzf "$ARCHIVE" -C "$directory"
-          library="$(find "$directory" -type f -name '*.so' -print -quit)"
-          test -n "$library"
-          file "$library" | grep -q 'arm64'
-          otool -L "$library"
-
-      - name: Verify Windows archive architecture and dependencies
-        if: runner.os == 'Windows'
-        shell: pwsh
-        env:
-          ARCHIVE: ${{ steps.build.outputs.file-path }}
-        run: |
-          $directory = Join-Path $env:RUNNER_TEMP ([guid]::NewGuid())
-          New-Item -ItemType Directory $directory | Out-Null
-          tar -xzf $env:ARCHIVE -C $directory
-          $library = Get-ChildItem $directory -Filter *.dll | Select-Object -First 1 -ExpandProperty FullName
-          if (-not $library) { throw "archive contains no DLL" }
-          $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
-          $installation = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-          $dumpbin = Get-ChildItem (Join-Path $installation "VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe") |
-            Sort-Object FullName -Descending |
-            Select-Object -First 1 -ExpandProperty FullName
-          if (-not $dumpbin) { throw "dumpbin was not found" }
-          $headers = & $dumpbin /headers $library
-          if ($headers -notmatch "8664 machine \(x64\)") { throw "DLL is not x86-64" }
-          & $dumpbin /dependents $library
+          --target "${{ matrix.target }}"
+          --host "${{ matrix.host }}"
+          --version "${{ steps.version.outputs.version }}"
 
       - name: Attest host archive
         if: ${{ !github.event.repository.private }}
