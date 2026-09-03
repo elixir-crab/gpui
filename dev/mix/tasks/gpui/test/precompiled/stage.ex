@@ -30,6 +30,8 @@ defmodule Mix.Tasks.Gpui.Test.Precompiled.Stage do
 
   defp find_archive!(root, archive_name) do
     root
+    |> Path.expand()
+    |> String.replace("\\", "/")
     |> Path.join("**/#{archive_name}")
     |> Path.wildcard(match_dot: true)
     |> Enum.filter(&File.regular?/1)
