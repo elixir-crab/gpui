@@ -22,9 +22,10 @@ interaction tests run under Xvfb with Mesa Lavapipe when a Linux host is
 available.
 
 Apple silicon macOS and x86-64 Windows are precompiled targets with native
-build, artifact inspection, NIF loading, and runtime startup evidence. Linux ARM,
-musl, Intel macOS, Windows ARM, and other target triples are not currently
-validated.
+build, artifact inspection, NIF loading, and runtime startup evidence. Windows
+native windows must run in an interactive desktop session rather than a Windows
+OpenSSH session. Linux ARM, musl, Intel macOS, Windows ARM, and other target
+triples are not currently validated.
 
 See [Native builds and deployment](native-builds.html) for current prerequisites
 and the proposed artifact process.

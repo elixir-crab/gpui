@@ -57,9 +57,11 @@ Published precompiled hosts target `x86_64-unknown-linux-gnu`,
 `aarch64-apple-darwin`, and `x86_64-pc-windows-msvc`. Linux release artifacts
 are built on Ubuntu 22.04 and must not require GLIBC symbols newer than
 `GLIBC_2.35`; macOS archives are built and load-tested on Apple silicon;
-Windows archives are built with MSVC and load-tested on x86-64 Windows. Intel
-macOS remains a source-build development target until matching native runtime
-evidence and release artifacts pass.
+Windows archives are built with MSVC and load-tested on x86-64 Windows. Native
+Windows applications must be launched in an interactive desktop session;
+Windows OpenSSH sessions are suitable for package and NIF checks but not for
+creating desktop windows. Intel macOS remains a source-build development target
+until matching native runtime evidence and release artifacts pass.
 
 ## Source builds
 

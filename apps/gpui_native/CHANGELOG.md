@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Compatibility
+
+- Documented that native Windows windows require an interactive desktop session;
+  OpenSSH sessions remain suitable for package and NIF validation.
+
 ## 0.2.0-rc.2 - 2026-09-03
 
 ### Added
