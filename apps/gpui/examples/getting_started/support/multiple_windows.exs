@@ -28,12 +28,12 @@ defmodule GettingStarted.MultipleWindows.MainView do
 
   @impl GPUI.View
   def handle_event("toggle_details", _event, %{open: false} = assigns) do
-    details = %GPUI.WindowSpec{
-      key: "details",
-      title: "Details",
-      size: {420, 240},
-      root: {GettingStarted.MultipleWindows.DetailsView, %{}}
-    }
+    details =
+      GPUI.WindowSpec.new("Details",
+        key: "details",
+        size: {420, 240},
+        root: GettingStarted.MultipleWindows.DetailsView
+      )
 
     {:open_window, details, %{assigns | open: true}}
   end

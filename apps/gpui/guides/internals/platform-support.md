@@ -51,8 +51,8 @@ files. Applications persist domain state and render fresh snapshots.
 
 ## Remote protocol validation
 
-`GPUI.Remote.Protocol.version/0` identifies the one wire shape implemented by
-the current source tree. Negotiation requires that exact version and the
+The internal remote protocol version identifies the one wire shape implemented
+by the current source tree. Negotiation requires that exact version and the
 required peer capabilities so mismatched development processes fail before
 mounting a session.
 

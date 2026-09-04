@@ -1,7 +1,10 @@
 # Editable text surfaces
 
 `<text_surface>` is a neutral, revisioned text editor primitive backed by a
-persistent `GPUI.Text.Buffer`. It provides native keyboard, IME, selection,
+persistent `GPUI.Text.Buffer`. Both require the `gpui_native` package; a
+renderer-independent `gpui`-only process can carry text value types but cannot
+create the native Rope resource. The surface provides native keyboard, IME,
+selection,
 undo, scrolling, shaping, hit testing, and geometry mechanics without adding
 file, language, syntax, gutter, tab, completion, or IDE policy.
 
@@ -94,18 +97,17 @@ edit to undo history.
 Application code changes text through the same revisioned transaction model:
 
 ```elixir
-alias GPUI.Text.{Buffer, Edit, Position, Range, Selection, Transaction}
+alias GPUI.Text.{Buffer, Edit, Position, Selection, Transaction}
 
 {:ok, snapshot} = Buffer.snapshot(buffer)
 insert_at = Position.new(0, 0)
 
-transaction = %Transaction{
-  id: "prepend-title-#{System.unique_integer([:positive])}",
-  base_revision: snapshot.revision,
-  origin: :external,
-  edits: [Edit.new(Range.new(insert_at, insert_at), "Title\n")],
-  selections: [Selection.caret("primary", Position.new(1, 0), primary: true)]
-}
+transaction =
+  Transaction.new(snapshot,
+    id: "prepend-title-#{System.unique_integer([:positive])}",
+    edits: [Edit.insert(insert_at, "Title\n")],
+    selections: [Selection.caret("primary", Position.new(1, 0), primary: true)]
+  )
 
 {:ok, %{revision: revision}} = Buffer.transact(buffer, transaction)
 ```

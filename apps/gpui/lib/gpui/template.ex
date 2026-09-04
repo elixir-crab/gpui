@@ -255,6 +255,7 @@ defmodule GPUI.Template do
     case Keyword.fetch(attrs, :class) do
       {:ok, class} when is_binary(class) ->
         %{style: style, unknown: unknown} = GPUI.Tailwind.normalize(class)
+        :ok = GPUI.Tailwind.handle_unknown!(unknown)
 
         attrs
         |> Keyword.delete(:class)

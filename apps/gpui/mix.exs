@@ -4,15 +4,16 @@ defmodule GPUI.MixProject do
   @version "0.2.0-rc.2"
   @source_url "https://github.com/elixir-crab/gpui"
   @umbrella_root __DIR__ |> Path.dirname() |> Path.dirname()
+  @in_umbrella File.exists?(Path.join(@umbrella_root, "mix.exs"))
 
   def project do
     [
       app: :gpui,
       version: @version,
-      build_path: Path.join(@umbrella_root, "_build"),
-      config_path: Path.join(@umbrella_root, "config/config.exs"),
-      deps_path: Path.join(@umbrella_root, "deps"),
-      lockfile: Path.join(@umbrella_root, "mix.lock"),
+      build_path: project_path("_build", "_build"),
+      config_path: project_path("config/config.exs", "config/config.exs"),
+      deps_path: project_path("deps", "deps"),
+      lockfile: project_path("mix.lock", "mix.lock"),
       elixir: "~> 1.20",
       elixirc_options: [check_cwd: false],
       start_permanent: Mix.env() == :prod,
@@ -30,6 +31,10 @@ defmodule GPUI.MixProject do
     [extra_applications: [:logger, :ssl]]
   end
 
+  defp project_path(umbrella_path, package_path) do
+    if @in_umbrella, do: Path.join(@umbrella_root, umbrella_path), else: package_path
+  end
+
   defp package do
     [
       name: "gpui",
@@ -42,7 +47,7 @@ defmodule GPUI.MixProject do
 
   defp deps do
     [
-      {:file_system, "~> 1.0"},
+      {:file_system, "~> 1.0", optional: true},
       {:phoenix_live_view, "~> 1.2.8"},
       {:safe_rpc, "~> 0.1.14"},
       {:ex_doc, "~> 0.40.3", only: :dev, runtime: false}
@@ -101,14 +106,17 @@ defmodule GPUI.MixProject do
       groups_for_modules: [
         Core: [
           GPUI,
+          GPUI.Builder,
           GPUI.Application,
           GPUI.Application.Identity,
           GPUI.Application.Icon,
           GPUI.Command,
           GPUI.Snapshot,
+          GPUI.Snapshot.Window,
           GPUI.Runtime,
           GPUI.Runtime.Update,
           GPUI.Tree,
+          GPUI.Debug,
           GPUI.View
         ],
         "Advanced infrastructure": [GPUI.Session],
@@ -119,6 +127,7 @@ defmodule GPUI.MixProject do
           GPUI.Text.Edit,
           GPUI.Text.Selection,
           GPUI.Text.Transaction,
+          GPUI.Text.Transaction.Result,
           GPUI.Text.Snapshot,
           GPUI.Text.Viewport,
           GPUI.Text.CaretGeometry,
@@ -128,13 +137,10 @@ defmodule GPUI.MixProject do
           GPUI.Text.InlineProjection,
           GPUI.Text.BlockProjection
         ],
-        Displays: [GPUI.Display, GPUI.Display.Native],
+        Displays: [GPUI.Display, GPUI.Display.Support],
         Elements: [
-          GPUI.UI,
-          GPUI.UI.Overlay,
           GPUI.Element,
           GPUI.Event,
-          GPUI.Image,
           GPUI.Raster,
           GPUI.ResourceRef,
           GPUI.Schema.Extension,
@@ -145,9 +151,7 @@ defmodule GPUI.MixProject do
         ],
         Remote: [
           GPUI.Remote.Server,
-          GPUI.Remote.Client,
-          GPUI.Remote.Protocol,
-          GPUI.Remote.Transport.TCP
+          GPUI.Remote.Client
         ],
         Testing: [GPUI.Test, GPUI.Test.UI, GPUI.Test.Display]
       ]
@@ -161,6 +165,7 @@ defmodule GPUI.MixProject do
   defp documented_modules do
     [
       GPUI,
+      GPUI.Builder,
       GPUI.Accessibility,
       GPUI.Native,
       GPUI.Application,
@@ -174,9 +179,11 @@ defmodule GPUI.MixProject do
       GPUI.Command,
       GPUI.Session,
       GPUI.Snapshot,
+      GPUI.Snapshot.Window,
       GPUI.Runtime,
       GPUI.Runtime.Update,
       GPUI.Tree,
+      GPUI.Debug,
       GPUI.View,
       GPUI.Text.Buffer,
       GPUI.Text.Position,
@@ -184,6 +191,7 @@ defmodule GPUI.MixProject do
       GPUI.Text.Edit,
       GPUI.Text.Selection,
       GPUI.Text.Transaction,
+      GPUI.Text.Transaction.Result,
       GPUI.Text.Snapshot,
       GPUI.Text.Viewport,
       GPUI.Text.CaretGeometry,
@@ -197,12 +205,10 @@ defmodule GPUI.MixProject do
       GPUI.Transfer.Payload,
       GPUI.Transfer.Event,
       GPUI.Display,
-      GPUI.Display.Native,
-      GPUI.UI,
-      GPUI.UI.Overlay,
+      GPUI.Display.Support,
+      GPUI.Color,
       GPUI.Element,
       GPUI.Event,
-      GPUI.Image,
       GPUI.Raster,
       GPUI.ResourceRef,
       GPUI.Tailwind,
@@ -210,11 +216,12 @@ defmodule GPUI.MixProject do
       GPUI.WindowSpec,
       GPUI.Remote.Server,
       GPUI.Remote.Client,
-      GPUI.Remote.Protocol,
-      GPUI.Remote.Transport.TCP,
       GPUI.Test,
       GPUI.Test.UI,
       GPUI.Test.Display,
+      GPUI.Test.Native,
+      GPUI.Native.Test,
+      GPUI.Test.Error,
       Mix.Tasks.Gpui.Release.Check
     ]
   end

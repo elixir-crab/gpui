@@ -11,7 +11,7 @@ defmodule GPUI.Runtime.Update do
 
   @type t :: %__MODULE__{
           revision: pos_integer(),
-          events: [map()],
+          events: [GPUI.Event.payload()],
           snapshot: GPUI.Snapshot.t()
         }
 end

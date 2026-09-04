@@ -20,9 +20,10 @@ defmodule GPUI.Text.BlockProjection do
           background: rgb() | nil
         }
 
+  @doc "Creates a bounded non-editable block adjacent to a logical text line."
   @spec new(non_neg_integer(), String.t(), keyword()) :: t()
   def new(line, text, opts \\ []) when is_integer(line) and line >= 0 and is_binary(text) do
-    %__MODULE__{
+    block = %__MODULE__{
       line: line,
       text: text,
       placement: Keyword.get(opts, :placement, :after),
@@ -30,5 +31,31 @@ defmodule GPUI.Text.BlockProjection do
       color: Keyword.get(opts, :color, 0xCBD5E1),
       background: Keyword.get(opts, :background)
     }
+
+    validate!(block)
+  end
+
+  @doc "Validates a block projection's bounded text and presentation values."
+  @spec validate!(t()) :: t()
+  def validate!(%__MODULE__{} = block) do
+    unless String.valid?(block.text) and byte_size(block.text) <= 16_384 do
+      raise ArgumentError, "block projection text must be valid UTF-8 no larger than 16384 bytes"
+    end
+
+    unless block.placement in [:before, :after] do
+      raise ArgumentError, "block projection placement must be :before or :after"
+    end
+
+    unless is_integer(block.height) and block.height in 1..512 do
+      raise ArgumentError, "block projection height must be an integer from 1 through 512"
+    end
+
+    Enum.each([block.color, block.background], fn color ->
+      unless is_nil(color) or (is_integer(color) and color in 0..0xFFFFFF) do
+        raise ArgumentError, "block projection colors must be six-digit RGB integers or nil"
+      end
+    end)
+
+    block
   end
 end

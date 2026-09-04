@@ -362,7 +362,7 @@ defmodule GPUI.RuntimeTest do
     {:ok, runtime} =
       GPUI.Runtime.start_link(app: TransferApp, display: RecordingDisplay, poll_interval: nil)
 
-    {_handled, snapshot} =
+    {:ok, _handled, snapshot} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :drop,
         window_id: 1,
@@ -393,7 +393,7 @@ defmodule GPUI.RuntimeTest do
     {:ok, runtime} =
       GPUI.Runtime.start_link(app: DemoApp, display: RecordingDisplay, poll_interval: nil)
 
-    {handled, snapshot} =
+    {:ok, handled, snapshot} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :link,
         window_id: 1,
@@ -409,7 +409,7 @@ defmodule GPUI.RuntimeTest do
     {:ok, runtime} =
       GPUI.Runtime.start_link(app: OutcomeApp, display: RecordingDisplay, poll_interval: nil)
 
-    {handled, snapshot} =
+    {:ok, handled, snapshot} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :click,
         window_id: 1,
@@ -419,7 +419,7 @@ defmodule GPUI.RuntimeTest do
     refute Map.has_key?(handled, :error)
     assert [%{root: %{assigns: %{label: "Details opened"}}}, %{key: "details"}] = snapshot.windows
 
-    {handled, unchanged} =
+    {:ok, handled, unchanged} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :click,
         window_id: 1,
@@ -429,7 +429,7 @@ defmodule GPUI.RuntimeTest do
     assert handled.error == :duplicate_window_key
     assert unchanged == snapshot
 
-    {_handled, snapshot} =
+    {:ok, _handled, snapshot} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :click,
         window_id: 1,
@@ -455,7 +455,7 @@ defmodule GPUI.RuntimeTest do
                })
     end)
 
-    {handled, snapshot} =
+    {:ok, handled, snapshot} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :click,
         window_id: 1,
@@ -530,7 +530,7 @@ defmodule GPUI.RuntimeTest do
     %{display: display} = :sys.get_state(runtime)
     assert [%{windows: [_window]}] = Agent.get(display, & &1)
 
-    {_event, snapshot} =
+    {:ok, _event, snapshot} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :click,
         window_id: 1,
@@ -666,20 +666,20 @@ defmodule GPUI.RuntimeTest do
     {:ok, raising_inject} = ContractDisplay.start_link(mode: :raise_inject)
 
     assert {:error, {:invalid_display_return, :drain_events, :invalid_drain}} =
-             GPUI.Display.drain(ContractDisplay, invalid_drain)
+             GPUI.Display.Support.drain(ContractDisplay, invalid_drain)
 
     assert {:error,
             {:display_callback_failed, :drain_events, :error,
              %RuntimeError{message: "drain failed"}}} =
-             GPUI.Display.drain(ContractDisplay, raising_drain)
+             GPUI.Display.Support.drain(ContractDisplay, raising_drain)
 
     assert {:error, {:invalid_display_return, :inject_event, :invalid_inject}} =
-             GPUI.Display.inject(ContractDisplay, invalid_inject, %{})
+             GPUI.Display.Support.inject(ContractDisplay, invalid_inject, %{})
 
     assert {:error,
             {:display_callback_failed, :inject_event, :error,
              %RuntimeError{message: "inject failed"}}} =
-             GPUI.Display.inject(ContractDisplay, raising_inject, %{})
+             GPUI.Display.Support.inject(ContractDisplay, raising_inject, %{})
   end
 
   test "application modules start renderer-independent sessions with a display" do
@@ -735,7 +735,7 @@ defmodule GPUI.RuntimeTest do
 
     assert :ok = GPUI.Runtime.subscribe(runtime)
 
-    {_handled, snapshot} =
+    {:ok, _handled, snapshot} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :change,
         window_id: 1,

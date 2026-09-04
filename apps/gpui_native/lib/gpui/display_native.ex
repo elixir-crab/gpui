@@ -82,7 +82,7 @@ defmodule GPUI.Display.Native do
 
     with :ok <- native_compiled(),
          :ok <- initialize_identity(identity),
-         {:ok, runtime} <- GPUI.Native.start_runtime(),
+         {:ok, runtime} <- GPUI.Native.Backend.start_runtime(),
          :ok <- initialize_theme(runtime, Keyword.get(opts, :theme)) do
       {:ok, %{runtime: runtime, windows: %{}, resources: %{}}}
     else
@@ -92,7 +92,7 @@ defmodule GPUI.Display.Native do
 
   @impl GenServer
   def terminate(_reason, state) do
-    GPUI.Native.stop_runtime(state.runtime)
+    GPUI.Native.Backend.stop_runtime(state.runtime)
     :ok
   catch
     :error, _reason -> :ok
@@ -108,24 +108,27 @@ defmodule GPUI.Display.Native do
   end
 
   def handle_call(:drain_events, _from, state) do
-    case GPUI.Native.drain_events(state.runtime) do
+    case GPUI.Native.Backend.drain_events(state.runtime) do
       {:ok, events} -> {:reply, {:ok, events}, forget_closed_windows(state, events)}
       {:error, _reason} = error -> {:reply, error, state}
     end
   end
 
   def handle_call({:inject_event, event}, _from, state) do
-    {:reply, GPUI.Native.inject_event(state.runtime, event), state}
+    {:reply, GPUI.Native.Backend.inject_event(state.runtime, event), state}
   end
 
   def handle_call({:await_frame, window_id, timeout}, from, state) do
-    async_frame_reply(from, fn -> GPUI.Native.await_frame(state.runtime, window_id, timeout) end)
+    async_frame_reply(from, fn ->
+      GPUI.Native.Backend.await_frame(state.runtime, window_id, timeout)
+    end)
+
     {:noreply, state}
   end
 
   def handle_call({:frame_token, window_id}, _from, state) do
     reply =
-      case GPUI.Native.frame_token(state.runtime, window_id) do
+      case GPUI.Native.Backend.frame_token(state.runtime, window_id) do
         {:ok, generation} -> {:ok, generation}
         {:error, "unknown_window"} -> {:error, :window_not_found}
         {:error, "gpui_command_timeout"} -> {:error, :timeout}
@@ -138,7 +141,7 @@ defmodule GPUI.Display.Native do
 
   def handle_call({:await_frame_after, window_id, generation, timeout}, from, state) do
     async_frame_reply(from, fn ->
-      GPUI.Native.await_frame_after(state.runtime, window_id, generation, timeout)
+      GPUI.Native.Backend.await_frame_after(state.runtime, window_id, generation, timeout)
     end)
 
     {:noreply, state}
@@ -146,7 +149,7 @@ defmodule GPUI.Display.Native do
 
   def handle_call({:set_theme, mode}, _from, state) do
     reply =
-      case GPUI.Native.set_theme(state.runtime, mode) do
+      case GPUI.Native.Backend.set_theme(state.runtime, mode) do
         {:ok, ^mode} -> :ok
         {:error, reason} -> {:error, reason}
       end
@@ -155,7 +158,7 @@ defmodule GPUI.Display.Native do
   end
 
   defp async_frame_reply(from, call),
-    do: GPUI.Display.async_reply(from, call, &normalize_frame_reply/1)
+    do: GPUI.Display.Support.async_reply(from, call, &normalize_frame_reply/1)
 
   defp normalize_frame_reply({:ok, _window_id}), do: :ok
   defp normalize_frame_reply({:error, "unknown_window"}), do: {:error, :window_not_found}
@@ -165,7 +168,7 @@ defmodule GPUI.Display.Native do
   defp normalize_frame_reply({:error, reason}), do: {:error, reason}
 
   defp native_compiled do
-    if GPUI.Native.compiled?() do
+    if GPUI.Native.available?() do
       :ok
     else
       {:error,
@@ -177,7 +180,7 @@ defmodule GPUI.Display.Native do
   defp initialize_identity(nil), do: :ok
 
   defp initialize_identity(%GPUI.Application.Identity{id: id, name: name}) do
-    case GPUI.Native.set_app_identity(id, name) do
+    case GPUI.Native.Backend.set_app_identity(id, name) do
       {:ok, _value} ->
         :ok
 
@@ -192,7 +195,7 @@ defmodule GPUI.Display.Native do
   defp initialize_theme(_runtime, nil), do: :ok
 
   defp initialize_theme(runtime, mode) when mode in [:light, :dark] do
-    case GPUI.Native.set_theme(runtime, mode) do
+    case GPUI.Native.Backend.set_theme(runtime, mode) do
       {:ok, ^mode} -> :ok
       {:error, reason} -> {:error, reason}
     end
@@ -234,14 +237,14 @@ defmodule GPUI.Display.Native do
   end
 
   defp put_resource(runtime, {id, resource}) do
-    case GPUI.Native.put_resource(runtime, to_string(id), resource) do
+    case GPUI.Native.Backend.put_resource(runtime, to_string(id), resource) do
       {:ok, _id} -> :ok
       {:error, reason} -> {:error, reason}
     end
   end
 
   defp drop_resource(runtime, id) do
-    case GPUI.Native.drop_resource(runtime, to_string(id)) do
+    case GPUI.Native.Backend.drop_resource(runtime, to_string(id)) do
       {:ok, _id} -> :ok
       {:error, reason} -> {:error, reason}
     end
@@ -259,7 +262,7 @@ defmodule GPUI.Display.Native do
   end
 
   defp close_window(runtime, window_id) do
-    case GPUI.Native.close_window(runtime, window_id) do
+    case GPUI.Native.Backend.close_window(runtime, window_id) do
       {:ok, ^window_id} -> :ok
       {:error, "unknown_window"} -> :ok
       {:error, reason} -> {:error, reason}
@@ -274,11 +277,11 @@ defmodule GPUI.Display.Native do
 
         {:ok, _changed_config} ->
           with :ok <- close_window(state.runtime, id) do
-            GPUI.Native.open_window(state.runtime, window)
+            GPUI.Native.Backend.open_window(state.runtime, window)
           end
 
         :error ->
-          GPUI.Native.open_window(state.runtime, window)
+          GPUI.Native.Backend.open_window(state.runtime, window)
       end
 
     case result do
@@ -292,8 +295,8 @@ defmodule GPUI.Display.Native do
   end
 
   defp update_or_reopen_window(runtime, %{id: id} = window) do
-    case GPUI.Native.update_window(runtime, id, get_in(window, [:root, :tree])) do
-      {:error, "unknown_window"} -> GPUI.Native.open_window(runtime, window)
+    case GPUI.Native.Backend.update_window(runtime, id, get_in(window, [:root, :tree])) do
+      {:error, "unknown_window"} -> GPUI.Native.Backend.open_window(runtime, window)
       result -> result
     end
   end

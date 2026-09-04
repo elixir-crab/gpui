@@ -3,14 +3,9 @@ defmodule GPUI.Test do
   ExUnit helpers for renderer-independent application tests and deterministic
   GPUI interaction tests.
 
-  Ordinary tests use a lightweight `GPUI.Test.Display`:
+  Renderer-independent tests use a lightweight `GPUI.Test.Display`:
 
       use GPUI.Test, async: true
-
-  Tests that exercise real operating-system windows opt in to an owned desktop
-  session:
-
-      use GPUI.Test, desktop: true
 
   Deterministic tests that need GPUI layout, focus, hit testing, or keyboard
   dispatch opt in to a supervised native UI:
@@ -48,35 +43,14 @@ defmodule GPUI.Test do
 
   defmacro __using__(opts) do
     {native_opts, case_opts} = Keyword.pop(opts, :native)
-    {desktop_opts, case_opts} = Keyword.pop(case_opts, :desktop)
-
-    if native_opts && desktop_opts do
-      raise ArgumentError, "GPUI tests cannot use native and desktop sessions together"
-    end
-
-    if (native_opts || desktop_opts) && Keyword.get(case_opts, :async, false) do
-      raise ArgumentError, "native and desktop GPUI tests cannot run asynchronously"
-    end
 
     native_opts = session_opts!(:native, native_opts)
-    desktop_opts = session_opts!(:desktop, desktop_opts)
 
     quote do
       use ExUnit.Case, unquote(case_opts)
 
-      unquote(
-        if desktop_opts != nil do
-          quote do
-            alias GPUITest.Desktop
-            import GPUITest.Desktop, only: [start_runtime!: 2]
-          end
-        else
-          quote do
-            import GPUI.Test
-            import GPUI.Tree, only: [all: 2, find: 2, find!: 2, path: 2]
-          end
-        end
-      )
+      import GPUI.Test
+      import GPUI.Tree, only: [all: 2, find: 2, find!: 2, path: 2]
 
       if unquote(native_opts != nil) do
         @moduletag :native
@@ -89,18 +63,10 @@ defmodule GPUI.Test do
           GPUI.Test.__setup_native__(context, unquote(Macro.escape(native_opts)))
         end
       end
-
-      if unquote(desktop_opts != nil) do
-        @moduletag :e2e
-
-        setup context do
-          GPUITest.Desktop.setup(context, unquote(Macro.escape(desktop_opts)))
-        end
-      end
     end
   end
 
-  @doc false
+  @doc "Initializes the supervised native UI handle used by `use GPUI.Test, native: ...`."
   @spec __setup_native__(map(), keyword()) :: {:ok, ui: GPUI.Test.UI.t()}
   def __setup_native__(_context, opts) do
     child_spec =
@@ -186,7 +152,7 @@ defmodule GPUI.Test do
       end
 
     with {:ok, :ok} <- Runtime.inject_event(runtime, event),
-         handled when is_list(handled) <- Runtime.drain_events(runtime) do
+         {:ok, handled} when is_list(handled) <- Runtime.drain_events(runtime) do
       {handled, Runtime.snapshot(runtime)}
     else
       {:error, reason} -> raise "GPUI test display failed to process event: #{inspect(reason)}"

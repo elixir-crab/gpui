@@ -118,8 +118,8 @@ defmodule Mix.Tasks.Gpui.Test.Precompiled do
         use ExUnit.Case, async: false
 
         test "loads the selected precompiled host" do
-          assert GPUI.Native.compiled?()
-          assert GPUI.Native.host_info() == {:ok, unquote(host)}
+          assert GPUI.Native.available?()
+          assert GPUI.Native.Backend.host_info() == {:ok, unquote(host)}
         end
       end
     end

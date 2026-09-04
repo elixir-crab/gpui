@@ -1,5 +1,11 @@
 defmodule GPUI.Native.MultiWindowTopologyE2ETest do
-  use GPUI.Test, desktop: true
+  use ExUnit.Case, async: false
+
+  alias GPUITest.Desktop
+
+  setup context do
+    Desktop.setup(context, [])
+  end
 
   @moduletag :e2e
 
@@ -62,7 +68,7 @@ defmodule GPUI.Native.MultiWindowTopologyE2ETest do
     %{windows: [%{root: %{assigns: %{details_title: details_title}}}]} =
       GPUI.Runtime.snapshot(runtime)
 
-    {_event, %{windows: [_, %{id: 2, key: "details"}]}} =
+    {:ok, _event, %{windows: [_, %{id: 2, key: "details"}]}} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :click,
         window_id: 1,
@@ -72,7 +78,7 @@ defmodule GPUI.Native.MultiWindowTopologyE2ETest do
     details_native = Desktop.window!(desktop, details_title)
     Desktop.await_frame!(desktop, runtime, 2, details_native)
 
-    {_event, %{windows: [%{key: "main"}]}} =
+    {:ok, _event, %{windows: [%{key: "main"}]}} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :click,
         window_id: 1,
@@ -83,7 +89,7 @@ defmodule GPUI.Native.MultiWindowTopologyE2ETest do
       assert {:error, :window_not_found} = GPUI.Runtime.frame_token(runtime, 2)
     end)
 
-    {_event, %{windows: [_, %{id: 3, key: "details"}]}} =
+    {:ok, _event, %{windows: [_, %{id: 3, key: "details"}]}} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :click,
         window_id: 1,

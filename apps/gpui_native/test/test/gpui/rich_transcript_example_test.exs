@@ -57,7 +57,7 @@ defmodule GPUI.RichTranscriptExampleTest do
     assert hd(prepended).number == -2
     assert Enum.count(prepended) == 22
 
-    {_event, _snapshot} =
+    {:ok, _event, _snapshot} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :link,
         window_id: 1,
@@ -75,7 +75,7 @@ defmodule GPUI.RichTranscriptExampleTest do
     assert {:ok, %{revision: draft_revision}} = replace_text(buffer, "A composed message")
     assert {:ok, _snapshot} = GPUI.Runtime.refresh(runtime)
 
-    {_event, _snapshot} =
+    {:ok, _event, _snapshot} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :submit,
         window_id: 1,

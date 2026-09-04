@@ -22,13 +22,32 @@ defmodule GPUI.Text.Decoration do
           underline_style: underline_style()
         }
 
+  @doc "Creates a validated visual decoration for a logical text range."
   @spec new(Range.t(), keyword()) :: t()
   def new(%Range{} = range, opts \\ []) do
-    %__MODULE__{
+    decoration = %__MODULE__{
       range: range,
       background: Keyword.get(opts, :background),
       underline: Keyword.get(opts, :underline),
       underline_style: Keyword.get(opts, :underline_style, :solid)
     }
+
+    validate!(decoration)
+  end
+
+  @doc "Validates a decoration's colors and underline style."
+  @spec validate!(t()) :: t()
+  def validate!(%__MODULE__{} = decoration) do
+    Enum.each([decoration.background, decoration.underline], fn color ->
+      unless is_nil(color) or (is_integer(color) and color in 0..0xFFFFFF) do
+        raise ArgumentError, "decoration colors must be six-digit RGB integers or nil"
+      end
+    end)
+
+    unless decoration.underline_style in [:solid, :dashed, :wavy] do
+      raise ArgumentError, "decoration underline_style must be :solid, :dashed, or :wavy"
+    end
+
+    decoration
   end
 end

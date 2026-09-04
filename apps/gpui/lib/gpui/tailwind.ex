@@ -3,7 +3,9 @@ defmodule GPUI.Tailwind do
   Small Tailwind-compatible class normalizer for GPUI element styles.
 
   This intentionally starts with a constrained subset that maps cleanly to GPUI.
-  Unknown classes are preserved under `:class` by callers for future handling.
+  Unknown classes are preserved under `:class` by callers and handled according
+  to the `:unknown_classes` application setting: `:warn` (the development
+  default), `:error`, or `:keep`.
   """
 
   @cache_table __MODULE__.Cache
@@ -45,6 +47,32 @@ defmodule GPUI.Tailwind do
       {:ok, result} -> result
       :error -> cache(classes, normalize_binary(classes))
     end
+  end
+
+  @doc "Applies the configured warning or error policy to unsupported classes."
+  @spec handle_unknown!([String.t()]) :: :ok
+  def handle_unknown!([]), do: :ok
+
+  def handle_unknown!(classes) when is_list(classes) do
+    case Application.get_env(:gpui, :unknown_classes, default_unknown_class_policy()) do
+      :keep ->
+        :ok
+
+      :warn ->
+        require Logger
+        Logger.warning("unsupported GPUI classes: #{Enum.join(classes, ", ")}")
+
+      :error ->
+        raise ArgumentError, "unsupported GPUI classes: #{Enum.join(classes, ", ")}"
+
+      policy ->
+        raise ArgumentError,
+              "expected :gpui, :unknown_classes to be :keep, :warn, or :error; got: #{inspect(policy)}"
+    end
+  end
+
+  defp default_unknown_class_policy do
+    if Code.ensure_loaded?(Mix) and Mix.env() == :dev, do: :warn, else: :keep
   end
 
   defp normalize_binary(classes) do

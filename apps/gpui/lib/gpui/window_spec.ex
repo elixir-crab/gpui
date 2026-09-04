@@ -37,6 +37,26 @@ defmodule GPUI.WindowSpec do
     commands: []
   ]
 
+  @doc "Builds and validates a declarative window specification."
+  @spec new(String.t(), keyword()) :: t()
+  def new(title, opts \\ []) when is_binary(title) and is_list(opts) do
+    root = Keyword.get(opts, :root)
+
+    root =
+      case root do
+        nil -> nil
+        {module, assigns} -> {module, Map.new(assigns)}
+        module when is_atom(module) -> {module, %{}}
+      end
+
+    opts
+    |> Keyword.put(:title, title)
+    |> Keyword.put(:root, root)
+    |> then(&struct!(__MODULE__, &1))
+    |> validate!()
+  end
+
+  @doc "Validates a declarative window specification and returns it."
   @spec validate!(t()) :: t()
   def validate!(
         %__MODULE__{

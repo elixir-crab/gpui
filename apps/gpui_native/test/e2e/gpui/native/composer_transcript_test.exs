@@ -1,5 +1,11 @@
 defmodule GPUI.Native.ComposerTranscriptE2ETest do
-  use GPUI.Test, desktop: true
+  use ExUnit.Case, async: false
+
+  alias GPUITest.Desktop
+
+  setup context do
+    Desktop.setup(context, [])
+  end
 
   alias GPUI.Text.{Buffer, Edit, Position, Range, Selection, Transaction}
 

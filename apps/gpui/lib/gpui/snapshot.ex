@@ -10,7 +10,7 @@ defmodule GPUI.Snapshot do
   defstruct [:windows, :resources]
 
   @type t :: %__MODULE__{
-          windows: [map()],
+          windows: [GPUI.Snapshot.Window.t()],
           resources: %{optional(String.t()) => map()}
         }
 end

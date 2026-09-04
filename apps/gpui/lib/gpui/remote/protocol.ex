@@ -2,6 +2,10 @@ defmodule GPUI.Remote.Protocol do
   @moduledoc """
   Transport-independent contract between a remote application session and display.
 
+  Transport and wire protocol modules are implementation details rather than
+  application extension points. `GPUI.Remote.Server` and `GPUI.Remote.Client`
+  own the supported deployment API.
+
   SafeRPC owns request mechanics and term safety. This module defines only the
   versioned GPUI operations and capability negotiation.
   """

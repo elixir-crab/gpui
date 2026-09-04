@@ -32,11 +32,11 @@ A running local session can add and remove windows without remounting the
 application:
 
 ```elixir
-details = %GPUI.WindowSpec{
-  key: "repository-details",
-  title: "Repository details",
-  root: {RepositoryDetailsView, %{repository: repository}}
-}
+details =
+  GPUI.WindowSpec.new("Repository details",
+    key: "repository-details",
+    root: {RepositoryDetailsView, repository: repository}
+  )
 
 {:ok, window_id, snapshot} = GPUI.Runtime.open_window(runtime, details)
 {:ok, snapshot} = GPUI.Runtime.close_window(runtime, "repository-details")
@@ -117,11 +117,11 @@ runtime PID or a generic effect bus:
 
 ```elixir
 def handle_event("open-details", _event, assigns) do
-  details = %GPUI.WindowSpec{
-    key: "repository-details",
-    title: "Repository details",
-    root: {RepositoryDetailsView, %{repository: assigns.repository}}
-  }
+  details =
+    GPUI.WindowSpec.new("Repository details",
+      key: "repository-details",
+      root: {RepositoryDetailsView, repository: assigns.repository}
+    )
 
   {:open_window, details, assigns}
 end

@@ -23,6 +23,7 @@ defmodule Mix.Tasks.Gpui.Test.Packages do
     try do
       unpacked = build_packages!(root, packages)
       validate_package_contents!(unpacked)
+      validate_package_projects!(unpacked)
       validate_native_source_graphs!(unpacked)
       validate_consumer!(workdir, "gpui_consumer", [:gpui], unpacked)
       validate_consumer!(workdir, "components_consumer", [:gpui, :gpui_components], unpacked)
@@ -75,6 +76,21 @@ defmodule Mix.Tasks.Gpui.Test.Packages do
     end
   end
 
+  defp validate_package_projects!(packages) do
+    validate_package_project!(packages.gpui, [])
+    validate_package_project!(packages.gpui_components, [:gpui])
+    validate_package_project!(packages.gpui_native, [:gpui, :gpui_components])
+  end
+
+  defp validate_package_project!(package, _dependencies) do
+    packages_root = Path.dirname(package)
+    env = [{"GPUI_PACKAGE_VALIDATION_ROOT", packages_root} | package_env()]
+
+    run!("mix", ["deps.get"], env, package)
+    run!("mix", ["compile", "--warnings-as-errors"], env, package)
+    run!("mix", ["docs", "--warnings-as-errors"], env, package)
+  end
+
   defp validate_native_source_graphs!(packages) do
     manifest = Path.join(packages.gpui_native, "native/Cargo.toml")
 
@@ -87,6 +103,7 @@ defmodule Mix.Tasks.Gpui.Test.Packages do
         ])
 
       graph = GPUI.Dev.CargoMetadata.new!(metadata)
+
       GPUI.Dev.NativeWorkspace.check_manifest!(manifest,
         no_default_features: true,
         features: feature
@@ -219,7 +236,7 @@ defmodule Mix.Tasks.Gpui.Test.Packages do
       )
       |> maybe_add_assertion(
         :gpui_native in apps,
-        quote(do: refute(GPUI.Native.compiled?()))
+        quote(do: refute(GPUI.Native.available?()))
       )
 
     quote generated: true do

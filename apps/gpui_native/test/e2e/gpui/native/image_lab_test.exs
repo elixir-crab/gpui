@@ -1,7 +1,13 @@
 GPUITest.Examples.load!(:image_lab)
 
 defmodule GPUI.Native.ImageLabE2ETest do
-  use GPUI.Test, desktop: true
+  use ExUnit.Case, async: false
+
+  alias GPUITest.Desktop
+
+  setup context do
+    Desktop.setup(context, [])
+  end
 
   alias Examples.ImageLab.App
   alias Examples.ImageLab.Coordinator

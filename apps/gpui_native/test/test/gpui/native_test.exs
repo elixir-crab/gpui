@@ -4,35 +4,44 @@ defmodule GPUI.NativeTest do
   @moduletag :native
 
   test "generated lifecycle boundary starts and stops a native runtime" do
-    assert GPUI.Native.compiled?()
-    assert {:ok, host} = GPUI.Native.host_info()
+    assert GPUI.Native.Backend.available?()
+    assert {:ok, host} = GPUI.Native.Backend.host_info()
     assert host in [:headless, :vanilla, :gpui_component]
-    assert {:ok, runtime} = GPUI.Native.start_runtime()
-    assert {:ok, :ok} = GPUI.Native.stop_runtime(runtime)
+    assert {:ok, runtime} = GPUI.Native.Backend.start_runtime()
+    assert {:ok, :ok} = GPUI.Native.Backend.stop_runtime(runtime)
   end
 
   test "native events cross the boundary as structured maps" do
-    assert {:ok, runtime} = GPUI.Native.start_runtime()
+    assert {:ok, runtime} = GPUI.Native.Backend.start_runtime()
 
     assert {:ok, :ok} =
-             GPUI.Native.inject_event(runtime, %{type: :click, window_id: 7, event: "save"})
+             GPUI.Native.Backend.inject_event(runtime, %{
+               type: :click,
+               window_id: 7,
+               event: "save"
+             })
 
     assert {:ok, [%{type: :click, window_id: 7, event: "save"}]} =
-             GPUI.Native.drain_events(runtime)
+             GPUI.Native.Backend.drain_events(runtime)
 
     assert {:ok, :ok} =
-             GPUI.Native.inject_event(runtime, %{type: :command, window_id: 7, event: "save"})
+             GPUI.Native.Backend.inject_event(runtime, %{
+               type: :command,
+               window_id: 7,
+               event: "save"
+             })
 
     assert {:ok, [%{type: :command, window_id: 7, event: "save"}]} =
-             GPUI.Native.drain_events(runtime)
+             GPUI.Native.Backend.drain_events(runtime)
 
     assert {:ok, :ok} =
-             GPUI.Native.inject_event(runtime, %{type: :window_closed, window_id: 7})
+             GPUI.Native.Backend.inject_event(runtime, %{type: :window_closed, window_id: 7})
 
-    assert {:ok, [%{type: :window_closed, window_id: 7}]} = GPUI.Native.drain_events(runtime)
+    assert {:ok, [%{type: :window_closed, window_id: 7}]} =
+             GPUI.Native.Backend.drain_events(runtime)
 
     assert {:ok, :ok} =
-             GPUI.Native.inject_event(runtime, %{
+             GPUI.Native.Backend.inject_event(runtime, %{
                type: :change,
                window_id: 7,
                event: "language_changed",
@@ -40,10 +49,10 @@ defmodule GPUI.NativeTest do
              })
 
     assert {:ok, [%{type: :change, window_id: 7, event: "language_changed", value: nil}]} =
-             GPUI.Native.drain_events(runtime)
+             GPUI.Native.Backend.drain_events(runtime)
 
     assert {:ok, :ok} =
-             GPUI.Native.inject_event(runtime, %{
+             GPUI.Native.Backend.inject_event(runtime, %{
                type: :keydown,
                window_id: 7,
                event: "key_pressed",
@@ -51,7 +60,7 @@ defmodule GPUI.NativeTest do
              })
 
     assert {:ok, [%{type: :keydown, window_id: 7, event: "key_pressed", value: "enter"}]} =
-             GPUI.Native.drain_events(runtime)
+             GPUI.Native.Backend.drain_events(runtime)
   end
 
   test "rejects unsupported native component themes" do
@@ -61,23 +70,27 @@ defmodule GPUI.NativeTest do
              GPUI.Display.Native.start_link(theme: :system)
   end
 
-  test "exposes the complete generated native lifecycle boundary" do
+  test "keeps low-level native lifecycle operations behind the backend adapter" do
     Code.ensure_loaded!(GPUI.Native)
+    Code.ensure_loaded!(GPUI.Native.Backend)
 
-    assert function_exported?(GPUI.Native, :decode_image, 1)
-    assert function_exported?(GPUI.Native, :host_info, 0)
-    assert function_exported?(GPUI.Native, :text_buffer_new, 3)
-    assert function_exported?(GPUI.Native, :text_buffer_snapshot, 1)
-    assert function_exported?(GPUI.Native, :text_buffer_transact, 2)
-    assert function_exported?(GPUI.Native, :text_buffer_undo, 2)
-    assert function_exported?(GPUI.Native, :text_buffer_redo, 2)
-    assert function_exported?(GPUI.Native, :open_window, 2)
-    assert function_exported?(GPUI.Native, :update_window, 3)
-    assert function_exported?(GPUI.Native, :close_window, 2)
-    assert function_exported?(GPUI.Native, :await_frame, 3)
-    assert function_exported?(GPUI.Native, :frame_token, 2)
-    assert function_exported?(GPUI.Native, :await_frame_after, 4)
-    assert function_exported?(GPUI.Native, :stop_runtime, 1)
-    assert function_exported?(GPUI.Native, :set_theme, 2)
+    assert function_exported?(GPUI.Native, :available?, 0)
+    refute function_exported?(GPUI.Native, :start_runtime, 0)
+
+    assert function_exported?(GPUI.Native.Backend, :decode_image, 1)
+    assert function_exported?(GPUI.Native.Backend, :host_info, 0)
+    assert function_exported?(GPUI.Native.Backend, :text_buffer_new, 3)
+    assert function_exported?(GPUI.Native.Backend, :text_buffer_snapshot, 1)
+    assert function_exported?(GPUI.Native.Backend, :text_buffer_transact, 2)
+    assert function_exported?(GPUI.Native.Backend, :text_buffer_undo, 2)
+    assert function_exported?(GPUI.Native.Backend, :text_buffer_redo, 2)
+    assert function_exported?(GPUI.Native.Backend, :open_window, 2)
+    assert function_exported?(GPUI.Native.Backend, :update_window, 3)
+    assert function_exported?(GPUI.Native.Backend, :close_window, 2)
+    assert function_exported?(GPUI.Native.Backend, :await_frame, 3)
+    assert function_exported?(GPUI.Native.Backend, :frame_token, 2)
+    assert function_exported?(GPUI.Native.Backend, :await_frame_after, 4)
+    assert function_exported?(GPUI.Native.Backend, :stop_runtime, 1)
+    assert function_exported?(GPUI.Native.Backend, :set_theme, 2)
   end
 end

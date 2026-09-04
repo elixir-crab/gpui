@@ -31,6 +31,12 @@ Lowercase tags are renderer primitives such as `div`, `text`, `input`, and
 compile time instead of bypassing their public builder contracts. Duplicate
 attributes and unknown tags are also compile errors.
 
+Component events use `phx-*` attributes because the template and callback
+vocabulary intentionally follows Phoenix conventions familiar to Elixir users;
+there is no Phoenix process or browser event behind them. The attribute value is
+a stable application event name delivered to the `GPUI.View` `handle_event/3`
+callback.
+
 Every native component requires a stable, non-empty string `id`. Component
 builders reject unknown options and validate schema-backed attributes and event
 names before a snapshot reaches any display, including `GPUI.Test.Display`.

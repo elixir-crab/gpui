@@ -92,6 +92,9 @@ Rendering is not the only cost of a large collection: putting every child—or
 the full source model—into view assigns also serializes it into every local or
 remote snapshot. Source-backed lists keep the full model in a supervised source
 process and put only the current loaded slice in assigns.
+`GPUI.UI.Collection.Source` and `GPUI.UI.Collection.Selection` can keep the
+correlated count/offset/children and ID/index pairs together before those values
+are passed to a component.
 
 ```elixir
 <UI.virtual_list

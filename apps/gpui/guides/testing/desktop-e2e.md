@@ -6,9 +6,15 @@ clipboard, IME, external transfer machinery, or compositor.
 
 ```elixir
 defmodule MyApp.NativeWindowTest do
-  use GPUI.Test, desktop: true
+  use ExUnit.Case, async: false
+
+  alias GPUITest.Desktop
 
   @moduletag :e2e
+
+  setup context do
+    Desktop.setup(context, [])
+  end
 end
 ```
 
@@ -28,8 +34,10 @@ mix gpui.test.e2e apps/gpui_native/test/e2e/gpui/native
 On Linux, the task checks `xvfb-run`, D-Bus, and `xdotool`, then runs with Xvfb
 and Lavapipe. On macOS, it checks Accessibility and Screen Recording permission,
 builds the Swift desktop driver, and uses the active WindowServer and real Metal
-renderer. Both paths execute ordinary ExUnit through `GPUITest.Desktop`; there
-is no separate test-runner architecture.
+renderer. The repository-owned E2E support is intentionally separate from the
+public `GPUI.Test` API: it drives operating-system facilities and is not shipped
+in the Hex packages. Both paths execute ordinary ExUnit through
+`GPUITest.Desktop`; there is no separate test-runner architecture.
 
 The source-built native artifacts for ordinary, deterministic-native, and
 desktop modes are isolated. Verify the transition sequence without cleaning
@@ -124,8 +132,9 @@ Inspect images for:
 - focus visibility;
 - theme and state variants.
 
-`GPUITest.Desktop.capture!/2` remains a focused explicit capture helper for E2E
-tests. It does not wait, inspect environment variables, or choose output paths.
+The repository-only `GPUITest.Desktop.capture!/2` helper remains available to
+focused E2E tests. It does not wait, inspect environment variables, or choose
+output paths.
 
 ## Coverage boundaries
 

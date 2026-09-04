@@ -7,7 +7,7 @@ that can truthfully prove the behavior:
 | --- | --- | --- |
 | Renderer-independent `use GPUI.Test` | Elixir state, callbacks, validation, snapshots, topology, and protocol policy | GPUI layout, native focus, or OS behavior |
 | Deterministic `use GPUI.Test, native: ...` | GPUI layout, bounds, hit testing, focus, keyboard dispatch, and component mechanics | OS clipboard, IME, compositor, or real-window behavior |
-| Desktop E2E `use GPUI.Test, desktop: true` | Window-server, accessibility-adapter, clipboard, IME, external transfer, and compositor facts | A replacement for focused component tests |
+| Repository desktop E2E | Window-server, accessibility-adapter, clipboard, IME, external transfer, and compositor facts | A replacement for focused component tests |
 
 Pixel-level appearance belongs to synchronized visual capture rather than a
 behavioral assertion.

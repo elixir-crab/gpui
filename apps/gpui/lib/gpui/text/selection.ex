@@ -13,13 +13,22 @@ defmodule GPUI.Text.Selection do
           primary: boolean()
         }
 
+  @doc "Creates a directed selection from anchor to head."
+  @spec new(String.t(), Position.t(), Position.t(), keyword()) :: t()
+  def new(id, %Position{} = anchor, %Position{} = head, opts \\ [])
+      when is_binary(id) and id != "" do
+    primary = Keyword.get(opts, :primary, false)
+
+    unless is_boolean(primary) do
+      raise ArgumentError, "text selection primary must be a boolean"
+    end
+
+    %__MODULE__{id: id, anchor: anchor, head: head, primary: primary}
+  end
+
+  @doc "Creates a collapsed selection at a logical position."
   @spec caret(String.t(), Position.t(), keyword()) :: t()
   def caret(id, %Position{} = position, opts \\ []) when is_binary(id) and id != "" do
-    %__MODULE__{
-      id: id,
-      anchor: position,
-      head: position,
-      primary: Keyword.get(opts, :primary, false)
-    }
+    new(id, position, position, opts)
   end
 end

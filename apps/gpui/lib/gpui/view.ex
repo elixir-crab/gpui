@@ -18,8 +18,8 @@ defmodule GPUI.View do
           | {:close_window, GPUI.WindowSpec.key() | pos_integer(), map()}
 
   @callback render(map()) :: Element.t()
-  @callback handle_event(String.t(), map(), map()) :: callback_result()
-  @callback handle_window_event(window_event(), map(), map()) ::
+  @callback handle_event(String.t(), GPUI.Event.payload(), map()) :: callback_result()
+  @callback handle_window_event(window_event(), GPUI.Event.payload(), map()) ::
               {:noreply, map()} | {:close, map()}
   @callback handle_info(term(), map()) :: callback_result()
 
@@ -29,8 +29,6 @@ defmodule GPUI.View do
     quote do
       @behaviour GPUI.View
 
-      import Kernel, except: [div: 2]
-      import GPUI
       import GPUI.Template, only: [sigil_GPUI: 2]
       import GPUI.Color, only: [sigil_RGB: 2, sigil_RGBA: 2]
 

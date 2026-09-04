@@ -1,5 +1,11 @@
 defmodule GPUI.Test.Native do
-  @moduledoc false
+  @moduledoc """
+  Supervised adapter for deterministic native UI operations.
+
+  `GPUI.Test` owns the supported testing workflow. This process module is
+  documented for maintainers and excluded from the package's public API
+  reference.
+  """
 
   use GenServer
 

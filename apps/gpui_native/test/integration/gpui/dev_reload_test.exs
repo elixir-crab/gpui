@@ -284,11 +284,14 @@ defmodule GPUI.DevTest do
   end
 
   defp dispatch(runtime, window_id, event) do
-    GPUI.Runtime.dispatch_event(runtime, %{
-      type: :click,
-      window_id: window_id,
-      event: event
-    })
+    {:ok, event, snapshot} =
+      GPUI.Runtime.dispatch_event(runtime, %{
+        type: :click,
+        window_id: window_id,
+        event: event
+      })
+
+    {event, snapshot}
   end
 
   defp flush_snapshots do

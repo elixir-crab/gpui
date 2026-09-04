@@ -1,5 +1,5 @@
 defmodule GPUI.Tailwind.Palette do
-  @moduledoc false
+  @moduledoc "Generated Tailwind color palette metadata and lookups.\n\n`GPUI.Tailwind` owns the supported class-normalization API. This\ngenerated module is documented for maintainers and excluded from the\npackage's public API reference.\n"
   @tailwind_version "3.4.17"
   @source_url "https://unpkg.com/tailwindcss@3.4.17/src/public/colors.js"
   @source_sha256 "28907aa147f4ca19fb3c07bd21e88aac459df8a533e629530eb8b384bcae760d"

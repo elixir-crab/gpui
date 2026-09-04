@@ -41,12 +41,18 @@ defmodule GPUI.Text.StyleRun do
     weight = Keyword.get(opts, :font_weight)
     style = Keyword.get(opts, :font_style)
 
-    validate_color!(color)
-    validate_weight!(weight)
-    validate_style!(style)
-    validate_present!(color, weight, style)
+    run = %__MODULE__{range: range, color: color, font_weight: weight, font_style: style}
+    validate!(run)
+  end
 
-    %__MODULE__{range: range, color: color, font_weight: weight, font_style: style}
+  @doc "Validates a style run's color, font values, and non-empty presentation."
+  @spec validate!(t()) :: t()
+  def validate!(%__MODULE__{} = run) do
+    validate_color!(run.color)
+    validate_weight!(run.font_weight)
+    validate_style!(run.font_style)
+    validate_present!(run.color, run.font_weight, run.font_style)
+    run
   end
 
   defp validate_color!(nil), do: :ok

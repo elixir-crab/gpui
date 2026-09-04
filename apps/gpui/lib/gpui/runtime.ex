@@ -30,6 +30,14 @@ defmodule GPUI.Runtime do
   @event_history_limit 1_000
   @sync_retry_interval 50
 
+  @type display_error ::
+          {:display_start_failed, term()}
+          | {:display_sync_failed, term()}
+          | {:display_drain_failed, term()}
+          | {:display_inject_failed, term()}
+
+  @type error :: GPUI.Session.operation_error() | GPUI.Session.topology_error() | display_error()
+
   @type state :: %{
           application: module(),
           identity: GPUI.Application.Identity.t() | nil,
@@ -68,7 +76,7 @@ defmodule GPUI.Runtime do
   def events(runtime), do: GenServer.call(runtime, :events, @call_timeout)
 
   @doc "Drains display events, applies them to the session, and synchronizes the result."
-  @spec drain_events(GenServer.server()) :: [map()] | {:error, term()}
+  @spec drain_events(GenServer.server()) :: {:ok, [map()]} | {:error, error()}
   def drain_events(runtime), do: GenServer.call(runtime, :drain_events, @call_timeout)
 
   @doc "Adds a keyed declarative window and synchronizes it to the display."
@@ -84,38 +92,38 @@ defmodule GPUI.Runtime do
     do: GenServer.call(runtime, {:close_window, window}, @call_timeout)
 
   @doc "Stores a session resource and synchronizes the resulting snapshot."
-  @spec put_resource(GenServer.server(), String.Chars.t(), map()) :: :ok | {:error, term()}
+  @spec put_resource(GenServer.server(), String.Chars.t(), map()) :: :ok | {:error, error()}
   def put_resource(runtime, id, resource),
     do: GenServer.call(runtime, {:put_resource, id, resource}, @call_timeout)
 
   @doc "Drops a session resource and synchronizes the resulting snapshot."
-  @spec drop_resource(GenServer.server(), String.Chars.t()) :: :ok | {:error, term()}
+  @spec drop_resource(GenServer.server(), String.Chars.t()) :: :ok | {:error, error()}
   def drop_resource(runtime, id),
     do: GenServer.call(runtime, {:drop_resource, id}, @call_timeout)
 
   @doc "Validates and dispatches one explicit typed event and synchronizes the resulting snapshot."
   @spec dispatch_event(GenServer.server(), map()) ::
-          {map(), GPUI.Snapshot.t()} | {:error, term()}
+          {:ok, map(), GPUI.Snapshot.t()} | {:error, error()}
   def dispatch_event(runtime, event),
     do: GenServer.call(runtime, {:dispatch_event, event}, @call_timeout)
 
   @doc "Delivers an OTP message to a window's root view and synchronizes the display."
   @spec send_view(GenServer.server(), pos_integer(), term()) ::
-          {:ok, GPUI.Snapshot.t()} | {:error, term()}
+          {:ok, GPUI.Snapshot.t()} | {:error, error()}
   def send_view(runtime, window_id, message),
     do: GenServer.call(runtime, {:send_view, window_id, message}, @call_timeout)
 
   @doc "Rerenders every window from its current module and assigns, then synchronizes the display."
-  @spec refresh(GenServer.server()) :: {:ok, GPUI.Snapshot.t()} | {:error, term()}
+  @spec refresh(GenServer.server()) :: {:ok, GPUI.Snapshot.t()} | {:error, error()}
   def refresh(runtime), do: GenServer.call(runtime, :refresh, @call_timeout)
 
   @doc "Injects an event into the active display queue without dispatching it immediately."
-  @spec inject_event(GenServer.server(), map()) :: {:ok, term()} | {:error, term()}
+  @spec inject_event(GenServer.server(), map()) :: {:ok, term()} | {:error, error()}
   def inject_event(runtime, event),
     do: GenServer.call(runtime, {:inject_event, event}, @call_timeout)
 
   @doc "Requests a display frame for the current snapshot without changing application state."
-  @spec request_frame(GenServer.server()) :: :ok | {:error, term()}
+  @spec request_frame(GenServer.server()) :: :ok | {:error, error()}
   def request_frame(runtime), do: GenServer.call(runtime, :request_frame, @call_timeout)
 
   @doc "Subscribes the calling process to synchronized runtime updates."
@@ -256,7 +264,7 @@ defmodule GPUI.Runtime do
               |> record_events([handled])
               |> mark_synchronized(snapshot)
 
-            {:reply, {handled, snapshot}, state}
+            {:reply, {:ok, handled, snapshot}, state}
 
           {:error, reason} ->
             {:reply, {:error, reason}, mark_unsynchronized(state)}
@@ -281,14 +289,14 @@ defmodule GPUI.Runtime do
 
   def handle_call(:drain_events, _from, state) do
     case drain_display_events(state) do
-      {:ok, handled, state} -> {:reply, handled, state}
+      {:ok, handled, state} -> {:reply, {:ok, handled}, state}
       {:error, reason, state} -> {:reply, {:error, reason}, state}
     end
   end
 
   def handle_call({:inject_event, event}, _from, state) do
     reply =
-      case GPUI.Display.inject(state.display_module, state.display, event) do
+      case GPUI.Display.Support.inject(state.display_module, state.display, event) do
         {:ok, _value} = success -> success
         {:error, reason} -> {:error, {:display_inject_failed, reason}}
       end
@@ -305,7 +313,7 @@ defmodule GPUI.Runtime do
 
   def handle_call({:await_frame, window_id, timeout}, from, state) do
     :ok =
-      GPUI.Display.reply_after_frame(
+      GPUI.Display.Support.reply_after_frame(
         state.display_module,
         state.display,
         window_id,
@@ -318,7 +326,7 @@ defmodule GPUI.Runtime do
 
   def handle_call({:frame_token, window_id}, from, state) do
     :ok =
-      GPUI.Display.reply_from_display(
+      GPUI.Display.Support.reply_from_display(
         state.display_module,
         state.display,
         :frame_token,
@@ -331,7 +339,7 @@ defmodule GPUI.Runtime do
 
   def handle_call({:await_frame_after, window_id, generation, timeout}, from, state) do
     :ok =
-      GPUI.Display.reply_from_display(
+      GPUI.Display.Support.reply_from_display(
         state.display_module,
         state.display,
         :await_frame_after,
@@ -368,14 +376,18 @@ defmodule GPUI.Runtime do
   end
 
   defp start_display(display_module, display_opts) do
-    case GPUI.Display.start(display_module, display_opts) do
+    case GPUI.Display.Support.start(display_module, display_opts) do
       {:ok, display} -> {:ok, display}
       {:error, reason} -> {:error, {:display_start_failed, reason}}
     end
   end
 
   defp sync_initial_snapshot(display_module, display, session) do
-    case GPUI.Display.sync_snapshot(display_module, display, GPUI.Session.snapshot(session)) do
+    case GPUI.Display.Support.sync_snapshot(
+           display_module,
+           display,
+           GPUI.Session.snapshot(session)
+         ) do
       :ok -> :ok
       {:error, reason} -> {:error, {:display_sync_failed, reason}}
     end
@@ -407,7 +419,7 @@ defmodule GPUI.Runtime do
     do: {:reply, error, state}
 
   defp drain_display_events(state) do
-    case GPUI.Display.drain(state.display_module, state.display) do
+    case GPUI.Display.Support.drain(state.display_module, state.display) do
       {:ok, events} -> apply_display_events(state, events)
       {:error, reason} -> {:error, {:display_drain_failed, reason}, state}
     end
@@ -501,7 +513,7 @@ defmodule GPUI.Runtime do
   end
 
   defp sync_display(state, snapshot) do
-    case GPUI.Display.sync_snapshot(state.display_module, state.display, snapshot) do
+    case GPUI.Display.Support.sync_snapshot(state.display_module, state.display, snapshot) do
       :ok -> :ok
       {:error, reason} -> {:error, {:display_sync_failed, reason}}
     end

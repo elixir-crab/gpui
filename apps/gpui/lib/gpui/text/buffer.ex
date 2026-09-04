@@ -2,12 +2,19 @@ defmodule GPUI.Text.Buffer do
   @moduledoc """
   Persistent native Rope text storage with revisioned atomic edits.
 
+  `GPUI.Text.Buffer` requires the `gpui_native` package because its Rope storage
+  is a native resource. If that package is absent or disabled, operations return
+  `{:error, :native_backend_unavailable}` rather than calling an unavailable
+  module.
+
   This is a model primitive. It does not represent a file, editor, language,
   gutter, or workspace. Consumers own those policies and may later attach one
   or more renderer primitives to the same buffer.
   """
 
+  alias GPUI.Native.Backend
   alias GPUI.Text.{Edit, Position, Range, Selection, Snapshot, Transaction}
+  alias GPUI.Text.Transaction.Result
 
   @enforce_keys [:ref]
   defstruct [:ref]
@@ -23,7 +30,7 @@ defmodule GPUI.Text.Buffer do
 
     with :ok <- validate_revision(revision),
          {:ok, payload} <- selections_payload(selections),
-         {:ok, ref} <- GPUI.Native.text_buffer_new(text, revision, payload) do
+         {:ok, ref} <- Backend.call(:text_buffer_new, [text, revision, payload]) do
       {:ok, %__MODULE__{ref: ref}}
     end
   end
@@ -31,17 +38,24 @@ defmodule GPUI.Text.Buffer do
   @doc "Returns the current text, revision, selections, and history availability."
   @spec snapshot(t()) :: result(Snapshot.t())
   def snapshot(%__MODULE__{ref: ref}) do
-    with {:ok, snapshot} <- GPUI.Native.text_buffer_snapshot(ref) do
+    with {:ok, snapshot} <- Backend.call(:text_buffer_snapshot, [ref]) do
       {:ok, decode_snapshot(snapshot)}
     end
   end
 
   @doc "Atomically applies a transaction based on the current revision."
-  @spec transact(t(), Transaction.t()) :: result(map())
+  @spec transact(t(), Transaction.t()) :: result(Result.t())
   def transact(%__MODULE__{ref: ref}, %Transaction{} = transaction) do
+    transaction = Transaction.validate!(transaction)
+
     with {:ok, payload} <- transaction_payload(transaction),
-         {:ok, result} <- GPUI.Native.text_buffer_transact(ref, payload) do
-      {:ok, %{result | selections: decode_selections(result.selections)}}
+         {:ok, result} <- Backend.call(:text_buffer_transact, [ref, payload]) do
+      {:ok,
+       %Result{
+         revision: result.revision,
+         duplicate: result.duplicate,
+         selections: decode_selections(result.selections)
+       }}
     end
   end
 
@@ -49,7 +63,7 @@ defmodule GPUI.Text.Buffer do
   @spec undo(t(), non_neg_integer()) :: result(Snapshot.t())
   def undo(%__MODULE__{ref: ref}, base_revision) do
     with :ok <- validate_revision(base_revision),
-         {:ok, snapshot} <- GPUI.Native.text_buffer_undo(ref, base_revision) do
+         {:ok, snapshot} <- Backend.call(:text_buffer_undo, [ref, base_revision]) do
       {:ok, decode_snapshot(snapshot)}
     end
   end
@@ -58,7 +72,7 @@ defmodule GPUI.Text.Buffer do
   @spec redo(t(), non_neg_integer()) :: result(Snapshot.t())
   def redo(%__MODULE__{ref: ref}, base_revision) do
     with :ok <- validate_revision(base_revision),
-         {:ok, snapshot} <- GPUI.Native.text_buffer_redo(ref, base_revision) do
+         {:ok, snapshot} <- Backend.call(:text_buffer_redo, [ref, base_revision]) do
       {:ok, decode_snapshot(snapshot)}
     end
   end

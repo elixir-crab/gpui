@@ -26,7 +26,7 @@ defmodule GPUI.Codegen.Native.Boundary do
     definitions =
       Enum.map(@native_test_facade, fn {public_name, {nif_name, arg_names}} ->
         args = Enum.map(arg_names, &Macro.var(&1, nil))
-        call = {{:., [], [GPUI.Native, nif_name]}, [], args}
+        call = {{:., [], [GPUI.Native.Backend, nif_name]}, [], args}
         head = {public_name, [], args}
 
         quote do
@@ -68,7 +68,7 @@ defmodule GPUI.Codegen.Native.Boundary do
         if nif_error?(body) do
           call =
             quote do
-              apply(GPUI.Native.backend(), unquote(name), unquote(args))
+              apply(GPUI.Native.Backend.module(), unquote(name), unquote(args))
             end
 
           {:def, metadata, [{name, head_metadata, args}, [do: call]]}

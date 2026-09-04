@@ -13,8 +13,10 @@ defmodule GPUI.Dev do
   compilation so syntax failures cannot unload or partially redefine the live
   root module.
 
-  This facility is intended for trusted local development source. It does not
-  reload native code, remount applications, or migrate changed state shapes.
+  This facility is intended for trusted local development source. It requires
+  the optional `:file_system` dependency; applications that do not use source
+  reload do not need to start or include it. The watcher does not reload native
+  code, remount applications, or migrate changed state shapes.
   """
 
   use GenServer
@@ -44,7 +46,7 @@ defmodule GPUI.Dev do
     with :ok <- ensure_file_system(),
          {:ok, files} <- normalize_files(Keyword.fetch!(opts, :files)),
          {:ok, watcher} <- start_file_system(files) do
-      :ok = FileSystem.subscribe(watcher)
+      :ok = apply(FileSystem, :subscribe, [watcher])
 
       state = %{
         runtime: Keyword.fetch!(opts, :runtime),
@@ -119,7 +121,7 @@ defmodule GPUI.Dev do
 
   defp start_file_system(files) do
     directories = files |> Enum.map(&Path.dirname/1) |> Enum.uniq()
-    FileSystem.start_link(dirs: directories)
+    apply(FileSystem, :start_link, [[dirs: directories]])
   end
 
   defp canonical_path(path) do

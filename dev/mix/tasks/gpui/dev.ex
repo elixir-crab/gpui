@@ -45,7 +45,7 @@ defmodule Mix.Tasks.Gpui.Dev do
   end
 
   defp ensure_native_available! do
-    if Application.get_env(:gpui, :build_native, false) and not GPUI.Native.compiled?() do
+    if Application.get_env(:gpui, :build_native, false) and not GPUI.Native.available?() do
       Mix.raise("""
       the native GPUI runtime is not available in this build.
 

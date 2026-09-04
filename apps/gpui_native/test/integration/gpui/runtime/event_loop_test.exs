@@ -42,7 +42,9 @@ defmodule GPUI.Runtime.EventLoopTest do
     assert {:ok, :ok} =
              GPUI.Runtime.inject_event(runtime, %{type: :click, window_id: 1, event: "inc"})
 
-    assert [%{type: :click, event: "inc", window_id: 1}] = GPUI.Runtime.drain_events(runtime)
+    assert {:ok, [%{type: :click, event: "inc", window_id: 1}]} =
+             GPUI.Runtime.drain_events(runtime)
+
     assert [%{type: :click, event: "inc", window_id: 1}] = GPUI.Runtime.events(runtime)
 
     assert %{windows: [%{root: %{assigns: %{count: 1}}}]} = GPUI.Runtime.snapshot(runtime)
@@ -63,7 +65,9 @@ defmodule GPUI.Runtime.EventLoopTest do
     assert {:ok, :ok} =
              GPUI.Runtime.inject_event(runtime, %{type: :window_closed, window_id: 1})
 
-    assert [%{type: :window_closed, window_id: 1}] = GPUI.Runtime.drain_events(runtime)
+    assert {:ok, [%{type: :window_closed, window_id: 1}]} =
+             GPUI.Runtime.drain_events(runtime)
+
     assert %{windows: []} = GPUI.Runtime.snapshot(runtime)
     assert_receive {:gpui_snapshot, %{windows: []}}
   end

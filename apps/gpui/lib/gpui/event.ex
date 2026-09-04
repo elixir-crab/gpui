@@ -40,6 +40,14 @@ defmodule GPUI.Event do
           | :window_focus
           | :window_blur
           | :window_closed
+  @type payload :: %{
+          required(:type) => type(),
+          required(:window_id) => pos_integer(),
+          optional(:event) => String.t(),
+          optional(:value) => term(),
+          optional(atom()) => term()
+        }
+
   @type t :: %__MODULE__{
           type: type(),
           window_id: pos_integer() | nil,
@@ -104,7 +112,7 @@ defmodule GPUI.Event do
   @spec injectable_types() :: [type()]
   def injectable_types, do: @injectable_types
 
-  @spec normalize(t() | map() | keyword()) :: {:ok, map()} | {:error, term()}
+  @spec normalize(t() | map() | keyword()) :: {:ok, payload()} | {:error, term()}
   def normalize(%__MODULE__{} = event), do: event |> to_map() |> normalize()
 
   def normalize(event) when is_list(event) do
@@ -268,7 +276,7 @@ defmodule GPUI.Event do
   defp invalid(field), do: {:error, {:invalid_event, field}}
 
   @doc "Converts an event struct and its extra attributes into a plain event map."
-  @spec to_map(t()) :: map()
+  @spec to_map(t()) :: payload()
   def to_map(%__MODULE__{} = event) do
     event
     |> Map.from_struct()

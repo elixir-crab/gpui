@@ -3,7 +3,7 @@ defmodule GPUI.Test.DisplayTest do
 
   test "advertises no renderer enhancements" do
     display = start_supervised!({GPUI.Test.Display, []})
-    assert {:ok, []} = GPUI.Display.presentation_capabilities(GPUI.Test.Display, display)
+    assert {:ok, []} = GPUI.Display.Support.presentation_capabilities(GPUI.Test.Display, display)
   end
 
   test "records synchronized snapshots chronologically" do

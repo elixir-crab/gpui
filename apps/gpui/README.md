@@ -171,13 +171,12 @@ def deps do
 end
 ```
 
-For a native application using conventional controls:
+For a native application using conventional controls, `gpui_native` brings the
+matching `gpui` and `gpui_components` versions transitively:
 
 ```elixir
 def deps do
   [
-    {:gpui, "== 0.2.0-rc.2"},
-    {:gpui_components, "== 0.2.0-rc.2"},
     {:gpui_native, "== 0.2.0-rc.2"}
   ]
 end
