@@ -14,4 +14,10 @@ defmodule GPUI.NativeAvailabilityTest do
     refute GPUI.Native.available?()
     assert {:error, :native_backend_unavailable} = GPUI.Text.Buffer.new("text")
   end
+
+  test "the configured disabled backend returns a structured unavailable error" do
+    unless GPUI.Native.available?() do
+      assert {:error, :native_backend_unavailable} = GPUI.Text.Buffer.new("text")
+    end
+  end
 end

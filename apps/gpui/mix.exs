@@ -219,9 +219,6 @@ defmodule GPUI.MixProject do
       GPUI.Test,
       GPUI.Test.UI,
       GPUI.Test.Display,
-      GPUI.Test.Native,
-      GPUI.Native.Test,
-      GPUI.Test.Error,
       Mix.Tasks.Gpui.Release.Check
     ]
   end

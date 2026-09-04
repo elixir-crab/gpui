@@ -18,9 +18,28 @@ defmodule GPUI.Codegen.Native.Boundary do
     stop: {:native_test_stop, [:id]}
   ]
 
+  @native_test_docs %{
+    start: "Starts a deterministic native-test session.",
+    render: "Renders a tree into a deterministic native-test session.",
+    focus: "Focuses a target in a deterministic native-test session.",
+    click: "Clicks a target in a deterministic native-test session.",
+    click_at: "Clicks coordinates in a deterministic native-test session.",
+    scroll: "Scrolls a target in a deterministic native-test session.",
+    input: "Types text into a deterministic native-test session.",
+    resize: "Resizes a deterministic native-test session.",
+    bounds: "Returns target bounds from a deterministic native-test session.",
+    settle: "Runs a deterministic native-test session until idle.",
+    advance: "Advances a deterministic native-test session's clock.",
+    press: "Presses a key in a deterministic native-test session.",
+    events: "Drains events from a deterministic native-test session.",
+    stop: "Stops a deterministic native-test session."
+  }
+
+  @doc "Returns the deterministic native-test façade operation manifest."
   @spec native_test_facade() :: keyword({atom(), [atom()]})
   def native_test_facade, do: @native_test_facade
 
+  @doc "Builds the documented generated deterministic native-test façade."
   @spec native_test_facade_source() :: String.t()
   def native_test_facade_source do
     definitions =
@@ -29,7 +48,10 @@ defmodule GPUI.Codegen.Native.Boundary do
         call = {{:., [], [GPUI.Native.Backend, nif_name]}, [], args}
         head = {public_name, [], args}
 
+        documentation = Map.fetch!(@native_test_docs, public_name)
+
         quote do
+          @doc unquote(documentation)
           def unquote(head), do: unquote(call)
         end
       end)
