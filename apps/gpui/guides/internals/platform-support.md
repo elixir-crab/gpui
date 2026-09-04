@@ -17,17 +17,32 @@ These are current development requirements, not release guarantees.
 
 ## Platform validation
 
-The intended first distribution target is x86-64 GNU/Linux under X11. Native
-interaction tests run under Xvfb with Mesa Lavapipe when a Linux host is
-available.
+The `0.2.0-rc.2` precompiled targets are:
 
-Apple silicon macOS and x86-64 Windows are precompiled targets with native
-build, artifact inspection, NIF loading, and runtime startup evidence. Linux ARM,
-musl, Intel macOS, Windows ARM, and other target triples are not currently
-validated.
+- `x86_64-unknown-linux-gnu` under X11, validated with real windows,
+  interaction, and exact-window captures under Xvfb and Mesa Lavapipe;
+- `aarch64-apple-darwin`, validated with real AppKit windows, interaction, and
+  exact-window captures;
+- `x86_64-pc-windows-msvc`, validated for artifact structure, package
+  installation without Cargo, NIF loading, and runtime startup/shutdown.
+
+Windows native-window compatibility depends on GPUI accepting an available
+DXGI adapter. Native window creation with `0.2.0-rc.2` failed in tested
+QEMU/QXL and VMware Fusion guests during DirectX renderer initialization. The
+same failure remained after disabling VMware SVGA 3D and exposing Microsoft's
+Basic Display Driver. This is a virtual-graphics compatibility boundary, not a
+failure to select or load the precompiled NIF; physical Windows hardware and
+GPU-passthrough environments have not yet been tested. Track the affected
+configurations and upstream context in
+[issue #3](https://github.com/elixir-crab/gpui/issues/3).
+
+Linux ARM, musl, Intel macOS, Windows ARM-native ERTS, and other target triples
+are not currently validated. An ARM Windows guest can run the published x86-64
+ERTS and NIF through Windows emulation, but that does not constitute a native
+ARM target.
 
 See [Native builds and deployment](native-builds.html) for current prerequisites
-and the proposed artifact process.
+and artifact details.
 
 ## Architectural boundary
 
@@ -78,6 +93,7 @@ operating systems.
 ## Release policy
 
 Public stability, semantic-versioning guarantees, deprecation periods, retained
-wire versions, supported artifacts, and a platform matrix will be defined when
-the first release is prepared. Until then, optimize for a coherent design,
-truthful behavior, and strong tests rather than hypothetical compatibility.
+wire versions, and the stable platform matrix remain pending release-candidate
+feedback. Current release-candidate claims are limited to the evidence recorded
+above; a published native archive does not by itself imply validated desktop
+interaction on every machine with the same target triple.

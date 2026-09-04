@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Fixed
+
+- Preserve the complete GPUI/DirectX error chain when native window creation
+  fails so unsupported Windows graphics adapters can be diagnosed.
+
+### Compatibility
+
+- Documented that the `0.2.0-rc.2` Windows precompiled host installs and loads
+  in tested QEMU and VMware guests, while native window creation still requires
+  a DXGI adapter accepted by GPUI's DirectX renderer.
+
 ## 0.2.0-rc.2 - 2026-09-03
 
 ### Added

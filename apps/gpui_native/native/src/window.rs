@@ -930,7 +930,7 @@ fn open_gpui_window(
                 native_window_root(view_for_root.clone(), native_window, cx)
             },
         )
-        .map_err(|error| error.to_string())?;
+        .map_err(|error| format!("{error:#}"))?;
 
     Ok((handle, view))
 }
