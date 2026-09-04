@@ -15,7 +15,7 @@ and rendered with
 One declarative application can run against a local native display, a
 deterministic test display, or a native display on another machine.
 
-GPUI 0.2.0-rc.2 is published with precompiled Linux, Apple silicon macOS,
+GPUI 0.2.0-rc.2 is being prepared with precompiled Linux, Apple silicon macOS,
 and x86-64 Windows hosts. APIs may still change before 0.2.0. See
 [Platform support and development status](guides/internals/platform-support.md).
 

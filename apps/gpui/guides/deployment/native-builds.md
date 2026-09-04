@@ -47,49 +47,19 @@ stubs/facade are committed before release.
 
 ## Current platform status
 
-Published `0.2.0-rc.2` precompiled hosts target
-`x86_64-unknown-linux-gnu`, `aarch64-apple-darwin`, and
-`x86_64-pc-windows-msvc`:
+Source builds and native window lifecycle behavior are validated on:
 
-| Target | Published host artifacts | Clean no-Cargo load | Real native windows |
-| --- | --- | --- | --- |
-| x86-64 GNU/Linux | vanilla and `gpui-component` | validated | validated under X11 with Xvfb and Mesa Lavapipe |
-| Apple silicon macOS | vanilla and `gpui-component` | validated | validated with AppKit |
-| x86-64 Windows MSVC | vanilla and `gpui-component` | validated | not yet generally validated; see below |
+- `x86_64-unknown-linux-gnu` under X11 with Xvfb and Mesa Lavapipe;
+- `aarch64-apple-darwin` with AppKit on ERTS's original process main thread;
+- `x86_64-pc-windows-msvc` with the dedicated native GUI-thread host.
 
-Linux release artifacts are built on Ubuntu 22.04 and must not require GLIBC
-symbols newer than `GLIBC_2.35`. macOS archives are built and load-tested on
-Apple silicon. Windows archives are built with MSVC and load-tested on x86-64
-Windows.
-
-### Windows graphics requirements
-
-Loading a Windows archive proves package selection, checksum verification, and
-NIF compatibility; it does not prove that GPUI can create a window with every
-DXGI adapter. GPUI's DirectX 11 renderer requires feature level 10.1 or newer
-and raw/structured-buffer support through shader model 4.x.
-
-With `0.2.0-rc.2`, clean consumers loaded the x86-64 Windows NIF successfully
-in these guests but failed to create their first native window during DirectX
-renderer initialization:
-
-- QEMU/KVM with Microsoft Basic Display Adapter or Red Hat QXL;
-- VMware Fusion with VMware SVGA 3D;
-- the same VMware guest with SVGA 3D disabled and Microsoft Basic Display
-  Driver active. Track the affected environments and upstream context in
-  [issue #3](https://github.com/elixir-crab/gpui/issues/3).
-
-This matches a known class of upstream GPUI virtual-GPU compatibility problems.
-The upstream renderer already skips adapters that lack its structured-buffer
-requirement so Windows can expose a software renderer, but the tested guests
-still supplied no adapter that completed GPUI renderer creation. Physical
-Windows hardware and GPU-passthrough environments remain untested. Until real
-window evidence is available, treat Windows VM desktop support as experimental.
-
-Intel macOS remains a source-build development target. Linux ARM, musl, and
-Windows ARM-native ERTS do not have matching precompiled archives. Windows on
-ARM may run the published x86-64 ERTS and NIF under emulation, subject to the
-same graphics requirements.
+Published precompiled hosts target `x86_64-unknown-linux-gnu`,
+`aarch64-apple-darwin`, and `x86_64-pc-windows-msvc`. Linux release artifacts
+are built on Ubuntu 22.04 and must not require GLIBC symbols newer than
+`GLIBC_2.35`; macOS archives are built and load-tested on Apple silicon;
+Windows archives are built with MSVC and load-tested on x86-64 Windows. Intel
+macOS remains a source-build development target until matching native runtime
+evidence and release artifacts pass.
 
 ## Source builds
 
