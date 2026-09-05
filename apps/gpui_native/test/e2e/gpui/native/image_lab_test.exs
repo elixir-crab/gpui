@@ -56,7 +56,7 @@ defmodule GPUI.Native.ImageLabE2ETest do
              image_width: 2,
              image_height: 1,
              image: %GPUI.ResourceRef{id: "image-palette-preview"}
-           } = GPUI.Runtime.snapshot(runtime).windows |> hd() |> get_in([:root, :assigns])
+           } = GPUI.Runtime.snapshot!(runtime).windows |> hd() |> get_in([:root, :assigns])
 
     GPUI.Runtime.dispatch_event(runtime, %{
       type: :click,

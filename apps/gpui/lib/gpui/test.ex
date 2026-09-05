@@ -105,10 +105,10 @@ defmodule GPUI.Test do
   def render(%GPUI.Test.UI{} = ui, view, assigns),
     do: GPUI.Test.NativeSession.render(ui, view, assigns)
 
-  @doc "Returns a runtime snapshot, or passes an existing snapshot through."
+  @doc "Returns the runtime snapshot, or passes an existing snapshot through. Raises on render failure."
   @spec snapshot(GenServer.server() | Snapshot.t()) :: Snapshot.t()
   def snapshot(%Snapshot{} = snapshot), do: snapshot
-  def snapshot(runtime), do: Runtime.snapshot(runtime)
+  def snapshot(runtime), do: Runtime.snapshot!(runtime)
 
   @doc "Returns a window snapshot from a runtime or full snapshot."
   @spec window_snapshot(
@@ -153,7 +153,7 @@ defmodule GPUI.Test do
 
     with {:ok, :ok} <- Runtime.inject_event(runtime, event),
          {:ok, handled} when is_list(handled) <- Runtime.drain_events(runtime) do
-      {handled, Runtime.snapshot(runtime)}
+      {handled, Runtime.snapshot!(runtime)}
     else
       {:error, reason} -> raise "GPUI test display failed to process event: #{inspect(reason)}"
     end

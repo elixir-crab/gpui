@@ -16,6 +16,7 @@ defmodule GPUI.Session do
 
   import GPUI.Event, only: [is_routed_type: 1]
 
+  alias GPUI.Session.Support
   alias GPUI.Snapshot
   alias GPUI.WindowSpec
 
@@ -45,12 +46,6 @@ defmodule GPUI.Session do
     GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
   end
 
-  @doc "Starts a session whose application mount is completed by its supervisor."
-  @spec start_link_deferred(keyword()) :: GenServer.on_start()
-  def start_link_deferred(opts) do
-    GenServer.start_link(__MODULE__, {:deferred, opts})
-  end
-
   @doc "Returns the session's declarative windows."
   @spec windows(GenServer.server()) :: [WindowSpec.t()]
   def windows(session), do: GenServer.call(session, :windows)
@@ -66,7 +61,7 @@ defmodule GPUI.Session do
   def close_window(session, window), do: GenServer.call(session, {:close_window, window})
 
   @doc "Returns the current authoritative renderer-independent snapshot."
-  @spec snapshot(GenServer.server()) :: snapshot() | {:error, operation_error()}
+  @spec snapshot(GenServer.server()) :: {:ok, snapshot()} | {:error, operation_error()}
   def snapshot(session), do: GenServer.call(session, :snapshot)
 
   @doc "Stores one renderer-independent resource in the next snapshot."
@@ -98,34 +93,6 @@ defmodule GPUI.Session do
   @spec refresh(GenServer.server()) :: {:ok, snapshot()} | {:error, term()}
   def refresh(session), do: GenServer.call(session, :refresh)
 
-  @doc "Converts a declarative window into its serializable representation."
-  @spec window_payload(WindowSpec.t()) :: map()
-  def window_payload(%WindowSpec{} = window) do
-    %{
-      id: window.id,
-      key: window.key,
-      title: window.title,
-      size: Tuple.to_list(window.size || {800, 600}),
-      min_size: encode_optional_size(window.min_size),
-      resizable: window.resizable,
-      chrome: window.chrome,
-      lifecycle: window_lifecycle(window.root),
-      commands: Enum.map(window.commands, &GPUI.Command.to_payload/1),
-      root: encode_root(window.root)
-    }
-  end
-
-  defp window_lifecycle(nil), do: []
-
-  defp window_lifecycle({module, _assigns}) do
-    if function_exported?(module, :handle_window_event, 3),
-      do: [:close_request, :focus, :blur],
-      else: []
-  end
-
-  defp encode_optional_size(nil), do: nil
-  defp encode_optional_size(size), do: Tuple.to_list(size)
-
   @impl GenServer
   def init({:deferred, opts}) do
     app = Keyword.fetch!(opts, :app)
@@ -148,12 +115,7 @@ defmodule GPUI.Session do
   @impl GenServer
   def handle_call(:windows, _from, state), do: {:reply, state.windows, state}
 
-  def handle_call(:snapshot, _from, state) do
-    case safe_snapshot(state) do
-      {:ok, snapshot} -> {:reply, snapshot, state}
-      {:error, reason} -> {:reply, {:error, reason}, state}
-    end
-  end
+  def handle_call(:snapshot, _from, state), do: {:reply, safe_snapshot(state), state}
 
   def handle_call({:open_window, %WindowSpec{} = window}, _from, state) do
     case add_window(state, window) do
@@ -337,36 +299,7 @@ defmodule GPUI.Session do
   defp transition_error(_handled), do: nil
 
   defp snapshot_from_state(state) do
-    %Snapshot{windows: Enum.map(state.windows, &window_payload/1), resources: state.resources}
-  end
-
-  defp encode_root(nil), do: nil
-
-  defp encode_root({module, assigns}) do
-    assigns = Map.new(assigns)
-
-    %{
-      module: inspect(module),
-      assigns: assigns,
-      tree: viewport(render_root(module, assigns))
-    }
-  end
-
-  defp viewport(tree) do
-    %{
-      type: :viewport,
-      attrs: %{},
-      children: [tree]
-    }
-  end
-
-  defp render_root(module, assigns) do
-    unless Code.ensure_loaded?(module) and function_exported?(module, :render, 1) do
-      raise ArgumentError, "window root #{inspect(module)} must implement render/1"
-    end
-
-    module.render(assigns)
-    |> GPUI.Element.to_payload()
+    Support.snapshot(state.windows, state.resources)
   end
 
   defp normalize_and_handle_event(event, state) do

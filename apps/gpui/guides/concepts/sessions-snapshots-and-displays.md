@@ -103,6 +103,19 @@ the resulting snapshot back to the display.
 Normally the application module is placed directly in a supervision tree and
 its generated child specification starts the runtime.
 
+Snapshot queries use the same tagged result convention as remote clients and
+other fallible runtime operations:
+
+```elixir
+{:ok, snapshot} = GPUI.Runtime.snapshot(runtime)
+```
+
+`GPUI.Runtime.snapshot!/1` is available when rendering failure should raise a
+`GPUI.Runtime.Error` instead. A local snapshot query can fail only while
+rendering the authoritative session state. `GPUI.Remote.Client.snapshot/1`
+additionally reports transport, protocol, and local display-synchronization
+failures through its `{:error, reason}` result.
+
 Supervised workers can update a root view without pretending that application
 work is native input:
 

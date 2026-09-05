@@ -7,7 +7,7 @@ defmodule GPUI.Display do
   snapshot synchronization, event draining, and deterministic event injection.
   Frame barriers and presentation capabilities are optional.
 
-  Framework runtimes invoke this contract through `GPUI.Display.Support`, which
+  Framework runtimes invoke this contract through an internal support layer that
   validates callback results and turns callback failures into structured errors.
   """
 

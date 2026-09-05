@@ -68,8 +68,19 @@ defmodule GPUI.Runtime do
   def windows(runtime), do: GenServer.call(runtime, :windows, @call_timeout)
 
   @doc "Returns the current authoritative session snapshot."
-  @spec snapshot(GenServer.server()) :: GPUI.Snapshot.t()
-  def snapshot(runtime), do: GenServer.call(runtime, :snapshot, @call_timeout)
+  @spec snapshot(GenServer.server()) :: {:ok, GPUI.Snapshot.t()} | {:error, error()}
+  def snapshot(runtime) do
+    GenServer.call(runtime, :snapshot, @call_timeout)
+  end
+
+  @doc "Returns the current authoritative session snapshot or raises when rendering fails."
+  @spec snapshot!(GenServer.server()) :: GPUI.Snapshot.t()
+  def snapshot!(runtime) do
+    case snapshot(runtime) do
+      {:ok, snapshot} -> snapshot
+      {:error, reason} -> raise GPUI.Runtime.Error, operation: :snapshot, reason: reason
+    end
+  end
 
   @doc "Returns the bounded history of handled display events."
   @spec events(GenServer.server()) :: [map()]
@@ -306,7 +317,7 @@ defmodule GPUI.Runtime do
 
   def handle_call(:request_frame, _from, state) do
     case GPUI.Session.snapshot(state.session) do
-      %GPUI.Snapshot{} = snapshot -> {:reply, sync_display(state, snapshot), state}
+      {:ok, snapshot} -> {:reply, sync_display(state, snapshot), state}
       {:error, reason} -> {:reply, {:error, reason}, state}
     end
   end
@@ -383,12 +394,10 @@ defmodule GPUI.Runtime do
   end
 
   defp sync_initial_snapshot(display_module, display, session) do
-    case GPUI.Display.Support.sync_snapshot(
-           display_module,
-           display,
-           GPUI.Session.snapshot(session)
-         ) do
-      :ok -> :ok
+    with {:ok, snapshot} <- GPUI.Session.snapshot(session),
+         :ok <- GPUI.Display.Support.sync_snapshot(display_module, display, snapshot) do
+      :ok
+    else
       {:error, reason} -> {:error, {:display_sync_failed, reason}}
     end
   end
@@ -461,7 +470,7 @@ defmodule GPUI.Runtime do
 
   defp sync_and_publish(state) do
     case GPUI.Session.snapshot(state.session) do
-      %GPUI.Snapshot{} = snapshot ->
+      {:ok, snapshot} ->
         case sync_display(state, snapshot) do
           :ok ->
             state =
@@ -484,7 +493,7 @@ defmodule GPUI.Runtime do
 
   defp retry_unsynchronized(state) do
     case GPUI.Session.snapshot(state.session) do
-      %GPUI.Snapshot{} = snapshot ->
+      {:ok, snapshot} ->
         case sync_display(state, snapshot) do
           :ok ->
             state

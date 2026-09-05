@@ -88,7 +88,7 @@ defmodule GPUI.Native.InteractivityE2ETest do
   end
 
   defp assigns(runtime) do
-    %{windows: [%{root: %{assigns: assigns}}]} = GPUI.Runtime.snapshot(runtime)
+    %{windows: [%{root: %{assigns: assigns}}]} = GPUI.Runtime.snapshot!(runtime)
     assigns
   end
 end

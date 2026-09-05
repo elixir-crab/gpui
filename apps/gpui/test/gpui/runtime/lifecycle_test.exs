@@ -395,37 +395,39 @@ defmodule GPUI.Runtime.LifecycleTest do
     {:ok, runtime} =
       GPUI.Runtime.start_link(app: DemoApp, display: GPUI.Test.Display)
 
-    assert %{
-             windows: [
-               %{
-                 root: %{
-                   module: module,
-                   assigns: %{name: "OTP"},
-                   tree: %{
-                     type: :viewport,
-                     attrs: %{},
-                     children: [
-                       %{
-                         type: :div,
-                         attrs: %{
-                           style: [
-                             display: :flex,
-                             flex_direction: :column,
-                             align_items: :center,
-                             background: [:rgb, 4_210_752]
-                           ]
-                         },
-                         children: [%{type: :text, children: ["Hello ", "OTP"]}]
-                       }
-                     ]
-                   }
-                 }
-               }
-             ],
-             resources: %{}
-           } = GPUI.Runtime.snapshot(runtime)
+    assert {:ok,
+            %{
+              windows: [
+                %{
+                  root: %{
+                    module: module,
+                    assigns: %{name: "OTP"},
+                    tree: %{
+                      type: :viewport,
+                      attrs: %{},
+                      children: [
+                        %{
+                          type: :div,
+                          attrs: %{
+                            style: [
+                              display: :flex,
+                              flex_direction: :column,
+                              align_items: :center,
+                              background: [:rgb, 4_210_752]
+                            ]
+                          },
+                          children: [%{type: :text, children: ["Hello ", "OTP"]}]
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              resources: %{}
+            }} = GPUI.Runtime.snapshot(runtime)
 
     assert module =~ "HelloView"
+    assert %GPUI.Snapshot{} = GPUI.Runtime.snapshot!(runtime)
   end
 
   test "runtime subscriptions deliver synchronized typed updates" do
@@ -596,7 +598,7 @@ defmodule GPUI.Runtime.LifecycleTest do
     {:ok, session} = GPUI.Session.start_link(app: EmptyApp)
 
     assert [] = GPUI.Session.windows(session)
-    assert %GPUI.Snapshot{windows: [], resources: %{}} = GPUI.Session.snapshot(session)
+    assert {:ok, %GPUI.Snapshot{windows: [], resources: %{}}} = GPUI.Session.snapshot(session)
   end
 
   test "sessions report malformed and unsupported events explicitly without dispatching them" do
@@ -615,6 +617,6 @@ defmodule GPUI.Runtime.LifecycleTest do
     {:ok, session} = GPUI.Session.start_link(app: DemoApp)
 
     assert [%GPUI.WindowSpec{title: "GPUI + Elixir"}] = GPUI.Session.windows(session)
-    assert %{windows: [%{id: 1}], resources: %{}} = GPUI.Session.snapshot(session)
+    assert {:ok, %{windows: [%{id: 1}], resources: %{}}} = GPUI.Session.snapshot(session)
   end
 end

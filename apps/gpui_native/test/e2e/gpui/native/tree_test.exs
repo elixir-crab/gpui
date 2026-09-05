@@ -139,7 +139,7 @@ defmodule GPUI.Native.TreeE2ETest do
     Desktop.await_frame!(desktop, runtime, 1, native_window_id)
 
     current_range =
-      runtime |> GPUI.Runtime.snapshot() |> GPUI.Test.assigns() |> Map.fetch!(:range)
+      runtime |> GPUI.Runtime.snapshot!() |> GPUI.Test.assigns() |> Map.fetch!(:range)
 
     range =
       if current_range.last == 100_000,
@@ -152,7 +152,7 @@ defmodule GPUI.Native.TreeE2ETest do
 
     loaded_items =
       runtime
-      |> GPUI.Runtime.snapshot()
+      |> GPUI.Runtime.snapshot!()
       |> GPUI.Test.tree()
       |> GPUI.Tree.all(type: :ui_tree_item)
 

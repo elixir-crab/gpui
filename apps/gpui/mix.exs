@@ -114,6 +114,7 @@ defmodule GPUI.MixProject do
           GPUI.Snapshot,
           GPUI.Snapshot.Window,
           GPUI.Runtime,
+          GPUI.Runtime.Error,
           GPUI.Runtime.Update,
           GPUI.Tree,
           GPUI.Debug,
@@ -138,7 +139,7 @@ defmodule GPUI.MixProject do
           GPUI.Text.InlineProjection,
           GPUI.Text.BlockProjection
         ],
-        Displays: [GPUI.Display, GPUI.Display.Support],
+        Displays: [GPUI.Display],
         Elements: [
           GPUI.Element,
           GPUI.Event,
@@ -182,6 +183,7 @@ defmodule GPUI.MixProject do
       GPUI.Snapshot,
       GPUI.Snapshot.Window,
       GPUI.Runtime,
+      GPUI.Runtime.Error,
       GPUI.Runtime.Update,
       GPUI.Tree,
       GPUI.Debug,
@@ -207,7 +209,6 @@ defmodule GPUI.MixProject do
       GPUI.Transfer.Payload,
       GPUI.Transfer.Event,
       GPUI.Display,
-      GPUI.Display.Support,
       GPUI.Color,
       GPUI.Element,
       GPUI.Event,

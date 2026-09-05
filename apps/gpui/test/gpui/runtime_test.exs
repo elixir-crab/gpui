@@ -227,6 +227,28 @@ defmodule GPUI.RuntimeTest do
     end
   end
 
+  defmodule RenderFailureView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(_assigns) do
+      if :persistent_term.get({__MODULE__, :fail?}, false) do
+        raise "render failed"
+      else
+        %GPUI.Element{type: :text, children: ["ok"]}
+      end
+    end
+  end
+
+  defmodule RenderFailureApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(_args) do
+      {:ok, [window("Render failure", do: root(RenderFailureView, fail?: false))]}
+    end
+  end
+
   defmodule EmptyApp do
     use GPUI.Application
 
@@ -628,6 +650,27 @@ defmodule GPUI.RuntimeTest do
     assert Process.alive?(runtime)
   end
 
+  test "snapshot uses tagged errors and snapshot! raises a runtime error" do
+    key = {RenderFailureView, :fail?}
+    :persistent_term.put(key, false)
+    on_exit(fn -> :persistent_term.erase(key) end)
+
+    runtime =
+      start_supervised!(
+        {GPUI.Runtime, app: RenderFailureApp, display: GPUI.Test.Display, poll_interval: nil}
+      )
+
+    assert {:ok, %GPUI.Snapshot{}} = GPUI.Runtime.snapshot(runtime)
+    :persistent_term.put(key, true)
+
+    assert {:error, {:render_failed, %RuntimeError{message: "render failed"}, _stacktrace}} =
+             GPUI.Runtime.snapshot(runtime)
+
+    assert_raise GPUI.Runtime.Error, ~r/GPUI runtime snapshot failed/, fn ->
+      GPUI.Runtime.snapshot!(runtime)
+    end
+  end
+
   test "runtime retries authoritative snapshots after a display sync failure" do
     {:ok, runtime} =
       GPUI.Runtime.start_link(
@@ -648,7 +691,7 @@ defmodule GPUI.RuntimeTest do
              })
 
     assert %{windows: [%{root: %{assigns: %{name: "Recovered"}}}]} =
-             GPUI.Runtime.snapshot(runtime)
+             GPUI.Runtime.snapshot!(runtime)
 
     Process.sleep(30)
 

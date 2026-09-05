@@ -160,8 +160,7 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
 
   defp run_action(runtime, _x11_window_id, {:send_view_from, window_id, build_message}) do
     assigns =
-      runtime
-      |> GPUI.Runtime.snapshot()
+      runtime |> GPUI.Runtime.snapshot!()
       |> Map.fetch!(:windows)
       |> Enum.find(&(&1.id == window_id))
       |> get_in([:root, :assigns])

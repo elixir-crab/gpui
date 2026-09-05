@@ -133,7 +133,7 @@ defmodule GPUI.Dev.ReloadTest do
 
     assert Process.alive?(watcher)
     refute_receive {:gpui_snapshot, _snapshot}, 100
-    assert %{windows: [%{id: 1}, %{id: 2}]} = GPUI.Runtime.snapshot(runtime)
+    assert %{windows: [%{id: 1}, %{id: 2}]} = GPUI.Runtime.snapshot!(runtime)
 
     {_event, %{windows: [%{root: %{assigns: %{count: 8}}}, _]}} =
       dispatch(runtime, 1, "increment")

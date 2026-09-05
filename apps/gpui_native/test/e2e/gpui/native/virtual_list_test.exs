@@ -234,12 +234,12 @@ defmodule GPUI.Native.VirtualListE2ETest do
     Desktop.await_frame!(desktop, runtime, 1, native_window_id)
     Desktop.capture_fixture!(desktop, native_window_id, "virtual-list")
 
-    assert %{windows: [%{root: %{assigns: %{selected: nil}}}]} = GPUI.Runtime.snapshot(runtime)
+    assert %{windows: [%{root: %{assigns: %{selected: nil}}}]} = GPUI.Runtime.snapshot!(runtime)
     assert Process.alive?(runtime)
   end
 
   defp current_or_await_distant_range(runtime) do
-    range = runtime |> GPUI.Runtime.snapshot() |> hd_window_assigns() |> Map.fetch!(:range)
+    range = runtime |> GPUI.Runtime.snapshot!() |> hd_window_assigns() |> Map.fetch!(:range)
     if range.last > 99_900, do: range, else: await_distant_range(runtime)
   end
 

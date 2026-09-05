@@ -65,7 +65,7 @@ defmodule GPUI.Native.SplitE2ETest do
     resized =
       Desktop.eventually(desktop, runtime, fn ->
         %{windows: [%{root: %{assigns: %{sizes: [first, second] = sizes}}}]} =
-          GPUI.Runtime.snapshot(runtime)
+          GPUI.Runtime.snapshot!(runtime)
 
         assert first >= 140
         assert second >= 240
@@ -74,6 +74,6 @@ defmodule GPUI.Native.SplitE2ETest do
       end)
 
     assert {:ok, _snapshot} = GPUI.Runtime.refresh(runtime)
-    assert %{windows: [%{root: %{assigns: %{sizes: ^resized}}}]} = GPUI.Runtime.snapshot(runtime)
+    assert %{windows: [%{root: %{assigns: %{sizes: ^resized}}}]} = GPUI.Runtime.snapshot!(runtime)
   end
 end

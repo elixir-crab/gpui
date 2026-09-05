@@ -66,7 +66,7 @@ defmodule GPUI.Native.DisplayControlsE2ETest do
     window = Desktop.window!(desktop, title)
     Desktop.await_frame!(desktop, runtime, 1, window)
     Desktop.capture_fixture!(desktop, window, "display-controls")
-    assert %{windows: [%{root: %{assigns: %{copied: false}}}]} = GPUI.Runtime.snapshot(runtime)
+    assert %{windows: [%{root: %{assigns: %{copied: false}}}]} = GPUI.Runtime.snapshot!(runtime)
     assert Process.alive?(runtime)
   end
 end

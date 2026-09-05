@@ -95,12 +95,12 @@ defmodule GPUI.Native.MotionE2ETest do
   end
 
   defp assigns(runtime) do
-    %{windows: [%{root: %{assigns: assigns}}]} = GPUI.Runtime.snapshot(runtime)
+    %{windows: [%{root: %{assigns: assigns}}]} = GPUI.Runtime.snapshot!(runtime)
     assigns
   end
 
   defp motion_card(runtime) do
-    %{windows: [%{root: root}]} = GPUI.Runtime.snapshot(runtime)
+    %{windows: [%{root: root}]} = GPUI.Runtime.snapshot!(runtime)
     find_node(root.tree, "motion-card")
   end
 

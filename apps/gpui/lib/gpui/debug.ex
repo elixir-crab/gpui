@@ -3,12 +3,12 @@ defmodule GPUI.Debug do
 
   alias GPUI.{Runtime, Snapshot}
 
-  @doc "Returns a window's authoritative element tree."
+  @doc "Returns a window's authoritative element tree. Runtime render failures raise `GPUI.Runtime.Error`."
   @spec tree(GenServer.server() | Snapshot.t() | map(), keyword()) :: map()
   def tree(source, opts \\ [])
   def tree(%Snapshot{} = snapshot, opts), do: window!(snapshot, opts).root.tree
   def tree(%{type: _type} = tree, _opts), do: tree
-  def tree(runtime, opts), do: runtime |> Runtime.snapshot() |> tree(opts)
+  def tree(runtime, opts), do: runtime |> Runtime.snapshot!() |> tree(opts)
 
   @doc "Formats a bounded, human-readable tree."
   @spec format_tree(GenServer.server() | Snapshot.t() | map(), keyword()) :: String.t()

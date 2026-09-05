@@ -10,7 +10,7 @@ defmodule GPUI.Remote.Session.Supervisor do
   def start_app_session(tree, opts) do
     child_spec = %{
       id: :app_session,
-      start: {GPUI.Session, :start_link_deferred, [opts]},
+      start: {GPUI.Session.Support, :start_link_deferred, [opts]},
       restart: :temporary,
       significant: true
     }

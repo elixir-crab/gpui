@@ -128,7 +128,7 @@ defmodule GPUI.Native.CodeViewerE2ETest do
 
   defp root_assigns(runtime) do
     runtime
-    |> GPUI.Runtime.snapshot()
+    |> GPUI.Runtime.snapshot!()
     |> Map.fetch!(:windows)
     |> hd()
     |> get_in([:root, :assigns])

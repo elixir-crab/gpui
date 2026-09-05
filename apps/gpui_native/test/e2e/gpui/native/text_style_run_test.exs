@@ -63,6 +63,6 @@ defmodule GPUI.Native.TextStyleRunE2ETest do
     Desktop.await_frame!(desktop, runtime, 1, native_window)
 
     assert %{windows: [%{root: %{assigns: %{style_runs: [^run]}}}]} =
-             GPUI.Runtime.snapshot(runtime)
+             GPUI.Runtime.snapshot!(runtime)
   end
 end

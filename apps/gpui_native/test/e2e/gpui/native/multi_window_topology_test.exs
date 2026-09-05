@@ -66,7 +66,7 @@ defmodule GPUI.Native.MultiWindowTopologyE2ETest do
     Desktop.await_frame!(desktop, runtime, 1, main_native)
 
     %{windows: [%{root: %{assigns: %{details_title: details_title}}}]} =
-      GPUI.Runtime.snapshot(runtime)
+      GPUI.Runtime.snapshot!(runtime)
 
     {:ok, _event, %{windows: [_, %{id: 2, key: "details"}]}} =
       GPUI.Runtime.dispatch_event(runtime, %{

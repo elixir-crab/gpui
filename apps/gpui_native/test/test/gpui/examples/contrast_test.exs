@@ -27,7 +27,7 @@ defmodule GPUI.Examples.ContrastTest do
             id: {scenario, make_ref()}
           )
 
-        tree = GPUI.Runtime.snapshot(runtime).windows |> hd() |> get_in([:root, :tree])
+        tree = GPUI.Runtime.snapshot!(runtime).windows |> hd() |> get_in([:root, :tree])
         explicit_failures(tree, nil, @light_background, [to_string(scenario.id())])
       end)
 
