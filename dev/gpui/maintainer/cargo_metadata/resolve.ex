@@ -7,4 +7,3 @@ defmodule GPUI.Maintainer.CargoMetadata.Resolve do
 
   @type t :: %__MODULE__{nodes: [GPUI.Maintainer.CargoMetadata.Node.t()]}
 end
-

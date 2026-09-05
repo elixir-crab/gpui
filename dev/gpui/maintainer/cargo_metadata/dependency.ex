@@ -7,4 +7,3 @@ defmodule GPUI.Maintainer.CargoMetadata.Dependency do
 
   @type t :: %__MODULE__{pkg: String.t()}
 end
-

@@ -3,7 +3,7 @@ defmodule GPUI.Maintainer.CargoMetadata.Document do
 
   use JSONCodec, strict: true, fast_path: :json
 
-  defstruct [packages: [], resolve: nil]
+  defstruct packages: [], resolve: nil
 
   @type t :: %__MODULE__{
           packages: [GPUI.Maintainer.CargoMetadata.Package.t()],

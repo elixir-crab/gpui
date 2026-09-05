@@ -13,4 +13,3 @@ defmodule GPUI.Maintainer.CargoMetadata.Package do
           targets: [GPUI.Maintainer.CargoMetadata.Target.t()]
         }
 end
-

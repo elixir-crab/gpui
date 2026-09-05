@@ -7,4 +7,3 @@ defmodule GPUI.Maintainer.CargoMetadata.Node do
 
   @type t :: %__MODULE__{id: String.t(), deps: [GPUI.Maintainer.CargoMetadata.Dependency.t()]}
 end
-

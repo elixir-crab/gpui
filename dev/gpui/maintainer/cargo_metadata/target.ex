@@ -7,4 +7,3 @@ defmodule GPUI.Maintainer.CargoMetadata.Target do
 
   @type t :: %__MODULE__{crate_types: [String.t()]}
 end
-
