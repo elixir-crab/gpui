@@ -74,7 +74,7 @@ defmodule GPUI.Maintainer.NativeWorkspace do
   def audit!(args \\ []),
     do: stream!(["audit", "--deny", "unsound" | args], manifest: false, locked: false)
 
-  @doc false
+  @doc "Returns captured Cargo output for repository checks that inspect command text."
   @spec output!([String.t()]) :: String.t()
   def output!(args) do
     args

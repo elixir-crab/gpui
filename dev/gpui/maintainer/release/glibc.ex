@@ -1,8 +1,9 @@
 defmodule GPUI.Maintainer.Release.Glibc do
-  @moduledoc false
+  @moduledoc "Validates native archive GLIBC symbol-version compatibility."
 
   @type version :: {non_neg_integer(), non_neg_integer()}
 
+  @doc "Parses a dotted GLIBC major/minor version."
   @spec parse_version!(String.t()) :: version()
   def parse_version!(version) when is_binary(version) do
     case String.split(version, ".") do
@@ -11,6 +12,7 @@ defmodule GPUI.Maintainer.Release.Glibc do
     end
   end
 
+  @doc "Extracts sorted unique GLIBC requirements from object-dump output."
   @spec required_versions(String.t()) :: [version()]
   def required_versions(output) when is_binary(output) do
     ~r/GLIBC_(\d+)\.(\d+)/
@@ -20,6 +22,7 @@ defmodule GPUI.Maintainer.Release.Glibc do
     |> Enum.sort()
   end
 
+  @doc "Checks that a native archive does not require a newer GLIBC version."
   @spec check_archive!(Path.t(), keyword()) :: :ok
   def check_archive!(archive, opts) do
     maximum = Keyword.fetch!(opts, :max)

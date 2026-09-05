@@ -26,23 +26,30 @@ require_file("codegen/gpui/codegen/native/host.ex")
 require_file("apps/gpui/lib/gpui/transfer/payload.ex")
 require_file("apps/gpui/lib/gpui/transfer/event.ex")
 require_file("apps/gpui/lib/gpui/event.ex")
+require_file("codegen/gpui/codegen/native/accessibility/definitions.ex")
 require_file("codegen/gpui/codegen/native/accessibility.ex")
 require_file("codegen/gpui/codegen/native/boundary.ex")
 require_file("codegen/gpui/codegen/native/component_contracts.ex")
+require_file("codegen/gpui/codegen/native/component_host_contract/definitions.ex")
 require_file("codegen/gpui/codegen/native/component_host_contract.ex")
 require_file("codegen/gpui/codegen/native/component_adapters.ex")
 require_file("codegen/gpui/codegen/native/component_event_transport.ex")
 require_file("codegen/gpui/codegen/native/component_nodes.ex")
 require_file("codegen/gpui/codegen/native/core_style.ex")
 require_file("codegen/gpui/codegen/native/core_style_application.ex")
+require_file("codegen/gpui/codegen/native/component/macros.ex")
 require_file("codegen/gpui/codegen/native/components.ex")
 require_file("codegen/gpui/codegen/native/decoder.ex")
 require_file("codegen/gpui/codegen/native/disabled_window.ex")
+require_file("codegen/gpui/codegen/native/dispatch/definitions.ex")
 require_file("codegen/gpui/codegen/native/dispatch.ex")
 require_file("codegen/gpui/codegen/native/elements.ex")
+require_file("codegen/gpui/codegen/native/event_boundary/definitions.ex")
 require_file("codegen/gpui/codegen/native/event_boundary.ex")
+require_file("codegen/gpui/codegen/native/event/definitions.ex")
 require_file("codegen/gpui/codegen/native/events.ex")
 require_file("codegen/gpui/codegen/native/extensions.ex")
+require_file("codegen/gpui/codegen/native/style/definitions.ex")
 require_file("codegen/gpui/codegen/native/style.ex")
 require_file("codegen/gpui/codegen/native/style_adapter.ex")
 require_file("codegen/gpui/codegen/native/test_boundary.ex")
@@ -50,19 +57,29 @@ require_file("codegen/gpui/codegen/native/text_boundary.ex")
 require_file("codegen/gpui/codegen/native/text_types.ex")
 require_file("codegen/gpui/codegen/native/window.ex")
 require_file("codegen/gpui/codegen/native/atoms.ex")
+require_file("codegen/gpui/codegen/native/resource/definitions.ex")
 require_file("codegen/gpui/codegen/native/resources.ex")
 require_file("codegen/gpui/codegen/native/resource_boundary.ex")
+require_file("codegen/gpui/codegen/native/disabled_resource_boundary.ex")
 require_file("codegen/gpui/codegen/native/rusty.ex")
 require_file("codegen/gpui/codegen/native/runtime_boundary.ex")
 require_file("codegen/gpui/codegen/native/renderers.ex")
+require_file("codegen/gpui/codegen/native/renderer_dispatch/definitions.ex")
 require_file("codegen/gpui/codegen/native/renderer_dispatch.ex")
+require_file("codegen/gpui/codegen/native/registry/definitions.ex")
 require_file("codegen/gpui/codegen/native/registry.ex")
+require_file("codegen/gpui/codegen/native/schema_type/macros.ex")
 require_file("codegen/gpui/codegen/native/schema_types.ex")
 require_file("codegen/gpui/codegen/native/schema.ex")
-require_file("codegen/gpui/codegen/native/vanilla.ex")
+require_file("codegen/gpui/codegen/native/vanilla/definitions.ex")
+require_file("codegen/gpui/codegen/native/vanilla/schema_types.ex")
+require_file("codegen/gpui/codegen/native/vanilla/dispatch.ex")
+require_file("codegen/gpui/codegen/native/vanilla/registry.ex")
+require_file("codegen/gpui/codegen/native/vanilla/renderer_dispatch.ex")
 require_file("codegen/gpui/codegen/native/projections.ex")
 
-rust "native-component-event-transport", "apps/gpui_native/native/src/generated/component_event_transport.rs" do
+rust "native-component-event-transport",
+     "apps/gpui_native/native/src/generated/component_event_transport.rs" do
   GPUI.Codegen.Native.ComponentEventTransport.items()
 end
 
@@ -146,7 +163,8 @@ rust "vanilla-component-registry", "apps/gpui/native/src/generated/component_reg
   GPUI.Codegen.Native.Projections.registry_items(:vanilla)
 end
 
-rust "gpui-component-host-contract", "apps/gpui_components/native/src/generated/host_contract.rs" do
+rust "gpui-component-host-contract",
+     "apps/gpui_components/native/src/generated/host_contract.rs" do
   GPUI.Codegen.Native.ComponentHostContract.items()
 end
 
@@ -158,7 +176,8 @@ rust "gpui-component-schema", "apps/gpui_components/native/src/generated/schema.
   GPUI.Codegen.Native.Projections.schema_items(:gpui_component)
 end
 
-rust "gpui-component-registry", "apps/gpui_components/native/src/generated/component_registry.rs" do
+rust "gpui-component-registry",
+     "apps/gpui_components/native/src/generated/component_registry.rs" do
   GPUI.Codegen.Native.Projections.registry_items(:gpui_component)
 end
 
@@ -166,7 +185,8 @@ rust "vanilla-native-schema", "apps/gpui_native/native/src/generated/vanilla_sch
   GPUI.Codegen.Native.Projections.schema_items(:vanilla)
 end
 
-rust "vanilla-native-component-registry", "apps/gpui_native/native/src/generated/vanilla_component_registry.rs" do
+rust "vanilla-native-component-registry",
+     "apps/gpui_native/native/src/generated/vanilla_component_registry.rs" do
   GPUI.Codegen.Native.Projections.registry_items(:vanilla)
 end
 
@@ -195,8 +215,7 @@ generate "native-stubs", "apps/gpui/lib/gpui/native/generated.ex" do
     Nif.stubs_from_functions(
       Enum.map(rusty_functions, &{:decode_image, &1}) ++
         [
-          text_buffer_new:
-            MetaAST.function!(GPUI.Codegen.Native.TextBoundary, :text_buffer_new),
+          text_buffer_new: MetaAST.function!(GPUI.Codegen.Native.TextBoundary, :text_buffer_new),
           text_buffer_snapshot:
             MetaAST.function!(GPUI.Codegen.Native.TextBoundary, :text_buffer_snapshot),
           text_buffer_transact:
@@ -208,8 +227,7 @@ generate "native-stubs", "apps/gpui/lib/gpui/native/generated.ex" do
           host_info: MetaAST.function!(GPUI.Codegen.Native.RuntimeBoundary, :host_info),
           set_app_identity:
             MetaAST.function!(GPUI.Codegen.Native.RuntimeBoundary, :set_app_identity),
-          start_runtime:
-            MetaAST.function!(GPUI.Codegen.Native.RuntimeBoundary, :start_runtime),
+          start_runtime: MetaAST.function!(GPUI.Codegen.Native.RuntimeBoundary, :start_runtime),
           stop_runtime: MetaAST.function!(GPUI.Codegen.Native.RuntimeBoundary, :stop_runtime),
           open_window: MetaAST.function!(GPUI.Codegen.Native.Window, :open_window),
           update_window: MetaAST.function!(GPUI.Codegen.Native.Window, :update_window),
@@ -218,10 +236,8 @@ generate "native-stubs", "apps/gpui/lib/gpui/native/generated.ex" do
           frame_token: MetaAST.function!(GPUI.Codegen.Native.Window, :frame_token),
           await_frame_after: MetaAST.function!(GPUI.Codegen.Native.Window, :await_frame_after),
           set_theme: MetaAST.function!(GPUI.Codegen.Native.Window, :set_theme),
-          put_resource:
-            MetaAST.function!(GPUI.Codegen.Native.ResourceBoundary, :put_resource),
-          drop_resource:
-            MetaAST.function!(GPUI.Codegen.Native.ResourceBoundary, :drop_resource),
+          put_resource: MetaAST.function!(GPUI.Codegen.Native.ResourceBoundary, :put_resource),
+          drop_resource: MetaAST.function!(GPUI.Codegen.Native.ResourceBoundary, :drop_resource),
           drain_events: MetaAST.function!(GPUI.Codegen.Native.EventBoundary, :drain_events),
           inject_event: MetaAST.function!(GPUI.Codegen.Native.EventBoundary, :inject_event),
           native_test_start:
@@ -242,16 +258,14 @@ generate "native-stubs", "apps/gpui/lib/gpui/native/generated.ex" do
             MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_scroll),
           native_test_input:
             MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_input),
-          native_test_key:
-            MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_key),
+          native_test_key: MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_key),
           native_test_advance:
             MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_advance),
           native_test_idle:
             MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_idle),
           native_test_events:
             MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_events),
-          native_test_stop:
-            MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_stop)
+          native_test_stop: MetaAST.function!(GPUI.Codegen.Native.TestBoundary, :native_test_stop)
         ],
       GPUI.Native.Generated
     )
