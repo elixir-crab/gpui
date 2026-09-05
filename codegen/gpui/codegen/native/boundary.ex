@@ -57,7 +57,7 @@ defmodule GPUI.Codegen.Native.Boundary do
       end)
 
     quote do
-      defmodule GPUI.Native.Test do
+      defmodule GPUI.Native.TestDriver do
         @moduledoc """
         Generated low-level façade for deterministic native-test NIF commands.
 

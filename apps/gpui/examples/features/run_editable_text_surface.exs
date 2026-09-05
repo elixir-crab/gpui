@@ -8,4 +8,4 @@ children = [Features.EditableTextSurface.App]
 [{_, runtime, _, _}] = Supervisor.which_children(supervisor)
 
 IO.puts("Editable text surface is running. Press Ctrl+C twice to exit.")
-GPUI.Dev.wait(runtime, files: [Path.join(__DIR__, "editable_text_surface.exs")])
+GPUI.Dev.Reload.wait(runtime, files: [Path.join(__DIR__, "editable_text_surface.exs")])

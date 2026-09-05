@@ -10,7 +10,7 @@ defmodule Mix.Tasks.Gpui.Release.Version.Show do
   def run(args) do
     {options, positional} = OptionParser.parse!(args, strict: @switches)
     package = Keyword.get(options, :package) || List.first(positional) || "gpui_native"
-    version = GPUI.Dev.Release.Version.fetch!(package)
+    version = GPUI.Maintainer.Release.Version.fetch!(package)
 
     if options[:github_output] do
       output = System.fetch_env!("GITHUB_OUTPUT")
@@ -21,7 +21,7 @@ defmodule Mix.Tasks.Gpui.Release.Version.Show do
           "version=",
           to_string(version),
           "\nprerelease=",
-          to_string(GPUI.Dev.Release.Version.prerelease?(version)),
+          to_string(GPUI.Maintainer.Release.Version.prerelease?(version)),
           "\n"
         ],
         [:append]

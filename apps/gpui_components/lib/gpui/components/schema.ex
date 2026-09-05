@@ -9,7 +9,7 @@ defmodule GPUI.Components.Schema do
 
   @behaviour GPUI.Schema.Provider
 
-  alias GPUI.Schema.ComponentDocs
+  alias GPUI.Schema.Component.Docs
 
   @components GPUI.Components.Schema.Declarations.components()
 
@@ -52,7 +52,7 @@ defmodule GPUI.Components.Schema do
 
   @doc "Returns generated public option documentation for a component tag."
   @spec component_options_doc(atom()) :: String.t()
-  def component_options_doc(tag), do: tag |> component!() |> ComponentDocs.options_doc()
+  def component_options_doc(tag), do: tag |> component!() |> Docs.options_doc()
 
   @doc "Defines public component option types from conventional declarations."
   defmacro define_component_option_types(definitions) do
@@ -60,7 +60,7 @@ defmodule GPUI.Components.Schema do
 
     types =
       Enum.map(definitions, fn {type_name, tag} ->
-        type = tag |> component!() |> ComponentDocs.option_type_ast()
+        type = tag |> component!() |> Docs.option_type_ast()
         builder = type_name |> Atom.to_string() |> String.trim_trailing("_options")
 
         quote do

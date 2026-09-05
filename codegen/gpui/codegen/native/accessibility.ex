@@ -1,4 +1,4 @@
-defmodule GPUI.Codegen.Native.AccessibilityDefinitions do
+defmodule GPUI.Codegen.Native.Accessibility.Definitions do
   @moduledoc "Builds RustQ accessibility types and conversion implementations from GPUI.Accessibility policy."
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
@@ -122,13 +122,13 @@ defmodule GPUI.Codegen.Native.Accessibility do
 
   use RustQ.Meta, rust_sources: ["apps/gpui_native/native/src/element/mod.rs"]
 
-  alias GPUI.Codegen.Native.AccessibilityDefinitions
+  alias GPUI.Codegen.Native.Accessibility.Definitions
   alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
 
-  require AccessibilityDefinitions
-  AccessibilityDefinitions.define_contracts()
+  require Definitions
+  Definitions.define_contracts()
 
   @spec items() :: [AST.item()]
   def items do

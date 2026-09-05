@@ -1,21 +1,21 @@
 GPUITest.Examples.load!(:controlled_form)
 
 defmodule GPUITest.Visual.ControlledForm.Scenario do
-  @behaviour GPUI.Dev.Visual.Scenario
+  @behaviour GPUI.Maintainer.Visual.Scenario
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def id, do: :controlled_form
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def app, do: GettingStarted.ControlledForm.App
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def args(_theme), do: %{}
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def title, do: "Controlled Form"
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def captures do
     [
       %{name: "saved"},

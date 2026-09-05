@@ -140,7 +140,7 @@ and [UI components](apps/gpui/guides/ui/components.md).
 | [Component Gallery](apps/gpui/examples/component_gallery/README.md) | Canonical component states, combinations, and accessibility behavior |
 
 Run the `gpui.dev` Mix task with the larger examples for state-preserving
-Elixir source reload. See the [examples index](apps/gpui/examples/README.md) for the
+Elixir source reload through `GPUI.Dev.Reload`. See the [examples index](apps/gpui/examples/README.md) for the
 complete catalog.
 
 ## Packages

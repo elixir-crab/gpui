@@ -1,4 +1,4 @@
-defmodule GPUI.Codegen.Native.DispatchDefinitions do
+defmodule GPUI.Codegen.Native.Dispatch.Definitions do
   @moduledoc "Builds schema-derived RustQ dispatch functions for element and component decoding."
 
   defmacro define_dispatch(host) do
@@ -120,15 +120,15 @@ defmodule GPUI.Codegen.Native.Dispatch do
   @moduledoc "Emits generated native element-tag and component-kind decoder dispatch."
 
   use RustQ.Meta,
-    callable_modules: [GPUI.Codegen.Native.ComponentDefinitions]
+    callable_modules: [GPUI.Codegen.Native.Component.Definitions]
 
-  alias GPUI.Codegen.Native.DispatchDefinitions
+  alias GPUI.Codegen.Native.Dispatch.Definitions
   alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
 
-  require DispatchDefinitions
-  DispatchDefinitions.define_dispatch(:gpui_component)
+  require Definitions
+  Definitions.define_dispatch(:gpui_component)
 
   @spec items() :: [AST.item()]
   def items do

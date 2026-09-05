@@ -1,4 +1,4 @@
-defmodule GPUI.Codegen.Native.RendererDispatchDefinitions do
+defmodule GPUI.Codegen.Native.RendererDispatch.Definitions do
   @moduledoc "Builds renderer calls from schema entries and discovered handwritten Rust functions."
 
   defmacro define_renderer_dispatch(host) do
@@ -40,11 +40,11 @@ defmodule GPUI.Codegen.Native.RendererDispatchDefinitions do
     allow_attrs =
       if MapSet.subset?(MapSet.new([:node, :element_id, :context]), used_args),
         do: [],
-        else: [quote(do: @allow :unused_variables)]
+        else: [quote(do: @allow(:unused_variables))]
 
     {body, allow_attrs} =
       if clauses == [] do
-        {quote(do: unreachable!()), [quote(do: @allow :unused_variables)]}
+        {quote(do: unreachable!()), [quote(do: @allow(:unused_variables))]}
       else
         clauses = clauses ++ [{:->, [], [[Macro.var(:_, nil)], quote(do: unreachable!())]}]
         {{:case, [], [Macro.var(:node, nil), [do: clauses]]}, allow_attrs}
@@ -89,13 +89,13 @@ defmodule GPUI.Codegen.Native.RendererDispatch do
 
   use RustQ.Meta
 
-  alias GPUI.Codegen.Native.RendererDispatchDefinitions
+  alias GPUI.Codegen.Native.RendererDispatch.Definitions
   alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
 
-  require RendererDispatchDefinitions
-  RendererDispatchDefinitions.define_renderer_dispatch(:gpui_component)
+  require Definitions
+  Definitions.define_renderer_dispatch(:gpui_component)
 
   @spec item() :: AST.Function.t()
   def item do

@@ -1,4 +1,4 @@
-defmodule GPUI.Codegen.Native.ComponentDefinitionMacros do
+defmodule GPUI.Codegen.Native.Component.Macros do
   @moduledoc "Expands GPUI component schema entries into RustQ node types and decoder declarations."
 
   defmacro define_components(host) do
@@ -256,18 +256,18 @@ defmodule GPUI.Codegen.Native.ComponentDefinitionMacros do
     do: atom |> Atom.to_string() |> String.replace(~r/[^a-zA-Z0-9_]/, "_") |> String.to_atom()
 end
 
-defmodule GPUI.Codegen.Native.ComponentDefinitions do
+defmodule GPUI.Codegen.Native.Component.Definitions do
   @moduledoc "Emits generated Rust component node definitions and decoders."
 
   use RustQ.Meta
 
-  alias GPUI.Codegen.Native.ComponentDefinitionMacros
+  alias GPUI.Codegen.Native.Component.Macros
   alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
 
-  require ComponentDefinitionMacros
-  ComponentDefinitionMacros.define_components(:gpui_component)
+  require Macros
+  Macros.define_components(:gpui_component)
 
   @spec items() :: [AST.item()]
   def items do

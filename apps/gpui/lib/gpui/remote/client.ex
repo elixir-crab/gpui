@@ -34,7 +34,7 @@ defmodule GPUI.Remote.Client do
   @doc "Starts a remote display client linked to the caller."
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
-    with {:ok, _poll_interval} <- GPUI.Polling.interval(opts) do
+    with {:ok, _poll_interval} <- GPUI.Display.Polling.interval(opts) do
       GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
     end
   end
@@ -65,7 +65,7 @@ defmodule GPUI.Remote.Client do
     display_module = Keyword.get(opts, :display, GPUI.Display.Native)
     display_opts = Keyword.get(opts, :display_opts, [])
 
-    case GPUI.Polling.interval(opts) do
+    case GPUI.Display.Polling.interval(opts) do
       {:ok, poll_interval} ->
         start_display(display_module, display_opts, poll_interval, opts)
 
@@ -140,12 +140,12 @@ defmodule GPUI.Remote.Client do
   end
 
   def handle_call(:subscribe, {pid, _tag}, state) do
-    subscribers = GPUI.UpdateSubscribers.subscribe(state.subscribers, pid)
+    subscribers = GPUI.Runtime.Subscriptions.subscribe(state.subscribers, pid)
     {:reply, :ok, %{state | subscribers: subscribers}}
   end
 
   def handle_call(:unsubscribe, {pid, _tag}, state) do
-    subscribers = GPUI.UpdateSubscribers.unsubscribe(state.subscribers, pid)
+    subscribers = GPUI.Runtime.Subscriptions.unsubscribe(state.subscribers, pid)
     {:reply, :ok, %{state | subscribers: subscribers}}
   end
 
@@ -203,7 +203,7 @@ defmodule GPUI.Remote.Client do
 
   @impl GenServer
   def handle_info({:DOWN, monitor, :process, pid, _reason}, state) do
-    subscribers = GPUI.UpdateSubscribers.remove_down(state.subscribers, pid, monitor)
+    subscribers = GPUI.Runtime.Subscriptions.remove_down(state.subscribers, pid, monitor)
     {:noreply, %{state | subscribers: subscribers}}
   end
 
@@ -457,7 +457,7 @@ defmodule GPUI.Remote.Client do
       :ok ->
         state =
           if is_list(events) do
-            GPUI.UpdateSubscribers.publish_update(state, self(), events, snapshot)
+            GPUI.Runtime.Subscriptions.publish_update(state, self(), events, snapshot)
           else
             state
           end

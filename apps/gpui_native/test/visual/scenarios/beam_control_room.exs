@@ -1,21 +1,21 @@
 GPUITest.Examples.load!(:beam_control_room)
 
 defmodule GPUITest.Visual.BeamControlRoom.Scenario do
-  @behaviour GPUI.Dev.Visual.Scenario
+  @behaviour GPUI.Maintainer.Visual.Scenario
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def id, do: :beam_control_room
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def app, do: Examples.BeamControlRoom.App
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def args(_theme), do: %{snapshot: snapshot()}
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def title, do: "BEAM Control Room"
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def captures do
     [
       %{name: "runtime-health"},

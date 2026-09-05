@@ -110,8 +110,8 @@ defmodule GPUI.Umbrella.MixProject do
     Mix.Task.run("rustq.gen", ["--check"])
   end
 
-  defp rust_fmt(args), do: GPUI.Dev.NativeWorkspace.fmt!(args)
-  defp rust_check(_args), do: GPUI.Dev.NativeWorkspace.check_workspace!()
+  defp rust_fmt(args), do: GPUI.Maintainer.NativeWorkspace.fmt!(args)
+  defp rust_check(_args), do: GPUI.Maintainer.NativeWorkspace.check_workspace!()
   defp rust_clippy(_args), do: run_rust_clippy([])
 
   defp rust_headless_clippy(_args),
@@ -126,10 +126,10 @@ defmodule GPUI.Umbrella.MixProject do
   defp rust_e2e_clippy(_args),
     do: rust_cmd(["clippy", "--manifest-path", e2e_manifest(), "--", "-D", "warnings"])
 
-  defp rust_test(_args), do: GPUI.Dev.NativeWorkspace.test!(all_features: true)
+  defp rust_test(_args), do: GPUI.Maintainer.NativeWorkspace.test!(all_features: true)
 
   defp run_rust_clippy(options),
-    do: GPUI.Dev.NativeWorkspace.clippy!([{:package, "gpui_nif"} | options])
+    do: GPUI.Maintainer.NativeWorkspace.clippy!([{:package, "gpui_nif"} | options])
 
   defp e2e_manifest, do: "apps/gpui_native/test/support/desktop/drivers/linux/Cargo.toml"
 

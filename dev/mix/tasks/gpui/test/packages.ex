@@ -96,15 +96,15 @@ defmodule Mix.Tasks.Gpui.Test.Packages do
 
     for {host, feature} <- [vanilla: "vanilla-host", gpui_component: "gpui-component-host"] do
       metadata =
-        GPUI.Dev.NativeWorkspace.metadata_for_manifest!(manifest, [
+        GPUI.Maintainer.NativeWorkspace.metadata_for_manifest!(manifest, [
           "--no-default-features",
           "--features",
           feature
         ])
 
-      graph = GPUI.Dev.CargoMetadata.new!(metadata)
+      graph = GPUI.Maintainer.CargoMetadata.new!(metadata)
 
-      GPUI.Dev.NativeWorkspace.check_manifest!(manifest,
+      GPUI.Maintainer.NativeWorkspace.check_manifest!(manifest,
         no_default_features: true,
         features: feature
       )
@@ -124,13 +124,13 @@ defmodule Mix.Tasks.Gpui.Test.Packages do
   end
 
   defp assert_native_dependency!(graph, dependency, host) do
-    unless GPUI.Dev.CargoMetadata.depends_on?(graph, "gpui_nif", dependency) do
+    unless GPUI.Maintainer.CargoMetadata.depends_on?(graph, "gpui_nif", dependency) do
       Mix.raise("unpacked #{host} source graph is missing #{dependency}")
     end
   end
 
   defp refute_native_dependency!(graph, dependency, host) do
-    if GPUI.Dev.CargoMetadata.depends_on?(graph, "gpui_nif", dependency) do
+    if GPUI.Maintainer.CargoMetadata.depends_on?(graph, "gpui_nif", dependency) do
       Mix.raise("unpacked #{host} source graph unexpectedly resolves #{dependency}")
     end
   end

@@ -8,4 +8,4 @@ children = [GettingStarted.ControlledForm.App]
 [{_, runtime, _, _}] = Supervisor.which_children(supervisor)
 
 IO.puts("Controlled Form is running. Press Ctrl+C twice to exit.")
-GPUI.Dev.wait(runtime, files: [Path.join(__DIR__, "support/controlled_form.exs")])
+GPUI.Dev.Reload.wait(runtime, files: [Path.join(__DIR__, "support/controlled_form.exs")])

@@ -3,7 +3,7 @@ defmodule GPUI.Remote.Session do
 
   use GenServer
 
-  alias GPUI.Remote.SessionTree
+  alias GPUI.Remote.Session.Supervisor, as: SessionSupervisor
   alias GPUI.Remote.Supervision
 
   @callback_timeout 5_000
@@ -51,7 +51,7 @@ defmodule GPUI.Remote.Session do
 
   @impl GenServer
   def handle_call(:mount, _from, %{session: nil} = state) do
-    case SessionTree.start_app_session(state.tree, app: state.app, args: state.args) do
+    case SessionSupervisor.start_app_session(state.tree, app: state.app, args: state.args) do
       {:ok, session} ->
         snapshot = GPUI.Session.snapshot(session)
         state = state |> Map.put(:session, session) |> touch()

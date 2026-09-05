@@ -2,13 +2,13 @@ defmodule GPUI.Schema do
   @moduledoc "Canonical element, component, event, resource, and style protocol schema."
 
   alias GPUI.Schema.Component
-  alias GPUI.Schema.ComponentDocs
+  alias GPUI.Schema.Component.Docs
   alias GPUI.Schema.Extension
   alias GPUI.Schema.Resource
   alias GPUI.Schema.Registry
   alias GPUI.Schema.Style
 
-  Code.ensure_compiled!(ComponentDocs)
+  Code.ensure_compiled!(Docs)
   Code.ensure_compiled!(Extension)
 
   @max_text_surface_lines 64
@@ -392,7 +392,7 @@ defmodule GPUI.Schema do
 
   @doc "Returns generated public option documentation for a component tag."
   @spec component_options_doc(atom()) :: String.t()
-  def component_options_doc(tag), do: tag |> component!() |> ComponentDocs.options_doc()
+  def component_options_doc(tag), do: tag |> component!() |> Docs.options_doc()
 
   @doc "Defines public component option types from schema definitions."
   defmacro define_component_option_types(definitions) do
@@ -400,7 +400,7 @@ defmodule GPUI.Schema do
 
     types =
       Enum.map(definitions, fn {type_name, tag} ->
-        type = tag |> component!() |> ComponentDocs.option_type_ast()
+        type = tag |> component!() |> Docs.option_type_ast()
         builder = type_name |> Atom.to_string() |> String.trim_trailing("_options")
 
         quote do

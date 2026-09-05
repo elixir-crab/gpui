@@ -1,6 +1,6 @@
 GPUITest.Examples.load!(:beam_control_room)
 
-defmodule GPUI.BeamControlRoomProcessSourceTest do
+defmodule GPUI.Examples.BeamControlRoom.ProcessSourceTest do
   use GPUI.Test, async: true
 
   alias Examples.BeamControlRoom.ProcessApp, as: App

@@ -1,4 +1,4 @@
-defmodule GPUI.ApplicationChildSpecTest do
+defmodule GPUI.Application.ChildSpecTest do
   use ExUnit.Case, async: true
 
   defmodule Application do

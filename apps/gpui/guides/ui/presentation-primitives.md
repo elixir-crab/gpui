@@ -108,7 +108,7 @@ whether a snapshot may mount and never permits a display to add, remove, or
 rearrange application elements. Fallbacks travel in the serialized component,
 so local and remote displays receive the same topology and application policy.
 
-Use `GPUI.Display.Support.presentation_capabilities/2` only for diagnostics or display
+Presentation support is available through the active display for diagnostics or
 introspection. Do not branch application topology on it.
 
 ## Example and testing

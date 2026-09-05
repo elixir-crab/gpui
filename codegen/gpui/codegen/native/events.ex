@@ -1,4 +1,4 @@
-defmodule GPUI.Codegen.Native.EventDefinitions do
+defmodule GPUI.Codegen.Native.Event.Definitions do
   @moduledoc "Derives Rust input-kind enums and encoders from schema event declarations."
 
   defmacro define_input_kind(host) do
@@ -76,13 +76,13 @@ defmodule GPUI.Codegen.Native.Events do
   use RustQ.Meta,
     rust_sources: ["apps/gpui_native/native/src/event.rs"]
 
-  alias GPUI.Codegen.Native.EventDefinitions
+  alias GPUI.Codegen.Native.Event.Definitions
   alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Type, as: R
 
-  require EventDefinitions
+  require Definitions
 
   @type event_value ::
           R.enum(
@@ -94,8 +94,8 @@ defmodule GPUI.Codegen.Native.Events do
             nil: []
           )
 
-  EventDefinitions.define_input_kind(:gpui_component)
-  EventDefinitions.define_event_impls(:gpui_component)
+  Definitions.define_input_kind(:gpui_component)
+  Definitions.define_event_impls(:gpui_component)
 
   @spec encode_file_dialog_event(
           R.path(:Env, R.lifetime(:a)),

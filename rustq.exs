@@ -6,7 +6,7 @@ alias RustQ.Rustler.Nif
 
 require_file("apps/gpui/lib/gpui/schema/extension.ex")
 require_file("apps/gpui/lib/gpui/schema/component.ex")
-require_file("apps/gpui/lib/gpui/schema/component_docs.ex")
+require_file("apps/gpui/lib/gpui/schema/component/docs.ex")
 require_file("apps/gpui/lib/gpui/schema/resource.ex")
 require_file("apps/gpui/lib/gpui/schema/style.ex")
 require_file("apps/gpui/lib/gpui/schema/registry.ex")
@@ -178,11 +178,11 @@ rust "component-registry", "apps/gpui_native/native/src/generated/component_regi
   GPUI.Codegen.Native.Schema.registry_items()
 end
 
-generate "native-test-facade", "apps/gpui/lib/gpui/native_test.ex" do
+generate "native-test-facade", "apps/gpui/lib/gpui/native/test_driver.ex" do
   content(GPUI.Codegen.Native.Boundary.native_test_facade_source())
 end
 
-generate "native-stubs", "apps/gpui/lib/gpui/native_generated.ex" do
+generate "native-stubs", "apps/gpui/lib/gpui/native/generated.ex" do
   rusty_functions =
     GPUI.Codegen.Native.Rusty
     |> RustQ.Native.items()
@@ -264,10 +264,10 @@ generate "native-stubs", "apps/gpui/lib/gpui/native_generated.ex" do
   )
 end
 
-generate "native-facade", "apps/gpui/lib/gpui/native_facade.ex" do
+generate "native-facade", "apps/gpui/lib/gpui/native/facade.ex" do
   content(
     GPUI.Codegen.Native.Boundary.native_facade_source(
-      File.read!("apps/gpui/lib/gpui/native_generated.ex")
+      File.read!("apps/gpui/lib/gpui/native/generated.ex")
     )
   )
 end

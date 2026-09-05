@@ -13,7 +13,7 @@ defmodule GPUI.UI do
 
   alias GPUI.Element
   alias GPUI.Components.Schema, as: ComponentsSchema
-  alias GPUI.UI.CollectionValidation
+  alias GPUI.UI.Collection.Validation
 
   require ComponentsSchema
 
@@ -434,13 +434,13 @@ defmodule GPUI.UI do
       |> ComponentsSchema.apply_defaults(:ui_virtual_list)
 
     item_ids =
-      CollectionValidation.collection_item_ids!(
+      Validation.collection_item_ids!(
         :ui_virtual_list,
         :ui_virtual_list_item,
         children
       )
 
-    CollectionValidation.validate_virtual_collection!(:ui_virtual_list, assigns, item_ids)
+    Validation.validate_virtual_collection!(:ui_virtual_list, assigns, item_ids)
 
     component(:ui_virtual_list, assigns)
   end
@@ -483,13 +483,13 @@ defmodule GPUI.UI do
     assigns = ComponentsSchema.apply_defaults(assigns, :ui_virtual_collection)
 
     item_ids =
-      CollectionValidation.collection_item_ids!(
+      Validation.collection_item_ids!(
         :ui_virtual_collection,
         :ui_virtual_item,
         children
       )
 
-    CollectionValidation.validate_variable_collection!(assigns, item_ids)
+    Validation.validate_variable_collection!(assigns, item_ids)
     component(:ui_virtual_collection, assigns)
   end
 
@@ -506,7 +506,7 @@ defmodule GPUI.UI do
   def virtual_item(assigns) when is_map(assigns) do
     assigns = ComponentsSchema.apply_defaults(assigns, :ui_virtual_item)
 
-    CollectionValidation.validate_non_negative_integer!(
+    Validation.validate_non_negative_integer!(
       :ui_virtual_item,
       :revision,
       assigns.revision
@@ -554,7 +554,7 @@ defmodule GPUI.UI do
   def rich_text(assigns) when is_map(assigns) do
     assigns = normalize_attr_key(assigns, :"phx-link")
     assigns = ComponentsSchema.apply_defaults(assigns, :ui_rich_text)
-    CollectionValidation.validate_rich_text!(assigns)
+    Validation.validate_rich_text!(assigns)
     component(:ui_rich_text, assigns)
   end
 
@@ -572,22 +572,22 @@ defmodule GPUI.UI do
   def data_table(assigns) when is_map(assigns) do
     assigns = normalize_attr_key(assigns, :"phx-range")
     children = Map.get(assigns, :children, [])
-    {columns, rows} = CollectionValidation.table_children!(children)
+    {columns, rows} = Validation.table_children!(children)
 
     assigns =
       assigns
       |> Map.put_new(:total_count, length(rows))
       |> ComponentsSchema.apply_defaults(:ui_data_table)
 
-    column_ids = Enum.map(columns, &CollectionValidation.element_id!/1)
-    row_ids = Enum.map(rows, &CollectionValidation.element_id!/1)
+    column_ids = Enum.map(columns, &Validation.element_id!/1)
+    row_ids = Enum.map(rows, &Validation.element_id!/1)
 
-    CollectionValidation.validate_table_columns!(columns, column_ids)
-    CollectionValidation.validate_table_rows!(rows, length(columns))
-    CollectionValidation.validate_virtual_collection!(:ui_data_table, assigns, row_ids)
-    CollectionValidation.validate_item_height!(:ui_data_table, assigns.header_height)
-    CollectionValidation.validate_table_selection!(assigns, column_ids)
-    CollectionValidation.validate_table_sort!(assigns, columns, column_ids)
+    Validation.validate_table_columns!(columns, column_ids)
+    Validation.validate_table_rows!(rows, length(columns))
+    Validation.validate_virtual_collection!(:ui_data_table, assigns, row_ids)
+    Validation.validate_item_height!(:ui_data_table, assigns.header_height)
+    Validation.validate_table_selection!(assigns, column_ids)
+    Validation.validate_table_sort!(assigns, columns, column_ids)
 
     component(:ui_data_table, assigns)
   end
@@ -637,10 +637,10 @@ defmodule GPUI.UI do
       |> Map.put_new(:total_count, length(children))
       |> ComponentsSchema.apply_defaults(:ui_tree)
 
-    item_ids = CollectionValidation.collection_item_ids!(:ui_tree, :ui_tree_item, children)
-    CollectionValidation.validate_virtual_collection!(:ui_tree, assigns, item_ids)
-    CollectionValidation.validate_event!(:ui_tree, assigns, :"phx-change")
-    CollectionValidation.validate_event!(:ui_tree, assigns, :"phx-toggle")
+    item_ids = Validation.collection_item_ids!(:ui_tree, :ui_tree_item, children)
+    Validation.validate_virtual_collection!(:ui_tree, assigns, item_ids)
+    Validation.validate_event!(:ui_tree, assigns, :"phx-change")
+    Validation.validate_event!(:ui_tree, assigns, :"phx-toggle")
 
     component(:ui_tree, assigns)
   end
@@ -654,7 +654,7 @@ defmodule GPUI.UI do
   def tree_item(assigns) when is_map(assigns) do
     assigns = ComponentsSchema.apply_defaults(assigns, :ui_tree_item)
 
-    CollectionValidation.validate_tree_item!(assigns)
+    Validation.validate_tree_item!(assigns)
     component(:ui_tree_item, assigns)
   end
 
@@ -680,11 +680,11 @@ defmodule GPUI.UI do
       |> ComponentsSchema.apply_defaults(:ui_code_viewer)
 
     item_ids =
-      CollectionValidation.collection_item_ids!(:ui_code_viewer, :ui_code_line, children)
+      Validation.collection_item_ids!(:ui_code_viewer, :ui_code_line, children)
 
-    CollectionValidation.validate_virtual_collection!(:ui_code_viewer, assigns, item_ids)
+    Validation.validate_virtual_collection!(:ui_code_viewer, assigns, item_ids)
 
-    CollectionValidation.validate_non_negative_integer!(
+    Validation.validate_non_negative_integer!(
       :ui_code_viewer,
       :max_columns,
       assigns.max_columns

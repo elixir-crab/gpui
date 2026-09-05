@@ -1,7 +1,7 @@
 GPUITest.Examples.load!(:pipeline_monitor)
 
 defmodule GPUITest.Visual.PipelineMonitor.Scenario do
-  @behaviour GPUI.Dev.Visual.Scenario
+  @behaviour GPUI.Maintainer.Visual.Scenario
 
   @impl true
   def id, do: :pipeline_monitor

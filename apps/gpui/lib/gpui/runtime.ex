@@ -54,7 +54,7 @@ defmodule GPUI.Runtime do
   @doc "Starts a runtime linked to the caller."
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
-    with {:ok, _poll_interval} <- GPUI.Polling.interval(opts) do
+    with {:ok, _poll_interval} <- GPUI.Display.Polling.interval(opts) do
       GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
     end
   end
@@ -146,7 +146,7 @@ defmodule GPUI.Runtime do
         do: Keyword.put_new(display_opts, :application_identity, identity),
         else: display_opts
 
-    with {:ok, poll_interval} <- GPUI.Polling.interval(opts),
+    with {:ok, poll_interval} <- GPUI.Display.Polling.interval(opts),
          {:ok, session} <-
            GPUI.Session.start_link(
              app: app,
@@ -205,12 +205,12 @@ defmodule GPUI.Runtime do
   def handle_call(:events, _from, state), do: {:reply, Enum.reverse(state.events), state}
 
   def handle_call(:subscribe, {pid, _tag}, state) do
-    subscribers = GPUI.UpdateSubscribers.subscribe(state.subscribers, pid)
+    subscribers = GPUI.Runtime.Subscriptions.subscribe(state.subscribers, pid)
     {:reply, :ok, %{state | subscribers: subscribers}}
   end
 
   def handle_call(:unsubscribe, {pid, _tag}, state) do
-    subscribers = GPUI.UpdateSubscribers.unsubscribe(state.subscribers, pid)
+    subscribers = GPUI.Runtime.Subscriptions.unsubscribe(state.subscribers, pid)
     {:reply, :ok, %{state | subscribers: subscribers}}
   end
 
@@ -221,7 +221,7 @@ defmodule GPUI.Runtime do
           :ok ->
             state =
               state
-              |> GPUI.UpdateSubscribers.publish_update(self(), [], snapshot)
+              |> GPUI.Runtime.Subscriptions.publish_update(self(), [], snapshot)
               |> mark_synchronized(snapshot)
 
             {:reply, {:ok, id, snapshot}, state}
@@ -260,7 +260,7 @@ defmodule GPUI.Runtime do
           :ok ->
             state =
               state
-              |> GPUI.UpdateSubscribers.publish_update(self(), [handled], snapshot)
+              |> GPUI.Runtime.Subscriptions.publish_update(self(), [handled], snapshot)
               |> record_events([handled])
               |> mark_synchronized(snapshot)
 
@@ -352,7 +352,7 @@ defmodule GPUI.Runtime do
 
   @impl GenServer
   def handle_info({:DOWN, monitor, :process, pid, _reason}, state) do
-    subscribers = GPUI.UpdateSubscribers.remove_down(state.subscribers, pid, monitor)
+    subscribers = GPUI.Runtime.Subscriptions.remove_down(state.subscribers, pid, monitor)
     {:noreply, %{state | subscribers: subscribers}}
   end
 
@@ -405,7 +405,7 @@ defmodule GPUI.Runtime do
       :ok ->
         state =
           state
-          |> GPUI.UpdateSubscribers.publish_update(self(), [], snapshot)
+          |> GPUI.Runtime.Subscriptions.publish_update(self(), [], snapshot)
           |> mark_synchronized(snapshot)
 
         {:reply, {:ok, snapshot}, state}
@@ -442,7 +442,7 @@ defmodule GPUI.Runtime do
       :ok ->
         state =
           state
-          |> GPUI.UpdateSubscribers.publish_update(self(), handled, snapshot)
+          |> GPUI.Runtime.Subscriptions.publish_update(self(), handled, snapshot)
           |> mark_synchronized(snapshot)
 
         {:ok, handled, state}
@@ -466,7 +466,7 @@ defmodule GPUI.Runtime do
           :ok ->
             state =
               state
-              |> GPUI.UpdateSubscribers.publish_update(self(), [], snapshot)
+              |> GPUI.Runtime.Subscriptions.publish_update(self(), [], snapshot)
               |> mark_synchronized(snapshot)
 
             {:ok, state}
@@ -488,7 +488,7 @@ defmodule GPUI.Runtime do
         case sync_display(state, snapshot) do
           :ok ->
             state
-            |> GPUI.UpdateSubscribers.publish_update(self(), [], snapshot)
+            |> GPUI.Runtime.Subscriptions.publish_update(self(), [], snapshot)
             |> mark_synchronized(snapshot)
 
           {:error, _reason} ->

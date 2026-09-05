@@ -71,12 +71,12 @@ defmodule GPUI.Test do
   def __setup_native__(_context, opts) do
     child_spec =
       Supervisor.child_spec(
-        {GPUI.Test.Native, Keyword.put(opts, :owner, self())},
-        id: {GPUI.Test.Native, make_ref()}
+        {GPUI.Test.NativeSession, Keyword.put(opts, :owner, self())},
+        id: {GPUI.Test.NativeSession, make_ref()}
       )
 
     pid = ExUnit.Callbacks.start_supervised!(child_spec)
-    {:ok, ui: GPUI.Test.Native.ui(pid)}
+    {:ok, ui: GPUI.Test.NativeSession.ui(pid)}
   end
 
   @doc "Starts a supervised runtime backed by `GPUI.Test.Display`."
@@ -103,7 +103,7 @@ defmodule GPUI.Test do
   @doc "Renders a view into an interactive deterministic native UI."
   @spec render(GPUI.Test.UI.t(), module(), map() | keyword()) :: GPUI.Test.UI.t()
   def render(%GPUI.Test.UI{} = ui, view, assigns),
-    do: GPUI.Test.Native.render(ui, view, assigns)
+    do: GPUI.Test.NativeSession.render(ui, view, assigns)
 
   @doc "Returns a runtime snapshot, or passes an existing snapshot through."
   @spec snapshot(GenServer.server() | Snapshot.t()) :: Snapshot.t()
@@ -174,41 +174,41 @@ defmodule GPUI.Test do
 
   @doc "Clicks a stable element ID or logical point in an interactive deterministic UI."
   @spec click(GPUI.Test.UI.t(), String.t() | {number(), number()}) :: GPUI.Test.UI.t()
-  def click(%GPUI.Test.UI{} = ui, target), do: GPUI.Test.Native.click(ui, target)
+  def click(%GPUI.Test.UI{} = ui, target), do: GPUI.Test.NativeSession.click(ui, target)
 
   @doc "Scrolls a stable target by a bounded logical-pixel delta."
   @spec scroll(GPUI.Test.UI.t(), String.t(), keyword()) :: GPUI.Test.UI.t()
   def scroll(%GPUI.Test.UI{} = ui, target, opts),
-    do: GPUI.Test.Native.scroll(ui, target, opts)
+    do: GPUI.Test.NativeSession.scroll(ui, target, opts)
 
   @doc "Types text into the focused native input."
   @spec type(GPUI.Test.UI.t(), String.t()) :: GPUI.Test.UI.t()
-  def type(%GPUI.Test.UI{} = ui, text), do: GPUI.Test.Native.type(ui, text)
+  def type(%GPUI.Test.UI{} = ui, text), do: GPUI.Test.NativeSession.type(ui, text)
 
   @doc "Resizes the deterministic native viewport."
   @spec resize(GPUI.Test.UI.t(), {number(), number()}) :: GPUI.Test.UI.t()
-  def resize(%GPUI.Test.UI{} = ui, size), do: GPUI.Test.Native.resize(ui, size)
+  def resize(%GPUI.Test.UI{} = ui, size), do: GPUI.Test.NativeSession.resize(ui, size)
 
   @doc "Moves native keyboard focus to a stable element ID."
   @spec focus(GPUI.Test.UI.t(), String.t()) :: GPUI.Test.UI.t()
-  def focus(%GPUI.Test.UI{} = ui, target), do: GPUI.Test.Native.focus(ui, target)
+  def focus(%GPUI.Test.UI{} = ui, target), do: GPUI.Test.NativeSession.focus(ui, target)
 
   @doc "Presses a semantic key in an interactive deterministic UI."
   @spec press(GPUI.Test.UI.t(), atom() | String.t()) :: GPUI.Test.UI.t()
-  def press(%GPUI.Test.UI{} = ui, key), do: GPUI.Test.Native.press(ui, key)
+  def press(%GPUI.Test.UI{} = ui, key), do: GPUI.Test.NativeSession.press(ui, key)
 
   @doc "Returns the rendered bounds for a stable element ID."
   @spec bounds(GPUI.Test.UI.t(), String.t()) :: map()
-  def bounds(%GPUI.Test.UI{} = ui, target), do: GPUI.Test.Native.bounds(ui, target)
+  def bounds(%GPUI.Test.UI{} = ui, target), do: GPUI.Test.NativeSession.bounds(ui, target)
 
   @doc "Runs native UI work until GPUI is parked."
   @spec settle(GPUI.Test.UI.t()) :: GPUI.Test.UI.t()
-  def settle(%GPUI.Test.UI{} = ui), do: GPUI.Test.Native.settle(ui)
+  def settle(%GPUI.Test.UI{} = ui), do: GPUI.Test.NativeSession.settle(ui)
 
   @doc "Advances GPUI's deterministic clock by the given milliseconds."
   @spec advance(GPUI.Test.UI.t(), non_neg_integer()) :: GPUI.Test.UI.t()
   def advance(%GPUI.Test.UI{} = ui, milliseconds),
-    do: GPUI.Test.Native.advance(ui, milliseconds)
+    do: GPUI.Test.NativeSession.advance(ui, milliseconds)
 
   @doc "Dispatches a click event and returns the updated snapshot."
   @spec click(GenServer.server(), String.t(), keyword()) :: Snapshot.t()

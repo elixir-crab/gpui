@@ -1,4 +1,4 @@
-defmodule GPUI.DevTest do
+defmodule GPUI.Dev.ReloadTest do
   use ExUnit.Case, async: false
 
   defmodule ReloadApp do
@@ -37,7 +37,7 @@ defmodule GPUI.DevTest do
     assert_receive {:gpui_snapshot, %{windows: [%{root: %{tree: before_tree}}]}}
     assert text(before_tree) == "before 7"
 
-    {:ok, watcher} = GPUI.Dev.watch(runtime, files: [path], debounce: 10)
+    {:ok, watcher} = GPUI.Dev.Reload.watch(runtime, files: [path], debounce: 10)
     assert Process.alive?(watcher)
     Process.sleep(750)
     flush_snapshots()
@@ -81,7 +81,7 @@ defmodule GPUI.DevTest do
 
     {_event, %{windows: [%{id: 1}, %{id: 2}]}} = dispatch(runtime, 1, "close-transient")
 
-    {:ok, watcher} = GPUI.Dev.watch(runtime, files: [path], debounce: 10)
+    {:ok, watcher} = GPUI.Dev.Reload.watch(runtime, files: [path], debounce: 10)
     assert Process.alive?(watcher)
     Process.sleep(750)
     flush_snapshots()
@@ -120,7 +120,7 @@ defmodule GPUI.DevTest do
     assert_receive {:gpui_snapshot, %{windows: [%{id: 1}]}}
     {_event, %{windows: [_, %{id: 2}]}} = dispatch(runtime, 1, "open-details")
 
-    {:ok, watcher} = GPUI.Dev.watch(runtime, files: [path], debounce: 10, notify: self())
+    {:ok, watcher} = GPUI.Dev.Reload.watch(runtime, files: [path], debounce: 10, notify: self())
     Process.sleep(750)
     flush_snapshots()
     File.write!(path, "defmodule #{inspect(module)} do\n  def render(\nend")

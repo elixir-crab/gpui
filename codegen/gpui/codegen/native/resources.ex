@@ -1,4 +1,4 @@
-defmodule GPUI.Codegen.Native.ResourceDefinitions do
+defmodule GPUI.Codegen.Native.Resource.Definitions do
   @moduledoc "Expands renderer-independent resource schema entries into RustQ data and decoder types."
 
   defmacro define_resources do
@@ -166,17 +166,17 @@ defmodule GPUI.Codegen.Native.Resources do
 
   use RustQ.Meta
 
-  alias GPUI.Codegen.Native.ResourceDefinitions
+  alias GPUI.Codegen.Native.Resource.Definitions
   alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
 
-  require ResourceDefinitions
-  ResourceDefinitions.define_resources()
+  require Definitions
+  Definitions.define_resources()
 
   @spec items() :: [AST.item()]
   def items do
-    type_names = Enum.map(GPUI.Schema.resource_specs(), &ResourceDefinitions.type_name/1)
+    type_names = Enum.map(GPUI.Schema.resource_specs(), &Definitions.type_name/1)
 
     structs =
       MetaAST.struct_type_items(

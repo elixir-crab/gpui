@@ -30,7 +30,7 @@ defmodule GPUI.Template do
         caller: caller,
         file: caller.file || "nofile",
         line: Keyword.get(meta, :line, caller.line),
-        tag_handler: GPUI.HTMLEngine
+        tag_handler: GPUI.Template.Engine
       )
 
     case Enum.reject(nodes, &blank_text?/1) do
@@ -98,7 +98,7 @@ defmodule GPUI.Template do
 
     quote do
       unquote(module).unquote(function)(
-        GPUI.Component.assigns(
+        GPUI.Template.Component.assigns(
           unquote(compile_attrs(attrs, caller)),
           List.flatten(unquote(children)),
           unquote(slots)
@@ -113,7 +113,7 @@ defmodule GPUI.Template do
 
     quote do
       unquote(module).unquote(function)(
-        GPUI.Component.assigns(
+        GPUI.Template.Component.assigns(
           unquote(compile_attrs(attrs, caller)),
           List.flatten(unquote(children)),
           unquote(slots)
@@ -132,7 +132,7 @@ defmodule GPUI.Template do
 
         slot =
           quote do
-            %GPUI.Component.Slot{
+            %GPUI.Template.Component.Slot{
               attrs: unquote(compile_attrs(attrs, caller)),
               children: List.flatten(unquote(children))
             }
@@ -143,7 +143,10 @@ defmodule GPUI.Template do
       {:self_close, :slot, name, attrs, _meta} ->
         slot =
           quote do
-            %GPUI.Component.Slot{attrs: unquote(compile_attrs(attrs, caller)), children: []}
+            %GPUI.Template.Component.Slot{
+              attrs: unquote(compile_attrs(attrs, caller)),
+              children: []
+            }
           end
 
         {compile_time_atom(name), slot}

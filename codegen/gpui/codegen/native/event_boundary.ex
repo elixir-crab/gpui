@@ -1,4 +1,4 @@
-defmodule GPUI.Codegen.Native.EventBoundaryDefinitions do
+defmodule GPUI.Codegen.Native.EventBoundary.Definitions do
   @moduledoc false
 
   defmacro define_inject_kind do
@@ -19,11 +19,11 @@ defmodule GPUI.Codegen.Native.EventBoundary do
     load: false,
     rust_sources: ["apps/gpui_native/native/src/nif.rs"]
 
-  alias GPUI.Codegen.Native.EventBoundaryDefinitions
+  alias GPUI.Codegen.Native.EventBoundary.Definitions
   alias RustQ.Type, as: R
 
-  require EventBoundaryDefinitions
-  EventBoundaryDefinitions.define_inject_kind()
+  require Definitions
+  Definitions.define_inject_kind()
 
   @type inject_request :: %{
           required(:event) => term()

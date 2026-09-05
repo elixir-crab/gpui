@@ -94,7 +94,7 @@ defmodule GPUI.Remote.Protocol do
   def negotiate(payload) when is_map(payload) do
     with {:ok, presentation} <- validate_presentation(Map.get(payload, :presentation, [])),
          {:ok, negotiated} <-
-           GPUI.Remote.ProtocolNegotiation.negotiate(
+           GPUI.Remote.Protocol.Negotiation.negotiate(
              payload,
              @version,
              @required_peer_capabilities,

@@ -1,4 +1,4 @@
-defmodule GPUI.Codegen.Native.StyleDefinitions do
+defmodule GPUI.Codegen.Native.Style.Definitions do
   @moduledoc "Derives RustQ style data, decoding, and application logic from GPUI.Schema styles."
 
   defmacro define_style_data do
@@ -209,18 +209,18 @@ defmodule GPUI.Codegen.Native.Style do
 
   use RustQ.Meta
 
-  alias GPUI.Codegen.Native.StyleDefinitions
+  alias GPUI.Codegen.Native.Style.Definitions
   alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Type, as: R
 
-  require StyleDefinitions
+  require Definitions
 
   defrustmod(GPUI, as: :gpui)
   defrustmod(StyleAttrs, as: :StyleAttrs)
 
-  StyleDefinitions.define_style_data()
+  Definitions.define_style_data()
 
   @allow :unreachable_patterns
   @spec decode_style(term()) :: R.nif_result(style_attrs())

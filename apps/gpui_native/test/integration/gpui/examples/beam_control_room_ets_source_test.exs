@@ -1,6 +1,6 @@
 GPUITest.Examples.load!(:beam_control_room)
 
-defmodule GPUI.BeamControlRoomEtsSourceTest do
+defmodule GPUI.Examples.BeamControlRoom.ETSSourceTest do
   use GPUI.Test, async: false
 
   alias Examples.BeamControlRoom.EtsApp, as: App

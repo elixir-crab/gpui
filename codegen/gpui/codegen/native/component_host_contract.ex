@@ -1,4 +1,4 @@
-defmodule GPUI.Codegen.Native.ComponentHostContractDefinitions do
+defmodule GPUI.Codegen.Native.ComponentHostContract.Definitions do
   @moduledoc false
 
   defmacro define_contract do
@@ -40,12 +40,12 @@ defmodule GPUI.Codegen.Native.ComponentHostContract do
 
   use RustQ.Meta
 
-  alias GPUI.Codegen.Native.ComponentHostContractDefinitions
+  alias GPUI.Codegen.Native.ComponentHostContract.Definitions
   alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
 
-  require ComponentHostContractDefinitions
-  ComponentHostContractDefinitions.define_contract()
+  require Definitions
+  Definitions.define_contract()
 
   @spec items() :: [AST.item()]
   def items do

@@ -47,9 +47,9 @@ or replaced directly because no historical payloads are supported.
 ## Capabilities and fallbacks
 
 A contract's capability list is vocabulary, not an implementation claim.
-`GPUI.Display.Support.presentation_capabilities/2` reports only behavior that the
-particular display implements. The pinned GPUI stack exposes blur only as a
-whole-window background appearance; it has no public element- or layer-level
+Displays report only behavior that the particular display implements, and that
+support is used for diagnostics rather than application topology. The pinned
+GPUI stack exposes blur only as a whole-window background appearance; it has no
 backdrop filter. Frost therefore declares only the implemented solid,
 translucent, and reduced-transparency behavior.
 

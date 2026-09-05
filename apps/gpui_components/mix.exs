@@ -72,8 +72,7 @@ defmodule GPUI.Components.MixProject do
           GPUI.UI.Collection,
           GPUI.UI.Collection.Source,
           GPUI.UI.Collection.Selection
-        ],
-        "Advanced schema": [GPUI.Components.Schema, GPUI.Components.NativeContract]
+        ]
       ]
     ]
   end
@@ -84,9 +83,7 @@ defmodule GPUI.Components.MixProject do
       GPUI.UI.Overlay,
       GPUI.UI.Collection,
       GPUI.UI.Collection.Source,
-      GPUI.UI.Collection.Selection,
-      GPUI.Components.Schema,
-      GPUI.Components.NativeContract
+      GPUI.UI.Collection.Selection
     ]
   end
 end

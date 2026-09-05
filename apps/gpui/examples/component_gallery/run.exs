@@ -18,4 +18,4 @@ files =
   |> Enum.uniq()
 
 IO.puts("GPUI Component Gallery is running. Press Ctrl+C twice to exit.")
-GPUI.Dev.wait(runtime, files: files)
+GPUI.Dev.Reload.wait(runtime, files: files)

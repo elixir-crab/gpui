@@ -95,7 +95,7 @@ jobs:
       - name: Build native NIF from source
         run: mix compile --force --warnings-as-errors
       - name: Run native boundary tests
-        run: mix test test/gpui/native_test.exs test/gpui/image_test.exs
+        run: mix test test/gpui/native/backend_test.exs test/gpui/image_test.exs
 
   release-package:
     runs-on: ubuntu-24.04

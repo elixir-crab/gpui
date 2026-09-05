@@ -9,6 +9,6 @@ defmodule Mix.Tasks.Gpui.Release.Inventory.Write do
   @impl Mix.Task
   def run(args) do
     {options, []} = OptionParser.parse!(args, strict: @switches)
-    GPUI.Dev.Release.Inventory.write!(Keyword.get(options, :output, "release-inventory"))
+    GPUI.Maintainer.Release.Inventory.write!(Keyword.get(options, :output, "release-inventory"))
   end
 end

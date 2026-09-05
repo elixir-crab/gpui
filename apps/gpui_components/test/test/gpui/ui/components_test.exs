@@ -1,0 +1,504 @@
+defmodule GPUI.UI.ComponentsTest do
+  use ExUnit.Case, async: true
+
+  alias GPUI.Element
+  alias GPUI.UI
+
+  test "builds progress, file-read, and clipboard controls" do
+    assert %Element{type: :ui_progress, attrs: progress} =
+             UI.progress(%{id: "upload", label: "Uploading", value: 25, max: 50})
+
+    assert progress[:value] == 25
+    assert progress[:max] == 50
+    assert progress[:indeterminate] == false
+
+    assert %Element{type: :ui_button, attrs: picker} =
+             UI.button(%{
+               :"phx-file-read" => "selected",
+               id: "source",
+               label: "Choose source"
+             })
+
+    assert picker[:file_max_bytes] == 10 * 1_024 * 1_024
+
+    assert %Element{type: :ui_button, attrs: copy} =
+             UI.button(%{
+               :"phx-clipboard-write" => "copied",
+               id: "copy",
+               label: "Copy",
+               clipboard_text: "value"
+             })
+
+    assert copy[:clipboard_text] == "value"
+  end
+
+  test "builds bounded edge fades with closed edge values" do
+    fade =
+      UI.edge_fade(%{
+        id: "feed-fades",
+        edges: [:top, :bottom],
+        size: 32,
+        opacity: 0.75,
+        children: ["content"]
+      })
+
+    assert %Element{type: :ui_edge_fade, attrs: attrs, children: ["content"]} = fade
+    assert attrs[:edges] == ["top", "bottom"]
+    assert attrs[:size] == 32
+    assert attrs[:opacity] == 0.75
+
+    assert_raise ArgumentError, ~r/unique list drawn from/, fn ->
+      UI.edge_fade(%{id: "bad-edges", edges: [:top, :top]})
+    end
+
+    assert_raise ArgumentError, ~r/number from 1 through 256/, fn ->
+      UI.edge_fade(%{id: "bad-size", size: 257})
+    end
+
+    assert_raise ArgumentError, ~r/number from zero through one/, fn ->
+      UI.edge_fade(%{id: "bad-opacity", opacity: 1.1})
+    end
+  end
+
+  test "builds frost with explicit accessibility and fallback policy" do
+    assert %Element{type: :ui_frost, attrs: attrs, children: ["content"]} =
+             UI.frost(%{id: "inspector", children: ["content"]})
+
+    assert attrs[:fallback] == "solid"
+    assert attrs[:opacity] == 0.82
+    assert attrs[:reduced_transparency] == false
+
+    assert %Element{attrs: reduced} =
+             UI.frost(%{
+               id: "reduced",
+               fallback: "translucent",
+               opacity: 0.5,
+               reduced_transparency: true
+             })
+
+    assert reduced[:fallback] == "translucent"
+    assert reduced[:reduced_transparency] == true
+
+    assert_raise ArgumentError, ~r/fallback must be one of/, fn ->
+      UI.frost(%{id: "bad-fallback", fallback: "blur-or-crash"})
+    end
+
+    assert_raise ArgumentError, ~r/number from zero through one/, fn ->
+      UI.frost(%{id: "bad-opacity", opacity: -0.1})
+    end
+  end
+
+  test "builds a bounded serializable paint display list" do
+    commands = [
+      %{type: :rect, x: 4, y: 6, width: 80, height: 24, color: 0x336699FF},
+      %{type: :line, x1: 0, y1: 0, x2: 100, y2: 40, width: 2, color: 0xFFFFFFFF}
+    ]
+
+    assert %Element{type: :ui_paint, attrs: attrs} =
+             UI.paint(%{id: "chart-overlay", commands: commands})
+
+    assert Enum.map(attrs[:commands], & &1.kind) == ["rect", "line"]
+
+    assert %Element{attrs: zero_rect_attrs} =
+             UI.paint(%{
+               id: "zero-rect",
+               commands: [%{type: :rect, x: 0, y: 0, width: 0, height: 0, color: 0}]
+             })
+
+    assert [%{kind: "rect", width: 0, height: 0}] = zero_rect_attrs[:commands]
+
+    assert %Element{attrs: bounded_attrs} =
+             UI.paint(%{
+               id: "bounded",
+               commands:
+                 List.duplicate(
+                   %{type: :rect, x: 0, y: 0, width: 1, height: 1, color: 0},
+                   256
+                 )
+             })
+
+    assert Enum.count_until(bounded_attrs[:commands], 257) == 256
+
+    assert_raise ArgumentError, ~r/at most 256 bounded paint commands/, fn ->
+      UI.paint(%{
+        id: "too-many",
+        commands: List.duplicate(%{type: :rect, x: 0, y: 0, width: 1, height: 1, color: 0}, 257)
+      })
+    end
+
+    assert_raise ArgumentError, ~r/at most 256 bounded paint commands/, fn ->
+      UI.paint(%{
+        id: "zero-width-line",
+        commands: [%{type: :line, x1: 0, y1: 0, x2: 1, y2: 1, width: 0, color: 0}]
+      })
+    end
+
+    assert_raise ArgumentError, ~r/at most 256 bounded paint commands/, fn ->
+      UI.paint(%{id: "shader", commands: [%{type: :shader, source: "void main() {}"}]})
+    end
+
+    assert_raise ArgumentError, ~r/at most 256 bounded paint commands/, fn ->
+      UI.paint(%{
+        id: "unbounded",
+        commands: [%{type: :rect, x: 1_000_001, y: 0, width: 1, height: 1, color: 0}]
+      })
+    end
+  end
+
+  test "serializes exact extension versions as renderer-hidden attributes" do
+    for element <- [
+          UI.edge_fade(%{id: "fade", edges: [:bottom]}),
+          UI.frost(%{id: "frost"}),
+          UI.paint(%{id: "paint", commands: []})
+        ] do
+      assert %{attrs: %{__extension_version__: 1}} = Element.to_payload(element)
+      refute Keyword.has_key?(element.attrs, :__extension_version__)
+    end
+  end
+
+  test "validates progress, file-read, and clipboard values" do
+    assert_raise ArgumentError, ~r/value must be between zero and max/, fn ->
+      UI.progress(%{id: "upload", label: "Uploading", value: 101})
+    end
+
+    assert_raise ArgumentError, ~r/file_max_bytes must be between/, fn ->
+      UI.button(%{
+        :"phx-file-read" => "selected",
+        id: "source",
+        label: "Choose",
+        file_max_bytes: 1.5
+      })
+    end
+
+    assert_raise ArgumentError, ~r/clipboard_text/, fn ->
+      UI.button(%{
+        :"phx-clipboard-write" => "copied",
+        id: "copy",
+        label: "Copy",
+        clipboard_text: :invalid
+      })
+    end
+
+    assert_raise ArgumentError, ~r/no larger than 1 MiB/, fn ->
+      UI.button(%{
+        :"phx-clipboard-write" => "copied",
+        id: "copy",
+        label: "Copy",
+        clipboard_text: :binary.copy("x", 1_048_577)
+      })
+    end
+  end
+
+  test "validates schema-backed component attributes before native rendering" do
+    assert_raise ArgumentError, ~r/ui_button :label must be a non-empty string; got: 42/, fn ->
+      UI.button(%{id: "save", label: 42})
+    end
+
+    assert_raise ArgumentError, ~r/ui_button :variant must be one of .*got: "loud"/, fn ->
+      UI.button(%{id: "save", label: "Save", variant: "loud"})
+    end
+
+    assert_raise ArgumentError, ~r/ui_checkbox :checked must be a boolean; got: "yes"/, fn ->
+      UI.checkbox(%{id: "remember", label: "Remember me", checked: "yes"})
+    end
+
+    assert_raise ArgumentError, ~r/ui_input :value must be a string; got: 7/, fn ->
+      UI.input(%{id: "name", label: "Name", value: 7})
+    end
+
+    assert_raise ArgumentError, ~r/ui_input :focus_request must be a non-negative integer/, fn ->
+      UI.input(%{
+        id: "name",
+        label: "Name",
+        focus_request: -1,
+        "phx-change": "name_changed"
+      })
+    end
+
+    assert_raise ArgumentError, ~r/ui_button :phx-click must be a non-empty string/, fn ->
+      UI.button(%{id: "save", label: "Save", "phx-click": :save})
+    end
+
+    assert_raise ArgumentError, ~r/ui_button received unsupported attributes: :disabeld/, fn ->
+      UI.button(%{id: "save", label: "Save", disabeld: true})
+    end
+  end
+
+  test "requires semantic labels for interactive controls" do
+    assert_raise ArgumentError, ~r/ui_button :label must be a non-empty string/, fn ->
+      UI.button(%{id: "save"})
+    end
+
+    assert_raise ArgumentError, ~r/ui_checkbox :label must be a non-empty string/, fn ->
+      UI.checkbox(%{id: "remember", "phx-change": "remember_changed"})
+    end
+
+    assert_raise ArgumentError, ~r/ui_input :label must be a non-empty string/, fn ->
+      UI.input(%{id: "name", "phx-change": "name_changed"})
+    end
+
+    assert_raise ArgumentError, ~r/ui_select :label must be a non-empty string/, fn ->
+      UI.select(%{id: "language", options: ["Elixir"], "phx-change": "language_changed"})
+    end
+
+    assert_raise ArgumentError, ~r/ui_combobox :label must be a non-empty string/, fn ->
+      UI.combobox(%{id: "framework", options: ["Phoenix"], "phx-change": "framework_changed"})
+    end
+
+    assert_raise ArgumentError, ~r/ui_switch requires a non-empty string label/, fn ->
+      UI.switch(%{id: "notifications", checked: true, "phx-change": "notifications_changed"})
+    end
+
+    assert_raise ArgumentError, ~r/ui_radio_group requires a non-empty string label/, fn ->
+      UI.radio_group(%{
+        id: "plan",
+        value: "free",
+        options: [{"Free", "free"}],
+        "phx-change": "plan_changed"
+      })
+    end
+
+    assert_raise ArgumentError, ~r/ui_slider requires a non-empty string label/, fn ->
+      UI.slider(%{id: "volume", value: 50, "phx-change": "volume_changed"})
+    end
+  end
+
+  test "builds controlled field feedback and input submission contracts" do
+    input =
+      UI.input(%{
+        id: "name",
+        label: "Name",
+        value: "",
+        focus_request: 2,
+        "phx-change": "name_changed",
+        "phx-submit": "save"
+      })
+
+    assert %Element{
+             type: :div,
+             children: [
+               %Element{type: :text, children: ["Name (required)"]},
+               ^input,
+               %Element{
+                 type: :text,
+                 attrs: [style: [color: {:rgb, 0xEF4444}]],
+                 children: ["Error: Enter a name."]
+               }
+             ]
+           } =
+             UI.field(%{
+               label: "Name",
+               required: true,
+               help: "Shown to collaborators.",
+               error: "Enter a name.",
+               children: [input]
+             })
+
+    assert input.attrs[:focus_request] == 2
+    assert input.attrs[:"phx-submit"] == "save"
+
+    assert_raise ArgumentError, ~r/requires exactly one element child/, fn ->
+      UI.field(%{label: "Name", children: []})
+    end
+  end
+
+  test "requires event handlers for editable controlled components" do
+    assert_raise ArgumentError,
+                 ~r/ui_input :phx-change must be a non-empty string; got: nil/,
+                 fn ->
+                   UI.input(%{id: "name", label: "Name", value: "Ada"})
+                 end
+
+    assert %Element{attrs: attrs} =
+             UI.input(%{"phx-change" => "name_changed", id: "name", label: "Name", value: "Ada"})
+
+    assert attrs[:"phx-change"] == "name_changed"
+    refute Enum.any?(attrs, &(elem(&1, 0) == "phx-change"))
+
+    assert_raise ArgumentError,
+                 ~r/received duplicate :phx-change and "phx-change" attributes/,
+                 fn ->
+                   UI.input(%{
+                     "phx-change" => "other_name_changed",
+                     id: "name",
+                     label: "Name",
+                     value: "Ada",
+                     "phx-change": "name_changed"
+                   })
+                 end
+  end
+
+  test "builds controlled virtual lists from stable uniform items" do
+    first = UI.virtual_list_item(%{id: "first", children: ["First"]})
+    second = UI.virtual_list_item(%{id: "second", disabled: true, children: ["Second"]})
+
+    assert %Element{
+             type: :ui_virtual_list,
+             attrs: attrs,
+             children: [^first, ^second]
+           } =
+             UI.virtual_list(%{
+               id: "records",
+               label: "Records",
+               selected: "first",
+               reveal: "first",
+               item_height: 48,
+               children: [first, second]
+             })
+
+    assert attrs[:selected] == "first"
+    assert attrs[:reveal] == "first"
+    assert attrs[:reveal_strategy] == "nearest"
+    assert attrs[:total_count] == 2
+    assert attrs[:offset] == 0
+    assert attrs[:overscan] == 8
+    assert attrs[:item_height] == 48
+  end
+
+  test "builds source-backed virtual lists from contiguous loaded slices" do
+    items =
+      Enum.map(51..60, fn number ->
+        UI.virtual_list_item(%{id: "item-#{number}", children: ["Item #{number}"]})
+      end)
+
+    assert %Element{attrs: attrs, children: ^items} =
+             UI.virtual_list(%{
+               :"phx-range" => "records_range",
+               id: "records",
+               label: "Records",
+               total_count: 100_000,
+               offset: 50,
+               overscan: 12,
+               selected: "item-75001",
+               selected_index: 75_000,
+               reveal: "item-75001",
+               reveal_index: 75_000,
+               children: items
+             })
+
+    assert attrs[:total_count] == 100_000
+    assert attrs[:offset] == 50
+    assert attrs[:selected_index] == 75_000
+    assert attrs[:reveal_index] == 75_000
+    assert attrs[:"phx-range"] == "records_range"
+  end
+
+  test "validates source-backed virtual list ranges and controlled indexes" do
+    item = UI.virtual_list_item(%{id: "item-11"})
+    base = %{:"phx-range" => "range", id: "records", label: "Records", total_count: 100}
+
+    assert_raise ArgumentError, ~r/offset must be between/, fn ->
+      UI.virtual_list(Map.merge(base, %{offset: 101, children: []}))
+    end
+
+    assert_raise ArgumentError, ~r/loaded slice exceeds/, fn ->
+      UI.virtual_list(Map.merge(base, %{offset: 100, children: [item]}))
+    end
+
+    assert_raise ArgumentError, ~r/selected and selected_index must be provided together/, fn ->
+      UI.virtual_list(Map.merge(base, %{selected: "item-1", children: []}))
+    end
+
+    assert_raise ArgumentError, ~r/does not match the loaded item/, fn ->
+      UI.virtual_list(
+        Map.merge(base, %{
+          offset: 10,
+          selected: "item-other",
+          selected_index: 10,
+          children: [item]
+        })
+      )
+    end
+  end
+
+  test "builds variable-height virtual collections from complete stable snapshots" do
+    first = UI.virtual_item(%{id: "message-1", children: ["Short"]})
+
+    second =
+      UI.virtual_item(%{
+        id: "message-2",
+        children: ["A much longer message that may wrap to several native lines."]
+      })
+
+    assert %Element{
+             type: :ui_virtual_collection,
+             attrs: attrs,
+             children: [^first, ^second]
+           } =
+             UI.virtual_collection(%{
+               :"phx-range" => "visible_messages",
+               id: "transcript",
+               label: "Conversation",
+               alignment: "bottom",
+               overdraw: 320,
+               reveal: "message-1",
+               reveal_request: 2,
+               reveal_strategy: "top",
+               follow: "tail",
+               follow_request: 4,
+               children: [first, second]
+             })
+
+    assert attrs[:alignment] == "bottom"
+    assert attrs[:overdraw] == 320
+    assert attrs[:reveal_request] == 2
+    assert attrs[:follow] == "tail"
+    assert attrs[:follow_request] == 4
+    assert attrs[:"phx-range"] == "visible_messages"
+  end
+
+  test "validates bounded variable collection identity and requests" do
+    item = UI.virtual_item(%{id: "message-1"})
+
+    assert_raise ArgumentError, ~r/only accepts ui_virtual_item children/, fn ->
+      UI.virtual_collection(%{
+        id: "transcript",
+        label: "Conversation",
+        children: [UI.virtual_list_item(%{id: "message-1"})]
+      })
+    end
+
+    assert_raise ArgumentError, ~r/item IDs must be unique/, fn ->
+      UI.virtual_collection(%{
+        id: "transcript",
+        label: "Conversation",
+        children: [item, item]
+      })
+    end
+
+    assert_raise ArgumentError, ~r/no larger than 128 bytes/, fn ->
+      UI.virtual_collection(%{
+        id: "transcript",
+        label: "Conversation",
+        children: [UI.virtual_item(%{id: String.duplicate("x", 129)})]
+      })
+    end
+
+    assert_raise ArgumentError, ~r/reveal must identify a child/, fn ->
+      UI.virtual_collection(%{
+        id: "transcript",
+        label: "Conversation",
+        reveal: "missing",
+        children: [item]
+      })
+    end
+
+    assert_raise ArgumentError, ~r/follow_request must be a non-negative integer/, fn ->
+      UI.virtual_collection(%{
+        id: "transcript",
+        label: "Conversation",
+        follow_request: -1,
+        children: [item]
+      })
+    end
+
+    assert_raise ArgumentError, ~r/received unsupported attributes: :total_count/, fn ->
+      UI.virtual_collection(%{
+        id: "transcript",
+        label: "Conversation",
+        total_count: 10,
+        children: [item]
+      })
+    end
+  end
+end

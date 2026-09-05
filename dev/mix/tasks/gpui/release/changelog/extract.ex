@@ -13,7 +13,7 @@ defmodule Mix.Tasks.Gpui.Release.Changelog.Extract do
     version = Keyword.fetch!(options, :version)
     output = Keyword.fetch!(options, :output)
 
-    notes = GPUI.Dev.Release.Changelog.release_notes!(changelog, version)
+    notes = GPUI.Maintainer.Release.Changelog.release_notes!(changelog, version)
     File.mkdir_p!(Path.dirname(output))
     File.write!(output, notes)
   end

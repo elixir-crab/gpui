@@ -117,6 +117,7 @@ defmodule GPUI.MixProject do
           GPUI.Runtime.Update,
           GPUI.Tree,
           GPUI.Debug,
+          GPUI.Dev.Reload,
           GPUI.View
         ],
         "Advanced infrastructure": [GPUI.Session],
@@ -184,6 +185,7 @@ defmodule GPUI.MixProject do
       GPUI.Runtime.Update,
       GPUI.Tree,
       GPUI.Debug,
+      GPUI.Dev.Reload,
       GPUI.View,
       GPUI.Text.Buffer,
       GPUI.Text.Position,

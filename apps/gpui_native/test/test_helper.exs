@@ -1,5 +1,5 @@
 project_root = Mix.Project.project_file() |> Path.dirname()
-Code.require_file(GPUI.Dev.Paths.support("ssl_certs.exs"))
+Code.require_file(GPUI.Maintainer.Paths.support("ssl_certs.exs"))
 Code.require_file(Path.join(project_root, "test/support/examples.ex"))
 
 if Mix.env() == :e2e do

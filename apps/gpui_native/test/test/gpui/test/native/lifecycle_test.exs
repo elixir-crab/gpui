@@ -82,7 +82,7 @@ defmodule GPUI.Test.Native.LifecycleTest do
     viewport = %{type: :viewport, attrs: %{}, children: [tree]}
 
     assert_raise error, fn ->
-      GPUI.Native.Test.render(ui.pid |> :sys.get_state() |> Map.fetch!(:session), viewport)
+      GPUI.Native.TestDriver.render(ui.pid |> :sys.get_state() |> Map.fetch!(:session), viewport)
     end
   end
 
@@ -90,7 +90,7 @@ defmodule GPUI.Test.Native.LifecycleTest do
     render(ui, ControlsView, %{})
 
     error =
-      assert_raise GPUI.Test.Error, ~r/focus.*missing.*unknown_focus_target/, fn ->
+      assert_raise GPUI.Test.NativeError, ~r/focus.*missing.*unknown_focus_target/, fn ->
         focus(ui, "missing")
       end
 
@@ -103,13 +103,13 @@ defmodule GPUI.Test.Native.LifecycleTest do
   defp start_ui(owner \\ self()) do
     child_spec =
       Supervisor.child_spec(
-        {GPUI.Test.Native, owner: owner, size: {240, 120}},
-        id: {GPUI.Test.Native, make_ref()},
+        {GPUI.Test.NativeSession, owner: owner, size: {240, 120}},
+        id: {GPUI.Test.NativeSession, make_ref()},
         restart: :temporary
       )
 
     pid = start_supervised!(child_spec)
-    GPUI.Test.Native.ui(pid)
+    GPUI.Test.NativeSession.ui(pid)
   end
 
   test "simultaneous sessions isolate events and lifecycle", %{ui: ui} do
@@ -124,7 +124,7 @@ defmodule GPUI.Test.Native.LifecycleTest do
     assert_receive {:gpui, ^ui, {:event, %{event: "changed", value: true}}}
     refute_receive {:gpui, ^other, {:event, _event}}
 
-    GPUI.Test.Native.stop(ui)
+    GPUI.Test.NativeSession.stop(ui)
     refute Process.alive?(ui.pid)
 
     focus(other, "enabled-switch")
@@ -133,10 +133,10 @@ defmodule GPUI.Test.Native.LifecycleTest do
   end
 
   test "stale handles raise a native test session error", %{ui: ui} do
-    GPUI.Test.Native.stop(ui)
-    assert :ok = GPUI.Test.Native.stop(ui)
+    GPUI.Test.NativeSession.stop(ui)
+    assert :ok = GPUI.Test.NativeSession.stop(ui)
 
-    error = assert_raise GPUI.Test.Error, fn -> focus(ui, "enabled-switch") end
+    error = assert_raise GPUI.Test.NativeError, fn -> focus(ui, "enabled-switch") end
     assert error.operation == :session
     assert error.reason == :session_stopped
     assert error.ui == ui
@@ -147,8 +147,8 @@ defmodule GPUI.Test.Native.LifecycleTest do
 
     owner =
       spawn(fn ->
-        {:ok, pid} = GPUI.Test.Native.start_link(owner: self(), size: {240, 120})
-        send(parent, {:owned_ui, GPUI.Test.Native.ui(pid)})
+        {:ok, pid} = GPUI.Test.NativeSession.start_link(owner: self(), size: {240, 120})
+        send(parent, {:owned_ui, GPUI.Test.NativeSession.ui(pid)})
         receive do: (:stop -> :ok)
       end)
 
@@ -185,7 +185,7 @@ defmodule GPUI.Test.Native.LifecycleTest do
   test "a failed command does not break the session or a later session", %{ui: ui} do
     render(ui, ControlsView, %{})
 
-    assert_raise GPUI.Test.Error, fn -> bounds(ui, "missing") end
+    assert_raise GPUI.Test.NativeError, fn -> bounds(ui, "missing") end
 
     focus(ui, "enabled-switch")
     press(ui, :space)

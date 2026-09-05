@@ -1,4 +1,4 @@
-defmodule GPUI.Codegen.Native.RegistryDefinitions do
+defmodule GPUI.Codegen.Native.Registry.Definitions do
   @moduledoc "Derives typed native component-registry accessors from stateful schema entries."
 
   defmacro define_registry(host) do
@@ -102,13 +102,13 @@ defmodule GPUI.Codegen.Native.Registry do
 
   use RustQ.Meta
 
-  alias GPUI.Codegen.Native.RegistryDefinitions
+  alias GPUI.Codegen.Native.Registry.Definitions
   alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
 
-  require RegistryDefinitions
-  RegistryDefinitions.define_registry(:gpui_component)
+  require Definitions
+  Definitions.define_registry(:gpui_component)
 
   @spec items() :: [AST.item()]
   def items do

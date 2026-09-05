@@ -1,21 +1,21 @@
 GPUITest.Examples.load!(:component_gallery)
 
 defmodule GPUITest.Visual.ComponentGallery.Scenario do
-  @behaviour GPUI.Dev.Visual.Scenario
+  @behaviour GPUI.Maintainer.Visual.Scenario
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def id, do: :component_gallery
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def app, do: Examples.ComponentGallery.App
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def args(_theme), do: %{story: "welcome"}
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def title, do: "GPUI Component Gallery"
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def captures do
     [
       %{name: "welcome"},

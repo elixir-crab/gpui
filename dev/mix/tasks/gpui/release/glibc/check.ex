@@ -13,7 +13,7 @@ defmodule Mix.Tasks.Gpui.Release.Glibc.Check do
 
     archive = options |> Keyword.fetch!(:archive) |> Path.expand()
     maximum = Keyword.fetch!(options, :max_version)
-    :ok = GPUI.Dev.Release.Glibc.check_archive!(archive, max: maximum)
+    :ok = GPUI.Maintainer.Release.Glibc.check_archive!(archive, max: maximum)
     Mix.shell().info("#{Path.basename(archive)} requires no GLIBC newer than #{maximum}")
   end
 end

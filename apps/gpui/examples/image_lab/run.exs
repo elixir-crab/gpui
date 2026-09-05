@@ -24,7 +24,7 @@ if path != "" do
     })
 end
 
-GPUI.Dev.wait(runtime,
+GPUI.Dev.Reload.wait(runtime,
   files: [
     Path.join(__DIR__, "support/analysis.exs"),
     Path.join(__DIR__, "support/image_lab.exs")

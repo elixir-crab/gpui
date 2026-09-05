@@ -2,8 +2,8 @@ defmodule GPUI.Codegen.Native.Schema do
   @moduledoc "Composes generated native schema, decoder, dispatch, renderer, and registry items."
 
   alias GPUI.Codegen.Native.Accessibility
+  alias GPUI.Codegen.Native.Component.Definitions
   alias GPUI.Codegen.Native.ComponentContracts
-  alias GPUI.Codegen.Native.ComponentDefinitions
   alias GPUI.Codegen.Native.Decoder
   alias GPUI.Codegen.Native.Dispatch
   alias GPUI.Codegen.Native.Elements
@@ -20,7 +20,7 @@ defmodule GPUI.Codegen.Native.Schema do
     component_items =
       [
         ComponentContracts.items(),
-        ComponentDefinitions.items()
+        Definitions.items()
       ]
 
     [

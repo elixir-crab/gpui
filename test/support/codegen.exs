@@ -1,4 +1,4 @@
-codegen_root = GPUI.Dev.Paths.codegen_native()
+codegen_root = GPUI.Maintainer.Paths.codegen_native()
 
 for file <- ~w(
   accessibility.ex
