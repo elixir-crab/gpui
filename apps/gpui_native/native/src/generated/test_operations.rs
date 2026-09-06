@@ -50,3 +50,38 @@ pub(crate) fn native_test_advance_impl<'a>(
         Err(reason) => Ok((atoms::error(), reason).encode(env)),
     }
 }
+pub(crate) fn native_test_click_at_impl<'a>(
+    env: Env<'a>,
+    session: ResourceArc<native_test::NativeTestSessionResource>,
+    request: PointRequest,
+) -> NifResult<Term<'a>> {
+    match click_at(&session, request.x as f32, request.y as f32) {
+        Ok(_unit) => Ok((atoms::ok(), atoms::ok()).encode(env)),
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+    }
+}
+pub(crate) fn native_test_scroll_impl<'a>(
+    env: Env<'a>,
+    session: ResourceArc<native_test::NativeTestSessionResource>,
+    request: ScrollRequest,
+) -> NifResult<Term<'a>> {
+    match scroll(
+        &session,
+        request.target,
+        request.delta_x as f32,
+        request.delta_y as f32,
+    ) {
+        Ok(_unit) => Ok((atoms::ok(), atoms::ok()).encode(env)),
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+    }
+}
+pub(crate) fn native_test_resize_impl<'a>(
+    env: Env<'a>,
+    session: ResourceArc<native_test::NativeTestSessionResource>,
+    request: ResizeRequest,
+) -> NifResult<Term<'a>> {
+    match resize(&session, request.width as f32, request.height as f32) {
+        Ok(_unit) => Ok((atoms::ok(), atoms::ok()).encode(env)),
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+    }
+}

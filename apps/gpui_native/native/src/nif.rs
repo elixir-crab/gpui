@@ -2,14 +2,15 @@ use crate::*;
 
 #[cfg(feature = "native-test")]
 mod generated_test_operations {
-    use crate::native_test::{advance, click, focus, input, key};
+    use crate::native_test::{advance, click, click_at, focus, input, key, resize, scroll};
     use crate::*;
     include!("generated/test_operations.rs");
 }
 #[cfg(feature = "native-test")]
 pub(crate) use generated_test_operations::{
-    native_test_advance_impl, native_test_click_impl, native_test_focus_impl,
-    native_test_input_impl, native_test_key_impl,
+    native_test_advance_impl, native_test_click_at_impl, native_test_click_impl,
+    native_test_focus_impl, native_test_input_impl, native_test_key_impl, native_test_resize_impl,
+    native_test_scroll_impl,
 };
 
 pub(crate) fn host_info_impl<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
@@ -484,38 +485,24 @@ pub(crate) fn native_test_click_impl<'a>(
     Ok((atoms::error(), "native_test_disabled").encode(env))
 }
 
+#[cfg(not(feature = "native-test"))]
 pub(crate) fn native_test_click_at_impl<'a>(
     env: Env<'a>,
     test_id: ResourceArc<native_test::NativeTestSessionResource>,
     request: PointRequest,
 ) -> NifResult<Term<'a>> {
-    let PointRequest { x, y } = request;
-    #[cfg(feature = "native-test")]
-    let result = native_test::click_at(&test_id, x as f32, y as f32);
-    #[cfg(not(feature = "native-test"))]
-    let _ = (test_id, x, y);
-    #[cfg(not(feature = "native-test"))]
-    let result: Result<(), String> = Err("native_test_disabled".to_string());
-    encode_command_result(env, result.map(|()| atoms::ok()))
+    let _ = (test_id, request);
+    Ok((atoms::error(), "native_test_disabled").encode(env))
 }
 
+#[cfg(not(feature = "native-test"))]
 pub(crate) fn native_test_scroll_impl<'a>(
     env: Env<'a>,
     test_id: ResourceArc<native_test::NativeTestSessionResource>,
     request: ScrollRequest,
 ) -> NifResult<Term<'a>> {
-    let ScrollRequest {
-        target: element_id,
-        delta_x,
-        delta_y,
-    } = request;
-    #[cfg(feature = "native-test")]
-    let result = native_test::scroll(&test_id, element_id, delta_x as f32, delta_y as f32);
-    #[cfg(not(feature = "native-test"))]
-    let _ = (test_id, element_id, delta_x, delta_y);
-    #[cfg(not(feature = "native-test"))]
-    let result: Result<(), String> = Err("native_test_disabled".to_string());
-    encode_command_result(env, result.map(|()| atoms::ok()))
+    let _ = (test_id, request);
+    Ok((atoms::error(), "native_test_disabled").encode(env))
 }
 
 #[cfg(not(feature = "native-test"))]
@@ -528,19 +515,14 @@ pub(crate) fn native_test_input_impl<'a>(
     Ok((atoms::error(), "native_test_disabled").encode(env))
 }
 
+#[cfg(not(feature = "native-test"))]
 pub(crate) fn native_test_resize_impl<'a>(
     env: Env<'a>,
     test_id: ResourceArc<native_test::NativeTestSessionResource>,
     request: ResizeRequest,
 ) -> NifResult<Term<'a>> {
-    let ResizeRequest { width, height } = request;
-    #[cfg(feature = "native-test")]
-    let result = native_test::resize(&test_id, width as f32, height as f32);
-    #[cfg(not(feature = "native-test"))]
-    let _ = (test_id, width, height);
-    #[cfg(not(feature = "native-test"))]
-    let result: Result<(), String> = Err("native_test_disabled".to_string());
-    encode_command_result(env, result.map(|()| atoms::ok()))
+    let _ = (test_id, request);
+    Ok((atoms::error(), "native_test_disabled").encode(env))
 }
 
 pub(crate) fn native_test_bounds_impl<'a>(

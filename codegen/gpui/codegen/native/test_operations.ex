@@ -61,6 +61,47 @@ defmodule GPUI.Codegen.Native.TestOperations do
     encode_unit_result(env, advance(ref(session), request.milliseconds))
   end
 
+  @spec native_test_click_at_impl(
+          R.path(:Env, R.lifetime(:a)),
+          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          R.path(:PointRequest)
+        ) :: R.nif_result(term())
+  defrust native_test_click_at_impl(env, session, request) do
+    encode_unit_result(
+      env,
+      click_at(ref(session), cast(request.x, R.f32()), cast(request.y, R.f32()))
+    )
+  end
+
+  @spec native_test_scroll_impl(
+          R.path(:Env, R.lifetime(:a)),
+          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          R.path(:ScrollRequest)
+        ) :: R.nif_result(term())
+  defrust native_test_scroll_impl(env, session, request) do
+    encode_unit_result(
+      env,
+      scroll(
+        ref(session),
+        request.target,
+        cast(request.delta_x, R.f32()),
+        cast(request.delta_y, R.f32())
+      )
+    )
+  end
+
+  @spec native_test_resize_impl(
+          R.path(:Env, R.lifetime(:a)),
+          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          R.path(:ResizeRequest)
+        ) :: R.nif_result(term())
+  defrust native_test_resize_impl(env, session, request) do
+    encode_unit_result(
+      env,
+      resize(ref(session), cast(request.width, R.f32()), cast(request.height, R.f32()))
+    )
+  end
+
   @spec items() :: [RustQ.Rust.AST.item()]
   def items, do: Enum.map(MetaAST.functions(__MODULE__), &%{&1 | vis: :crate})
 end
