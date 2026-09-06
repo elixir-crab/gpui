@@ -131,27 +131,15 @@ impl TextBufferResource {
 }
 
 include!("generated/text_conversions.rs");
-fn map_error(error: core::Error) -> TextBufferError {
-    match error {
-        core::Error::InvalidPosition => TextBufferError::InvalidPosition,
-        core::Error::InvalidRange => TextBufferError::InvalidRange,
-        core::Error::InvalidSelection => TextBufferError::InvalidSelection,
-        core::Error::OverlappingEdits => TextBufferError::OverlappingEdits,
-        core::Error::StaleRevision(revision) => TextBufferError::StaleRevision(revision),
-        core::Error::TransactionConflict => TextBufferError::TransactionConflict,
-        core::Error::NothingToUndo => TextBufferError::NothingToUndo,
-        core::Error::NothingToRedo => TextBufferError::NothingToRedo,
-        core::Error::NoChange => {
-            #[cfg(feature = "components")]
-            {
-                TextBufferError::NoChange
-            }
-            #[cfg(not(feature = "components"))]
-            {
-                TextBufferError::TransactionConflict
-            }
-        }
-    }
+
+#[cfg(feature = "components")]
+fn no_change_error() -> TextBufferError {
+    TextBufferError::NoChange
+}
+
+#[cfg(not(feature = "components"))]
+fn no_change_error() -> TextBufferError {
+    TextBufferError::TransactionConflict
 }
 
 #[cfg(any(test, feature = "components"))]
@@ -188,6 +176,45 @@ pub(crate) fn byte_range_to_selection(
 #[cfg(test)]
 mod conversion_tests {
     use super::*;
+
+    #[test]
+    fn core_errors_preserve_boundary_variants() {
+        let cases = [
+            (
+                core::Error::InvalidPosition,
+                TextBufferError::InvalidPosition,
+            ),
+            (core::Error::InvalidRange, TextBufferError::InvalidRange),
+            (
+                core::Error::InvalidSelection,
+                TextBufferError::InvalidSelection,
+            ),
+            (
+                core::Error::OverlappingEdits,
+                TextBufferError::OverlappingEdits,
+            ),
+            (
+                core::Error::TransactionConflict,
+                TextBufferError::TransactionConflict,
+            ),
+            (core::Error::NothingToUndo, TextBufferError::NothingToUndo),
+            (core::Error::NothingToRedo, TextBufferError::NothingToRedo),
+            (
+                core::Error::StaleRevision(u64::MAX),
+                TextBufferError::StaleRevision(u64::MAX),
+            ),
+        ];
+        for (source, expected) in cases {
+            assert_eq!(map_error(source), expected);
+        }
+        #[cfg(feature = "components")]
+        assert_eq!(map_error(core::Error::NoChange), TextBufferError::NoChange);
+        #[cfg(not(feature = "components"))]
+        assert_eq!(
+            map_error(core::Error::NoChange),
+            TextBufferError::TransactionConflict
+        );
+    }
 
     #[test]
     fn transaction_and_snapshot_conversions_preserve_nested_values() {

@@ -90,3 +90,16 @@ fn from_core_result(value: core::TransactionResult) -> TransactionResult {
         selections: value.selections.into_iter().map(from_core_selection).collect(),
     }
 }
+fn map_error(error: core::Error) -> TextBufferError {
+    match error {
+        core::Error::InvalidPosition => TextBufferError::InvalidPosition,
+        core::Error::InvalidRange => TextBufferError::InvalidRange,
+        core::Error::InvalidSelection => TextBufferError::InvalidSelection,
+        core::Error::OverlappingEdits => TextBufferError::OverlappingEdits,
+        core::Error::TransactionConflict => TextBufferError::TransactionConflict,
+        core::Error::NothingToUndo => TextBufferError::NothingToUndo,
+        core::Error::NothingToRedo => TextBufferError::NothingToRedo,
+        core::Error::StaleRevision(revision) => TextBufferError::StaleRevision(revision),
+        core::Error::NoChange => no_change_error(),
+    }
+}

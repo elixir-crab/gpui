@@ -5,7 +5,9 @@ defmodule GPUI.Codegen.Native.TextConversions do
     rust_sources: ["apps/gpui/native/src/text.rs"]
 
   alias RustQ.Meta.AST, as: MetaAST
+  alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
+  alias RustQ.Rust.AST.PatternBuilder, as: P
   alias RustQ.Type, as: R
 
   @spec to_core_position(R.path(:TextPosition)) :: Core.Position.t()
@@ -110,6 +112,43 @@ defmodule GPUI.Codegen.Native.TextConversions do
 
       function ->
         function
-    end)
+    end) ++ [error_conversion()]
+  end
+
+  defp error_conversion do
+    variants = [
+      :InvalidPosition,
+      :InvalidRange,
+      :InvalidSelection,
+      :OverlappingEdits,
+      :TransactionConflict,
+      :NothingToUndo,
+      :NothingToRedo
+    ]
+
+    arms =
+      Enum.map(variants, fn variant ->
+        %AST.Arm{
+          pattern: P.path([:core, :Error, variant]),
+          body: [A.return_stmt(A.path_value([:TextBufferError, variant]))]
+        }
+      end)
+
+    revision = %AST.Arm{
+      pattern: P.path_tuple([:core, :Error, :StaleRevision], [:revision]),
+      body: [A.return_stmt(A.path_call([:TextBufferError, :StaleRevision], [:revision]))]
+    }
+
+    no_change = %AST.Arm{
+      pattern: P.path([:core, :Error, :NoChange]),
+      body: [A.return_stmt(A.call(:no_change_error, []))]
+    }
+
+    %AST.Function{
+      name: :map_error,
+      args: A.function_args(error: A.type_path([:core, :Error])),
+      returns: A.type_path(:TextBufferError),
+      body: [A.return_stmt(A.match_expr(A.var(:error), arms ++ [revision, no_change]))]
+    }
   end
 end
