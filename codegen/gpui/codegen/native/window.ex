@@ -54,14 +54,14 @@ defmodule GPUI.Codegen.Native.Window do
 
   @nif schedule: :dirty_io
   @spec open_window(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           term()
         ) :: R.nif_result(term())
   defnif(open_window(runtime, window), do: open_window_impl(nif_env(), runtime, window))
 
   @nif schedule: :dirty_io
   @spec update_window(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           R.u64(),
           term()
         ) :: R.nif_result(term())
@@ -72,7 +72,7 @@ defmodule GPUI.Codegen.Native.Window do
 
   @nif schedule: :dirty_io
   @spec close_window(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           R.u64()
         ) :: R.nif_result(term())
   defnif close_window(runtime, window_id) do
@@ -81,7 +81,7 @@ defmodule GPUI.Codegen.Native.Window do
 
   @nif schedule: :dirty_io
   @spec await_frame(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           R.u64(),
           R.u64()
         ) :: R.nif_result(term())
@@ -91,7 +91,7 @@ defmodule GPUI.Codegen.Native.Window do
 
   @nif schedule: :dirty_io
   @spec frame_token(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           R.u64()
         ) :: R.nif_result(term())
   defnif frame_token(runtime, window_id) do
@@ -100,7 +100,7 @@ defmodule GPUI.Codegen.Native.Window do
 
   @nif schedule: :dirty_io
   @spec await_frame_after(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           R.u64(),
           R.u64(),
           R.u64()
@@ -115,7 +115,7 @@ defmodule GPUI.Codegen.Native.Window do
 
   @nif schedule: :dirty_io
   @spec set_theme(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           theme()
         ) :: R.nif_result(term())
   defnif set_theme(runtime, mode) do
@@ -133,7 +133,7 @@ defmodule GPUI.Codegen.Native.Window do
           required(:min_size) => R.option([R.u32()]),
           required(:resizable) => boolean(),
           required(:chrome) => chrome(),
-          required(:lifecycle) => [R.path(:Lifecycle)],
+          required(:lifecycle) => [Lifecycle.t()],
           required(:commands) => [{String.t(), String.t()}],
           required(:root) => root()
         }
@@ -154,7 +154,7 @@ defmodule GPUI.Codegen.Native.Window do
           required(:tree) => term()
         }
 
-  @spec decode_update(update_request()) :: R.nif_result({R.u64(), R.path(:ElementNode)})
+  @spec decode_update(update_request()) :: R.nif_result({R.u64(), ElementNode.t()})
   defrust decode_update(request) do
     case decode_element_node(request.tree) do
       {:ok, tree} -> {:ok, {request.window_id, tree}}

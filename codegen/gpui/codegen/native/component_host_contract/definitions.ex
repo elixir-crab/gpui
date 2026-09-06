@@ -2,6 +2,8 @@ defmodule GPUI.Codegen.Native.ComponentHostContract.Definitions do
   @moduledoc "Defines RustQ component-host event contract types from package declarations."
 
   @doc "Injects component value and event types into the consuming RustQ metadata module."
+  # This schema computes native type names as atoms. Keep R.path at this
+  # metaprogramming boundary; concrete specs use ordinary remote types.
   defmacro define_contract do
     variants =
       GPUI.Components.NativeContract.events()
@@ -32,7 +34,7 @@ defmodule GPUI.Codegen.Native.ComponentHostContract.Definitions do
       @type component_event :: R.enum(unquote(variants))
 
       defrustimpl ComponentEvent, vis: :pub do
-        @spec envelope(R.ref(component_event())) :: R.ref(R.path(:ComponentEventEnvelope))
+        @spec envelope(R.ref(component_event())) :: R.ref(ComponentEventEnvelope.t())
         defrust envelope(self) do
           case self do
             (unquote_splicing(envelope_clauses))

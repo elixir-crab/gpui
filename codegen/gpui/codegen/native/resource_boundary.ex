@@ -28,7 +28,7 @@ defmodule GPUI.Codegen.Native.ResourceBoundary do
 
   @nif schedule: :dirty_cpu
   @spec put_resource(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           String.t(),
           term()
         ) :: R.nif_result(term())
@@ -37,7 +37,7 @@ defmodule GPUI.Codegen.Native.ResourceBoundary do
   end
 
   @spec drop_resource(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           String.t()
         ) :: R.nif_result(term())
   defnif drop_resource(runtime, resource_id) do

@@ -11,14 +11,14 @@ defmodule GPUI.Codegen.Native.DisabledResourceBoundary do
 
   @nif schedule: :dirty_cpu
   @spec put_resource(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           String.t(),
           term()
         ) :: R.nif_result(term())
   defnif(put_resource(_runtime, _resource_id, _resource), do: real_gpui_disabled())
 
   @spec drop_resource(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           String.t()
         ) :: R.nif_result(term())
   defnif(drop_resource(_runtime, _resource_id), do: real_gpui_disabled())

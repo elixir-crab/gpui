@@ -34,6 +34,7 @@ defmodule GPUI.Codegen.Native.Projections do
     |> List.flatten()
     |> Enum.map(&allow_vanilla_dead_code/1)
   end
+
   @spec registry_items(:vanilla | :gpui_component) :: [AST.item()]
   def registry_items(:gpui_component), do: GPUI.Codegen.Native.Schema.registry_items()
   def registry_items(:vanilla), do: build_registry_items(GPUI.Codegen.Native.Vanilla.Registry)
@@ -72,10 +73,18 @@ defmodule GPUI.Codegen.Native.Projections do
     functions =
       module
       |> MetaAST.functions()
-      |> Map.new(&{&1.name, %{&1 | vis: :crate, attrs: [A.attr(:cfg, feature: "real-gpui") | &1.attrs]}})
+      |> Map.new(
+        &{&1.name, %{&1 | vis: :crate, attrs: [A.attr(:cfg, feature: "real-gpui") | &1.attrs]}}
+      )
 
     Enum.flat_map(components, fn component ->
-      node = component.kind |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Node") |> String.to_atom()
+      node =
+        component.kind
+        |> Atom.to_string()
+        |> Macro.camelize()
+        |> Kernel.<>("Node")
+        |> String.to_atom()
+
       decoder = String.to_atom("decode_generated_#{component.kind}")
       [Map.fetch!(structs, node), Map.fetch!(functions, decoder)]
     end)
@@ -83,6 +92,7 @@ defmodule GPUI.Codegen.Native.Projections do
 
   defp type_item!(module, name, opts) do
     item = MetaAST.enum_type_item!(module, name)
+
     %{
       item
       | derive: Keyword.fetch!(opts, :derive),

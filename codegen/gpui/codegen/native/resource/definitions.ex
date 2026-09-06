@@ -51,7 +51,7 @@ defmodule GPUI.Codegen.Native.Resource.Definitions do
       @allow RustQ.Clippy.redundant_field_names()
       @allow RustQ.Clippy.lint(:match_single_binding)
       @spec unquote(decoder)(term()) ::
-              R.nif_result(R.path(unquote(resource_struct_name(resource.name))))
+              R.nif_result(unquote(struct).t())
       defrust unquote(decoder)(term) do
         unquote_splicing(statements)
         {:ok, struct_literal(unquote(struct), unquote(fields))}
@@ -102,7 +102,7 @@ defmodule GPUI.Codegen.Native.Resource.Definitions do
     [
       quote do
         unquote(value) =
-          case decode_as!(term.map_get(unquote(atom_call(source))), R.path(:Binary)) do
+          case decode_as!(term.map_get(unquote(atom_call(source))), Binary.t()) do
             binary -> binary.as_slice().to_vec()
           end
       end

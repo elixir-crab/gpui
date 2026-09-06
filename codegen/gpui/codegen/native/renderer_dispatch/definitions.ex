@@ -57,10 +57,10 @@ defmodule GPUI.Codegen.Native.RendererDispatch.Definitions do
       unquote_splicing(allow_attrs)
 
       @spec render_generated_component_node(
-              R.path(:ElementNode),
+              ElementNode.t(),
               R.usize(),
-              R.mut_ref(R.raw(:"element::ElementRenderContext<'_, '_>"))
-            ) :: R.path({:gpui, :AnyElement})
+              R.mut_ref(Element.ElementRenderContext.t(R.lifetime(:_), R.lifetime(:_)))
+            ) :: Gpui.AnyElement.t()
       defrust(render_generated_component_node(node, element_id, context), do: unquote(body))
     end
   end

@@ -26,7 +26,7 @@ defmodule GPUI.Codegen.Native.Dispatch.Definitions do
     body = {:case, [], [Macro.var(:tag, nil), [do: clauses]]}
 
     quote do
-      @spec decode_generated_element_tag(R.str()) :: R.path(:GeneratedElementTag)
+      @spec decode_generated_element_tag(R.str()) :: GeneratedElementTag.t()
       defrust(decode_generated_element_tag(tag), do: unquote(body))
     end
   end
@@ -51,8 +51,8 @@ defmodule GPUI.Codegen.Native.Dispatch.Definitions do
     body = {:case, [], [Macro.var(:tag, nil), [do: clauses]]}
 
     quote do
-      @spec generated_component_kind(R.path(:GeneratedElementTag)) ::
-              R.path(:GeneratedComponentKind)
+      @spec generated_component_kind(GeneratedElementTag.t()) ::
+              GeneratedComponentKind.t()
       defrust(generated_component_kind(tag), do: unquote(body))
     end
   end
@@ -81,8 +81,8 @@ defmodule GPUI.Codegen.Native.Dispatch.Definitions do
 
     quote do
       @allow RustQ.Clippy.lint(:redundant_closure)
-      @spec decode_generated_element_node(term(), R.path(:GeneratedElementTag)) ::
-              R.nif_result(R.path(:ElementNode))
+      @spec decode_generated_element_node(term(), GeneratedElementTag.t()) ::
+              R.nif_result(ElementNode.t())
       defrust(decode_generated_element_node(term, tag), do: unquote(body))
     end
   end

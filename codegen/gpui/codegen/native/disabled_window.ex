@@ -11,14 +11,14 @@ defmodule GPUI.Codegen.Native.DisabledWindow do
 
   @nif schedule: :dirty_io
   @spec open_window(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           term()
         ) :: R.nif_result(term())
   defnif(open_window(_runtime, _window), do: real_gpui_disabled())
 
   @nif schedule: :dirty_io
   @spec update_window(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           R.u64(),
           term()
         ) :: R.nif_result(term())
@@ -26,14 +26,14 @@ defmodule GPUI.Codegen.Native.DisabledWindow do
 
   @nif schedule: :dirty_io
   @spec close_window(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           R.u64()
         ) :: R.nif_result(term())
   defnif(close_window(_runtime, _window_id), do: real_gpui_disabled())
 
   @nif schedule: :dirty_io
   @spec await_frame(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           R.u64(),
           R.u64()
         ) :: R.nif_result(term())
@@ -41,14 +41,14 @@ defmodule GPUI.Codegen.Native.DisabledWindow do
 
   @nif schedule: :dirty_io
   @spec frame_token(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           R.u64()
         ) :: R.nif_result(term())
   defnif(frame_token(_runtime, _window_id), do: real_gpui_disabled())
 
   @nif schedule: :dirty_io
   @spec await_frame_after(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           R.u64(),
           R.u64(),
           R.u64()
@@ -59,8 +59,8 @@ defmodule GPUI.Codegen.Native.DisabledWindow do
 
   @nif schedule: :dirty_io
   @spec set_theme(
-          R.resource(R.path(:RuntimeResource)),
-          R.path(:Theme)
+          R.resource(RuntimeResource.t()),
+          Theme.t()
         ) :: R.nif_result(term())
   defnif(set_theme(_runtime, _mode), do: real_gpui_disabled())
 end

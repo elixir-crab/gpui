@@ -63,14 +63,14 @@ defmodule GPUI.Codegen.Native.ComponentContracts do
 
   @allow :unreachable_patterns
   @allow Clippy.redundant_field_names()
-  @spec decode_select_options(term()) :: R.nif_result(R.vec(R.path(:SelectOptionNode)))
+  @spec decode_select_options(term()) :: R.nif_result(R.vec(SelectOptionNode.t()))
   defrust decode_select_options(term) do
     decode_options(term, disabled: false)
   end
 
   @allow :unreachable_patterns
   @allow Clippy.redundant_field_names()
-  @spec decode_radio_options(term()) :: R.nif_result(R.vec(R.path(:RadioOptionNode)))
+  @spec decode_radio_options(term()) :: R.nif_result(R.vec(RadioOptionNode.t()))
   defrust decode_radio_options(term) do
     decode_options(term, disabled: true)
   end
@@ -78,10 +78,10 @@ defmodule GPUI.Codegen.Native.ComponentContracts do
   @allow Clippy.redundant_field_names()
   @spec accumulate_select_option(
           HashSet.t(String.t()),
-          R.vec(R.path(:SelectOptionNode)),
+          R.vec(SelectOptionNode.t()),
           String.t(),
           String.t()
-        ) :: R.nif_result({HashSet.t(String.t()), R.vec(R.path(:SelectOptionNode))})
+        ) :: R.nif_result({HashSet.t(String.t()), R.vec(SelectOptionNode.t())})
   defrustp accumulate_select_option(values, options, label, value) do
     if label.is_empty() do
       {:error, badarg()}
@@ -100,11 +100,11 @@ defmodule GPUI.Codegen.Native.ComponentContracts do
   @allow Clippy.redundant_field_names()
   @spec accumulate_radio_option(
           HashSet.t(String.t()),
-          R.vec(R.path(:RadioOptionNode)),
+          R.vec(RadioOptionNode.t()),
           String.t(),
           String.t(),
           boolean()
-        ) :: R.nif_result({HashSet.t(String.t()), R.vec(R.path(:RadioOptionNode))})
+        ) :: R.nif_result({HashSet.t(String.t()), R.vec(RadioOptionNode.t())})
   defrustp accumulate_radio_option(values, options, label, value, disabled) do
     if label.is_empty() do
       {:error, badarg()}
@@ -135,15 +135,15 @@ defmodule GPUI.Codegen.Native.ComponentContracts do
     end
   end
 
-  @spec append_select_option(R.vec(R.path(:SelectOptionNode)), R.path(:SelectOptionNode)) ::
-          R.vec(R.path(:SelectOptionNode))
+  @spec append_select_option(R.vec(SelectOptionNode.t()), SelectOptionNode.t()) ::
+          R.vec(SelectOptionNode.t())
   defrustp append_select_option(options, option) do
     options.push(option)
     options
   end
 
-  @spec append_radio_option(R.vec(R.path(:RadioOptionNode)), R.path(:RadioOptionNode)) ::
-          R.vec(R.path(:RadioOptionNode))
+  @spec append_radio_option(R.vec(RadioOptionNode.t()), RadioOptionNode.t()) ::
+          R.vec(RadioOptionNode.t())
   defrustp append_radio_option(options, option) do
     options.push(option)
     options

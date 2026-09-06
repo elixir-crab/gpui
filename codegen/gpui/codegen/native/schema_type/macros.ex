@@ -10,11 +10,11 @@ defmodule GPUI.Codegen.Native.SchemaType.Macros do
 
     element_variants =
       [
-        viewport: [quote(do: R.path(:ViewportNode))],
-        div: [quote(do: R.path(:ContainerNode))],
-        anchored_layer: [quote(do: R.path(:AnchoredLayerNode))],
-        text_surface: [quote(do: R.path(:TextSurfaceNode))],
-        input: [quote(do: R.path(:InputNode))]
+        viewport: [quote(do: ViewportNode.t())],
+        div: [quote(do: ContainerNode.t())],
+        anchored_layer: [quote(do: AnchoredLayerNode.t())],
+        text_surface: [quote(do: TextSurfaceNode.t())],
+        input: [quote(do: InputNode.t())]
       ] ++
         (components
          |> Enum.filter(&component_contract?/1)
@@ -22,8 +22,8 @@ defmodule GPUI.Codegen.Native.SchemaType.Macros do
            {component.kind, [quote(do: R.path(unquote(component_node_name(component))))]}
          end)) ++
         [
-          image: [quote(do: R.path(:ImageNode))],
-          text: [quote(do: R.path(:TextNode))]
+          image: [quote(do: ImageNode.t())],
+          text: [quote(do: TextNode.t())]
         ]
 
     quote do

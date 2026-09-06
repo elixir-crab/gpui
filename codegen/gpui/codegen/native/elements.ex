@@ -24,15 +24,15 @@ defmodule GPUI.Codegen.Native.Elements do
         }
 
   @type viewport_node :: %{
-          required(:children) => R.vec(R.path(:ElementNode))
+          required(:children) => R.vec(ElementNode.t())
         }
 
   @type container_node :: %{
-          required(:tag) => R.path(:GeneratedElementTag),
-          required(:style) => R.path(:StyleAttrs),
+          required(:tag) => GeneratedElementTag.t(),
+          required(:style) => StyleAttrs.t(),
           required(:id) => R.option(String.t()),
-          required(:accessibility) => R.path(:AccessibilitySemantics),
-          required(:children) => R.vec(R.path(:ElementNode)),
+          required(:accessibility) => AccessibilitySemantics.t(),
+          required(:children) => R.vec(ElementNode.t()),
           required(:click) => R.option(String.t()),
           required(:bounds_change) => R.option(String.t()),
           required(:focus_request) => R.u64(),
@@ -60,36 +60,36 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:fit) => String.t(),
           required(:margin) => R.f64(),
           required(:priority) => R.u64(),
-          required(:children) => R.vec(R.path(:ElementNode))
+          required(:children) => R.vec(ElementNode.t())
         }
 
   @type image_node :: %{
-          required(:image) => R.path(:ImageData),
-          required(:style) => R.path(:StyleAttrs),
+          required(:image) => ImageData.t(),
+          required(:style) => StyleAttrs.t(),
           required(:label) => R.option(String.t())
         }
 
   @type text_node :: %{
           required(:text) => String.t(),
-          required(:style) => R.path(:StyleAttrs)
+          required(:style) => StyleAttrs.t()
         }
 
   @type text_decoration_node :: %{
-          required(:range) => R.path(:TextRange),
+          required(:range) => TextRange.t(),
           required(:background) => R.option(R.u32()),
           required(:underline) => R.option(R.u32()),
           required(:underline_style) => String.t()
         }
 
   @type text_style_run_node :: %{
-          required(:range) => R.path(:TextRange),
+          required(:range) => TextRange.t(),
           required(:color) => R.option(R.u32()),
           required(:font_weight) => R.option(String.t()),
           required(:font_style) => R.option(String.t())
         }
 
   @type rich_text_run_node :: %{
-          required(:range) => R.path(:TextRange),
+          required(:range) => TextRange.t(),
           required(:color) => R.option(R.u32()),
           required(:background) => R.option(R.u32()),
           required(:font_weight) => R.option(String.t()),
@@ -101,7 +101,7 @@ defmodule GPUI.Codegen.Native.Elements do
         }
 
   @type text_inline_projection_node :: %{
-          required(:position) => R.path(:TextPosition),
+          required(:position) => TextPosition.t(),
           required(:text) => String.t(),
           required(:color) => R.u32()
         }
@@ -116,9 +116,9 @@ defmodule GPUI.Codegen.Native.Elements do
         }
 
   @type text_surface_node :: %{
-          required(:style) => R.path(:StyleAttrs),
+          required(:style) => StyleAttrs.t(),
           required(:id) => String.t(),
-          required(:buffer) => R.resource(R.path(:TextBufferResource)),
+          required(:buffer) => R.resource(TextBufferResource.t()),
           required(:focus_request) => R.u64(),
           required(:disabled) => boolean(),
           required(:soft_wrap) => boolean(),
@@ -129,13 +129,13 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:show_whitespaces) => boolean(),
           required(:tab_size) => R.u64(),
           required(:hard_tabs) => boolean(),
-          required(:geometry_ranges) => R.vec(R.path(:TextRange)),
+          required(:geometry_ranges) => R.vec(TextRange.t()),
           required(:scroll_request) => R.u64(),
-          required(:scroll_to) => R.option(R.path(:TextPosition)),
-          required(:decorations) => R.vec(R.path(:TextDecorationNode)),
-          required(:style_runs) => R.vec(R.path(:TextStyleRunNode)),
-          required(:inline_projections) => R.vec(R.path(:TextInlineProjectionNode)),
-          required(:block_projections) => R.vec(R.path(:TextBlockProjectionNode)),
+          required(:scroll_to) => R.option(TextPosition.t()),
+          required(:decorations) => R.vec(TextDecorationNode.t()),
+          required(:style_runs) => R.vec(TextStyleRunNode.t()),
+          required(:inline_projections) => R.vec(TextInlineProjectionNode.t()),
+          required(:block_projections) => R.vec(TextBlockProjectionNode.t()),
           required(:transaction) => R.option(String.t()),
           required(:submit) => R.option(String.t()),
           required(:selection_change) => R.option(String.t()),
@@ -148,7 +148,7 @@ defmodule GPUI.Codegen.Native.Elements do
         }
 
   @type input_node :: %{
-          required(:style) => R.path(:StyleAttrs),
+          required(:style) => StyleAttrs.t(),
           required(:id) => R.option(String.t()),
           required(:value) => String.t(),
           required(:placeholder) => R.option(String.t()),
@@ -160,10 +160,10 @@ defmodule GPUI.Codegen.Native.Elements do
           required(:blur) => R.option(String.t())
         }
 
-  @spec decode_paint_commands(term()) :: R.nif_result(R.vec(R.path(:PaintCommand)))
+  @spec decode_paint_commands(term()) :: R.nif_result(R.vec(PaintCommand.t()))
   defrust decode_paint_commands(term) do
     case component_attr(term, Atoms.commands()) do
-      {:ok, {:some, value}} -> decode_as(value, R.vec(R.path(:PaintCommand)))
+      {:ok, {:some, value}} -> decode_as(value, R.vec(PaintCommand.t()))
       {:ok, nil} -> {:ok, []}
       {:error, reason} -> {:error, reason}
     end
@@ -198,7 +198,7 @@ defmodule GPUI.Codegen.Native.Elements do
     decode_as(unwrap!(term.map_get(Atoms.children())), R.vec(term()))
   end
 
-  @spec decode_element_node(term()) :: R.nif_result(R.path(:ElementNode))
+  @spec decode_element_node(term()) :: R.nif_result(ElementNode.t())
   defrust decode_element_node(term) do
     case decode_as(term, String.t()) do
       {:ok, decoded_text} ->
@@ -230,8 +230,8 @@ defmodule GPUI.Codegen.Native.Elements do
     end
   end
 
-  @spec decode_viewport_node(term(), R.path(:GeneratedElementTag)) ::
-          R.nif_result(R.path(:ElementNode))
+  @spec decode_viewport_node(term(), GeneratedElementTag.t()) ::
+          R.nif_result(ElementNode.t())
   defrust decode_viewport_node(term, _tag) do
     {:ok,
      enum_variant(
@@ -242,8 +242,8 @@ defmodule GPUI.Codegen.Native.Elements do
   end
 
   @allow RustQ.Clippy.lint(:useless_vec)
-  @spec decode_container_node(term(), R.path(:GeneratedElementTag)) ::
-          R.nif_result(R.path(:ElementNode))
+  @spec decode_container_node(term(), GeneratedElementTag.t()) ::
+          R.nif_result(ElementNode.t())
   defrust decode_container_node(term, element_tag) do
     {:ok,
      enum_variant(
@@ -282,8 +282,8 @@ defmodule GPUI.Codegen.Native.Elements do
      )}
   end
 
-  @spec decode_anchored_layer_node(term(), R.path(:GeneratedElementTag)) ::
-          R.nif_result(R.path(:ElementNode))
+  @spec decode_anchored_layer_node(term(), GeneratedElementTag.t()) ::
+          R.nif_result(ElementNode.t())
   defrust decode_anchored_layer_node(term, _tag) do
     attrs = unwrap!(decode_element_attrs(term))
 
@@ -308,7 +308,7 @@ defmodule GPUI.Codegen.Native.Elements do
      )}
   end
 
-  @spec decode_image_data(term()) :: R.nif_result(R.path(:ImageData))
+  @spec decode_image_data(term()) :: R.nif_result(ImageData.t())
   defrustp decode_image_data(raster) do
     resource_ref =
       case raster.map_get(Atoms.__type__()) do
@@ -326,8 +326,8 @@ defmodule GPUI.Codegen.Native.Elements do
   end
 
   @allow Clippy.redundant_field_names()
-  @spec decode_image_node(term(), R.path(:GeneratedElementTag)) ::
-          R.nif_result(R.path(:ElementNode))
+  @spec decode_image_node(term(), GeneratedElementTag.t()) ::
+          R.nif_result(ElementNode.t())
   defrust decode_image_node(term, _tag) do
     attrs = unwrap!(decode_element_attrs(term))
     image = unwrap!(decode_image_data(unwrap!(attrs.map_get(Atoms.raster()))))
@@ -352,12 +352,12 @@ defmodule GPUI.Codegen.Native.Elements do
     end
   end
 
-  @spec text_ranges_attr(term(), atom()) :: R.nif_result(R.vec(R.path(:TextRange)))
+  @spec text_ranges_attr(term(), atom()) :: R.nif_result(R.vec(TextRange.t()))
   defrustp text_ranges_attr(term, attr) do
     case decode_element_attrs(term) do
       {:ok, attrs} ->
         case attrs.map_get(attr) do
-          {:ok, value} -> decode_as(value, R.vec(R.path(:TextRange)))
+          {:ok, value} -> decode_as(value, R.vec(TextRange.t()))
           {:error, _missing} -> {:ok, []}
         end
 
@@ -366,66 +366,66 @@ defmodule GPUI.Codegen.Native.Elements do
     end
   end
 
-  @spec text_position_attr(term(), atom()) :: R.nif_result(R.option(R.path(:TextPosition)))
+  @spec text_position_attr(term(), atom()) :: R.nif_result(R.option(TextPosition.t()))
   defrustp text_position_attr(term, attr) do
     case component_attr(term, attr) do
-      {:ok, {:some, value}} -> {:ok, some(decode_as!(value, R.path(:TextPosition)))}
+      {:ok, {:some, value}} -> {:ok, some(decode_as!(value, TextPosition.t()))}
       {:ok, nil} -> {:ok, nil}
       {:error, reason} -> {:error, reason}
     end
   end
 
   @spec text_decorations_attr(term(), atom()) ::
-          R.nif_result(R.vec(R.path(:TextDecorationNode)))
+          R.nif_result(R.vec(TextDecorationNode.t()))
   defrustp text_decorations_attr(term, attr) do
     case component_attr(term, attr) do
-      {:ok, {:some, value}} -> decode_as(value, R.vec(R.path(:TextDecorationNode)))
+      {:ok, {:some, value}} -> decode_as(value, R.vec(TextDecorationNode.t()))
       {:ok, nil} -> {:ok, []}
       {:error, reason} -> {:error, reason}
     end
   end
 
   @spec text_style_runs_attr(term(), atom()) ::
-          R.nif_result(R.vec(R.path(:TextStyleRunNode)))
+          R.nif_result(R.vec(TextStyleRunNode.t()))
   defrustp text_style_runs_attr(term, attr) do
     case component_attr(term, attr) do
-      {:ok, {:some, value}} -> decode_as(value, R.vec(R.path(:TextStyleRunNode)))
+      {:ok, {:some, value}} -> decode_as(value, R.vec(TextStyleRunNode.t()))
       {:ok, nil} -> {:ok, []}
       {:error, reason} -> {:error, reason}
     end
   end
 
-  @spec decode_rich_text_runs(term()) :: R.nif_result(R.vec(R.path(:RichTextRunNode)))
+  @spec decode_rich_text_runs(term()) :: R.nif_result(R.vec(RichTextRunNode.t()))
   defrust decode_rich_text_runs(term) do
     case component_attr(term, Atoms.runs()) do
-      {:ok, {:some, value}} -> decode_as(value, R.vec(R.path(:RichTextRunNode)))
+      {:ok, {:some, value}} -> decode_as(value, R.vec(RichTextRunNode.t()))
       {:ok, nil} -> {:ok, []}
       {:error, reason} -> {:error, reason}
     end
   end
 
   @spec text_inline_projections_attr(term(), atom()) ::
-          R.nif_result(R.vec(R.path(:TextInlineProjectionNode)))
+          R.nif_result(R.vec(TextInlineProjectionNode.t()))
   defrustp text_inline_projections_attr(term, attr) do
     case component_attr(term, attr) do
-      {:ok, {:some, value}} -> decode_as(value, R.vec(R.path(:TextInlineProjectionNode)))
+      {:ok, {:some, value}} -> decode_as(value, R.vec(TextInlineProjectionNode.t()))
       {:ok, nil} -> {:ok, []}
       {:error, reason} -> {:error, reason}
     end
   end
 
   @spec text_block_projections_attr(term(), atom()) ::
-          R.nif_result(R.vec(R.path(:TextBlockProjectionNode)))
+          R.nif_result(R.vec(TextBlockProjectionNode.t()))
   defrustp text_block_projections_attr(term, attr) do
     case component_attr(term, attr) do
-      {:ok, {:some, value}} -> decode_as(value, R.vec(R.path(:TextBlockProjectionNode)))
+      {:ok, {:some, value}} -> decode_as(value, R.vec(TextBlockProjectionNode.t()))
       {:ok, nil} -> {:ok, []}
       {:error, reason} -> {:error, reason}
     end
   end
 
-  @spec decode_text_surface_node(term(), R.path(:GeneratedElementTag)) ::
-          R.nif_result(R.path(:ElementNode))
+  @spec decode_text_surface_node(term(), GeneratedElementTag.t()) ::
+          R.nif_result(ElementNode.t())
   defrust decode_text_surface_node(term, _tag) do
     attrs = unwrap!(decode_element_attrs(term))
 
@@ -436,8 +436,7 @@ defmodule GPUI.Codegen.Native.Elements do
        struct_literal(TextSurfaceNode,
          style: unwrap!(decode_style(term)),
          id: decode_as!(attrs.map_get(Atoms.id()), String.t()),
-         buffer:
-           decode_as!(attrs.map_get(Atoms.buffer()), R.resource(R.path(:TextBufferResource))),
+         buffer: decode_as!(attrs.map_get(Atoms.buffer()), R.resource(TextBufferResource.t())),
          focus_request:
            unwrap!(component_non_negative_integer_attr(term, Atoms.focus_request())).unwrap_or(0),
          disabled: unwrap!(component_bool_attr(term, Atoms.disabled())).unwrap_or(false),
@@ -474,8 +473,8 @@ defmodule GPUI.Codegen.Native.Elements do
      )}
   end
 
-  @spec decode_input_node(term(), R.path(:GeneratedElementTag)) ::
-          R.nif_result(R.path(:ElementNode))
+  @spec decode_input_node(term(), GeneratedElementTag.t()) ::
+          R.nif_result(ElementNode.t())
   defrust decode_input_node(term, _tag) do
     {:ok,
      enum_variant(
@@ -497,7 +496,7 @@ defmodule GPUI.Codegen.Native.Elements do
      )}
   end
 
-  @spec decode_children(term()) :: R.nif_result(R.vec(R.path(:ElementNode)))
+  @spec decode_children(term()) :: R.nif_result(R.vec(ElementNode.t()))
   defrust decode_children(term) do
     children = unwrap!(decode_element_children(term))
 
@@ -523,8 +522,8 @@ defmodule GPUI.Codegen.Native.Elements do
     end
   end
 
-  @spec decode_text_node(term(), R.path(:GeneratedElementTag)) ::
-          R.nif_result(R.path(:ElementNode))
+  @spec decode_text_node(term(), GeneratedElementTag.t()) ::
+          R.nif_result(ElementNode.t())
   defrust decode_text_node(term, _tag) do
     {:ok,
      enum_variant(

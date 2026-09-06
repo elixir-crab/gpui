@@ -77,7 +77,7 @@ defmodule GPUI.Codegen.Native.TestBoundary do
 
   @nif schedule: :dirty_io
   @spec native_test_render(
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
           term()
         ) :: R.nif_result(term())
   defnif native_test_render(session, tree) do
@@ -86,7 +86,7 @@ defmodule GPUI.Codegen.Native.TestBoundary do
 
   @nif schedule: :dirty_io
   @spec native_test_resize(
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
           R.f64(),
           R.f64()
         ) :: R.nif_result(term())
@@ -96,7 +96,7 @@ defmodule GPUI.Codegen.Native.TestBoundary do
 
   @nif schedule: :dirty_io
   @spec native_test_bounds(
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
           String.t()
         ) :: R.nif_result(term())
   defnif native_test_bounds(session, target) do
@@ -105,7 +105,7 @@ defmodule GPUI.Codegen.Native.TestBoundary do
 
   @nif schedule: :dirty_io
   @spec native_test_focus(
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
           String.t()
         ) :: R.nif_result(term())
   defnif native_test_focus(session, target) do
@@ -114,7 +114,7 @@ defmodule GPUI.Codegen.Native.TestBoundary do
 
   @nif schedule: :dirty_io
   @spec native_test_click(
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
           String.t()
         ) :: R.nif_result(term())
   defnif native_test_click(session, target) do
@@ -123,7 +123,7 @@ defmodule GPUI.Codegen.Native.TestBoundary do
 
   @nif schedule: :dirty_io
   @spec native_test_click_at(
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
           R.f64(),
           R.f64()
         ) :: R.nif_result(term())
@@ -133,7 +133,7 @@ defmodule GPUI.Codegen.Native.TestBoundary do
 
   @nif schedule: :dirty_io
   @spec native_test_scroll(
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
           String.t(),
           R.f64(),
           R.f64()
@@ -144,7 +144,7 @@ defmodule GPUI.Codegen.Native.TestBoundary do
 
   @nif schedule: :dirty_io
   @spec native_test_input(
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
           String.t()
         ) :: R.nif_result(term())
   defnif native_test_input(session, text) do
@@ -153,7 +153,7 @@ defmodule GPUI.Codegen.Native.TestBoundary do
 
   @nif schedule: :dirty_io
   @spec native_test_key(
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
           String.t()
         ) :: R.nif_result(term())
   defnif native_test_key(session, key) do
@@ -162,7 +162,7 @@ defmodule GPUI.Codegen.Native.TestBoundary do
 
   @nif schedule: :dirty_io
   @spec native_test_advance(
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
           R.u64()
         ) :: R.nif_result(term())
   defnif native_test_advance(session, milliseconds) do
@@ -170,17 +170,17 @@ defmodule GPUI.Codegen.Native.TestBoundary do
   end
 
   @nif schedule: :dirty_io
-  @spec native_test_idle(R.raw(:"ResourceArc<native_test::NativeTestSessionResource>")) ::
+  @spec native_test_idle(R.resource(NativeTest.NativeTestSessionResource.t())) ::
           R.nif_result(term())
   defnif(native_test_idle(session), do: native_test_idle_impl(nif_env(), session))
 
   @nif schedule: :dirty_io
-  @spec native_test_events(R.raw(:"ResourceArc<native_test::NativeTestSessionResource>")) ::
+  @spec native_test_events(R.resource(NativeTest.NativeTestSessionResource.t())) ::
           R.nif_result(term())
   defnif(native_test_events(session), do: native_test_events_impl(nif_env(), session))
 
   @nif schedule: :dirty_io
-  @spec native_test_stop(R.raw(:"ResourceArc<native_test::NativeTestSessionResource>")) ::
+  @spec native_test_stop(R.resource(NativeTest.NativeTestSessionResource.t())) ::
           R.nif_result(term())
   defnif(native_test_stop(session), do: native_test_stop_impl(nif_env(), session))
 end

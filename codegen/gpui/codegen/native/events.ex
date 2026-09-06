@@ -26,22 +26,22 @@ defmodule GPUI.Codegen.Native.Events do
   Definitions.define_event_impls(:gpui_component)
 
   @spec encode_file_dialog_event(
-          R.path(:Env, R.lifetime(:a)),
+          Env.t(R.lifetime(:a)),
           R.u64(),
           String.t(),
-          R.path(:Term, R.lifetime(:a))
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+          Term.t(R.lifetime(:a))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust(encode_file_dialog_event(env, window_id, event, value),
     do: encode_value_event(env, Atoms.file_read(), window_id, event, value)
   )
 
   @spec encode_file_dialog_selected(
-          R.path(:Env, R.lifetime(:a)),
+          Env.t(R.lifetime(:a)),
           R.u64(),
           String.t(),
           R.u64(),
-          R.path(:Term, R.lifetime(:a))
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+          Term.t(R.lifetime(:a))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust encode_file_dialog_selected(env, operation_id, name, size, data) do
     encode_event_map(
       env,
@@ -56,9 +56,9 @@ defmodule GPUI.Codegen.Native.Events do
   end
 
   @spec encode_file_dialog_cancelled(
-          R.path(:Env, R.lifetime(:a)),
+          Env.t(R.lifetime(:a)),
           R.u64()
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust encode_file_dialog_cancelled(env, operation_id) do
     encode_event_map(
       env,
@@ -70,10 +70,10 @@ defmodule GPUI.Codegen.Native.Events do
   end
 
   @spec encode_file_dialog_error(
-          R.path(:Env, R.lifetime(:a)),
+          Env.t(R.lifetime(:a)),
           R.u64(),
           String.t()
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust encode_file_dialog_error(env, operation_id, reason) do
     encode_event_map(
       env,
@@ -86,44 +86,44 @@ defmodule GPUI.Codegen.Native.Events do
   end
 
   @spec encode_bounds_event(
-          R.path(:Env, R.lifetime(:a)),
+          Env.t(R.lifetime(:a)),
           R.u64(),
           String.t(),
-          R.path(:ElementBoundsGeometry)
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+          ElementBoundsGeometry.t()
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust(encode_bounds_event(env, window_id, event, value),
     do: encode_value_event(env, Atoms.bounds(), window_id, event, value.encode(env))
   )
 
   @spec encode_clipboard_event(
-          R.path(:Env, R.lifetime(:a)),
+          Env.t(R.lifetime(:a)),
           R.u64(),
           String.t(),
-          R.path(:TransferPayload)
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+          TransferPayload.t()
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust(encode_clipboard_event(env, window_id, event, value),
     do: encode_value_event(env, Atoms.clipboard(), window_id, event, value.encode(env))
   )
 
   @spec encode_transfer_event(
-          R.path(:Env, R.lifetime(:a)),
+          Env.t(R.lifetime(:a)),
           R.ref(input_kind()),
           R.u64(),
           String.t(),
-          R.path(:TransferEventValue)
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+          TransferEventValue.t()
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust(encode_transfer_event(env, kind, window_id, event, value),
     do: encode_value_event(env, kind.atom(), window_id, event, value.encode(env))
   )
 
   @allow :dead_code
   @spec encode_value_event(
-          R.path(:Env, R.lifetime(:a)),
-          R.path(:Atom),
+          Env.t(R.lifetime(:a)),
+          Atom.t(),
           R.u64(),
           String.t(),
-          R.path(:Term, R.lifetime(:a))
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+          Term.t(R.lifetime(:a))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrustp encode_value_event(env, kind, window_id, event, value) do
     encode_event_map(
       env,
@@ -137,24 +137,24 @@ defmodule GPUI.Codegen.Native.Events do
   end
 
   @spec encode_focus_event(
-          R.path(:Env, R.lifetime(:a)),
+          Env.t(R.lifetime(:a)),
           R.ref(input_kind()),
           R.u64(),
           String.t(),
           String.t()
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust encode_focus_event(env, kind, window_id, event, id) do
     value = encode_event_map(env, [{Atoms.id(), id.encode(env)}])
     encode_value_event(env, kind.atom(), window_id, event, value)
   end
 
   @spec encode_virtual_range_event(
-          R.path(:Env, R.lifetime(:a)),
+          Env.t(R.lifetime(:a)),
           R.u64(),
           String.t(),
           R.u64(),
           R.u64()
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust encode_virtual_range_event(env, window_id, event, first, last) do
     value =
       encode_event_map(
@@ -169,10 +169,10 @@ defmodule GPUI.Codegen.Native.Events do
   end
 
   @spec encode_missing_resource_event(
-          R.path(:Env, R.lifetime(:a)),
+          Env.t(R.lifetime(:a)),
           R.u64(),
           String.t()
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust encode_missing_resource_event(env, window_id, id) do
     encode_event_map(
       env,
@@ -186,85 +186,85 @@ defmodule GPUI.Codegen.Native.Events do
   end
 
   @spec encode_revisioned_transaction_event(
-          R.path(:Env, R.lifetime(:a)),
-          R.path(:Atom),
+          Env.t(R.lifetime(:a)),
+          Atom.t(),
           R.u64(),
           String.t(),
-          R.path(:TextTransaction),
+          TextTransaction.t(),
           R.u64()
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust(encode_revisioned_transaction_event(env, kind, window_id, event, value, revision),
     do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
   )
 
   @spec encode_revisioned_selection_event(
-          R.path(:Env, R.lifetime(:a)),
-          R.path(:Atom),
+          Env.t(R.lifetime(:a)),
+          Atom.t(),
           R.u64(),
           String.t(),
-          R.vec(R.path(:TextSelection)),
+          R.vec(TextSelection.t()),
           R.u64()
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust(encode_revisioned_selection_event(env, kind, window_id, event, value, revision),
     do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
   )
 
   @spec encode_revisioned_viewport_event(
-          R.path(:Env, R.lifetime(:a)),
-          R.path(:Atom),
+          Env.t(R.lifetime(:a)),
+          Atom.t(),
           R.u64(),
           String.t(),
-          R.path(:TextViewportGeometry),
+          TextViewportGeometry.t(),
           R.u64()
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust(encode_revisioned_viewport_event(env, kind, window_id, event, value, revision),
     do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
   )
 
   @spec encode_revisioned_geometry_event(
-          R.path(:Env, R.lifetime(:a)),
-          R.path(:Atom),
+          Env.t(R.lifetime(:a)),
+          Atom.t(),
           R.u64(),
           String.t(),
-          R.path(:TextCaretGeometry),
+          TextCaretGeometry.t(),
           R.u64()
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust(encode_revisioned_geometry_event(env, kind, window_id, event, value, revision),
     do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
   )
 
   @spec encode_revisioned_range_geometry_event(
-          R.path(:Env, R.lifetime(:a)),
-          R.path(:Atom),
+          Env.t(R.lifetime(:a)),
+          Atom.t(),
           R.u64(),
           String.t(),
-          R.vec(R.path(:TextRangeGeometry)),
+          R.vec(TextRangeGeometry.t()),
           R.u64()
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust(encode_revisioned_range_geometry_event(env, kind, window_id, event, value, revision),
     do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
   )
 
   @spec encode_revisioned_position_event(
-          R.path(:Env, R.lifetime(:a)),
-          R.path(:Atom),
+          Env.t(R.lifetime(:a)),
+          Atom.t(),
           R.u64(),
           String.t(),
-          R.path(:TextPosition),
+          TextPosition.t(),
           R.u64()
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust(encode_revisioned_position_event(env, kind, window_id, event, value, revision),
     do: encode_revisioned_event(env, kind, window_id, event, value.encode(env), revision)
   )
 
   @spec encode_revisioned_event(
-          R.path(:Env, R.lifetime(:a)),
-          R.path(:Atom),
+          Env.t(R.lifetime(:a)),
+          Atom.t(),
           R.u64(),
           String.t(),
-          R.path(:Term, R.lifetime(:a)),
+          Term.t(R.lifetime(:a)),
           R.u64()
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrustp encode_revisioned_event(env, kind, window_id, event, value, revision) do
     encode_event_map(
       env,
@@ -279,12 +279,12 @@ defmodule GPUI.Codegen.Native.Events do
   end
 
   @spec encode_input_event(
-          R.path(:Env, R.lifetime(:a)),
+          Env.t(R.lifetime(:a)),
           R.ref(input_kind()),
           R.u64(),
           String.t(),
           R.option(event_value())
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust encode_input_event(env, kind, window_id, event, value) do
     entries = [
       {Atoms.type_atom(), kind.atom().to_term(env)},
@@ -302,21 +302,21 @@ defmodule GPUI.Codegen.Native.Events do
   end
 
   @spec append_event_value(
-          R.vec({R.path(:Atom), R.path(:Term, R.lifetime(:a))}),
-          R.path(:Env, R.lifetime(:a)),
+          R.vec({Atom.t(), Term.t(R.lifetime(:a))}),
+          Env.t(R.lifetime(:a)),
           event_value()
-        ) :: R.vec({R.path(:Atom), R.path(:Term, R.lifetime(:a))})
+        ) :: R.vec({Atom.t(), Term.t(R.lifetime(:a))})
   defrustp append_event_value(entries, env, value) do
     entries.push({Atoms.value(), value.encode(env)})
     entries
   end
 
   @spec encode_named_event(
-          R.path(:Env, R.lifetime(:a)),
-          R.path(:Atom),
+          Env.t(R.lifetime(:a)),
+          Atom.t(),
           R.u64(),
           String.t()
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust encode_named_event(env, kind, window_id, event) do
     encode_event_map(
       env,
@@ -329,10 +329,10 @@ defmodule GPUI.Codegen.Native.Events do
   end
 
   @spec encode_window_event(
-          R.path(:Env, R.lifetime(:a)),
-          R.path(:Atom),
+          Env.t(R.lifetime(:a)),
+          Atom.t(),
           R.u64()
-        ) :: R.nif_result(R.path(:Term, R.lifetime(:a)))
+        ) :: R.nif_result(Term.t(R.lifetime(:a)))
   defrust encode_window_event(env, kind, window_id) do
     encode_event_map(
       env,

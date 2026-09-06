@@ -31,7 +31,7 @@ defmodule GPUI.Codegen.Native.Registry.Definitions do
 
     quote do
       @spec unquote(name)(
-              R.mut_ref(R.path(:ComponentRegistry)),
+              R.mut_ref(ComponentRegistry.t()),
               R.str()
             ) :: R.option(R.mut_ref(R.path(unquote(type))))
       defrust unquote(name)(self, id) do
@@ -53,7 +53,7 @@ defmodule GPUI.Codegen.Native.Registry.Definitions do
 
     quote do
       @spec unquote(name)(
-              R.mut_ref(R.path(:ComponentRegistry)),
+              R.mut_ref(ComponentRegistry.t()),
               R.str(),
               R.path(unquote(type))
             ) :: boolean()
@@ -70,7 +70,7 @@ defmodule GPUI.Codegen.Native.Registry.Definitions do
     name = String.to_atom("remove_#{method}")
 
     quote do
-      @spec unquote(name)(R.mut_ref(R.path(:ComponentRegistry)), R.str()) :: boolean()
+      @spec unquote(name)(R.mut_ref(ComponentRegistry.t()), R.str()) :: boolean()
       defrust unquote(name)(self, id) do
         key = ComponentKey.new(enum_variant(ComponentKind, unquote(method)), id)
         self.active.remove(ref(key))

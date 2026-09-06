@@ -13,19 +13,19 @@ defmodule GPUI.Codegen.Native.TextTypes do
         }
 
   @type text_range :: %{
-          required(:start) => R.path(:TextPosition),
-          required(:end) => R.path(:TextPosition)
+          required(:start) => TextPosition.t(),
+          required(:end) => TextPosition.t()
         }
 
   @type text_selection :: %{
           required(:id) => String.t(),
-          required(:anchor) => R.path(:TextPosition),
-          required(:head) => R.path(:TextPosition),
+          required(:anchor) => TextPosition.t(),
+          required(:head) => TextPosition.t(),
           required(:primary) => boolean()
         }
 
   @type text_edit :: %{
-          required(:range) => R.path(:TextRange),
+          required(:range) => TextRange.t(),
           required(:text) => String.t()
         }
 
@@ -33,14 +33,14 @@ defmodule GPUI.Codegen.Native.TextTypes do
           required(:id) => String.t(),
           required(:base_revision) => R.u64(),
           required(:origin) => String.t(),
-          required(:edits) => R.vec(R.path(:TextEdit)),
-          required(:selections) => R.vec(R.path(:TextSelection))
+          required(:edits) => R.vec(TextEdit.t()),
+          required(:selections) => R.vec(TextSelection.t())
         }
 
   @type text_snapshot :: %{
           required(:revision) => R.u64(),
           required(:text) => String.t(),
-          required(:selections) => R.vec(R.path(:TextSelection)),
+          required(:selections) => R.vec(TextSelection.t()),
           required(:can_undo) => boolean(),
           required(:can_redo) => boolean()
         }
@@ -48,7 +48,7 @@ defmodule GPUI.Codegen.Native.TextTypes do
   @type transaction_result :: %{
           required(:revision) => R.u64(),
           required(:duplicate) => boolean(),
-          required(:selections) => R.vec(R.path(:TextSelection))
+          required(:selections) => R.vec(TextSelection.t())
         }
 
   @spec items() :: [RustQ.Rust.AST.item()]

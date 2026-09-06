@@ -10,17 +10,17 @@ defmodule GPUI.Codegen.Native.TextConversions do
   alias RustQ.Rust.AST.PatternBuilder, as: P
   alias RustQ.Type, as: R
 
-  @spec to_core_position(R.path(:TextPosition)) :: Core.Position.t()
+  @spec to_core_position(TextPosition.t()) :: Core.Position.t()
   defrustp to_core_position(value) do
     struct_literal(Core.Position, line: value.line, utf16_offset: value.utf16_offset)
   end
 
-  @spec from_core_position(Core.Position.t()) :: R.path(:TextPosition)
+  @spec from_core_position(Core.Position.t()) :: TextPosition.t()
   defrustp from_core_position(value) do
     struct_literal(TextPosition, line: value.line, utf16_offset: value.utf16_offset)
   end
 
-  @spec to_core_range(R.path(:TextRange)) :: Core.Range.t()
+  @spec to_core_range(TextRange.t()) :: Core.Range.t()
   defrustp to_core_range(value) do
     struct_literal(Core.Range,
       start: to_core_position(value.start),
@@ -28,7 +28,7 @@ defmodule GPUI.Codegen.Native.TextConversions do
     )
   end
 
-  @spec from_core_range(Core.Range.t()) :: R.path(:TextRange)
+  @spec from_core_range(Core.Range.t()) :: TextRange.t()
   defrustp from_core_range(value) do
     struct_literal(TextRange,
       start: from_core_position(value.start),
@@ -36,7 +36,7 @@ defmodule GPUI.Codegen.Native.TextConversions do
     )
   end
 
-  @spec to_core_selection(R.path(:TextSelection)) :: Core.Selection.t()
+  @spec to_core_selection(TextSelection.t()) :: Core.Selection.t()
   defrustp to_core_selection(value) do
     struct_literal(Core.Selection,
       id: value.id,
@@ -46,7 +46,7 @@ defmodule GPUI.Codegen.Native.TextConversions do
     )
   end
 
-  @spec from_core_selection(Core.Selection.t()) :: R.path(:TextSelection)
+  @spec from_core_selection(Core.Selection.t()) :: TextSelection.t()
   defrustp from_core_selection(value) do
     struct_literal(TextSelection,
       id: value.id,
@@ -56,7 +56,7 @@ defmodule GPUI.Codegen.Native.TextConversions do
     )
   end
 
-  @spec to_core_transaction(R.path(:TextTransaction)) :: Core.Transaction.t()
+  @spec to_core_transaction(TextTransaction.t()) :: Core.Transaction.t()
   defrustp to_core_transaction(value) do
     struct_literal(Core.Transaction,
       id: value.id,
@@ -70,7 +70,7 @@ defmodule GPUI.Codegen.Native.TextConversions do
     )
   end
 
-  @spec from_core_transaction(Core.Transaction.t()) :: R.path(:TextTransaction)
+  @spec from_core_transaction(Core.Transaction.t()) :: TextTransaction.t()
   defrustp from_core_transaction(value) do
     struct_literal(TextTransaction,
       id: value.id,
@@ -84,7 +84,7 @@ defmodule GPUI.Codegen.Native.TextConversions do
     )
   end
 
-  @spec from_core_snapshot(Core.Snapshot.t()) :: R.path(:TextSnapshot)
+  @spec from_core_snapshot(Core.Snapshot.t()) :: TextSnapshot.t()
   defrustp from_core_snapshot(value) do
     struct_literal(TextSnapshot,
       revision: value.revision,
@@ -95,7 +95,7 @@ defmodule GPUI.Codegen.Native.TextConversions do
     )
   end
 
-  @spec from_core_result(Core.TransactionResult.t()) :: R.path(:TransactionResult)
+  @spec from_core_result(Core.TransactionResult.t()) :: TransactionResult.t()
   defrustp from_core_result(value) do
     struct_literal(TransactionResult,
       revision: value.revision,
@@ -104,7 +104,7 @@ defmodule GPUI.Codegen.Native.TextConversions do
     )
   end
 
-  @spec no_change_error() :: R.path(:TextBufferError)
+  @spec no_change_error() :: TextBufferError.t()
   @cfg feature: "components"
   defrustp(no_change_error(), do: enum_variant(TextBufferError, :no_change))
   @cfg not: [feature: "components"]

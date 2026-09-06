@@ -21,12 +21,10 @@ defmodule GPUI.Codegen.Native.EventBoundary do
   defrust(inject_request(event), do: %{event: event})
 
   @spec decode_inject(inject_request()) ::
-          R.nif_result(
-            {R.path(:InjectKind), R.u64(), R.option(String.t()), R.option(R.path(:EventValue))}
-          )
+          R.nif_result({InjectKind.t(), R.u64(), R.option(String.t()), R.option(EventValue.t())})
   defrust decode_inject(request) do
     event = request.event
-    kind = decode_as!(event.map_get(Atoms.type_atom()), R.path(:InjectKind))
+    kind = decode_as!(event.map_get(Atoms.type_atom()), InjectKind.t())
     window_id = decode_as!(event.map_get(Atoms.window_id()), R.u64())
 
     event_name =
@@ -44,11 +42,11 @@ defmodule GPUI.Codegen.Native.EventBoundary do
     {:ok, {kind, window_id, event_name, value}}
   end
 
-  @spec drain_events(R.resource(R.path(:RuntimeResource))) :: R.nif_result(term())
+  @spec drain_events(R.resource(RuntimeResource.t())) :: R.nif_result(term())
   defnif(drain_events(runtime), do: drain_events_impl(nif_env(), runtime))
 
   @spec inject_event(
-          R.resource(R.path(:RuntimeResource)),
+          R.resource(RuntimeResource.t()),
           term()
         ) :: R.nif_result(term())
   defnif inject_event(runtime, event) do

@@ -39,6 +39,9 @@ defmodule GPUI.Codegen.Native.CoreStyle do
   defp field_type(:atom_string), do: option(A.type_path(:String))
   defp field_type(:color), do: option(A.type_path(:u32))
   defp field_type(type) when type in [:number, :px, :radius], do: option(A.type_path(:f32))
-  defp field_type(type) when type in [:length, :position_length, :flex_basis], do: option(A.type_path(:Length))
+
+  defp field_type(type) when type in [:length, :position_length, :flex_basis],
+    do: option(A.type_path(:Length))
+
   defp option(type), do: A.type_path(:Option, generics: [type])
 end

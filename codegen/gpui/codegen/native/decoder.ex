@@ -106,7 +106,7 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
-  @spec length_value(term()) :: R.option(R.path({:gpui, :DefiniteLength}))
+  @spec length_value(term()) :: R.option(Gpui.DefiniteLength.t())
   defrust length_value(term) do
     if atom_eq(term, "full") do
       some(full_length())
@@ -129,7 +129,7 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
-  @spec px_length_value(term()) :: R.option(R.path({:gpui, :DefiniteLength}))
+  @spec px_length_value(term()) :: R.option(Gpui.DefiniteLength.t())
   defrust px_length_value(term) do
     case px_value(term) do
       {:some, value} -> some(pixel_length(value))
@@ -138,7 +138,7 @@ defmodule GPUI.Codegen.Native.Decoder do
   end
 
   @allow RustQ.Clippy.lint(:manual_map)
-  @spec position_length_value(term()) :: R.option(R.path({:gpui, :Length}))
+  @spec position_length_value(term()) :: R.option(Gpui.Length.t())
   defrust position_length_value(term) do
     if atom_eq(term, "auto") do
       some(auto_flex_basis())
@@ -152,7 +152,7 @@ defmodule GPUI.Codegen.Native.Decoder do
 
   @allow RustQ.Clippy.lint(:manual_range_contains)
   @spec position_definite_length_value(term()) ::
-          R.option(R.path({:gpui, :DefiniteLength}))
+          R.option(Gpui.DefiniteLength.t())
   defrust position_definite_length_value(term) do
     if atom_eq(term, "full") do
       some(full_length())
@@ -175,7 +175,7 @@ defmodule GPUI.Codegen.Native.Decoder do
     end
   end
 
-  @spec flex_basis_value(term()) :: R.option(R.path({:gpui, :Length}))
+  @spec flex_basis_value(term()) :: R.option(Gpui.Length.t())
   defrust flex_basis_value(term) do
     if atom_eq(term, "auto") do
       some(auto_flex_basis())

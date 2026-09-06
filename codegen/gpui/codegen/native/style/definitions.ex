@@ -13,22 +13,22 @@ defmodule GPUI.Codegen.Native.Style.Definitions do
     quote do
       @type style_attrs :: unquote(fields)
 
-      @spec full_length() :: R.path({:gpui, :DefiniteLength})
+      @spec full_length() :: Gpui.DefiniteLength.t()
       defrust full_length() do
         GPUI.relative(1.0)
       end
 
-      @spec fraction_length(R.f32()) :: R.path({:gpui, :DefiniteLength})
+      @spec fraction_length(R.f32()) :: Gpui.DefiniteLength.t()
       defrust fraction_length(value) do
         GPUI.relative(value)
       end
 
-      @spec pixel_length(R.f32()) :: R.path({:gpui, :DefiniteLength})
+      @spec pixel_length(R.f32()) :: Gpui.DefiniteLength.t()
       defrust pixel_length(value) do
         GPUI.px(value).into()
       end
 
-      @spec auto_flex_basis() :: R.path({:gpui, :Length})
+      @spec auto_flex_basis() :: Gpui.Length.t()
       defrust auto_flex_basis() do
         GPUI.Length.Auto
       end
@@ -45,8 +45,8 @@ defmodule GPUI.Codegen.Native.Style.Definitions do
 
       @allow :unreachable_patterns
       @allow RustQ.Clippy.lint(:single_match)
-      @spec apply_generated_render_styles(R.path({:gpui, :Div}), style_attrs()) ::
-              R.path({:gpui, :Div})
+      @spec apply_generated_render_styles(Gpui.Div.t(), style_attrs()) ::
+              Gpui.Div.t()
       defrust apply_generated_render_styles(element, style) do
         element = element
         unquote_splicing(render_statements)
@@ -65,13 +65,13 @@ defmodule GPUI.Codegen.Native.Style.Definitions do
     do: quote(do: R.option(R.f32()))
 
   defp style_field_type(:length),
-    do: quote(do: R.option(R.path({:gpui, :DefiniteLength})))
+    do: quote(do: R.option(Gpui.DefiniteLength.t()))
 
   defp style_field_type(:position_length),
-    do: quote(do: R.option(R.path({:gpui, :Length})))
+    do: quote(do: R.option(Gpui.Length.t()))
 
   defp style_field_type(:flex_basis),
-    do: quote(do: R.option(R.path({:gpui, :Length})))
+    do: quote(do: R.option(Gpui.Length.t()))
 
   defp style_clause(spec) do
     value = Macro.var(:value, nil)

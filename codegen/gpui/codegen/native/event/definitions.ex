@@ -27,8 +27,8 @@ defmodule GPUI.Codegen.Native.Event.Definitions do
       defrustimpl EventValue do
         @spec encode(
                 R.ref(event_value()),
-                R.path(:Env, R.lifetime(:a))
-              ) :: R.path(:Term, R.lifetime(:a))
+                Env.t(R.lifetime(:a))
+              ) :: Term.t(R.lifetime(:a))
         defrust encode(self, env) do
           case self do
             enum_variant(Self, :string, value) -> value.encode(env)
@@ -42,7 +42,7 @@ defmodule GPUI.Codegen.Native.Event.Definitions do
       end
 
       defrustimpl InputKind do
-        @spec atom(R.ref(input_kind())) :: R.path(:Atom)
+        @spec atom(R.ref(input_kind())) :: Atom.t()
         defrust atom(self) do
           case self do
             (unquote_splicing(input_kind_clauses))

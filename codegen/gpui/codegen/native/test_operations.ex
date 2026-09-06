@@ -20,9 +20,9 @@ defmodule GPUI.Codegen.Native.TestOperations do
   end
 
   @spec native_test_focus_impl(
-          R.path(:Env, R.lifetime(:a)),
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
-          R.path(:TargetRequest)
+          Env.t(R.lifetime(:a)),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
+          TargetRequest.t()
         ) :: R.nif_result(term())
   @cfg feature: "native-test"
   defrust native_test_focus_impl(env, session, request) do
@@ -35,9 +35,9 @@ defmodule GPUI.Codegen.Native.TestOperations do
   end
 
   @spec native_test_click_impl(
-          R.path(:Env, R.lifetime(:a)),
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
-          R.path(:TargetRequest)
+          Env.t(R.lifetime(:a)),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
+          TargetRequest.t()
         ) :: R.nif_result(term())
   @cfg feature: "native-test"
   defrust native_test_click_impl(env, session, request) do
@@ -50,9 +50,9 @@ defmodule GPUI.Codegen.Native.TestOperations do
   end
 
   @spec native_test_input_impl(
-          R.path(:Env, R.lifetime(:a)),
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
-          R.path(:InputRequest)
+          Env.t(R.lifetime(:a)),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
+          InputRequest.t()
         ) :: R.nif_result(term())
   @cfg feature: "native-test"
   defrust native_test_input_impl(env, session, request) do
@@ -65,9 +65,9 @@ defmodule GPUI.Codegen.Native.TestOperations do
   end
 
   @spec native_test_key_impl(
-          R.path(:Env, R.lifetime(:a)),
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
-          R.path(:KeyRequest)
+          Env.t(R.lifetime(:a)),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
+          KeyRequest.t()
         ) :: R.nif_result(term())
   @cfg feature: "native-test"
   defrust native_test_key_impl(env, session, request) do
@@ -80,9 +80,9 @@ defmodule GPUI.Codegen.Native.TestOperations do
   end
 
   @spec native_test_advance_impl(
-          R.path(:Env, R.lifetime(:a)),
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
-          R.path(:AdvanceRequest)
+          Env.t(R.lifetime(:a)),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
+          AdvanceRequest.t()
         ) :: R.nif_result(term())
   @cfg feature: "native-test"
   defrust native_test_advance_impl(env, session, request) do
@@ -95,9 +95,9 @@ defmodule GPUI.Codegen.Native.TestOperations do
   end
 
   @spec native_test_click_at_impl(
-          R.path(:Env, R.lifetime(:a)),
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
-          R.path(:PointRequest)
+          Env.t(R.lifetime(:a)),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
+          PointRequest.t()
         ) :: R.nif_result(term())
   @cfg feature: "native-test"
   defrust native_test_click_at_impl(env, session, request) do
@@ -113,9 +113,9 @@ defmodule GPUI.Codegen.Native.TestOperations do
   end
 
   @spec native_test_scroll_impl(
-          R.path(:Env, R.lifetime(:a)),
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
-          R.path(:ScrollRequest)
+          Env.t(R.lifetime(:a)),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
+          ScrollRequest.t()
         ) :: R.nif_result(term())
   @cfg feature: "native-test"
   defrust native_test_scroll_impl(env, session, request) do
@@ -136,9 +136,9 @@ defmodule GPUI.Codegen.Native.TestOperations do
   end
 
   @spec native_test_resize_impl(
-          R.path(:Env, R.lifetime(:a)),
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
-          R.path(:ResizeRequest)
+          Env.t(R.lifetime(:a)),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
+          ResizeRequest.t()
         ) :: R.nif_result(term())
   @cfg feature: "native-test"
   defrust native_test_resize_impl(env, session, request) do
@@ -154,8 +154,8 @@ defmodule GPUI.Codegen.Native.TestOperations do
   end
 
   @spec native_test_idle_impl(
-          R.path(:Env, R.lifetime(:a)),
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>")
+          Env.t(R.lifetime(:a)),
+          R.resource(NativeTest.NativeTestSessionResource.t())
         ) :: R.nif_result(term())
   @cfg feature: "native-test"
   defrust(native_test_idle_impl(env, session), do: encode_unit_result(env, idle(ref(session))))
@@ -165,8 +165,8 @@ defmodule GPUI.Codegen.Native.TestOperations do
   )
 
   @spec native_test_stop_impl(
-          R.path(:Env, R.lifetime(:a)),
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>")
+          Env.t(R.lifetime(:a)),
+          R.resource(NativeTest.NativeTestSessionResource.t())
         ) :: R.nif_result(term())
   @cfg feature: "native-test"
   defrust(native_test_stop_impl(env, session), do: encode_unit_result(env, stop(ref(session))))
@@ -176,9 +176,9 @@ defmodule GPUI.Codegen.Native.TestOperations do
   )
 
   @spec native_test_bounds_impl(
-          R.path(:Env, R.lifetime(:a)),
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
-          R.path(:TargetRequest)
+          Env.t(R.lifetime(:a)),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
+          TargetRequest.t()
         ) :: R.nif_result(term())
   @cfg feature: "native-test"
   defrust native_test_bounds_impl(env, session, request) do
@@ -193,7 +193,7 @@ defmodule GPUI.Codegen.Native.TestOperations do
     do: {:ok, {Atoms.error(), "native_test_disabled"}.encode(env)}
   )
 
-  @spec native_test_start_impl(R.path(:Env, R.lifetime(:a)), R.f64(), R.f64()) ::
+  @spec native_test_start_impl(Env.t(R.lifetime(:a)), R.f64(), R.f64()) ::
           R.nif_result(term())
   @cfg feature: "native-test"
   defrust native_test_start_impl(env, width, height) do
@@ -209,9 +209,9 @@ defmodule GPUI.Codegen.Native.TestOperations do
   )
 
   @spec native_test_render_impl(
-          R.path(:Env, R.lifetime(:a)),
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
-          R.path(:RenderRequest, R.lifetime(:a))
+          Env.t(R.lifetime(:a)),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
+          RenderRequest.t(R.lifetime(:a))
         ) :: R.nif_result(term())
   @cfg feature: "native-test"
   defrust native_test_render_impl(env, session, request) do
@@ -229,8 +229,8 @@ defmodule GPUI.Codegen.Native.TestOperations do
   end
 
   @spec native_test_events_impl(
-          R.path(:Env, R.lifetime(:a)),
-          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>")
+          Env.t(R.lifetime(:a)),
+          R.resource(NativeTest.NativeTestSessionResource.t())
         ) :: R.nif_result(term())
   @cfg feature: "native-test"
   defrust native_test_events_impl(env, session) do
@@ -251,7 +251,7 @@ defmodule GPUI.Codegen.Native.TestOperations do
     do: {:ok, {Atoms.error(), "native_test_disabled"}.encode(env)}
   )
 
-  @spec encode_pending_events(R.path(:Env, R.lifetime(:a)), R.vec(R.path(:NativeEvent))) ::
+  @spec encode_pending_events(Env.t(R.lifetime(:a)), R.vec(NativeEvent.t())) ::
           R.nif_result(R.vec(term()))
   @cfg feature: "native-test"
   defrustp encode_pending_events(env, pending) do

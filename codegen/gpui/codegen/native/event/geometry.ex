@@ -32,8 +32,8 @@ defmodule GPUI.Codegen.Native.Event.Geometry do
         }
 
   @type text_range_geometry :: %{
-          required(:range) => R.path({:crate, :TextRange}),
-          required(:rectangles) => R.vec(R.path(:TextRectangle))
+          required(:range) => Crate.TextRange.t(),
+          required(:rectangles) => R.vec(TextRectangle.t())
         }
 
   @spec items() :: [RustQ.Rust.AST.item()]

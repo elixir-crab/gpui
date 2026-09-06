@@ -22,6 +22,6 @@ defmodule GPUI.Codegen.Native.RuntimeBoundary do
   defnif(start_runtime(), do: start_runtime_impl(nif_env()))
 
   @nif schedule: :dirty_io
-  @spec stop_runtime(R.resource(R.path(:RuntimeResource))) :: R.nif_result(term())
+  @spec stop_runtime(R.resource(RuntimeResource.t())) :: R.nif_result(term())
   defnif(stop_runtime(runtime), do: stop_runtime_impl(nif_env(), runtime))
 end

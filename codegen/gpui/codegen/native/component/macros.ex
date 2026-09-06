@@ -18,9 +18,9 @@ defmodule GPUI.Codegen.Native.Component.Macros do
 
   defp component_type_declaration(component) do
     fields =
-      [style: quote(do: R.path(:StyleAttrs))] ++
+      [style: quote(do: StyleAttrs.t())] ++
         Enum.map(component.attrs, fn {name, type} -> {name, component_field_type(name, type)} end) ++
-        if(component.children, do: [children: quote(do: R.vec(R.path(:ElementNode)))], else: []) ++
+        if(component.children, do: [children: quote(do: R.vec(ElementNode.t()))], else: []) ++
         Enum.map(component.events, fn {name, _attr} -> {name, quote(do: R.option(String.t()))} end)
 
     fields =
@@ -116,20 +116,20 @@ defmodule GPUI.Codegen.Native.Component.Macros do
     do: quote(do: R.vec(R.f64()))
 
   defp component_field_type(_name, {:default, :paint_commands, _default}),
-    do: quote(do: R.vec(R.path(:PaintCommand)))
+    do: quote(do: R.vec(PaintCommand.t()))
 
   defp component_field_type(_name, {:enum, _values}), do: quote(do: R.option(String.t()))
 
   defp component_field_type(_name, :select_options),
-    do: quote(do: R.vec(R.path(:SelectOptionNode)))
+    do: quote(do: R.vec(SelectOptionNode.t()))
 
-  defp component_field_type(_name, :radio_options), do: quote(do: R.vec(R.path(:RadioOptionNode)))
+  defp component_field_type(_name, :radio_options), do: quote(do: R.vec(RadioOptionNode.t()))
 
   defp component_field_type(_name, :paint_commands),
-    do: quote(do: R.vec(R.path(:PaintCommand)))
+    do: quote(do: R.vec(PaintCommand.t()))
 
   defp component_field_type(_name, :rich_text_runs),
-    do: quote(do: R.vec(R.path(:RichTextRunNode)))
+    do: quote(do: R.vec(RichTextRunNode.t()))
 
   defp component_decoder_expr(:id, :string), do: quote(do: unwrap!(component_id(term)))
 

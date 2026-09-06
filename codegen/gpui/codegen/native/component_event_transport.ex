@@ -40,7 +40,8 @@ defmodule GPUI.Codegen.Native.ComponentEventTransport do
       enum_variant(ComponentValue, :number, value) ->
         some(enum_variant(EventValue, :number, value))
 
-      enum_variant(ComponentValue, :none) -> nil
+      enum_variant(ComponentValue, :none) ->
+        nil
     end
   end
 
