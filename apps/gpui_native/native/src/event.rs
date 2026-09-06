@@ -12,34 +12,7 @@ use crate::element::component::display::FileDialogResult;
 
 include!("generated/events.rs");
 
-#[cfg(feature = "real-gpui")]
-#[derive(Clone, Debug, PartialEq, rustler::NifMap)]
-pub(crate) struct ElementBoundsGeometry {
-    pub(crate) id: String,
-    pub(crate) x: f64,
-    pub(crate) y: f64,
-    pub(crate) width: f64,
-    pub(crate) height: f64,
-    pub(crate) coordinate_space: String,
-}
-
-#[cfg_attr(not(feature = "components"), allow(dead_code))]
-#[derive(Clone, Debug, PartialEq, rustler::NifMap)]
-pub(crate) struct TransferPayload {
-    pub(crate) text: Option<String>,
-    pub(crate) external_paths: Vec<String>,
-}
-
-#[cfg_attr(not(feature = "components"), allow(dead_code))]
-#[derive(Clone, Debug, PartialEq, rustler::NifMap)]
-pub(crate) struct TransferEventValue {
-    pub(crate) session_id: u64,
-    pub(crate) target_id: String,
-    pub(crate) x: f64,
-    pub(crate) y: f64,
-    pub(crate) coordinate_space: String,
-    pub(crate) payload: Option<TransferPayload>,
-}
+include!("generated/event_payloads.rs");
 
 #[derive(Clone, Debug)]
 pub(crate) enum NativeEvent {
