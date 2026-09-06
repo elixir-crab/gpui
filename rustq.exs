@@ -47,6 +47,7 @@ require_file("codegen/gpui/codegen/native/elements.ex")
 require_file("codegen/gpui/codegen/native/event_boundary/definitions.ex")
 require_file("codegen/gpui/codegen/native/event_boundary.ex")
 require_file("codegen/gpui/codegen/native/event/definitions.ex")
+require_file("codegen/gpui/codegen/native/event/geometry.ex")
 require_file("codegen/gpui/codegen/native/events.ex")
 require_file("codegen/gpui/codegen/native/extensions.ex")
 require_file("codegen/gpui/codegen/native/style/definitions.ex")
@@ -139,6 +140,10 @@ end
 
 rust "apps/gpui_native/native/src/generated/extensions.rs" do
   GPUI.Codegen.Native.Extensions.items()
+end
+
+rust "apps/gpui_native/native/src/generated/event_geometry.rs" do
+  GPUI.Codegen.Native.Event.Geometry.items()
 end
 
 rust "apps/gpui_native/native/src/generated/events.rs" do

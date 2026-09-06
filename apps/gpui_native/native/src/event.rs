@@ -5,42 +5,7 @@ use crate::{TextPosition, TextSelection, TextTransaction};
 use rustler::NifMap;
 use rustler::{Atom, Encoder, Env, NifResult, Term};
 
-#[cfg(feature = "components")]
-#[derive(Clone, Debug, NifMap)]
-pub(crate) struct TextViewportGeometry {
-    pub(crate) first_visible_row: u64,
-    pub(crate) last_visible_row: u64,
-    pub(crate) scroll_x: f64,
-    pub(crate) scroll_y: f64,
-    pub(crate) line_height: f64,
-}
-
-#[cfg(feature = "components")]
-#[derive(Clone, Debug, NifMap)]
-pub(crate) struct TextCaretGeometry {
-    pub(crate) line: u64,
-    pub(crate) utf16_offset: u64,
-    pub(crate) x: f64,
-    pub(crate) y: f64,
-    pub(crate) width: f64,
-    pub(crate) height: f64,
-}
-
-#[cfg(feature = "components")]
-#[derive(Clone, Debug, NifMap)]
-pub(crate) struct TextRectangle {
-    pub(crate) x: f64,
-    pub(crate) y: f64,
-    pub(crate) width: f64,
-    pub(crate) height: f64,
-}
-
-#[cfg(feature = "components")]
-#[derive(Clone, Debug, NifMap)]
-pub(crate) struct TextRangeGeometry {
-    pub(crate) range: crate::TextRange,
-    pub(crate) rectangles: Vec<TextRectangle>,
-}
+include!("generated/event_geometry.rs");
 
 #[cfg(feature = "components")]
 use crate::element::component::display::FileDialogResult;
