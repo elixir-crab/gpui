@@ -41,3 +41,52 @@ fn from_core_selection(value: core::Selection) -> TextSelection {
         primary: value.primary,
     }
 }
+fn to_core_transaction(value: TextTransaction) -> core::Transaction {
+    core::Transaction {
+        id: value.id,
+        base_revision: value.base_revision,
+        origin: value.origin,
+        edits: value
+            .edits
+            .into_iter()
+            .map(|edit| core::Edit {
+                range: to_core_range(edit.range),
+                text: edit.text,
+            })
+            .collect(),
+        selections: value.selections.into_iter().map(to_core_selection).collect(),
+    }
+}
+#[cfg(feature = "components")]
+fn from_core_transaction(value: core::Transaction) -> TextTransaction {
+    TextTransaction {
+        id: value.id,
+        base_revision: value.base_revision,
+        origin: value.origin,
+        edits: value
+            .edits
+            .into_iter()
+            .map(|edit| TextEdit {
+                range: from_core_range(edit.range),
+                text: edit.text,
+            })
+            .collect(),
+        selections: value.selections.into_iter().map(from_core_selection).collect(),
+    }
+}
+fn from_core_snapshot(value: core::Snapshot) -> TextSnapshot {
+    TextSnapshot {
+        revision: value.revision,
+        text: value.text,
+        selections: value.selections.into_iter().map(from_core_selection).collect(),
+        can_undo: value.can_undo,
+        can_redo: value.can_redo,
+    }
+}
+fn from_core_result(value: core::TransactionResult) -> TransactionResult {
+    TransactionResult {
+        revision: value.revision,
+        duplicate: value.duplicate,
+        selections: value.selections.into_iter().map(from_core_selection).collect(),
+    }
+}

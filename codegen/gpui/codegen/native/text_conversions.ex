@@ -54,13 +54,62 @@ defmodule GPUI.Codegen.Native.TextConversions do
     )
   end
 
+  @spec to_core_transaction(R.path(:TextTransaction)) :: Core.Transaction.t()
+  defrustp to_core_transaction(value) do
+    struct_literal(Core.Transaction,
+      id: value.id,
+      base_revision: value.base_revision,
+      origin: value.origin,
+      edits:
+        Enum.map(value.edits, fn edit ->
+          struct_literal(Core.Edit, range: to_core_range(edit.range), text: edit.text)
+        end),
+      selections: Enum.map(value.selections, &to_core_selection/1)
+    )
+  end
+
+  @spec from_core_transaction(Core.Transaction.t()) :: R.path(:TextTransaction)
+  defrustp from_core_transaction(value) do
+    struct_literal(TextTransaction,
+      id: value.id,
+      base_revision: value.base_revision,
+      origin: value.origin,
+      edits:
+        Enum.map(value.edits, fn edit ->
+          struct_literal(TextEdit, range: from_core_range(edit.range), text: edit.text)
+        end),
+      selections: Enum.map(value.selections, &from_core_selection/1)
+    )
+  end
+
+  @spec from_core_snapshot(Core.Snapshot.t()) :: R.path(:TextSnapshot)
+  defrustp from_core_snapshot(value) do
+    struct_literal(TextSnapshot,
+      revision: value.revision,
+      text: value.text,
+      selections: Enum.map(value.selections, &from_core_selection/1),
+      can_undo: value.can_undo,
+      can_redo: value.can_redo
+    )
+  end
+
+  @spec from_core_result(Core.TransactionResult.t()) :: R.path(:TransactionResult)
+  defrustp from_core_result(value) do
+    struct_literal(TransactionResult,
+      revision: value.revision,
+      duplicate: value.duplicate,
+      selections: Enum.map(value.selections, &from_core_selection/1)
+    )
+  end
+
   @spec items() :: [RustQ.Rust.AST.item()]
   def items do
     Enum.map(MetaAST.functions(__MODULE__), fn
-      %{name: :from_core_range} = function ->
+      %{name: name} = function when name in [:from_core_range, :from_core_transaction] ->
         %{function | attrs: [A.attr(:cfg, feature: "components") | function.attrs]}
 
-      function -> function
+      function ->
+        function
     end)
   end
 end

@@ -131,71 +131,6 @@ impl TextBufferResource {
 }
 
 include!("generated/text_conversions.rs");
-fn to_core_transaction(value: TextTransaction) -> core::Transaction {
-    core::Transaction {
-        id: value.id,
-        base_revision: value.base_revision,
-        origin: value.origin,
-        edits: value
-            .edits
-            .into_iter()
-            .map(|edit| core::Edit {
-                range: to_core_range(edit.range),
-                text: edit.text,
-            })
-            .collect(),
-        selections: value
-            .selections
-            .into_iter()
-            .map(to_core_selection)
-            .collect(),
-    }
-}
-#[cfg(feature = "components")]
-fn from_core_transaction(value: core::Transaction) -> TextTransaction {
-    TextTransaction {
-        id: value.id,
-        base_revision: value.base_revision,
-        origin: value.origin,
-        edits: value
-            .edits
-            .into_iter()
-            .map(|edit| TextEdit {
-                range: from_core_range(edit.range),
-                text: edit.text,
-            })
-            .collect(),
-        selections: value
-            .selections
-            .into_iter()
-            .map(from_core_selection)
-            .collect(),
-    }
-}
-fn from_core_snapshot(value: core::Snapshot) -> TextSnapshot {
-    TextSnapshot {
-        revision: value.revision,
-        text: value.text,
-        selections: value
-            .selections
-            .into_iter()
-            .map(from_core_selection)
-            .collect(),
-        can_undo: value.can_undo,
-        can_redo: value.can_redo,
-    }
-}
-fn from_core_result(value: core::TransactionResult) -> TransactionResult {
-    TransactionResult {
-        revision: value.revision,
-        duplicate: value.duplicate,
-        selections: value
-            .selections
-            .into_iter()
-            .map(from_core_selection)
-            .collect(),
-    }
-}
 fn map_error(error: core::Error) -> TextBufferError {
     match error {
         core::Error::InvalidPosition => TextBufferError::InvalidPosition,
@@ -253,6 +188,63 @@ pub(crate) fn byte_range_to_selection(
 #[cfg(test)]
 mod conversion_tests {
     use super::*;
+
+    #[test]
+    fn transaction_and_snapshot_conversions_preserve_nested_values() {
+        let selection = core::Selection {
+            id: "primary".into(),
+            anchor: core::Position {
+                line: 2,
+                utf16_offset: 3,
+            },
+            head: core::Position {
+                line: 0,
+                utf16_offset: 0,
+            },
+            primary: true,
+        };
+        let transaction = core::Transaction {
+            id: "tx-λ".into(),
+            base_revision: 42,
+            origin: "external".into(),
+            edits: vec![core::Edit {
+                range: core::Range {
+                    start: selection.head.clone(),
+                    end: selection.anchor.clone(),
+                },
+                text: "hello 🎉".into(),
+            }],
+            selections: vec![selection.clone()],
+        };
+        #[cfg(feature = "components")]
+        assert_eq!(
+            to_core_transaction(from_core_transaction(transaction.clone())),
+            transaction
+        );
+        #[cfg(not(feature = "components"))]
+        let _ = transaction;
+
+        let snapshot = from_core_snapshot(core::Snapshot {
+            revision: 43,
+            text: "hello 🎉".into(),
+            selections: vec![selection.clone()],
+            can_undo: true,
+            can_redo: false,
+        });
+        assert_eq!(snapshot.revision, 43);
+        assert_eq!(snapshot.text, "hello 🎉");
+        assert!(snapshot.can_undo);
+        assert!(!snapshot.can_redo);
+        assert_eq!(to_core_selection(snapshot.selections[0].clone()), selection);
+        let result = from_core_result(core::TransactionResult {
+            revision: 43,
+            duplicate: true,
+            selections: vec![selection.clone()],
+        });
+        assert_eq!(result.revision, 43);
+        assert!(result.duplicate);
+        assert_eq!(to_core_selection(result.selections[0].clone()), selection);
+    }
 
     #[test]
     fn selection_round_trip_preserves_identity_direction_and_primary_flag() {
