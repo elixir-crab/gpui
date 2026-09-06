@@ -52,6 +52,7 @@ require_file("codegen/gpui/codegen/native/extensions.ex")
 require_file("codegen/gpui/codegen/native/style/definitions.ex")
 require_file("codegen/gpui/codegen/native/style.ex")
 require_file("codegen/gpui/codegen/native/style_adapter.ex")
+require_file("codegen/gpui/codegen/native/test_operations.ex")
 require_file("codegen/gpui/codegen/native/test_boundary.ex")
 require_file("codegen/gpui/codegen/native/text_boundary.ex")
 require_file("codegen/gpui/codegen/native/text_types.ex")
@@ -98,6 +99,10 @@ end
 
 rust "native-style-adapter", "apps/gpui_native/native/src/generated/style_adapter.rs" do
   GPUI.Codegen.Native.StyleAdapter.items()
+end
+
+rust "apps/gpui_native/native/src/generated/test_operations.rs" do
+  GPUI.Codegen.Native.TestOperations.items()
 end
 
 rust "apps/gpui_native/native/src/generated/test_boundary.rs" do

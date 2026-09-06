@@ -1,5 +1,14 @@
 use crate::*;
 
+#[cfg(feature = "native-test")]
+mod generated_test_operations {
+    use crate::native_test::{click, focus};
+    use crate::*;
+    include!("generated/test_operations.rs");
+}
+#[cfg(feature = "native-test")]
+pub(crate) use generated_test_operations::{native_test_click_impl, native_test_focus_impl};
+
 pub(crate) fn host_info_impl<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
     #[cfg(feature = "gpui-component-host")]
     let host = atoms::gpui_component();
@@ -452,34 +461,24 @@ pub(crate) fn native_test_render_impl<'a>(
     }
 }
 
+#[cfg(not(feature = "native-test"))]
 pub(crate) fn native_test_focus_impl<'a>(
     env: Env<'a>,
     test_id: ResourceArc<native_test::NativeTestSessionResource>,
     request: TargetRequest,
 ) -> NifResult<Term<'a>> {
-    let component_id = request.target;
-    #[cfg(feature = "native-test")]
-    let result = native_test::focus(&test_id, component_id);
-    #[cfg(not(feature = "native-test"))]
-    let _ = (test_id, component_id);
-    #[cfg(not(feature = "native-test"))]
-    let result: Result<(), String> = Err("native_test_disabled".to_string());
-    encode_command_result(env, result.map(|()| atoms::ok()))
+    let _ = (test_id, request);
+    Ok((atoms::error(), "native_test_disabled").encode(env))
 }
 
+#[cfg(not(feature = "native-test"))]
 pub(crate) fn native_test_click_impl<'a>(
     env: Env<'a>,
     test_id: ResourceArc<native_test::NativeTestSessionResource>,
     request: TargetRequest,
 ) -> NifResult<Term<'a>> {
-    let element_id = request.target;
-    #[cfg(feature = "native-test")]
-    let result = native_test::click(&test_id, element_id);
-    #[cfg(not(feature = "native-test"))]
-    let _ = (test_id, element_id);
-    #[cfg(not(feature = "native-test"))]
-    let result: Result<(), String> = Err("native_test_disabled".to_string());
-    encode_command_result(env, result.map(|()| atoms::ok()))
+    let _ = (test_id, request);
+    Ok((atoms::error(), "native_test_disabled").encode(env))
 }
 
 pub(crate) fn native_test_click_at_impl<'a>(
