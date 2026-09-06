@@ -9,6 +9,16 @@ defmodule GPUI.Codegen.Native.ComponentHostContract.Definitions do
         {event.name, [quote(do: R.path(unquote(payload_type(event.payload))))]}
       end)
 
+    envelope_clauses =
+      Enum.map(GPUI.Components.NativeContract.events(), fn event ->
+        pattern = quote(do: enum_variant(Self, unquote(event.name), value))
+
+        body =
+          if event.payload == :none, do: quote(do: value), else: quote(do: ref(value.envelope))
+
+        {:->, [], [[pattern], body]}
+      end)
+
     quote do
       @type component_value ::
               R.enum(
@@ -20,6 +30,15 @@ defmodule GPUI.Codegen.Native.ComponentHostContract.Definitions do
               )
 
       @type component_event :: R.enum(unquote(variants))
+
+      defrustimpl ComponentEvent, vis: :pub do
+        @spec envelope(R.ref(component_event())) :: R.ref(R.path(:ComponentEventEnvelope))
+        defrust envelope(self) do
+          case self do
+            (unquote_splicing(envelope_clauses))
+          end
+        end
+      end
     end
   end
 

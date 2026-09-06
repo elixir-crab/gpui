@@ -17,7 +17,8 @@ defmodule GPUI.Codegen.Native.ComponentHostContract do
 
     [
       %{value | derive: [:Clone, :Debug, :PartialEq], vis: :pub},
-      %{event | derive: [:Clone, :Debug, :PartialEq], vis: :pub}
+      %{event | derive: [:Clone, :Debug, :PartialEq], vis: :pub},
+      MetaAST.impl!(__MODULE__, :ComponentEvent)
     ]
   end
 end

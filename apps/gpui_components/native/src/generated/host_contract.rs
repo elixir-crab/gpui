@@ -31,3 +31,29 @@ pub enum ComponentEvent {
     Toggle(ComponentValueEvent),
     Release(ComponentValueEvent),
 }
+impl ComponentEvent {
+    pub fn envelope(&self) -> &ComponentEventEnvelope {
+        match self {
+            Self::DragEnter(value) => &value.envelope,
+            Self::DragMove(value) => &value.envelope,
+            Self::DragLeave(value) => &value.envelope,
+            Self::Drop(value) => &value.envelope,
+            Self::Change(value) => &value.envelope,
+            Self::Click(value) => value,
+            Self::Clipboard(value) => &value.envelope,
+            Self::ClipboardWrite(value) => value,
+            Self::FileRead(value) => &value.envelope,
+            Self::Select(value) => &value.envelope,
+            Self::Submit(value) => &value.envelope,
+            Self::Focus(value) => value,
+            Self::Blur(value) => value,
+            Self::Search(value) => &value.envelope,
+            Self::Range(value) => &value.envelope,
+            Self::Link(value) => &value.envelope,
+            Self::CellChange(value) => &value.envelope,
+            Self::Sort(value) => &value.envelope,
+            Self::Toggle(value) => &value.envelope,
+            Self::Release(value) => &value.envelope,
+        }
+    }
+}
