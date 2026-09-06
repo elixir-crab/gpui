@@ -3,15 +3,18 @@ use crate::*;
 mod generated_test_operations {
     #[cfg(feature = "native-test")]
     use crate::native_test::{
-        advance, bounds, click, click_at, focus, idle, input, key, resize, scroll, stop,
+        advance, bounds, click, click_at, events, focus, idle, input, key, render, resize, scroll,
+        start, stop,
     };
     use crate::*;
+    use rustler::Error;
     include!("generated/test_operations.rs");
 }
 pub(crate) use generated_test_operations::{
     native_test_advance_impl, native_test_bounds_impl, native_test_click_at_impl,
-    native_test_click_impl, native_test_focus_impl, native_test_idle_impl, native_test_input_impl,
-    native_test_key_impl, native_test_resize_impl, native_test_scroll_impl, native_test_stop_impl,
+    native_test_click_impl, native_test_events_impl, native_test_focus_impl, native_test_idle_impl,
+    native_test_input_impl, native_test_key_impl, native_test_render_impl, native_test_resize_impl,
+    native_test_scroll_impl, native_test_start_impl, native_test_stop_impl,
 };
 
 pub(crate) fn host_info_impl<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
@@ -429,63 +432,6 @@ pub(crate) fn set_theme_impl<'a>(
         env,
         execute_window_command(&runtime, command, receiver).map(|()| encoded_mode),
     )
-}
-
-pub(crate) fn native_test_start_impl<'a>(
-    env: Env<'a>,
-    width: f64,
-    height: f64,
-) -> NifResult<Term<'a>> {
-    #[cfg(feature = "native-test")]
-    let result = native_test::start(width as f32, height as f32).map(ResourceArc::new);
-    #[cfg(not(feature = "native-test"))]
-    let _ = (width, height);
-    #[cfg(not(feature = "native-test"))]
-    let result: Result<ResourceArc<native_test::NativeTestSessionResource>, String> =
-        Err("native_test_disabled".to_string());
-    encode_command_result(env, result)
-}
-
-pub(crate) fn native_test_render_impl<'a>(
-    env: Env<'a>,
-    test_id: ResourceArc<native_test::NativeTestSessionResource>,
-    request: RenderRequest<'a>,
-) -> NifResult<Term<'a>> {
-    let tree = request.tree;
-    #[cfg(feature = "native-test")]
-    let result = decode_element_node(tree).and_then(|tree| {
-        native_test::render(&test_id, tree).map_err(|reason| rustler::Error::Term(Box::new(reason)))
-    });
-    #[cfg(not(feature = "native-test"))]
-    let _ = (test_id, tree);
-    #[cfg(not(feature = "native-test"))]
-    let result: NifResult<()> = Err(rustler::Error::Term(Box::new("native_test_disabled")));
-    match result {
-        Ok(()) => Ok((atoms::ok(), atoms::ok()).encode(env)),
-        Err(error) => Err(error),
-    }
-}
-
-pub(crate) fn native_test_events_impl<'a>(
-    env: Env<'a>,
-    test_id: ResourceArc<native_test::NativeTestSessionResource>,
-) -> NifResult<Term<'a>> {
-    #[cfg(feature = "native-test")]
-    let result = native_test::events(&test_id);
-    #[cfg(not(feature = "native-test"))]
-    let _ = test_id;
-    #[cfg(not(feature = "native-test"))]
-    let result: Result<Vec<NativeEvent>, String> = Err("native_test_disabled".to_string());
-    match result {
-        Ok(events) => {
-            let encoded = events
-                .into_iter()
-                .map(|event| encode_native_event(env, event))
-                .collect::<NifResult<Vec<Term>>>()?;
-            Ok((atoms::ok(), encoded).encode(env))
-        }
-        Err(reason) => Ok((atoms::error(), reason).encode(env)),
-    }
 }
 
 fn encode_command_result<T: Encoder>(env: Env, result: Result<T, String>) -> NifResult<Term> {

@@ -212,3 +212,69 @@ pub(crate) fn native_test_bounds_impl<'a>(
 ) -> NifResult<Term<'a>> {
     Ok((atoms::error(), "native_test_disabled").encode(env))
 }
+#[cfg(feature = "native-test")]
+pub(crate) fn native_test_start_impl<'a>(
+    env: Env<'a>,
+    width: f64,
+    height: f64,
+) -> NifResult<Term<'a>> {
+    match start(width as f32, height as f32) {
+        Ok(session) => Ok((atoms::ok(), ResourceArc::new(session)).encode(env)),
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+    }
+}
+#[cfg(not(feature = "native-test"))]
+pub(crate) fn native_test_start_impl<'a>(
+    env: Env<'a>,
+    _width: f64,
+    _height: f64,
+) -> NifResult<Term<'a>> {
+    Ok((atoms::error(), "native_test_disabled").encode(env))
+}
+#[cfg(feature = "native-test")]
+pub(crate) fn native_test_render_impl<'a>(
+    env: Env<'a>,
+    session: ResourceArc<native_test::NativeTestSessionResource>,
+    request: RenderRequest<'a>,
+) -> NifResult<Term<'a>> {
+    let tree = decode_element_node(request.tree)?;
+    match render(&session, tree) {
+        Ok(_unit) => Ok((atoms::ok(), atoms::ok()).encode(env)),
+        Err(reason) => Err(Error::Term(Box::new(reason))),
+    }
+}
+#[cfg(not(feature = "native-test"))]
+pub(crate) fn native_test_render_impl<'a>(
+    _env: Env<'a>,
+    _session: ResourceArc<native_test::NativeTestSessionResource>,
+    _request: RenderRequest<'a>,
+) -> NifResult<Term<'a>> {
+    Err(Error::Term(Box::new("native_test_disabled")))
+}
+#[cfg(feature = "native-test")]
+pub(crate) fn native_test_events_impl<'a>(
+    env: Env<'a>,
+    session: ResourceArc<native_test::NativeTestSessionResource>,
+) -> NifResult<Term<'a>> {
+    match events(&session) {
+        Ok(pending) => {
+            let encoded = encode_pending_events(env, pending)?;
+            Ok((atoms::ok(), encoded).encode(env))
+        }
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+    }
+}
+#[cfg(not(feature = "native-test"))]
+pub(crate) fn native_test_events_impl<'a>(
+    env: Env<'a>,
+    _session: ResourceArc<native_test::NativeTestSessionResource>,
+) -> NifResult<Term<'a>> {
+    Ok((atoms::error(), "native_test_disabled").encode(env))
+}
+#[cfg(feature = "native-test")]
+pub(crate) fn encode_pending_events<'a>(
+    env: Env<'a>,
+    pending: Vec<NativeEvent>,
+) -> NifResult<Vec<Term<'a>>> {
+    pending.into_iter().map(|event| encode_native_event(env, event)).collect()
+}
