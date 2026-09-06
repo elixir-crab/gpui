@@ -41,7 +41,7 @@ defmodule GPUI.Umbrella.MixProject do
       {:dialyxir, "~> 1.0", runtime: false},
       {:credo, "~> 1.0", runtime: false},
       {:ex_doc, "~> 0.40.3", runtime: false},
-      {:rustq, "~> 1.0.0-rc.7", runtime: false},
+      {:rustq, "~> 1.0.0-rc.8", runtime: false},
       {:json_codec, "~> 0.2.3", runtime: false, override: true},
       {:igniter, "~> 0.8.2"}
     ]
