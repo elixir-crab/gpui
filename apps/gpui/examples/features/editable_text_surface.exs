@@ -107,13 +107,14 @@ defmodule Features.EditableTextSurface.View do
     {:ok, snapshot} = GPUI.Text.Buffer.snapshot(assigns.buffer)
     position = end_position(snapshot.text)
 
-    {:ok, %{revision: revision}} =
-      GPUI.Text.Buffer.transact(assigns.buffer, %GPUI.Text.Transaction{
+    transaction =
+      GPUI.Text.Transaction.new(snapshot,
         id: "demo-external-#{System.unique_integer([:positive])}",
-        base_revision: snapshot.revision,
-        edits: [GPUI.Text.Edit.new(GPUI.Text.Range.new(position, position), "\nExternal edit")],
+        edits: [GPUI.Text.Edit.insert(position, "\nExternal edit")],
         selections: [GPUI.Text.Selection.caret("primary", position, primary: true)]
-      })
+      )
+
+    {:ok, %{revision: revision}} = GPUI.Text.Buffer.transact(assigns.buffer, transaction)
 
     {:noreply, %{assigns | revision: revision, status: "External edit applied"}}
   end

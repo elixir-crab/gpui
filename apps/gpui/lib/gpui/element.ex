@@ -132,6 +132,7 @@ defmodule GPUI.Element do
     case Keyword.fetch(attrs, :class) do
       {:ok, class} when is_binary(class) ->
         %{style: class_style, unknown: unknown} = GPUI.Tailwind.normalize(class)
+        :ok = GPUI.Tailwind.handle_unknown!(unknown)
         style = merge_styles(class_style, Keyword.get(attrs, :style, []))
 
         attrs

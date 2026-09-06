@@ -3,7 +3,7 @@ defmodule GPUI.Remote.Connection do
 
   use GenServer
 
-  alias GPUI.Remote.ConnectionTree
+  alias GPUI.Remote.Connection.Supervisor, as: ConnectionSupervisor
   alias GPUI.Remote.Supervision
   alias GPUI.Remote.Transport.TCP
 
@@ -22,9 +22,9 @@ defmodule GPUI.Remote.Connection do
     connection_id = System.unique_integer([:positive])
 
     child_spec = %{
-      id: {ConnectionTree, connection_id},
+      id: {ConnectionSupervisor, connection_id},
       start:
-        {ConnectionTree, :start_link,
+        {ConnectionSupervisor, :start_link,
          [
            [
              server: self(),
@@ -50,7 +50,7 @@ defmodule GPUI.Remote.Connection do
     with {:ok, owner} <- Supervision.child(tree, :owner, :connection_unavailable),
          {:ok, task_supervisor} <- Supervision.child(tree, :tasks, :connection_unavailable),
          :ok <- configure(owner, task_supervisor),
-         {:ok, _rpc} <- ConnectionTree.start_rpc(tree, owner, socket) do
+         {:ok, _rpc} <- ConnectionSupervisor.start_rpc(tree, owner, socket) do
       Process.monitor(tree)
       put_in(state.connections[tree], %{owner: owner, id: connection_id})
     else

@@ -7,7 +7,7 @@ defmodule GPUI.UI.Overlay do
   and dismissal behavior between snapshots.
   """
 
-  alias GPUI.Component.Slot
+  alias GPUI.Template.Component.Slot
   alias GPUI.Element
   alias GPUI.Components.Schema, as: ComponentsSchema
 

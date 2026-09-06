@@ -169,7 +169,13 @@ defmodule Mix.Tasks.Gpui.Tailwind.Palette do
     ast =
       quote generated: true do
         defmodule GPUI.Tailwind.Palette do
-          @moduledoc false
+          @moduledoc """
+          Generated Tailwind color palette metadata and lookups.
+
+          `GPUI.Tailwind` owns the supported class-normalization API. This
+          generated module is documented for maintainers and excluded from the
+          package's public API reference.
+          """
 
           @tailwind_version unquote(@version)
           @source_url unquote(@source_url)

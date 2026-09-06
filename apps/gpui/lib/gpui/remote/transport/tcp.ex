@@ -1,6 +1,10 @@
 defmodule GPUI.Remote.Transport.TCP do
   @moduledoc """
   Length-prefixed ETF transport over TCP, with optional SSL.
+
+  This transport is used internally by `GPUI.Remote.Server` and
+  `GPUI.Remote.Client`. It remains documented for maintainers but is excluded
+  from the supported application API reference.
   """
 
   @behaviour SafeRPC.Transport

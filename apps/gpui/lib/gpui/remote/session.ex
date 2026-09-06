@@ -3,7 +3,7 @@ defmodule GPUI.Remote.Session do
 
   use GenServer
 
-  alias GPUI.Remote.SessionTree
+  alias GPUI.Remote.Session.Supervisor, as: SessionSupervisor
   alias GPUI.Remote.Supervision
 
   @callback_timeout 5_000
@@ -51,11 +51,17 @@ defmodule GPUI.Remote.Session do
 
   @impl GenServer
   def handle_call(:mount, _from, %{session: nil} = state) do
-    case SessionTree.start_app_session(state.tree, app: state.app, args: state.args) do
+    case SessionSupervisor.start_app_session(state.tree, app: state.app, args: state.args) do
       {:ok, session} ->
-        snapshot = GPUI.Session.snapshot(session)
         state = state |> Map.put(:session, session) |> touch()
-        {:reply, {:ok, %{session_id: state.session_id, snapshot: snapshot}}, state}
+
+        case session_snapshot(state) do
+          {:ok, snapshot} ->
+            {:reply, {:ok, %{session_id: state.session_id, snapshot: snapshot}}, state}
+
+          {:error, reason} ->
+            {:reply, {:error, reason}, state}
+        end
 
       {:error, reason} ->
         {:reply, {:error, reason}, touch(state)}
@@ -142,7 +148,7 @@ defmodule GPUI.Remote.Session do
   end
 
   defp session_snapshot(%{session: nil}), do: {:error, :session_not_mounted}
-  defp session_snapshot(state), do: {:ok, GPUI.Session.snapshot(state.session)}
+  defp session_snapshot(state), do: GPUI.Session.snapshot(state.session)
 
   defp repeated_event?(_state, nil), do: false
   defp repeated_event?(state, request_id), do: request_id in state.event_requests

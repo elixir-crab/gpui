@@ -1,15 +1,3 @@
-defmodule GPUI.Codegen.Native.EventBoundaryDefinitions do
-  @moduledoc false
-
-  defmacro define_inject_kind do
-    type = GPUI.Event.injectable_types() |> Enum.reverse() |> Enum.reduce(&{:|, [], [&1, &2]})
-
-    quote do
-      @type inject_kind :: unquote(type)
-    end
-  end
-end
-
 defmodule GPUI.Codegen.Native.EventBoundary do
   @moduledoc "Defines RustQ-owned native event request and NIF boundaries."
 
@@ -19,11 +7,11 @@ defmodule GPUI.Codegen.Native.EventBoundary do
     load: false,
     rust_sources: ["apps/gpui_native/native/src/nif.rs"]
 
-  alias GPUI.Codegen.Native.EventBoundaryDefinitions
+  alias GPUI.Codegen.Native.EventBoundary.Definitions
   alias RustQ.Type, as: R
 
-  require EventBoundaryDefinitions
-  EventBoundaryDefinitions.define_inject_kind()
+  require Definitions
+  Definitions.define_inject_kind()
 
   @type inject_request :: %{
           required(:event) => term()

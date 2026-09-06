@@ -1,5 +1,16 @@
 defmodule GPUI.TailwindTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
+
+  setup do
+    previous = Application.get_env(:gpui, :unknown_classes)
+    Application.put_env(:gpui, :unknown_classes, :keep)
+
+    on_exit(fn ->
+      if previous,
+        do: Application.put_env(:gpui, :unknown_classes, previous),
+        else: Application.delete_env(:gpui, :unknown_classes)
+    end)
+  end
 
   test "programmatic UI components normalize classes before serialization" do
     payload =

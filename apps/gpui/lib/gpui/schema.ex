@@ -2,13 +2,13 @@ defmodule GPUI.Schema do
   @moduledoc "Canonical element, component, event, resource, and style protocol schema."
 
   alias GPUI.Schema.Component
-  alias GPUI.Schema.ComponentDocs
+  alias GPUI.Schema.Component.Docs
   alias GPUI.Schema.Extension
   alias GPUI.Schema.Resource
   alias GPUI.Schema.Registry
   alias GPUI.Schema.Style
 
-  Code.ensure_compiled!(ComponentDocs)
+  Code.ensure_compiled!(Docs)
   Code.ensure_compiled!(Extension)
 
   @max_text_surface_lines 64
@@ -392,7 +392,7 @@ defmodule GPUI.Schema do
 
   @doc "Returns generated public option documentation for a component tag."
   @spec component_options_doc(atom()) :: String.t()
-  def component_options_doc(tag), do: tag |> component!() |> ComponentDocs.options_doc()
+  def component_options_doc(tag), do: tag |> component!() |> Docs.options_doc()
 
   @doc "Defines public component option types from schema definitions."
   defmacro define_component_option_types(definitions) do
@@ -400,7 +400,7 @@ defmodule GPUI.Schema do
 
     types =
       Enum.map(definitions, fn {type_name, tag} ->
-        type = tag |> component!() |> ComponentDocs.option_type_ast()
+        type = tag |> component!() |> Docs.option_type_ast()
         builder = type_name |> Atom.to_string() |> String.trim_trailing("_options")
 
         quote do
@@ -727,12 +727,10 @@ defmodule GPUI.Schema do
         Enum.all?(value, fn
           %{
             __struct__: GPUI.Text.InlineProjection,
-            position: %{__struct__: GPUI.Text.Position},
-            text: text,
-            color: color
-          } ->
-            is_binary(text) and byte_size(text) <= 4096 and
-              is_integer(color) and color in 0..0xFFFFFF
+            position: %{__struct__: GPUI.Text.Position}
+          } = projection ->
+            GPUI.Text.InlineProjection.validate!(projection)
+            true
 
           _other ->
             false
@@ -766,9 +764,8 @@ defmodule GPUI.Schema do
       Enum.count_until(value, 257) <= 256 and
         Enum.all?(value, fn
           %{__struct__: GPUI.Text.Decoration, range: %{__struct__: GPUI.Text.Range}} = decoration ->
-            Enum.all?([decoration.background, decoration.underline], fn color ->
-              is_nil(color) or (is_integer(color) and color in 0..0xFFFFFF)
-            end) and decoration.underline_style in [:solid, :dashed, :wavy]
+            GPUI.Text.Decoration.validate!(decoration)
+            true
 
           _other ->
             false
@@ -797,52 +794,28 @@ defmodule GPUI.Schema do
   defp validate_attr!(tag, name, type, value),
     do: invalid_attr!(tag, name, expected_attr_type(type), value)
 
-  defp valid_style_run?(%{
-         __struct__: GPUI.Text.StyleRun,
-         range: %{__struct__: GPUI.Text.Range},
-         color: color,
-         font_weight: weight,
-         font_style: style
-       }) do
-    (is_nil(color) or valid_rgb?(color)) and
-      weight in [
-        nil,
-        :thin,
-        :extra_light,
-        :light,
-        :normal,
-        :medium,
-        :semibold,
-        :bold,
-        :extra_bold,
-        :black
-      ] and
-      style in [nil, :normal, :italic, :oblique] and
-      not (is_nil(color) and is_nil(weight) and is_nil(style))
+  defp valid_style_run?(
+         %{
+           __struct__: GPUI.Text.StyleRun,
+           range: %{__struct__: GPUI.Text.Range}
+         } = run
+       ) do
+    GPUI.Text.StyleRun.validate!(run)
+    true
   end
 
   defp valid_style_run?(_other), do: false
 
-  defp valid_block_projection?(%{
-         __struct__: GPUI.Text.BlockProjection,
-         line: line,
-         text: text,
-         placement: placement,
-         height: height,
-         color: color,
-         background: background
-       }) do
-    valid_line_and_text?(line, text) and placement in [:before, :after] and
-      is_integer(height) and height in 1..512 and valid_rgb?(color) and
-      (is_nil(background) or valid_rgb?(background))
+  defp valid_block_projection?(
+         %{
+           __struct__: GPUI.Text.BlockProjection
+         } = block
+       ) do
+    GPUI.Text.BlockProjection.validate!(block)
+    true
   end
 
   defp valid_block_projection?(_other), do: false
-
-  defp valid_line_and_text?(line, text),
-    do: is_integer(line) and line >= 0 and is_binary(text) and byte_size(text) <= 16_384
-
-  defp valid_rgb?(color), do: is_integer(color) and color in 0..0xFFFFFF
 
   defp valid_paint_command?(%{type: type, x: x, y: y, width: width, height: height, color: color})
        when type in [:rect, "rect"] do

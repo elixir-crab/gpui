@@ -31,7 +31,8 @@ defmodule GPUI.Tree do
   @spec path(element_node(), selector()) :: [element_node()] | nil
   def path(tree, selector) when is_list(selector), do: find_path(tree, selector, [])
 
-  @doc false
+  @doc "Returns whether an element node matches every selector attribute."
+  @spec matches?(element_node(), selector()) :: boolean()
   def matches?(%Element{type: type, attrs: attrs}, selector),
     do: matches_attributes?(type, Map.new(attrs), selector)
 

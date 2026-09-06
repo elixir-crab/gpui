@@ -14,7 +14,7 @@ defmodule GPUI.Native.NIF do
 
   if @compiled do
     version = Mix.Project.config()[:version]
-    project_root = __DIR__ |> Path.dirname() |> Path.dirname() |> Path.dirname()
+    project_root = Mix.Project.project_file() |> Path.dirname() |> Path.expand()
     checksum = Path.join(project_root, "checksum-Elixir.GPUI.Native.NIF.exs")
     system_architecture = :erlang.system_info(:system_architecture) |> List.to_string()
 
@@ -22,10 +22,11 @@ defmodule GPUI.Native.NIF do
 
     source_checkout? =
       project_root
-      |> Path.join("../..")
-      |> Path.expand()
-      |> Path.join(".git")
-      |> File.dir?()
+      |> Stream.unfold(fn path ->
+        parent = Path.dirname(path)
+        {path, if(parent == path, do: nil, else: parent)}
+      end)
+      |> Enum.any?(&File.dir?(Path.join(&1, ".git")))
 
     release_metadata? = Mix.env() == :release and source_checkout?
 

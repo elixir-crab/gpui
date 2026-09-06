@@ -8,4 +8,4 @@ children = [GettingStarted.HelloWindow.App]
 [{_, runtime, _, _}] = Supervisor.which_children(supervisor)
 
 IO.puts("Hello GPUI is running. Press Ctrl+C twice to exit.")
-GPUI.Dev.wait(runtime, files: [Path.join(__DIR__, "support/hello_window.exs")])
+GPUI.Dev.Reload.wait(runtime, files: [Path.join(__DIR__, "support/hello_window.exs")])

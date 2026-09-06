@@ -138,11 +138,12 @@ defmodule GPUITest.Desktop do
   def await_frame!(%__MODULE__{} = desktop, source, window_id, %Window{} = window) do
     if runtime_process?(source), do: :ok = GPUI.Runtime.request_frame(source)
     request_frame!(desktop, window)
-    assert :ok = GPUI.Display.call_await_frame(source, window_id, @update_timeout)
+    assert :ok = GPUI.Display.Support.call_await_frame(source, window_id, @update_timeout)
   end
 
   def await_frame_after!(runtime, window_id, generation, timeout \\ @update_timeout) do
-    assert :ok = GPUI.Display.call_await_frame_after(runtime, window_id, generation, timeout)
+    assert :ok =
+             GPUI.Display.Support.call_await_frame_after(runtime, window_id, generation, timeout)
   end
 
   def assert_no_runtime_update!(desktop, runtime, window_id, window, action) do

@@ -42,10 +42,12 @@ defmodule GPUI.Runtime.EventLoopTest do
     assert {:ok, :ok} =
              GPUI.Runtime.inject_event(runtime, %{type: :click, window_id: 1, event: "inc"})
 
-    assert [%{type: :click, event: "inc", window_id: 1}] = GPUI.Runtime.drain_events(runtime)
+    assert {:ok, [%{type: :click, event: "inc", window_id: 1}]} =
+             GPUI.Runtime.drain_events(runtime)
+
     assert [%{type: :click, event: "inc", window_id: 1}] = GPUI.Runtime.events(runtime)
 
-    assert %{windows: [%{root: %{assigns: %{count: 1}}}]} = GPUI.Runtime.snapshot(runtime)
+    assert %{windows: [%{root: %{assigns: %{count: 1}}}]} = GPUI.Runtime.snapshot!(runtime)
     assert_receive {:gpui_snapshot, %{windows: [%{root: %{assigns: %{count: 1}}}]}}
   end
 
@@ -63,8 +65,10 @@ defmodule GPUI.Runtime.EventLoopTest do
     assert {:ok, :ok} =
              GPUI.Runtime.inject_event(runtime, %{type: :window_closed, window_id: 1})
 
-    assert [%{type: :window_closed, window_id: 1}] = GPUI.Runtime.drain_events(runtime)
-    assert %{windows: []} = GPUI.Runtime.snapshot(runtime)
+    assert {:ok, [%{type: :window_closed, window_id: 1}]} =
+             GPUI.Runtime.drain_events(runtime)
+
+    assert %{windows: []} = GPUI.Runtime.snapshot!(runtime)
     assert_receive {:gpui_snapshot, %{windows: []}}
   end
 
@@ -75,10 +79,10 @@ defmodule GPUI.Runtime.EventLoopTest do
     raster = %{__type__: :raster, width: 1, height: 1, format: :rgba8, data: <<255, 0, 0, 255>>}
 
     assert :ok = GPUI.Runtime.put_resource(runtime, "logo", raster)
-    assert %{resources: %{"logo" => ^raster}} = GPUI.Runtime.snapshot(runtime)
+    assert %{resources: %{"logo" => ^raster}} = GPUI.Runtime.snapshot!(runtime)
 
     assert :ok = GPUI.Runtime.drop_resource(runtime, "logo")
-    assert %{resources: %{}} = GPUI.Runtime.snapshot(runtime)
+    assert %{resources: %{}} = GPUI.Runtime.snapshot!(runtime)
   end
 
   test "rejects invalid polling intervals during startup" do

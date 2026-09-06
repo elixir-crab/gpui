@@ -1,5 +1,11 @@
 defmodule GPUI.Native.LifecycleE2ETest do
-  use GPUI.Test, desktop: true
+  use ExUnit.Case, async: false
+
+  alias GPUITest.Desktop
+
+  setup context do
+    Desktop.setup(context, [])
+  end
 
   alias GPUI.Snapshot
 
@@ -79,12 +85,15 @@ defmodule GPUI.Native.LifecycleE2ETest do
 
     runtime_a = :sys.get_state(display_a).runtime
     assert :ok = GenServer.stop(display_a)
-    assert {:error, "gpui_runtime_stopped"} = GPUI.Native.update_window(runtime_a, 1, tree_a)
-    assert {:error, "gpui_runtime_stopped"} = GPUI.Native.await_frame(runtime_a, 1, 100)
-    assert {:error, "gpui_runtime_stopped"} = GPUI.Native.frame_token(runtime_a, 1)
 
     assert {:error, "gpui_runtime_stopped"} =
-             GPUI.Native.await_frame_after(runtime_a, 1, 0, 100)
+             GPUI.Native.Backend.update_window(runtime_a, 1, tree_a)
+
+    assert {:error, "gpui_runtime_stopped"} = GPUI.Native.Backend.await_frame(runtime_a, 1, 100)
+    assert {:error, "gpui_runtime_stopped"} = GPUI.Native.Backend.frame_token(runtime_a, 1)
+
+    assert {:error, "gpui_runtime_stopped"} =
+             GPUI.Native.Backend.await_frame_after(runtime_a, 1, 0, 100)
 
     assert :ok =
              GPUI.Display.Native.sync(
@@ -93,15 +102,17 @@ defmodule GPUI.Native.LifecycleE2ETest do
              )
 
     runtime_b = :sys.get_state(display_b).runtime
-    assert {:ok, 1} = GPUI.Native.close_window(runtime_b, 1)
+    assert {:ok, 1} = GPUI.Native.Backend.close_window(runtime_b, 1)
 
     assert {:ok, [%{type: :window_closed, window_id: 1}]} =
              GPUI.Display.Native.drain_events(display_b)
 
-    assert {:error, "unknown_window"} = GPUI.Native.close_window(runtime_b, 1)
-    assert {:error, "unknown_window"} = GPUI.Native.await_frame(runtime_b, 1, 100)
-    assert {:error, "unknown_window"} = GPUI.Native.frame_token(runtime_b, 1)
-    assert {:error, "unknown_window"} = GPUI.Native.await_frame_after(runtime_b, 1, 0, 100)
+    assert {:error, "unknown_window"} = GPUI.Native.Backend.close_window(runtime_b, 1)
+    assert {:error, "unknown_window"} = GPUI.Native.Backend.await_frame(runtime_b, 1, 100)
+    assert {:error, "unknown_window"} = GPUI.Native.Backend.frame_token(runtime_b, 1)
+
+    assert {:error, "unknown_window"} =
+             GPUI.Native.Backend.await_frame_after(runtime_b, 1, 0, 100)
   end
 
   test "repeated window and resource reconciliation remains responsive", %{desktop: desktop} do
@@ -300,12 +311,15 @@ defmodule GPUI.Native.LifecycleE2ETest do
     ]
 
     for {name, malformed} <- malformed_trees do
-      assert_native_rejected(name, fn -> GPUI.Native.update_window(runtime, 1, malformed) end)
+      assert_native_rejected(name, fn ->
+        GPUI.Native.Backend.update_window(runtime, 1, malformed)
+      end)
+
       assert Process.alive?(display)
     end
 
     assert_native_rejected(:invalid_resource, fn ->
-      GPUI.Native.put_resource(runtime, "bad", %{
+      GPUI.Native.Backend.put_resource(runtime, "bad", %{
         width: 0,
         height: 1,
         format: :rgba8,

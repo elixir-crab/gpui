@@ -24,7 +24,7 @@ defmodule Mix.Tasks.Gpui.Release.Check do
 
     Mix.Task.run("gpui.test.packages")
 
-    GPUI.Dev.NativeWorkspace.audit!(
+    GPUI.Maintainer.NativeWorkspace.audit!(
       Enum.flat_map(@acknowledged_rust_advisories, &["--ignore", &1])
     )
 
@@ -32,7 +32,7 @@ defmodule Mix.Tasks.Gpui.Release.Check do
   end
 
   defp reject_gpl3_rust_dependencies! do
-    packages = GPUI.Dev.NativeWorkspace.metadata!().packages
+    packages = GPUI.Maintainer.NativeWorkspace.metadata!().packages
 
     forbidden =
       Enum.filter(packages, fn package ->

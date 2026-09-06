@@ -1,5 +1,11 @@
 defmodule GPUI.Native.TextStyleRunE2ETest do
-  use GPUI.Test, desktop: true
+  use ExUnit.Case, async: false
+
+  alias GPUITest.Desktop
+
+  setup context do
+    Desktop.setup(context, [])
+  end
 
   alias GPUI.Text.Buffer
   alias GPUI.Text.Position
@@ -57,6 +63,6 @@ defmodule GPUI.Native.TextStyleRunE2ETest do
     Desktop.await_frame!(desktop, runtime, 1, native_window)
 
     assert %{windows: [%{root: %{assigns: %{style_runs: [^run]}}}]} =
-             GPUI.Runtime.snapshot(runtime)
+             GPUI.Runtime.snapshot!(runtime)
   end
 end

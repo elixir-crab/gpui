@@ -34,7 +34,7 @@ defmodule GPUI.Remote.Client do
   @doc "Starts a remote display client linked to the caller."
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
-    with {:ok, _poll_interval} <- GPUI.Polling.interval(opts) do
+    with {:ok, _poll_interval} <- GPUI.Display.Polling.interval(opts) do
       GenServer.start_link(__MODULE__, opts, name: Keyword.get(opts, :name))
     end
   end
@@ -65,7 +65,7 @@ defmodule GPUI.Remote.Client do
     display_module = Keyword.get(opts, :display, GPUI.Display.Native)
     display_opts = Keyword.get(opts, :display_opts, [])
 
-    case GPUI.Polling.interval(opts) do
+    case GPUI.Display.Polling.interval(opts) do
       {:ok, poll_interval} ->
         start_display(display_module, display_opts, poll_interval, opts)
 
@@ -75,7 +75,7 @@ defmodule GPUI.Remote.Client do
   end
 
   defp start_display(display_module, display_opts, poll_interval, opts) do
-    case GPUI.Display.start(display_module, display_opts) do
+    case GPUI.Display.Support.start(display_module, display_opts) do
       {:ok, display} ->
         start_rpc(display, display_module, poll_interval, opts)
 
@@ -85,7 +85,8 @@ defmodule GPUI.Remote.Client do
   end
 
   defp start_rpc(display, display_module, poll_interval, opts) do
-    with {:ok, supports} <- GPUI.Display.presentation_capabilities(display_module, display),
+    with {:ok, supports} <-
+           GPUI.Display.Support.presentation_capabilities(display_module, display),
          {:ok, rpc, capabilities} <- start_rpc_client(opts, supports) do
       state = %{
         opts: opts,
@@ -139,12 +140,12 @@ defmodule GPUI.Remote.Client do
   end
 
   def handle_call(:subscribe, {pid, _tag}, state) do
-    subscribers = GPUI.UpdateSubscribers.subscribe(state.subscribers, pid)
+    subscribers = GPUI.Runtime.Subscriptions.subscribe(state.subscribers, pid)
     {:reply, :ok, %{state | subscribers: subscribers}}
   end
 
   def handle_call(:unsubscribe, {pid, _tag}, state) do
-    subscribers = GPUI.UpdateSubscribers.unsubscribe(state.subscribers, pid)
+    subscribers = GPUI.Runtime.Subscriptions.unsubscribe(state.subscribers, pid)
     {:reply, :ok, %{state | subscribers: subscribers}}
   end
 
@@ -163,7 +164,7 @@ defmodule GPUI.Remote.Client do
 
   def handle_call({:await_frame, window_id, timeout}, from, state) do
     :ok =
-      GPUI.Display.reply_after_frame(
+      GPUI.Display.Support.reply_after_frame(
         state.display_module,
         state.display,
         window_id,
@@ -176,7 +177,7 @@ defmodule GPUI.Remote.Client do
 
   def handle_call({:frame_token, window_id}, from, state) do
     :ok =
-      GPUI.Display.reply_from_display(
+      GPUI.Display.Support.reply_from_display(
         state.display_module,
         state.display,
         :frame_token,
@@ -189,7 +190,7 @@ defmodule GPUI.Remote.Client do
 
   def handle_call({:await_frame_after, window_id, generation, timeout}, from, state) do
     :ok =
-      GPUI.Display.reply_from_display(
+      GPUI.Display.Support.reply_from_display(
         state.display_module,
         state.display,
         :await_frame_after,
@@ -202,7 +203,7 @@ defmodule GPUI.Remote.Client do
 
   @impl GenServer
   def handle_info({:DOWN, monitor, :process, pid, _reason}, state) do
-    subscribers = GPUI.UpdateSubscribers.remove_down(state.subscribers, pid, monitor)
+    subscribers = GPUI.Runtime.Subscriptions.remove_down(state.subscribers, pid, monitor)
     {:noreply, %{state | subscribers: subscribers}}
   end
 
@@ -255,7 +256,7 @@ defmodule GPUI.Remote.Client do
     Reconnect.stop_client(state.rpc)
 
     supports =
-      case GPUI.Display.presentation_capabilities(state.display_module, state.display) do
+      case GPUI.Display.Support.presentation_capabilities(state.display_module, state.display) do
         {:ok, supports} -> supports
         {:error, _reason} -> []
       end
@@ -333,7 +334,7 @@ defmodule GPUI.Remote.Client do
   end
 
   defp safe_display_drain(state) do
-    GPUI.Display.drain(state.display_module, state.display)
+    GPUI.Display.Support.drain(state.display_module, state.display)
   end
 
   defp enqueue_display_events(state, events) do
@@ -456,7 +457,7 @@ defmodule GPUI.Remote.Client do
       :ok ->
         state =
           if is_list(events) do
-            GPUI.UpdateSubscribers.publish_update(state, self(), events, snapshot)
+            GPUI.Runtime.Subscriptions.publish_update(state, self(), events, snapshot)
           else
             state
           end
@@ -469,7 +470,7 @@ defmodule GPUI.Remote.Client do
   end
 
   defp safe_display_sync(state, snapshot) do
-    GPUI.Display.sync_snapshot(state.display_module, state.display, snapshot)
+    GPUI.Display.Support.sync_snapshot(state.display_module, state.display, snapshot)
   end
 
   defp new_session_id, do: unique_id()

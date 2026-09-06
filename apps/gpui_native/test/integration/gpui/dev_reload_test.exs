@@ -1,4 +1,4 @@
-defmodule GPUI.DevTest do
+defmodule GPUI.Dev.ReloadTest do
   use ExUnit.Case, async: false
 
   defmodule ReloadApp do
@@ -37,7 +37,7 @@ defmodule GPUI.DevTest do
     assert_receive {:gpui_snapshot, %{windows: [%{root: %{tree: before_tree}}]}}
     assert text(before_tree) == "before 7"
 
-    {:ok, watcher} = GPUI.Dev.watch(runtime, files: [path], debounce: 10)
+    {:ok, watcher} = GPUI.Dev.Reload.watch(runtime, files: [path], debounce: 10)
     assert Process.alive?(watcher)
     Process.sleep(750)
     flush_snapshots()
@@ -81,7 +81,7 @@ defmodule GPUI.DevTest do
 
     {_event, %{windows: [%{id: 1}, %{id: 2}]}} = dispatch(runtime, 1, "close-transient")
 
-    {:ok, watcher} = GPUI.Dev.watch(runtime, files: [path], debounce: 10)
+    {:ok, watcher} = GPUI.Dev.Reload.watch(runtime, files: [path], debounce: 10)
     assert Process.alive?(watcher)
     Process.sleep(750)
     flush_snapshots()
@@ -120,7 +120,7 @@ defmodule GPUI.DevTest do
     assert_receive {:gpui_snapshot, %{windows: [%{id: 1}]}}
     {_event, %{windows: [_, %{id: 2}]}} = dispatch(runtime, 1, "open-details")
 
-    {:ok, watcher} = GPUI.Dev.watch(runtime, files: [path], debounce: 10, notify: self())
+    {:ok, watcher} = GPUI.Dev.Reload.watch(runtime, files: [path], debounce: 10, notify: self())
     Process.sleep(750)
     flush_snapshots()
     File.write!(path, "defmodule #{inspect(module)} do\n  def render(\nend")
@@ -133,7 +133,7 @@ defmodule GPUI.DevTest do
 
     assert Process.alive?(watcher)
     refute_receive {:gpui_snapshot, _snapshot}, 100
-    assert %{windows: [%{id: 1}, %{id: 2}]} = GPUI.Runtime.snapshot(runtime)
+    assert %{windows: [%{id: 1}, %{id: 2}]} = GPUI.Runtime.snapshot!(runtime)
 
     {_event, %{windows: [%{root: %{assigns: %{count: 8}}}, _]}} =
       dispatch(runtime, 1, "increment")
@@ -284,11 +284,14 @@ defmodule GPUI.DevTest do
   end
 
   defp dispatch(runtime, window_id, event) do
-    GPUI.Runtime.dispatch_event(runtime, %{
-      type: :click,
-      window_id: window_id,
-      event: event
-    })
+    {:ok, event, snapshot} =
+      GPUI.Runtime.dispatch_event(runtime, %{
+        type: :click,
+        window_id: window_id,
+        event: event
+      })
+
+    {event, snapshot}
   end
 
   defp flush_snapshots do

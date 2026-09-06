@@ -1,7 +1,7 @@
 GPUITest.Examples.load!(:image_lab)
 
 defmodule GPUITest.Visual.ImageLab.Scenario do
-  @behaviour GPUI.Dev.Visual.Scenario
+  @behaviour GPUI.Maintainer.Visual.Scenario
 
   alias Examples.ImageLab.Analysis
 
@@ -14,13 +14,13 @@ defmodule GPUITest.Visual.ImageLab.Scenario do
     {0x8B, 0x5C, 0xF6}
   ]
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def id, do: :image_lab
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def app, do: Examples.ImageLab.App
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def args(_theme) do
     %{
       path: "/fixtures/color-blocks.png",
@@ -29,10 +29,10 @@ defmodule GPUITest.Visual.ImageLab.Scenario do
     }
   end
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def title, do: "Image Lab"
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def captures do
     [
       %{name: "ready"},

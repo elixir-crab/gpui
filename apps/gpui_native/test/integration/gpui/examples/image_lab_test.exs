@@ -1,6 +1,6 @@
 GPUITest.Examples.load!(:image_lab)
 
-defmodule GPUI.ImageLabExampleTest do
+defmodule GPUI.Examples.ImageLabTest do
   use GPUI.Test, async: false
 
   alias Examples.ImageLab.Analysis

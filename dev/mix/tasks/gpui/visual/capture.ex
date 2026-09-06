@@ -2,7 +2,7 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
   use Mix.Task
 
   @shortdoc "Captures synchronized native visual scenarios"
-  @project_root GPUI.Dev.Paths.app(:gpui_native)
+  @project_root GPUI.Maintainer.Paths.app(:gpui_native)
   @scenario_dir Path.join(@project_root, "test/visual/scenarios")
 
   @impl Mix.Task
@@ -92,7 +92,7 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
     |> Path.join("*.exs")
     |> Path.wildcard()
     |> Enum.each(fn path ->
-      path |> Path.basename(".exs") |> GPUI.Dev.Visual.ScenarioLoader.load!()
+      path |> Path.basename(".exs") |> GPUI.Maintainer.Visual.ScenarioLoader.load!()
     end)
 
     :code.all_loaded()
@@ -111,7 +111,7 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
 
   defp visual_scenario?(module) do
     function_exported?(module, :module_info, 1) and
-      GPUI.Dev.Visual.Scenario in Keyword.get(module.module_info(:attributes), :behaviour, [])
+      GPUI.Maintainer.Visual.Scenario in Keyword.get(module.module_info(:attributes), :behaviour, [])
   end
 
   defp unknown_scenario_message(id, scenarios) do
@@ -160,8 +160,7 @@ defmodule Mix.Tasks.Gpui.Visual.Capture do
 
   defp run_action(runtime, _x11_window_id, {:send_view_from, window_id, build_message}) do
     assigns =
-      runtime
-      |> GPUI.Runtime.snapshot()
+      runtime |> GPUI.Runtime.snapshot!()
       |> Map.fetch!(:windows)
       |> Enum.find(&(&1.id == window_id))
       |> get_in([:root, :assigns])

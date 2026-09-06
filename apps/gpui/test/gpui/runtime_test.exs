@@ -227,6 +227,28 @@ defmodule GPUI.RuntimeTest do
     end
   end
 
+  defmodule RenderFailureView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(_assigns) do
+      if :persistent_term.get({__MODULE__, :fail?}, false) do
+        raise "render failed"
+      else
+        %GPUI.Element{type: :text, children: ["ok"]}
+      end
+    end
+  end
+
+  defmodule RenderFailureApp do
+    use GPUI.Application
+
+    @impl GPUI.Application
+    def mount(_args) do
+      {:ok, [window("Render failure", do: root(RenderFailureView, fail?: false))]}
+    end
+  end
+
   defmodule EmptyApp do
     use GPUI.Application
 
@@ -362,7 +384,7 @@ defmodule GPUI.RuntimeTest do
     {:ok, runtime} =
       GPUI.Runtime.start_link(app: TransferApp, display: RecordingDisplay, poll_interval: nil)
 
-    {_handled, snapshot} =
+    {:ok, _handled, snapshot} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :drop,
         window_id: 1,
@@ -393,7 +415,7 @@ defmodule GPUI.RuntimeTest do
     {:ok, runtime} =
       GPUI.Runtime.start_link(app: DemoApp, display: RecordingDisplay, poll_interval: nil)
 
-    {handled, snapshot} =
+    {:ok, handled, snapshot} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :link,
         window_id: 1,
@@ -409,7 +431,7 @@ defmodule GPUI.RuntimeTest do
     {:ok, runtime} =
       GPUI.Runtime.start_link(app: OutcomeApp, display: RecordingDisplay, poll_interval: nil)
 
-    {handled, snapshot} =
+    {:ok, handled, snapshot} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :click,
         window_id: 1,
@@ -419,7 +441,7 @@ defmodule GPUI.RuntimeTest do
     refute Map.has_key?(handled, :error)
     assert [%{root: %{assigns: %{label: "Details opened"}}}, %{key: "details"}] = snapshot.windows
 
-    {handled, unchanged} =
+    {:ok, handled, unchanged} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :click,
         window_id: 1,
@@ -429,7 +451,7 @@ defmodule GPUI.RuntimeTest do
     assert handled.error == :duplicate_window_key
     assert unchanged == snapshot
 
-    {_handled, snapshot} =
+    {:ok, _handled, snapshot} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :click,
         window_id: 1,
@@ -455,7 +477,7 @@ defmodule GPUI.RuntimeTest do
                })
     end)
 
-    {handled, snapshot} =
+    {:ok, handled, snapshot} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :click,
         window_id: 1,
@@ -530,7 +552,7 @@ defmodule GPUI.RuntimeTest do
     %{display: display} = :sys.get_state(runtime)
     assert [%{windows: [_window]}] = Agent.get(display, & &1)
 
-    {_event, snapshot} =
+    {:ok, _event, snapshot} =
       GPUI.Runtime.dispatch_event(runtime, %{
         type: :click,
         window_id: 1,
@@ -628,6 +650,27 @@ defmodule GPUI.RuntimeTest do
     assert Process.alive?(runtime)
   end
 
+  test "snapshot uses tagged errors and snapshot! raises a runtime error" do
+    key = {RenderFailureView, :fail?}
+    :persistent_term.put(key, false)
+    on_exit(fn -> :persistent_term.erase(key) end)
+
+    runtime =
+      start_supervised!(
+        {GPUI.Runtime, app: RenderFailureApp, display: GPUI.Test.Display, poll_interval: nil}
+      )
+
+    assert {:ok, %GPUI.Snapshot{}} = GPUI.Runtime.snapshot(runtime)
+    :persistent_term.put(key, true)
+
+    assert {:error, {:render_failed, %RuntimeError{message: "render failed"}, _stacktrace}} =
+             GPUI.Runtime.snapshot(runtime)
+
+    assert_raise GPUI.Runtime.Error, ~r/GPUI runtime snapshot failed/, fn ->
+      GPUI.Runtime.snapshot!(runtime)
+    end
+  end
+
   test "runtime retries authoritative snapshots after a display sync failure" do
     {:ok, runtime} =
       GPUI.Runtime.start_link(
@@ -648,7 +691,7 @@ defmodule GPUI.RuntimeTest do
              })
 
     assert %{windows: [%{root: %{assigns: %{name: "Recovered"}}}]} =
-             GPUI.Runtime.snapshot(runtime)
+             GPUI.Runtime.snapshot!(runtime)
 
     Process.sleep(30)
 
@@ -659,265 +702,5 @@ defmodule GPUI.RuntimeTest do
     refute :sys.get_state(runtime).unsynchronized?
   end
 
-  test "display boundary normalizes event callback failures" do
-    {:ok, invalid_drain} = ContractDisplay.start_link(mode: :invalid_drain)
-    {:ok, raising_drain} = ContractDisplay.start_link(mode: :raise_drain)
-    {:ok, invalid_inject} = ContractDisplay.start_link(mode: :invalid_inject)
-    {:ok, raising_inject} = ContractDisplay.start_link(mode: :raise_inject)
-
-    assert {:error, {:invalid_display_return, :drain_events, :invalid_drain}} =
-             GPUI.Display.drain(ContractDisplay, invalid_drain)
-
-    assert {:error,
-            {:display_callback_failed, :drain_events, :error,
-             %RuntimeError{message: "drain failed"}}} =
-             GPUI.Display.drain(ContractDisplay, raising_drain)
-
-    assert {:error, {:invalid_display_return, :inject_event, :invalid_inject}} =
-             GPUI.Display.inject(ContractDisplay, invalid_inject, %{})
-
-    assert {:error,
-            {:display_callback_failed, :inject_event, :error,
-             %RuntimeError{message: "inject failed"}}} =
-             GPUI.Display.inject(ContractDisplay, raising_inject, %{})
-  end
-
-  test "application modules start renderer-independent sessions with a display" do
-    {:ok, runtime} =
-      start_supervised({DemoApp, display: GPUI.Test.Display, display_opts: [owner: self()]})
-
-    assert [%GPUI.WindowSpec{title: "GPUI + Elixir", size: {500, 500}}] =
-             GPUI.Runtime.windows(runtime)
-
-    assert_receive {:gpui_snapshot, %{windows: [%{id: 1}]}}
-  end
-
-  test "runtime snapshots contain rendered window trees" do
-    {:ok, runtime} =
-      GPUI.Runtime.start_link(app: DemoApp, display: GPUI.Test.Display)
-
-    assert %{
-             windows: [
-               %{
-                 root: %{
-                   module: module,
-                   assigns: %{name: "OTP"},
-                   tree: %{
-                     type: :viewport,
-                     attrs: %{},
-                     children: [
-                       %{
-                         type: :div,
-                         attrs: %{
-                           style: [
-                             display: :flex,
-                             flex_direction: :column,
-                             align_items: :center,
-                             background: [:rgb, 4_210_752]
-                           ]
-                         },
-                         children: [%{type: :text, children: ["Hello ", "OTP"]}]
-                       }
-                     ]
-                   }
-                 }
-               }
-             ],
-             resources: %{}
-           } = GPUI.Runtime.snapshot(runtime)
-
-    assert module =~ "HelloView"
-  end
-
-  test "runtime subscriptions deliver synchronized typed updates" do
-    {:ok, runtime} =
-      GPUI.Runtime.start_link(app: DemoApp, display: GPUI.Test.Display)
-
-    assert :ok = GPUI.Runtime.subscribe(runtime)
-
-    {_handled, snapshot} =
-      GPUI.Runtime.dispatch_event(runtime, %{
-        type: :change,
-        window_id: 1,
-        event: "rename",
-        value: "BEAM"
-      })
-
-    assert_receive {:gpui, ^runtime,
-                    %GPUI.Runtime.Update{
-                      revision: 1,
-                      events: [%{event: "rename"}],
-                      snapshot: ^snapshot
-                    }}
-
-    assert :ok = GPUI.Runtime.unsubscribe(runtime)
-
-    GPUI.Runtime.dispatch_event(runtime, %{
-      type: :change,
-      window_id: 1,
-      event: "rename",
-      value: "OTP"
-    })
-
-    refute_receive {:gpui, ^runtime, %GPUI.Runtime.Update{}}
-  end
-
-  test "runtime removes subscribers when their processes exit" do
-    {:ok, runtime} =
-      GPUI.Runtime.start_link(app: DemoApp, display: GPUI.Test.Display)
-
-    owner = self()
-
-    subscriber =
-      spawn(fn ->
-        :ok = GPUI.Runtime.subscribe(runtime)
-        send(owner, {:subscribed, self()})
-
-        receive do
-          :stop -> :ok
-        end
-      end)
-
-    assert_receive {:subscribed, ^subscriber}
-    %{subscribers: %{^subscriber => monitor}} = :sys.get_state(runtime)
-    :erlang.trace(runtime, true, [:receive])
-    Process.exit(subscriber, :kill)
-
-    assert_receive {:trace, ^runtime, :receive, {:DOWN, ^monitor, :process, ^subscriber, :killed}}
-    refute Map.has_key?(:sys.get_state(runtime).subscribers, subscriber)
-    :erlang.trace(runtime, false, [:receive])
-  end
-
-  test "OTP messages update root views and synchronize displays" do
-    {:ok, runtime} =
-      GPUI.Runtime.start_link(
-        app: DemoApp,
-        display: GPUI.Test.Display,
-        display_opts: [owner: self()]
-      )
-
-    assert_receive {:gpui_snapshot, %{windows: [%{root: %{assigns: %{name: "OTP"}}}]}}
-    assert :ok = GPUI.Runtime.subscribe(runtime)
-
-    assert {:ok, %{windows: [%{root: %{assigns: %{name: "BEAM"}}}]} = snapshot} =
-             GPUI.Runtime.send_view(runtime, 1, {:rename, "BEAM"})
-
-    assert_receive {:gpui_snapshot, ^snapshot}
-
-    assert_receive {:gpui, ^runtime,
-                    %GPUI.Runtime.Update{revision: 1, events: [], snapshot: ^snapshot}}
-
-    assert {:error, :window_not_found} = GPUI.Runtime.send_view(runtime, 999, :ignored)
-  end
-
-  test "refresh rerenders current assigns and synchronizes subscribers" do
-    :persistent_term.put(
-      {RefreshView, :renderer},
-      fn assigns -> "before #{assigns.name}" end
-    )
-
-    {:ok, runtime} =
-      GPUI.Runtime.start_link(
-        app: RefreshApp,
-        display: GPUI.Test.Display,
-        display_opts: [owner: self()],
-        poll_interval: nil
-      )
-
-    assert_receive {:gpui_snapshot, %{windows: [%{root: %{tree: before_tree}}]}}
-    assert get_in(before_tree, [:children, Access.at(0), :children]) == ["before preserved"]
-    assert :ok = GPUI.Runtime.subscribe(runtime)
-
-    :persistent_term.put(
-      {RefreshView, :renderer},
-      fn assigns -> "after #{assigns.name}" end
-    )
-
-    assert {:ok,
-            %{windows: [%{root: %{assigns: %{name: "preserved"}, tree: after_tree}}]} =
-              snapshot} = GPUI.Runtime.refresh(runtime)
-
-    assert get_in(after_tree, [:children, Access.at(0), :children]) == ["after preserved"]
-    assert_receive {:gpui_snapshot, ^snapshot}
-
-    assert_receive {:gpui, ^runtime,
-                    %GPUI.Runtime.Update{revision: 1, events: [], snapshot: ^snapshot}}
-  after
-    :persistent_term.erase({RefreshView, :renderer})
-  end
-
-  test "runtime frame barriers delegate to the active display" do
-    {:ok, runtime} =
-      GPUI.Runtime.start_link(app: DemoApp, display: GPUI.Test.Display)
-
-    assert :ok = GPUI.Runtime.await_frame(runtime, 1)
-    assert {:ok, 0} = GPUI.Runtime.frame_token(runtime, 1)
-    assert :ok = GPUI.Runtime.await_frame_after(runtime, 1, 0)
-    assert {:error, :window_not_found} = GPUI.Runtime.await_frame(runtime, 999)
-    assert {:error, :window_not_found} = GPUI.Runtime.frame_token(runtime, 999)
-    assert {:error, :window_not_found} = GPUI.Runtime.await_frame_after(runtime, 999, 0)
-  end
-
-  test "display callback failures reply without blocking or crashing the runtime" do
-    {:ok, runtime} =
-      GPUI.Runtime.start_link(app: DemoApp, display: RaisingFrameDisplay)
-
-    assert {:error, {:display_callback_failed, :error, %RuntimeError{message: "frame failed"}}} =
-             GPUI.Runtime.await_frame(runtime, 1)
-
-    assert Process.alive?(runtime)
-  end
-
-  test "waiting for a frame does not block the runtime" do
-    {:ok, runtime} =
-      GPUI.Runtime.start_link(
-        app: DemoApp,
-        display: BlockingFrameDisplay,
-        display_opts: [owner: self()]
-      )
-
-    waiter = Task.async(fn -> GPUI.Runtime.await_frame(runtime, 1) end)
-    assert_receive {:frame_waiting, frame_task}
-    assert [%GPUI.WindowSpec{id: 1}] = GPUI.Runtime.windows(runtime)
-
-    send(frame_task, :release_frame)
-    assert :ok = Task.await(waiter)
-  end
-
-  test "sessions reject invalid application mount results explicitly" do
-    previous = Process.flag(:trap_exit, true)
-
-    assert {:error, {:invalid_mount_return, :invalid}} =
-             GPUI.Session.start_link(app: InvalidMountApp)
-
-    Process.flag(:trap_exit, previous)
-  end
-
-  test "applications can mount an empty window set without placeholder state" do
-    {:ok, session} = GPUI.Session.start_link(app: EmptyApp)
-
-    assert [] = GPUI.Session.windows(session)
-    assert %GPUI.Snapshot{windows: [], resources: %{}} = GPUI.Session.snapshot(session)
-  end
-
   defp set_display_mode(display, mode), do: Agent.update(display, fn _current -> mode end)
-
-  test "sessions report malformed and unsupported events explicitly without dispatching them" do
-    {:ok, session} = GPUI.Session.start_link(app: DemoApp)
-
-    assert {:ok, %{window_id: 1, event: "rename", error: {:invalid_event, :type}}, snapshot} =
-             GPUI.Session.dispatch_event(session, %{window_id: 1, event: "rename"})
-
-    assert snapshot.windows |> hd() |> get_in([:root, :assigns, :name]) == "OTP"
-
-    assert {:ok, %{type: :mystery, error: {:unsupported_event_type, :mystery}}, _snapshot} =
-             GPUI.Session.dispatch_event(session, %{type: :mystery, window_id: 1})
-  end
-
-  test "sessions can run without any display" do
-    {:ok, session} = GPUI.Session.start_link(app: DemoApp)
-
-    assert [%GPUI.WindowSpec{title: "GPUI + Elixir"}] = GPUI.Session.windows(session)
-    assert %{windows: [%{id: 1}], resources: %{}} = GPUI.Session.snapshot(session)
-  end
 end

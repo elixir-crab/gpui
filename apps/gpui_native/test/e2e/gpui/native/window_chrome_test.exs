@@ -1,5 +1,11 @@
 defmodule GPUI.Native.WindowChromeE2ETest do
-  use GPUI.Test, desktop: true
+  use ExUnit.Case, async: false
+
+  alias GPUITest.Desktop
+
+  setup context do
+    Desktop.setup(context, [])
+  end
 
   @moduletag :e2e
   @moduletag timeout: 30_000
@@ -76,11 +82,11 @@ defmodule GPUI.Native.WindowChromeE2ETest do
     Desktop.click!(desktop, window_id, at: {close_x, 24})
 
     Desktop.eventually(desktop, runtime, fn -> assert %{close_requests: 1} = assigns(runtime) end)
-    assert %{windows: [_window]} = GPUI.Runtime.snapshot(runtime)
+    assert %{windows: [_window]} = GPUI.Runtime.snapshot!(runtime)
   end
 
   defp assigns(runtime) do
-    %{windows: [%{root: %{assigns: assigns}}]} = GPUI.Runtime.snapshot(runtime)
+    %{windows: [%{root: %{assigns: assigns}}]} = GPUI.Runtime.snapshot!(runtime)
     assigns
   end
 end

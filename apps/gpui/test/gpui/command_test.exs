@@ -191,7 +191,7 @@ defmodule GPUI.CommandTest do
     refute window.resizable
     assert window.chrome == :content
 
-    payload = Session.window_payload(window)
+    payload = GPUI.Session.Support.window_payload(window)
     assert payload.lifecycle == [:close_request, :focus, :blur]
 
     assert %{
@@ -202,14 +202,14 @@ defmodule GPUI.CommandTest do
                {"refresh", "primary-r"},
                {"focus_filter", "primary-shift-f"}
              ]
-           } = Session.window_payload(window)
+           } = GPUI.Session.Support.window_payload(window)
   end
 
   test "views without a lifecycle callback retain ordinary platform lifecycle" do
     assert {:ok, [window]} = PlainApp.mount(%{})
     window = %{WindowSpec.validate!(window) | id: 1}
 
-    assert Session.window_payload(window).lifecycle == []
+    assert GPUI.Session.Support.window_payload(window).lifecycle == []
   end
 
   test "keyed window DSL rejects duplicate initial topology" do
@@ -294,7 +294,7 @@ defmodule GPUI.CommandTest do
              Session.dispatch_event(session, %{type: :window_focus, window_id: 1})
 
     assert Process.alive?(session)
-    assert %GPUI.Snapshot{} = Session.snapshot(session)
+    assert {:ok, %GPUI.Snapshot{}} = Session.snapshot(session)
   end
 
   test "rejects malformed window lifecycle contracts" do

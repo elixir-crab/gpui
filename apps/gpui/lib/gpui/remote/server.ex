@@ -26,9 +26,9 @@ defmodule GPUI.Remote.Server do
   alias GPUI.Remote.Connection
   alias GPUI.Remote.Protocol
   alias GPUI.Remote.Request
-  alias GPUI.Remote.ServerSupervisor
-  alias GPUI.Remote.SessionRegistry
-  alias GPUI.Remote.SessionSupervisor
+  alias GPUI.Remote.Server.Supervisor, as: ServerSupervisor
+  alias GPUI.Remote.Session.Registry, as: SessionRegistry
+  alias GPUI.Remote.SessionPool
   alias GPUI.Remote.Supervision
   alias GPUI.Remote.Transport.TCP
 
@@ -288,7 +288,7 @@ defmodule GPUI.Remote.Server do
       request_limit: state.session_request_limit
     ]
 
-    case SessionSupervisor.start_session(state.session_supervisor, opts) do
+    case SessionPool.start_session(state.session_supervisor, opts) do
       {:ok, session} -> register_session(state, session_id, request_id, session)
       {:error, reason} -> {{:error, reason}, state}
     end
@@ -312,7 +312,7 @@ defmodule GPUI.Remote.Server do
         {{:delegate, route, :mount}, %{state | session_registry: registry}}
 
       {:error, reason} ->
-        SessionSupervisor.stop_session(session)
+        SessionPool.stop_session(session)
         {{:error, reason}, state}
     end
   end

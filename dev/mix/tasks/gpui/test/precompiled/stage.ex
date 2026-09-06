@@ -14,7 +14,7 @@ defmodule Mix.Tasks.Gpui.Test.Precompiled.Stage do
     host = Keyword.get(options, :host) || System.fetch_env!("HOST")
     host_atom = parse_host!(host)
     version = Mix.Project.config() |> Keyword.fetch!(:version)
-    archive_name = GPUI.Dev.Release.Archive.archive_name(version, target, host_atom)
+    archive_name = GPUI.Maintainer.Release.Archive.archive_name(version, target, host_atom)
     archive = find_archive!(archive_root, archive_name)
     root = File.cwd!()
     checksum = Path.join(root, "apps/gpui_native/checksum-Elixir.GPUI.Native.NIF.exs")

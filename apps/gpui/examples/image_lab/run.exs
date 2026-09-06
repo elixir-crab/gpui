@@ -16,14 +16,15 @@ path =
 {:ok, _supervisor} = Examples.ImageLab.Supervisor.start_link(runtime: runtime)
 
 if path != "" do
-  GPUI.Runtime.dispatch_event(runtime, %{
-    type: :click,
-    window_id: 1,
-    event: "load_image"
-  })
+  {:ok, _event, _snapshot} =
+    GPUI.Runtime.dispatch_event(runtime, %{
+      type: :click,
+      window_id: 1,
+      event: "load_image"
+    })
 end
 
-GPUI.Dev.wait(runtime,
+GPUI.Dev.Reload.wait(runtime,
   files: [
     Path.join(__DIR__, "support/analysis.exs"),
     Path.join(__DIR__, "support/image_lab.exs")

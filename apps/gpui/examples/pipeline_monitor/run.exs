@@ -13,4 +13,4 @@ worker_supervisor = Examples.PipelineMonitor.TaskSupervisor
 for kind <- [:success, :fail_once, :slow_success, :permanent_failure], do: Examples.PipelineMonitor.Pipeline.enqueue(pipeline, kind)
 
 IO.puts("Pipeline Monitor is running. Press Ctrl+C twice to exit.")
-GPUI.Dev.wait(runtime, files: Path.wildcard(Path.join(__DIR__, "support/*.exs")))
+GPUI.Dev.Reload.wait(runtime, files: Path.wildcard(Path.join(__DIR__, "support/*.exs")))

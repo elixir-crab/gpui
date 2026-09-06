@@ -26,7 +26,7 @@ defmodule Examples.ComponentGallery.Stories.CodeViewer do
       UI.code_line(%{
         id: "line-2",
         number: 74,
-        text: "   snapshot = Session.snapshot(session)",
+        text: "   {:ok, snapshot} = Session.snapshot(session)",
         kind: "context"
       }),
       UI.code_line(%{

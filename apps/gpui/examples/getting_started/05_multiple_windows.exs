@@ -8,4 +8,4 @@ children = [GettingStarted.MultipleWindows.App]
 [{_, runtime, _, _}] = Supervisor.which_children(supervisor)
 
 IO.puts("Multiple Windows is running. Press Ctrl+C twice to exit.")
-GPUI.Dev.wait(runtime, files: [Path.join(__DIR__, "support/multiple_windows.exs")])
+GPUI.Dev.Reload.wait(runtime, files: [Path.join(__DIR__, "support/multiple_windows.exs")])

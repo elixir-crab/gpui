@@ -20,7 +20,7 @@ defmodule GPUI.Image do
   @doc "Decodes PNG, JPEG, WebP, GIF, TIFF, BMP, or ICO image bytes."
   @spec decode(binary()) :: {:ok, Raster.t()} | {:error, decode_error()}
   def decode(bytes) when is_binary(bytes) do
-    case GPUI.Native.decode_image(bytes) do
+    case GPUI.Native.Backend.decode_image(bytes) do
       {:ok, width, height, rgba} -> {:ok, Raster.new(width, height, rgba)}
       {:error, "invalid_image"} -> {:error, :invalid_image}
     end

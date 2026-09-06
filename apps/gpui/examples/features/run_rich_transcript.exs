@@ -6,4 +6,4 @@ Code.require_file("rich_transcript.exs", __DIR__)
 {:ok, runtime} = GPUI.Runtime.start_link(app: Features.RichTranscript.App)
 
 IO.puts("Rich transcript is running. Press Ctrl+C twice to exit.")
-GPUI.Dev.wait(runtime, files: [Path.join(__DIR__, "rich_transcript.exs")])
+GPUI.Dev.Reload.wait(runtime, files: [Path.join(__DIR__, "rich_transcript.exs")])

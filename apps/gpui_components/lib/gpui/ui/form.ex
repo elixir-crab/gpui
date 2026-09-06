@@ -71,6 +71,7 @@ defmodule GPUI.UI.Form do
 
       class when is_binary(class) ->
         %{style: class_style, unknown: unknown} = GPUI.Tailwind.normalize(class)
+        :ok = GPUI.Tailwind.handle_unknown!(unknown)
         merged_style = merge_styles(class_style, style)
 
         []

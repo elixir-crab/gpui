@@ -2,7 +2,7 @@ defmodule GPUI.DSLTest do
   use ExUnit.Case, async: true
 
   import Kernel, except: [div: 2]
-  import GPUI
+  import GPUI.Builder
 
   test "builds block-style element trees" do
     element =

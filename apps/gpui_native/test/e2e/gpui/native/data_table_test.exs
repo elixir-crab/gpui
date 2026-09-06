@@ -1,5 +1,11 @@
 defmodule GPUI.Native.DataTableE2ETest do
-  use GPUI.Test, desktop: true
+  use ExUnit.Case, async: false
+
+  alias GPUITest.Desktop
+
+  setup context do
+    Desktop.setup(context, [])
+  end
 
   @moduletag :e2e
 
@@ -172,7 +178,7 @@ defmodule GPUI.Native.DataTableE2ETest do
     Desktop.await_frame!(desktop, runtime, 1, native_window_id)
     Desktop.capture_fixture!(desktop, native_window_id, "data-table")
 
-    snapshot = GPUI.Runtime.snapshot(runtime)
+    snapshot = GPUI.Runtime.snapshot!(runtime)
     rows = snapshot |> GPUI.Test.tree() |> GPUI.Tree.all(type: :ui_table_row)
     assert Enum.count_until(rows, 33) <= 32
     assert Enum.any?(rows, &match?(%{attrs: %{id: "target"}}, &1))
@@ -183,7 +189,7 @@ defmodule GPUI.Native.DataTableE2ETest do
   end
 
   defp current_or_await_distant_range(runtime) do
-    range = runtime |> GPUI.Runtime.snapshot() |> hd_window_assigns() |> Map.fetch!(:range)
+    range = runtime |> GPUI.Runtime.snapshot!() |> hd_window_assigns() |> Map.fetch!(:range)
     if range.last > 99_900, do: range, else: await_distant_range(runtime)
   end
 

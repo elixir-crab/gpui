@@ -39,6 +39,8 @@ defmodule GPUI.Application do
           start: {GPUI.Runtime, :start_link, [Keyword.put(opts, :app, __MODULE__)]}
         }
       end
+
+      defoverridable child_spec: 1
     end
   end
 

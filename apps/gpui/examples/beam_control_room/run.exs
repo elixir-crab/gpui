@@ -12,7 +12,7 @@ runtime = Examples.BeamControlRoom.Runtime
 
 IO.puts("BEAM Control Room is running. Press Ctrl+C twice to exit.")
 
-GPUI.Dev.wait(runtime,
+GPUI.Dev.Reload.wait(runtime,
   files: [
     Path.join(__DIR__, "support/process_source.exs"),
     Path.join(__DIR__, "support/ets_source.exs"),

@@ -9,7 +9,7 @@ defmodule Mix.Tasks.Gpui.Dev do
       mix gpui.dev apps/gpui/examples/beam_control_room/run.exs
       mix gpui.dev apps/gpui/examples/image_lab/run.exs -- path/to/image.png
 
-  The script must call `GPUI.Dev.wait/2` with its runtime and source files.
+  The script must call `GPUI.Dev.Reload.wait/2` with its runtime and source files.
   Changes to those files are compiled in the running BEAM, then the existing
   windows are rerendered with their current assigns. Native/schema changes and
   application remount changes still require a restart.
@@ -45,7 +45,7 @@ defmodule Mix.Tasks.Gpui.Dev do
   end
 
   defp ensure_native_available! do
-    if Application.get_env(:gpui, :build_native, false) and not GPUI.Native.compiled?() do
+    if Application.get_env(:gpui, :build_native, false) and not GPUI.Native.available?() do
       Mix.raise("""
       the native GPUI runtime is not available in this build.
 

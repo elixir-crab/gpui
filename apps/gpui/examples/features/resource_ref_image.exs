@@ -13,4 +13,4 @@ Code.require_file("support/resource_ref_image.exs", __DIR__)
   )
 
 IO.puts("Resource Reference Image is running. Press Ctrl+C twice to exit.")
-GPUI.Dev.wait(runtime, files: [Path.join(__DIR__, "support/resource_ref_image.exs")])
+GPUI.Dev.Reload.wait(runtime, files: [Path.join(__DIR__, "support/resource_ref_image.exs")])

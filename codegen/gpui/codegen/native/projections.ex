@@ -9,7 +9,7 @@ defmodule GPUI.Codegen.Native.Projections do
   def schema_items(:gpui_component), do: GPUI.Codegen.Native.Schema.items()
 
   def schema_items(:vanilla) do
-    component_items = component_items(GPUI.Codegen.Native.Vanilla.ComponentDefinitions, :vanilla)
+    component_items = component_items(GPUI.Codegen.Native.Vanilla.Definitions, :vanilla)
 
     [
       type_item!(GPUI.Codegen.Native.Vanilla.SchemaTypes, :GeneratedComponentKind,

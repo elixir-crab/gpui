@@ -16,7 +16,7 @@ defmodule GPUI.Schema.Registry do
   @type provider_entry :: %{provider: schema_module(), component: Component.t()}
   @type t :: %__MODULE__{modules: [schema_module()], components: [Component.t()]}
 
-  @doc false
+  @doc "Builds an immutable registry directly from already-validated component declarations."
   @spec from_components([Component.t()]) :: t()
   def from_components(components) when is_list(components) do
     validate_components!(__MODULE__, components)

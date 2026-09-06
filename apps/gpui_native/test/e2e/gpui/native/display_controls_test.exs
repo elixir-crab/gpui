@@ -1,5 +1,11 @@
 defmodule GPUI.Native.DisplayControlsE2ETest do
-  use GPUI.Test, desktop: true
+  use ExUnit.Case, async: false
+
+  alias GPUITest.Desktop
+
+  setup context do
+    Desktop.setup(context, [])
+  end
 
   @moduletag :e2e
 
@@ -60,7 +66,7 @@ defmodule GPUI.Native.DisplayControlsE2ETest do
     window = Desktop.window!(desktop, title)
     Desktop.await_frame!(desktop, runtime, 1, window)
     Desktop.capture_fixture!(desktop, window, "display-controls")
-    assert %{windows: [%{root: %{assigns: %{copied: false}}}]} = GPUI.Runtime.snapshot(runtime)
+    assert %{windows: [%{root: %{assigns: %{copied: false}}}]} = GPUI.Runtime.snapshot!(runtime)
     assert Process.alive?(runtime)
   end
 end

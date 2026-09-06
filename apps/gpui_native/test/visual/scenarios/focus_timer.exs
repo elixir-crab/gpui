@@ -1,21 +1,21 @@
 GPUITest.Examples.load!(:focus_timer)
 
 defmodule GPUITest.Visual.FocusTimer.Scenario do
-  @behaviour GPUI.Dev.Visual.Scenario
+  @behaviour GPUI.Maintainer.Visual.Scenario
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def id, do: :focus_timer
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def app, do: GettingStarted.FocusTimer.App
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def args(_theme), do: %{seconds: 2}
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def title, do: "Focus Timer"
 
-  @impl GPUI.Dev.Visual.Scenario
+  @impl GPUI.Maintainer.Visual.Scenario
   def captures do
     [
       %{name: "ready"},

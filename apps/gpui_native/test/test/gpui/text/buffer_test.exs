@@ -69,7 +69,7 @@ defmodule GPUI.Text.BufferTest do
     }
 
     assert_raise ErlangError, ~r/Could not decode field :edits/, fn ->
-      GPUI.Native.text_buffer_transact(ref, %{
+      GPUI.Native.Backend.text_buffer_transact(ref, %{
         id: "missing-range-end",
         base_revision: 0,
         origin: "external",
@@ -79,7 +79,7 @@ defmodule GPUI.Text.BufferTest do
     end
 
     assert_raise ErlangError, ~r/Could not decode field :selections/, fn ->
-      GPUI.Native.text_buffer_transact(ref, %{
+      GPUI.Native.Backend.text_buffer_transact(ref, %{
         id: "invalid-selection-position",
         base_revision: 0,
         origin: "external",
