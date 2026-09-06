@@ -10,14 +10,6 @@ const COMMAND_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 #[cfg(feature = "native-test")]
 const MAX_PENDING_COMMANDS: usize = 64;
 
-#[cfg(not(feature = "native-test"))]
-pub(crate) struct TestBounds {
-    pub(crate) x: f64,
-    pub(crate) y: f64,
-    pub(crate) width: f64,
-    pub(crate) height: f64,
-}
-
 #[cfg(feature = "native-test")]
 type TestCommandReply<T> = std::sync::mpsc::SyncSender<Result<T, String>>;
 

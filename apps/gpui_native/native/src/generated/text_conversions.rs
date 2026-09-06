@@ -90,6 +90,14 @@ fn from_core_result(value: core::TransactionResult) -> TransactionResult {
         selections: value.selections.into_iter().map(from_core_selection).collect(),
     }
 }
+#[cfg(feature = "components")]
+fn no_change_error() -> TextBufferError {
+    TextBufferError::NoChange
+}
+#[cfg(not(feature = "components"))]
+fn no_change_error() -> TextBufferError {
+    TextBufferError::TransactionConflict
+}
 fn map_error(error: core::Error) -> TextBufferError {
     match error {
         core::Error::InvalidPosition => TextBufferError::InvalidPosition,

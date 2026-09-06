@@ -132,16 +132,6 @@ impl TextBufferResource {
 
 include!("generated/text_conversions.rs");
 
-#[cfg(feature = "components")]
-fn no_change_error() -> TextBufferError {
-    TextBufferError::NoChange
-}
-
-#[cfg(not(feature = "components"))]
-fn no_change_error() -> TextBufferError {
-    TextBufferError::TransactionConflict
-}
-
 #[cfg(any(test, feature = "components"))]
 pub(crate) fn position_to_byte_offset(
     text: &str,

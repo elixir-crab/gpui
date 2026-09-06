@@ -104,6 +104,12 @@ defmodule GPUI.Codegen.Native.TextConversions do
     )
   end
 
+  @spec no_change_error() :: R.path(:TextBufferError)
+  @cfg feature: "components"
+  defrustp(no_change_error(), do: enum_variant(TextBufferError, :no_change))
+  @cfg not: [feature: "components"]
+  defrustp(no_change_error(), do: enum_variant(TextBufferError, :transaction_conflict))
+
   @spec items() :: [RustQ.Rust.AST.item()]
   def items do
     Enum.map(MetaAST.functions(__MODULE__), fn

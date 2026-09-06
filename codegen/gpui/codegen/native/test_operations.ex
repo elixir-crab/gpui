@@ -150,6 +150,46 @@ defmodule GPUI.Codegen.Native.TestOperations do
     {:ok, {Atoms.error(), "native_test_disabled"}.encode(env)}
   end
 
+  @spec native_test_idle_impl(
+          R.path(:Env, R.lifetime(:a)),
+          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>")
+        ) :: R.nif_result(term())
+  @cfg feature: "native-test"
+  defrust(native_test_idle_impl(env, session), do: encode_unit_result(env, idle(ref(session))))
+  @cfg not: [feature: "native-test"]
+  defrust(native_test_idle_impl(env, _session),
+    do: {:ok, {Atoms.error(), "native_test_disabled"}.encode(env)}
+  )
+
+  @spec native_test_stop_impl(
+          R.path(:Env, R.lifetime(:a)),
+          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>")
+        ) :: R.nif_result(term())
+  @cfg feature: "native-test"
+  defrust(native_test_stop_impl(env, session), do: encode_unit_result(env, stop(ref(session))))
+  @cfg not: [feature: "native-test"]
+  defrust(native_test_stop_impl(env, _session),
+    do: {:ok, {Atoms.error(), "native_test_disabled"}.encode(env)}
+  )
+
+  @spec native_test_bounds_impl(
+          R.path(:Env, R.lifetime(:a)),
+          R.raw(:"ResourceArc<native_test::NativeTestSessionResource>"),
+          R.path(:TargetRequest)
+        ) :: R.nif_result(term())
+  @cfg feature: "native-test"
+  defrust native_test_bounds_impl(env, session, request) do
+    case bounds(ref(session), request.target) do
+      {:ok, value} -> {:ok, {Atoms.ok(), value.x, value.y, value.width, value.height}.encode(env)}
+      {:error, reason} -> {:ok, {Atoms.error(), reason}.encode(env)}
+    end
+  end
+
+  @cfg not: [feature: "native-test"]
+  defrust(native_test_bounds_impl(env, _session, _request),
+    do: {:ok, {Atoms.error(), "native_test_disabled"}.encode(env)}
+  )
+
   @spec items() :: [RustQ.Rust.AST.item()]
   def items, do: Enum.map(MetaAST.functions(__MODULE__), &%{&1 | vis: :crate})
 end
