@@ -2,12 +2,15 @@ use crate::*;
 
 #[cfg(feature = "native-test")]
 mod generated_test_operations {
-    use crate::native_test::{click, focus};
+    use crate::native_test::{advance, click, focus, input, key};
     use crate::*;
     include!("generated/test_operations.rs");
 }
 #[cfg(feature = "native-test")]
-pub(crate) use generated_test_operations::{native_test_click_impl, native_test_focus_impl};
+pub(crate) use generated_test_operations::{
+    native_test_advance_impl, native_test_click_impl, native_test_focus_impl,
+    native_test_input_impl, native_test_key_impl,
+};
 
 pub(crate) fn host_info_impl<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
     #[cfg(feature = "gpui-component-host")]
@@ -515,19 +518,14 @@ pub(crate) fn native_test_scroll_impl<'a>(
     encode_command_result(env, result.map(|()| atoms::ok()))
 }
 
+#[cfg(not(feature = "native-test"))]
 pub(crate) fn native_test_input_impl<'a>(
     env: Env<'a>,
     test_id: ResourceArc<native_test::NativeTestSessionResource>,
     request: InputRequest,
 ) -> NifResult<Term<'a>> {
-    let text = request.text;
-    #[cfg(feature = "native-test")]
-    let result = native_test::input(&test_id, text);
-    #[cfg(not(feature = "native-test"))]
-    let _ = (test_id, text);
-    #[cfg(not(feature = "native-test"))]
-    let result: Result<(), String> = Err("native_test_disabled".to_string());
-    encode_command_result(env, result.map(|()| atoms::ok()))
+    let _ = (test_id, request);
+    Ok((atoms::error(), "native_test_disabled").encode(env))
 }
 
 pub(crate) fn native_test_resize_impl<'a>(
@@ -578,34 +576,24 @@ pub(crate) fn native_test_idle_impl<'a>(
     encode_command_result(env, result.map(|()| atoms::ok()))
 }
 
+#[cfg(not(feature = "native-test"))]
 pub(crate) fn native_test_advance_impl<'a>(
     env: Env<'a>,
     test_id: ResourceArc<native_test::NativeTestSessionResource>,
     request: AdvanceRequest,
 ) -> NifResult<Term<'a>> {
-    let milliseconds = request.milliseconds;
-    #[cfg(feature = "native-test")]
-    let result = native_test::advance(&test_id, milliseconds);
-    #[cfg(not(feature = "native-test"))]
-    let _ = (test_id, milliseconds);
-    #[cfg(not(feature = "native-test"))]
-    let result: Result<(), String> = Err("native_test_disabled".to_string());
-    encode_command_result(env, result.map(|()| atoms::ok()))
+    let _ = (test_id, request);
+    Ok((atoms::error(), "native_test_disabled").encode(env))
 }
 
+#[cfg(not(feature = "native-test"))]
 pub(crate) fn native_test_key_impl<'a>(
     env: Env<'a>,
     test_id: ResourceArc<native_test::NativeTestSessionResource>,
     request: KeyRequest,
 ) -> NifResult<Term<'a>> {
-    let key = request.key;
-    #[cfg(feature = "native-test")]
-    let result = native_test::key(&test_id, key);
-    #[cfg(not(feature = "native-test"))]
-    let _ = (test_id, key);
-    #[cfg(not(feature = "native-test"))]
-    let result: Result<(), String> = Err("native_test_disabled".to_string());
-    encode_command_result(env, result.map(|()| atoms::ok()))
+    let _ = (test_id, request);
+    Ok((atoms::error(), "native_test_disabled").encode(env))
 }
 
 pub(crate) fn native_test_events_impl<'a>(

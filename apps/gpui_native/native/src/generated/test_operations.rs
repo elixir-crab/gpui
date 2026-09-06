@@ -20,3 +20,33 @@ pub(crate) fn native_test_click_impl<'a>(
         Err(reason) => Ok((atoms::error(), reason).encode(env)),
     }
 }
+pub(crate) fn native_test_input_impl<'a>(
+    env: Env<'a>,
+    session: ResourceArc<native_test::NativeTestSessionResource>,
+    request: InputRequest,
+) -> NifResult<Term<'a>> {
+    match input(&session, request.text) {
+        Ok(_unit) => Ok((atoms::ok(), atoms::ok()).encode(env)),
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+    }
+}
+pub(crate) fn native_test_key_impl<'a>(
+    env: Env<'a>,
+    session: ResourceArc<native_test::NativeTestSessionResource>,
+    request: KeyRequest,
+) -> NifResult<Term<'a>> {
+    match key(&session, request.key) {
+        Ok(_unit) => Ok((atoms::ok(), atoms::ok()).encode(env)),
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+    }
+}
+pub(crate) fn native_test_advance_impl<'a>(
+    env: Env<'a>,
+    session: ResourceArc<native_test::NativeTestSessionResource>,
+    request: AdvanceRequest,
+) -> NifResult<Term<'a>> {
+    match advance(&session, request.milliseconds) {
+        Ok(_unit) => Ok((atoms::ok(), atoms::ok()).encode(env)),
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+    }
+}
