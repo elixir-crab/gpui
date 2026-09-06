@@ -50,8 +50,10 @@ pub(crate) fn decode_color_value<'a>(unit: Term<'a>, value: Term<'a>) -> Option<
         Ok(color) => {
             if atom_eq(unit, "rgb") {
                 if color <= 16777215 { Some(color * 256 + 255) } else { None }
+            } else if atom_eq(unit, "rgba") {
+                Some(color)
             } else {
-                if atom_eq(unit, "rgba") { Some(color) } else { None }
+                None
             }
         }
         Err(_reason) => None,

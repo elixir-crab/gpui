@@ -130,47 +130,7 @@ impl TextBufferResource {
     }
 }
 
-fn to_core_position(value: TextPosition) -> core::Position {
-    core::Position {
-        line: value.line,
-        utf16_offset: value.utf16_offset,
-    }
-}
-fn from_core_position(value: core::Position) -> TextPosition {
-    TextPosition {
-        line: value.line,
-        utf16_offset: value.utf16_offset,
-    }
-}
-fn to_core_range(value: TextRange) -> core::Range {
-    core::Range {
-        start: to_core_position(value.start),
-        end: to_core_position(value.end),
-    }
-}
-#[cfg(feature = "components")]
-fn from_core_range(value: core::Range) -> TextRange {
-    TextRange {
-        start: from_core_position(value.start),
-        end: from_core_position(value.end),
-    }
-}
-fn to_core_selection(value: TextSelection) -> core::Selection {
-    core::Selection {
-        id: value.id,
-        anchor: to_core_position(value.anchor),
-        head: to_core_position(value.head),
-        primary: value.primary,
-    }
-}
-fn from_core_selection(value: core::Selection) -> TextSelection {
-    TextSelection {
-        id: value.id,
-        anchor: from_core_position(value.anchor),
-        head: from_core_position(value.head),
-        primary: value.primary,
-    }
-}
+include!("generated/text_conversions.rs");
 fn to_core_transaction(value: TextTransaction) -> core::Transaction {
     core::Transaction {
         id: value.id,
@@ -288,4 +248,50 @@ pub(crate) fn byte_range_to_selection(
     core::byte_range_to_selection(text, range)
         .map(from_core_selection)
         .map_err(map_error)
+}
+
+#[cfg(test)]
+mod conversion_tests {
+    use super::*;
+
+    #[test]
+    fn selection_round_trip_preserves_identity_direction_and_primary_flag() {
+        let selection = TextSelection {
+            id: "secondary-λ".into(),
+            anchor: TextPosition {
+                line: u64::MAX,
+                utf16_offset: 4,
+            },
+            head: TextPosition {
+                line: 2,
+                utf16_offset: 1,
+            },
+            primary: false,
+        };
+        assert_eq!(
+            from_core_selection(to_core_selection(selection.clone())),
+            selection
+        );
+    }
+
+    #[test]
+    fn range_conversion_preserves_endpoints_without_normalizing() {
+        let range = TextRange {
+            start: TextPosition {
+                line: 9,
+                utf16_offset: 4,
+            },
+            end: TextPosition {
+                line: 2,
+                utf16_offset: 1,
+            },
+        };
+        let converted = to_core_range(range.clone());
+        assert_eq!(converted.start.line, range.start.line);
+        assert_eq!(converted.start.utf16_offset, range.start.utf16_offset);
+        assert_eq!(converted.end.line, range.end.line);
+        assert_eq!(converted.end.utf16_offset, range.end.utf16_offset);
+        #[cfg(feature = "components")]
+        assert_eq!(from_core_range(converted), range);
+    }
 }

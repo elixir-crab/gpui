@@ -48,6 +48,7 @@ require_file("codegen/gpui/codegen/native/style_adapter.ex")
 require_file("codegen/gpui/codegen/native/test_boundary.ex")
 require_file("codegen/gpui/codegen/native/text_boundary.ex")
 require_file("codegen/gpui/codegen/native/text_types.ex")
+require_file("codegen/gpui/codegen/native/text_conversions.ex")
 require_file("codegen/gpui/codegen/native/window.ex")
 require_file("codegen/gpui/codegen/native/atoms.ex")
 require_file("codegen/gpui/codegen/native/resources.ex")
@@ -88,6 +89,10 @@ end
 
 rust "apps/gpui_native/native/src/generated/text_boundary.rs" do
   RustQ.Native.items(GPUI.Codegen.Native.TextBoundary)
+end
+
+rust "apps/gpui_native/native/src/generated/text_conversions.rs" do
+  GPUI.Codegen.Native.TextConversions.items()
 end
 
 rust "apps/gpui_native/native/src/generated/text_types.rs" do
