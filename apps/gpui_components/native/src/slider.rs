@@ -13,6 +13,12 @@ use gpui_core::Length;
 
 pub type SharedEvent = Arc<Mutex<Option<String>>>;
 
+include!("generated/slider.rs");
+
+#[cfg(test)]
+#[path = "slider_behavior_tests.rs"]
+mod behavior_tests;
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SliderConfig {
     pub min: f32,
@@ -94,50 +100,7 @@ pub fn create<T: 'static>(
     let event_binding = binding.clone();
     let event_release = release_event.clone();
     let subscription = cx.subscribe_in(&state, window, move |_, _, event: &SliderEvent, _, _| {
-        let (change, event_name, value, track) = match event {
-            SliderEvent::Change(value) => {
-                let value = number(*value);
-                let event = event_binding.lock().ok().and_then(|mut binding| {
-                    binding
-                        .event
-                        .clone()
-                        .inspect(|_| binding.push_pending(value))
-                });
-                (true, event, value, true)
-            }
-            SliderEvent::Release(value) => {
-                let value = number(*value);
-                let event = event_release.lock().ok().and_then(|event| event.clone());
-                let track = event_binding
-                    .lock()
-                    .map(|mut binding| {
-                        if binding.event.is_none() && event.is_some() {
-                            binding.push_pending(value);
-                            true
-                        } else {
-                            false
-                        }
-                    })
-                    .unwrap_or(false);
-                (false, event, value, track)
-            }
-        };
-        if let Some(event) = event_name {
-            let value = ComponentValueEvent {
-                envelope: ComponentEventEnvelope { window_id, event },
-                value: ComponentValue::Number(value),
-            };
-            let result = host.emit(if change {
-                ComponentEvent::Change(value)
-            } else {
-                ComponentEvent::Release(value)
-            });
-            if result.is_err() && track {
-                if let Ok(mut binding) = event_binding.lock() {
-                    binding.pop_pending();
-                }
-            }
-        }
+        handle_slider(&event_binding, &event_release, &host, window_id, event);
     });
     ComponentSlider {
         state,

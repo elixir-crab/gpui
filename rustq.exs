@@ -32,6 +32,7 @@ require_file("codegen/gpui/codegen/native/boundary.ex")
 require_file("codegen/gpui/codegen/native/component_contracts.ex")
 require_file("codegen/gpui/codegen/native/component_host_contract/definitions.ex")
 require_file("codegen/gpui/codegen/native/component_host_contract.ex")
+require_file("codegen/gpui/codegen/native/slider.ex")
 require_file("codegen/gpui/codegen/native/component_adapters.ex")
 require_file("codegen/gpui/codegen/native/component_event_transport.ex")
 require_file("codegen/gpui/codegen/native/component_nodes.ex")
@@ -191,6 +192,10 @@ end
 rust "gpui-component-host-contract",
      "apps/gpui_components/native/src/generated/host_contract.rs" do
   GPUI.Codegen.Native.ComponentHostContract.items()
+end
+
+rust "gpui-component-slider", "apps/gpui_components/native/src/generated/slider.rs" do
+  MetaAST.functions(GPUI.Codegen.Native.Slider)
 end
 
 rust "gpui-component-nodes", "apps/gpui_components/native/src/generated/nodes.rs" do
