@@ -157,12 +157,6 @@ defmodule GPUITest.Desktop do
     refute_receive {:gpui, ^runtime, %GPUI.Runtime.Update{}}, 0
   end
 
-  def eventually(%__MODULE__{} = desktop, runtime, fun, timeout \\ @update_timeout) do
-    ensure_attached!(desktop, runtime)
-    deadline = System.monotonic_time(:millisecond) + timeout
-    await_update(runtime, fun, deadline, nil)
-  end
-
   @impl GenServer
   def init(opts) do
     owner = Keyword.fetch!(opts, :owner)
@@ -267,41 +261,6 @@ defmodule GPUITest.Desktop do
 
   defp call(%__MODULE__{} = desktop, command),
     do: GenServer.call(desktop.pid, {:command, desktop.ref, command}, 10_000)
-
-  defp ensure_attached!(desktop, runtime) do
-    if runtime_attached?(desktop, runtime),
-      do: :ok,
-      else: raise(ArgumentError, "runtime is not owned by this desktop session")
-  end
-
-  defp runtime_attached?(desktop, runtime), do: call(desktop, {:attached?, runtime})
-
-  defp await_update(runtime, fun, deadline, last_error) do
-    case evaluate(fun) do
-      {:ok, value} when value not in [false, nil] ->
-        value
-
-      result ->
-        last_error = if match?({:error, _}, result), do: elem(result, 1), else: last_error
-        remaining = max(deadline - System.monotonic_time(:millisecond), 0)
-
-        receive do
-          {:gpui, ^runtime, %GPUI.Runtime.Update{}} ->
-            await_update(runtime, fun, deadline, last_error)
-        after
-          remaining ->
-            flunk("runtime did not reach the expected state; last error: #{inspect(last_error)}")
-        end
-    end
-  end
-
-  defp evaluate(fun) do
-    {:ok, fun.()}
-  rescue
-    error in [ExUnit.AssertionError, MatchError] -> {:error, error}
-  catch
-    :exit, reason -> {:error, reason}
-  end
 
   defp flush_updates(source) do
     receive do

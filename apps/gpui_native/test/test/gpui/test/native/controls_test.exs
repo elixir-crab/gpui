@@ -1,6 +1,33 @@
 defmodule GPUI.Test.Native.ControlsTest do
   use GPUI.Test, native: [size: {320, 160}]
 
+  defmodule BasicView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(assigns) do
+      ~GPUI"""
+      <div class="flex flex-col gap-4">
+        <GPUI.UI.button id="increment" label="Increment" phx-click="increment" />
+        <GPUI.UI.checkbox id="enabled" label="Enabled" checked={assigns.enabled} phx-change="toggle" />
+      </div>
+      """
+    end
+  end
+
+  test "button and checkbox emit pointer events with controlled state", %{ui: ui} do
+    render(ui, BasicView, enabled: false)
+    settle(ui)
+    click(ui, "increment")
+    assert_receive {:gpui, ^ui, {:event, %{type: :click, event: "increment"}}}
+    click(ui, "enabled")
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "toggle", value: true}}}
+    render(ui, BasicView, enabled: true)
+    settle(ui)
+    click(ui, "enabled")
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "toggle", value: false}}}
+  end
+
   defmodule InputView do
     use GPUI.View
 
@@ -105,6 +132,20 @@ defmodule GPUI.Test.Native.ControlsTest do
     focus(ui, "motion-button")
     press(ui, :enter)
 
+    assert_receive {:gpui, ^ui, {:event, %{type: :click, event: "activate"}}}
+  end
+
+  test "animated buttons retain pointer activation across replayed motion", %{ui: ui} do
+    render(ui, MotionButtonView, motion_request: 1)
+    advance(ui, 250)
+    click(ui, "motion-button")
+    assert_receive {:gpui, ^ui, {:event, %{type: :click, event: "activate"}}}
+
+    render(ui, MotionButtonView, motion_request: 2)
+    advance(ui, 250)
+    click(ui, "motion-button")
+    assert_receive {:gpui, ^ui, {:event, %{type: :click, event: "activate"}}}
+    click(ui, "motion-button")
     assert_receive {:gpui, ^ui, {:event, %{type: :click, event: "activate"}}}
   end
 

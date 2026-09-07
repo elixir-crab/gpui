@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.3">
+    <meta name="project" content="gpui v0.2.0-rc.2">
+
+
+    <title>Resources and display actions — gpui v0.2.0-rc.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-NHQLCD6Y.css" />
+
+    <script defer src="dist/sidebar_items-5E369AEC.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-Y2MUTVIN.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="https://github.com/elixir-crab/gpui" class="sidebar-projectName" translate="no">
+gpui
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.2.0-rc.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-extra" id="main" data-type="extras">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of gpui</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>Resources and display actions</h1>
+
+<a href="resources-and-display-actions.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+      <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/guides/ui/resources-and-display-actions.md#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+<p>File pickers, clipboards, and external paths belong to the machine running the
+<a href="GPUI.Display.html"><code class="inline">GPUI.Display</code></a>. This matters for remote applications: a user's display machine
+may not share a filesystem or clipboard with the BEAM host.</p><p>GPUI transfers bounded facts rather than product policy. The framework does not
+infer MIME types, open dropped paths, upload attachments, traverse directories,
+or decide whether application code should trust a selected resource.</p><h2 id="display-machine-ownership" class="section-heading"><a href="#display-machine-ownership" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Display-machine ownership</span></h2><p>Treat every external path as meaningful only on the display machine. Application
+code remains responsible for:</p><ul><li>file type and size validation;</li><li>reading files and handling permissions;</li><li>upload and attachment lifecycle;</li><li>MIME and application-format interpretation;</li><li>project-relative path conversion;</li><li>command execution and security policy.</li></ul><p>When an application needs portable bytes rather than a display-local path, use
+the bounded file-picker action described below. It reads on the display machine
+and emits bytes through the normal event path.</p><h2 id="read-a-selected-file" class="section-heading"><a href="#read-a-selected-file" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Read a selected file</span></h2><p><code class="inline">phx-file-read</code> on <code class="inline">button/1</code> opens the platform picker on the display machine,
+reads one selected file, and emits bytes rather than a path:</p><pre><code class="makeup elixir" translate="no"><span class="o">&lt;</span><span class="nc">UI</span><span class="o">.</span><span class="n">button</span><span class="w">
+  </span><span class="n">id</span><span class="o">=</span><span class="s">&quot;source-image&quot;</span><span class="w">
+  </span><span class="n">label</span><span class="o">=</span><span class="s">&quot;Choose image&quot;</span><span class="w">
+  </span><span class="n">file_prompt</span><span class="o">=</span><span class="s">&quot;Choose an image&quot;</span><span class="w">
+  </span><span class="n">file_max_bytes</span><span class="o">=</span><span class="p" data-group-id="4455144919-1">{</span><span class="mi">25</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1_024</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1_024</span><span class="p" data-group-id="4455144919-1">}</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">file</span><span class="o">-</span><span class="n">read</span><span class="o">=</span><span class="s">&quot;image-selected&quot;</span><span class="w">
+</span><span class="o">/</span><span class="o">&gt;</span></code></pre><p><code class="inline">file_max_bytes</code> defaults to 10 MiB and is bounded to <code class="inline">1..25 MiB</code>. The event
+value is one of:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="0290162231-1">%{</span><span class="w">
+  </span><span class="ss">operation_id</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span><span class="w">
+  </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="ss">:selected</span><span class="p">,</span><span class="w">
+  </span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;photo.png&quot;</span><span class="p">,</span><span class="w">
+  </span><span class="ss">size</span><span class="p">:</span><span class="w"> </span><span class="mi">12_345</span><span class="p">,</span><span class="w">
+  </span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="n">encoded_bytes</span><span class="w">
+</span><span class="p" data-group-id="0290162231-1">}</span><span class="w">
+
+</span><span class="p" data-group-id="0290162231-2">%{</span><span class="ss">operation_id</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="ss">:cancelled</span><span class="p" data-group-id="0290162231-2">}</span><span class="w">
+</span><span class="p" data-group-id="0290162231-3">%{</span><span class="ss">operation_id</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="ss">reason</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;permission denied&quot;</span><span class="p" data-group-id="0290162231-3">}</span></code></pre><p>The stable operation ID distinguishes separate picker requests. <code class="inline">name</code> is the
+selected display-side basename, not an application-authoritative identity.
+Validate the bytes and format before using them.</p><p>If the button also declares clipboard and ordinary click events, clipboard
+operations run first, then the file read, then <code class="inline">phx-click</code>.</p><h2 id="read-and-write-clipboard-text" class="section-heading"><a href="#read-and-write-clipboard-text" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Read and write clipboard text</span></h2><p>An explicit clipboard-read action retrieves bounded text from the display
+machine:</p><pre><code class="makeup elixir" translate="no"><span class="o">&lt;</span><span class="nc">UI</span><span class="o">.</span><span class="n">button</span><span class="w">
+  </span><span class="n">id</span><span class="o">=</span><span class="s">&quot;paste&quot;</span><span class="w">
+  </span><span class="n">label</span><span class="o">=</span><span class="s">&quot;Paste&quot;</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">clipboard</span><span class="o">-</span><span class="n">read</span><span class="o">=</span><span class="s">&quot;clipboard-read&quot;</span><span class="w">
+</span><span class="o">/</span><span class="o">&gt;</span></code></pre><p>The handler receives a canonical public payload:</p><pre><code class="makeup elixir" translate="no"><span class="kd">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p" data-group-id="8414572047-1">(</span><span class="w">
+      </span><span class="s">&quot;clipboard-read&quot;</span><span class="p">,</span><span class="w">
+      </span><span class="p" data-group-id="8414572047-2">%{</span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="8414572047-3">%</span><span class="nc" data-group-id="8414572047-3">GPUI.Transfer.Payload</span><span class="p" data-group-id="8414572047-3">{</span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="n">text</span><span class="p">,</span><span class="w"> </span><span class="ss">external_paths</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="8414572047-4">[</span><span class="p" data-group-id="8414572047-4">]</span><span class="p" data-group-id="8414572047-3">}</span><span class="p" data-group-id="8414572047-2">}</span><span class="p">,</span><span class="w">
+      </span><span class="n">assigns</span><span class="w">
+    </span><span class="p" data-group-id="8414572047-1">)</span><span class="w"> </span><span class="k" data-group-id="8414572047-5">do</span><span class="w">
+  </span><span class="p" data-group-id="8414572047-6">{</span><span class="ss">:noreply</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8414572047-7">%{</span><span class="n">assigns</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">pasted_text</span><span class="p">:</span><span class="w"> </span><span class="n">text</span><span class="p" data-group-id="8414572047-7">}</span><span class="p" data-group-id="8414572047-6">}</span><span class="w">
+</span><span class="k" data-group-id="8414572047-5">end</span></code></pre><p>Clipboard text is valid UTF-8 and bounded to 1 MiB. A non-text, empty, or
+oversized clipboard produces <code class="inline">text: nil</code>; arbitrary MIME bytes are not exposed.
+When <code class="inline">phx-click</code> is also present, the clipboard event is emitted first.</p><p>Write bounded text by pairing <code class="inline">clipboard_text</code> with
+<code class="inline">phx-clipboard-write</code>:</p><pre><code class="makeup elixir" translate="no"><span class="o">&lt;</span><span class="nc">UI</span><span class="o">.</span><span class="n">button</span><span class="w">
+  </span><span class="n">id</span><span class="o">=</span><span class="s">&quot;copy-css&quot;</span><span class="w">
+  </span><span class="n">label</span><span class="o">=</span><span class="s">&quot;Copy CSS&quot;</span><span class="w">
+  </span><span class="n">clipboard_text</span><span class="o">=</span><span class="p" data-group-id="8981122884-1">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">css</span><span class="p" data-group-id="8981122884-1">}</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">clipboard</span><span class="o">-</span><span class="n">write</span><span class="o">=</span><span class="s">&quot;css-copied&quot;</span><span class="w">
+</span><span class="o">/</span><span class="o">&gt;</span></code></pre><p>The named event acknowledges that the platform write was requested. It does not
+turn clipboard contents into application-owned state or promise that another
+process has consumed them.</p><p>Native editable text keeps its immediate platform copy, paste, selection, and
+IME behavior. Use explicit clipboard payload events only when application policy
+needs to inspect text before accepting it.</p><h2 id="external-path-drops" class="section-heading"><a href="#external-path-drops" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">External path drops</span></h2><p><code class="inline">GPUI.UI.drop_target/1</code> receives external-path drag sessions without reading the
+files:</p><pre><code class="makeup elixir" translate="no"><span class="o">&lt;</span><span class="nc">UI</span><span class="o">.</span><span class="n">drop_target</span><span class="w">
+  </span><span class="n">id</span><span class="o">=</span><span class="s">&quot;attachments&quot;</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">drag</span><span class="o">-</span><span class="n">enter</span><span class="o">=</span><span class="s">&quot;attachments-entered&quot;</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">drag</span><span class="o">-</span><span class="n">move</span><span class="o">=</span><span class="s">&quot;attachments-moved&quot;</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">drag</span><span class="o">-</span><span class="n">leave</span><span class="o">=</span><span class="s">&quot;attachments-left&quot;</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">drop</span><span class="o">=</span><span class="s">&quot;attachments-dropped&quot;</span><span class="w">
+  </span><span class="n">class</span><span class="o">=</span><span class="s">&quot;p-6 border rounded-lg&quot;</span><span class="w">
+</span><span class="o">&gt;</span><span class="w">
+  </span><span class="o">&lt;</span><span class="n">text</span><span class="o">&gt;</span><span class="nc">Drop</span><span class="w"> </span><span class="n">files</span><span class="w"> </span><span class="n">here</span><span class="o">&lt;</span><span class="o">/</span><span class="n">text</span><span class="o">&gt;</span><span class="w">
+</span><span class="o">&lt;</span><span class="o">/</span><span class="nc">UI</span><span class="o">.</span><span class="n">drop_target</span><span class="o">&gt;</span></code></pre><p>Handlers receive a normalized <a href="GPUI.Transfer.Event.html"><code class="inline">GPUI.Transfer.Event</code></a>:</p><pre><code class="makeup elixir" translate="no"><span class="kd">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p" data-group-id="0255821677-1">(</span><span class="w">
+      </span><span class="s">&quot;attachments-dropped&quot;</span><span class="p">,</span><span class="w">
+      </span><span class="p" data-group-id="0255821677-2">%{</span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0255821677-3">%</span><span class="nc" data-group-id="0255821677-3">GPUI.Transfer.Event</span><span class="p" data-group-id="0255821677-3">{</span><span class="p" data-group-id="0255821677-3">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">transfer</span><span class="p" data-group-id="0255821677-2">}</span><span class="p">,</span><span class="w">
+      </span><span class="n">assigns</span><span class="w">
+    </span><span class="p" data-group-id="0255821677-1">)</span><span class="w"> </span><span class="k" data-group-id="0255821677-4">do</span><span class="w">
+  </span><span class="n">paths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">transfer</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">external_paths</span><span class="w">
+  </span><span class="p" data-group-id="0255821677-5">{</span><span class="ss">:noreply</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0255821677-6">%{</span><span class="n">assigns</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="ss">pending_display_paths</span><span class="p">:</span><span class="w"> </span><span class="n">paths</span><span class="p" data-group-id="0255821677-6">}</span><span class="p" data-group-id="0255821677-5">}</span><span class="w">
+</span><span class="k" data-group-id="0255821677-4">end</span></code></pre><p>A transfer event contains:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="9222908043-1">%</span><span class="nc" data-group-id="9222908043-1">GPUI.Transfer.Event</span><span class="p" data-group-id="9222908043-1">{</span><span class="w">
+  </span><span class="ss">session_id</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span><span class="w">
+  </span><span class="ss">target_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;attachments&quot;</span><span class="p">,</span><span class="w">
+  </span><span class="ss">position</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="9222908043-2">{</span><span class="mf">320.0</span><span class="p">,</span><span class="w"> </span><span class="mf">180.0</span><span class="p" data-group-id="9222908043-2">}</span><span class="p">,</span><span class="w">
+  </span><span class="ss">coordinate_space</span><span class="p">:</span><span class="w"> </span><span class="ss">:window_native_pixels</span><span class="p">,</span><span class="w">
+  </span><span class="ss">payload</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="9222908043-3">%</span><span class="nc" data-group-id="9222908043-3">GPUI.Transfer.Payload</span><span class="p" data-group-id="9222908043-3">{</span><span class="w">
+    </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+    </span><span class="ss">external_paths</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="9222908043-4">[</span><span class="s">&quot;/display/tmp/document.pdf&quot;</span><span class="p" data-group-id="9222908043-4">]</span><span class="w">
+  </span><span class="p" data-group-id="9222908043-3">}</span><span class="w">
+</span><span class="p" data-group-id="9222908043-1">}</span></code></pre><p><code class="inline">:drag_enter</code> and <code class="inline">:drop</code> include the bounded payload. <code class="inline">:drag_move</code> carries the
+latest position without repeating paths and may be display-side coalesced.
+<code class="inline">:drag_leave</code> terminates the session. The renderer-owned monotonic session ID
+prevents stale movement or leave events from being associated with a later
+drag.</p><p>Payload bounds are:</p><table><thead><tr><th style="text-align: left;">Value</th><th style="text-align: right;">Bound</th></tr></thead><tbody><tr><td style="text-align: left;">Text</td><td style="text-align: right;">1 MiB</td></tr><tr><td style="text-align: left;">Unique external paths</td><td style="text-align: right;">64</td></tr><tr><td style="text-align: left;">One UTF-8 path</td><td style="text-align: right;">4 KiB</td></tr><tr><td style="text-align: left;">All unique paths</td><td style="text-align: right;">256 KiB</td></tr><tr><td style="text-align: left;">Stable target ID</td><td style="text-align: right;">128 bytes</td></tr></tbody></table><p>Duplicate paths are removed in first-seen order. Invalid or unrepresentable
+UTF-8 paths are rejected rather than converted lossily.</p><h2 id="remote-behavior" class="section-heading"><a href="#remote-behavior" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Remote behavior</span></h2><p>File reads, clipboard operations, and drops occur where the display runs. Remote
+paths are never rewritten as BEAM-host paths. Bounded bytes and canonical event
+values travel through the ordinary remote protocol.</p><p>Remote clipboard and external-path support use additive capabilities. A peer
+that did not advertise the relevant capability cannot send the corresponding
+event. Capabilities are renegotiated after reconnection before queued transfer
+events resume.</p><p>Applications should not branch their window or element topology based on where
+the display runs. Provide an ordinary controlled fallback when a display cannot
+perform an optional platform action.</p><h2 id="images-and-raster-resources" class="section-heading"><a href="#images-and-raster-resources" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Images and raster resources</span></h2><p><code class="inline">GPUI.Image.decode/1</code> converts common encoded image bytes into a validated
+<a href="GPUI.Raster.html"><code class="inline">GPUI.Raster</code></a>. Decoding runs on a dirty CPU scheduler; keep file access and
+larger workflows in supervised tasks:</p><pre><code class="makeup elixir" translate="no"><span class="k">with</span><span class="w"> </span><span class="p" data-group-id="8703158946-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">raster</span><span class="p" data-group-id="8703158946-1">}</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nc">GPUI.Image</span><span class="o">.</span><span class="n">decode</span><span class="p" data-group-id="8703158946-2">(</span><span class="n">encoded_bytes</span><span class="p" data-group-id="8703158946-2">)</span><span class="w"> </span><span class="k" data-group-id="8703158946-3">do</span><span class="w">
+  </span><span class="nc">GPUI.Runtime</span><span class="o">.</span><span class="n">put_resource</span><span class="p" data-group-id="8703158946-4">(</span><span class="n">runtime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;preview&quot;</span><span class="p">,</span><span class="w"> </span><span class="nc">GPUI.Raster</span><span class="o">.</span><span class="n">to_payload</span><span class="p" data-group-id="8703158946-5">(</span><span class="n">raster</span><span class="p" data-group-id="8703158946-5">)</span><span class="p" data-group-id="8703158946-4">)</span><span class="w">
+</span><span class="k" data-group-id="8703158946-3">end</span></code></pre><p>Render a one-off inline raster with:</p><pre><code class="makeup elixir" translate="no"><span class="o">&lt;</span><span class="n">img</span><span class="w"> </span><span class="n">raster</span><span class="o">=</span><span class="p" data-group-id="8814928936-1">{</span><span class="n">raster</span><span class="p" data-group-id="8814928936-1">}</span><span class="w"> </span><span class="n">label</span><span class="o">=</span><span class="s">&quot;Preview&quot;</span><span class="w"> </span><span class="o">/</span><span class="o">&gt;</span></code></pre><p><code class="inline">label</code> provides the native accessibility name. For images retained across
+multiple view updates, install the raster once and render a reference:</p><pre><code class="makeup elixir" translate="no"><span class="o">&lt;</span><span class="n">img</span><span class="w"> </span><span class="n">raster</span><span class="o">=</span><span class="p" data-group-id="9048274254-1">{</span><span class="nc">GPUI.ResourceRef</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="9048274254-2">(</span><span class="s">&quot;preview&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">:raster</span><span class="p" data-group-id="9048274254-2">)</span><span class="p" data-group-id="9048274254-1">}</span><span class="w"> </span><span class="n">label</span><span class="o">=</span><span class="s">&quot;Preview&quot;</span><span class="w"> </span><span class="o">/</span><span class="o">&gt;</span></code></pre><p>Resource references avoid copying the complete pixel payload through each later
+snapshot and work across local and remote displays.</p><h2 id="deterministic-testing" class="section-heading"><a href="#deterministic-testing" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Deterministic testing</span></h2><p>Renderer-independent helpers exercise application policy without opening native
+pickers or touching the host clipboard:</p><pre><code class="makeup elixir" translate="no"><span class="n">file_select</span><span class="p" data-group-id="5628639931-1">(</span><span class="n">runtime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;image-selected&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;fixture.png&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">encoded_png</span><span class="p" data-group-id="5628639931-1">)</span><span class="w">
+</span><span class="n">file_cancel</span><span class="p" data-group-id="5628639931-2">(</span><span class="n">runtime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;image-selected&quot;</span><span class="p" data-group-id="5628639931-2">)</span></code></pre><p>Construct typed transfer values directly when testing drop policy:</p><pre><code class="makeup elixir" translate="no"><span class="n">payload</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GPUI.Transfer.Payload</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="7363428769-1">(</span><span class="ss">external_paths</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7363428769-2">[</span><span class="s">&quot;/display/tmp/report.csv&quot;</span><span class="p" data-group-id="7363428769-2">]</span><span class="p" data-group-id="7363428769-1">)</span><span class="w">
+
+</span><span class="n">transfer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="7363428769-3">%</span><span class="nc" data-group-id="7363428769-3">GPUI.Transfer.Event</span><span class="p" data-group-id="7363428769-3">{</span><span class="w">
+  </span><span class="ss">session_id</span><span class="p">:</span><span class="w"> </span><span class="mi">17</span><span class="p">,</span><span class="w">
+  </span><span class="ss">target_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;attachments&quot;</span><span class="p">,</span><span class="w">
+  </span><span class="ss">position</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7363428769-4">{</span><span class="mf">20.0</span><span class="p">,</span><span class="w"> </span><span class="mf">30.0</span><span class="p" data-group-id="7363428769-4">}</span><span class="p">,</span><span class="w">
+  </span><span class="ss">coordinate_space</span><span class="p">:</span><span class="w"> </span><span class="ss">:window_native_pixels</span><span class="p">,</span><span class="w">
+  </span><span class="ss">payload</span><span class="p">:</span><span class="w"> </span><span class="n">payload</span><span class="w">
+</span><span class="p" data-group-id="7363428769-3">}</span></code></pre><p>Use renderer-independent tests for bounds, normalization, routing, and
+application decisions. Use desktop E2E for real clipboard, picker, and external
+drop behavior. Deterministic native tests may cover target layout and routing,
+but they do not establish operating-system transfer facts.</p><p>See <a href="transfers.html">Transfer payload internals</a> for the pinned native capability
+analysis, renderer session mechanics, remote capability enforcement, and
+intentionally deferred formats.</p>
+
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="presentation-primitives.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Presentation primitives
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="windows-and-lifecycle.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Windows and lifecycle
+        </span>
+      </a>
+
+  </div>
+</div>
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/gpui/0.2.0-rc.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2">Hex Preview</a>
+
+                (<a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2/show/guides/ui/resources-and-display-actions.md">current file</a>)
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="gpui.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.3) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.3">
+    <meta name="project" content="gpui v0.2.0-rc.2">
+
+
+    <title>GPUI.Builder — gpui v0.2.0-rc.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-NHQLCD6Y.css" />
+
+    <script defer src="dist/sidebar_items-5E369AEC.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-Y2MUTVIN.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="https://github.com/elixir-crab/gpui" class="sidebar-projectName" translate="no">
+gpui
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.2.0-rc.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of gpui</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">GPUI.<wbr />Builder</span> 
+      <small class="app-vsn" translate="no">(gpui v0.2.0-rc.2)</small>
+
+    </h1>
+
+<a href="GPUI.Builder.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+
+      <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/../../../../apps/gpui/lib/gpui/builder.ex#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Programmatic builders for immutable <a href="GPUI.Element.html"><code class="inline">GPUI.Element</code></a> trees.</p><p>Most views use the <code class="inline">~GPUI</code> template sigil. Import this module explicitly when
+pipe-style construction is a better fit for generated or data-driven trees.</p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h2>
+<div class="summary-functions summary">
+  <h3>
+    <a href="#functions">Functions</a>
+  </h3>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#bg/2" data-no-tooltip="" translate="no">bg(element, color)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Sets background color.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#child/2" data-no-tooltip="" translate="no">child(element, child)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Adds a child to an element for pipe-style view construction.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#div/0" data-no-tooltip="" translate="no">div()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Creates a <code class="inline">div</code> element.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#div/1" data-no-tooltip="" translate="no">div(attrs)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#div/2" data-no-tooltip="" translate="no">div(attrs, list)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#flex/1" data-no-tooltip="" translate="no">flex(element)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Adds flex display style to an element.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#flex_col/1" data-no-tooltip="" translate="no">flex_col(element)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Adds column flex direction to an element.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#items_center/1" data-no-tooltip="" translate="no">items_center(element)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Centers children on the cross axis.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#justify_center/1" data-no-tooltip="" translate="no">justify_center(element)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Centers children on the main axis.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#px/1" data-no-tooltip="" translate="no">px(value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a GPUI pixel length.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#rgb/1" data-no-tooltip="" translate="no">rgb(value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Represents a GPUI RGB color.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#size/2" data-no-tooltip="" translate="no">size(element, size)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Sets width and height to the same value.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#style/3" data-no-tooltip="" translate="no">style(element, name, value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Sets a schema-backed style on an element.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#text/1" data-no-tooltip="" translate="no">text(value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Creates a text node.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="functions" class="details-list">
+    <h2 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h2>
+
+    <div class="functions-list">
+<section class="detail" id="bg/2">
+
+  <div class="detail-header">
+    <a href="#bg/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">bg(element, color)</h1>
+
+
+        <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/../../../../apps/gpui/lib/gpui/builder.ex#L81" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> bg(<a href="GPUI.Element.html#t:t/0">GPUI.Element.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()) :: <a href="GPUI.Element.html#t:t/0">GPUI.Element.t</a>()</pre>
+
+      </div>
+
+<p>Sets background color.</p>
+  </section>
+</section>
+<section class="detail" id="child/2">
+
+  <div class="detail-header">
+    <a href="#child/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">child(element, child)</h1>
+
+
+        <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/../../../../apps/gpui/lib/gpui/builder.ex#L51" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> child(<a href="GPUI.Element.html#t:t/0">GPUI.Element.t</a>(), <a href="GPUI.Element.html#t:child/0">GPUI.Element.child</a>()) :: <a href="GPUI.Element.html#t:t/0">GPUI.Element.t</a>()</pre>
+
+      </div>
+
+<p>Adds a child to an element for pipe-style view construction.</p>
+  </section>
+</section>
+<section class="detail" id="div/0">
+
+  <div class="detail-header">
+    <a href="#div/0" class="detail-link" data-no-tooltip="" aria-label="Link to this macro">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">div()</h1>
+
+        <span class="note">(macro)</span>
+
+
+        <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/../../../../apps/gpui/lib/gpui/builder.ex#L12" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Creates a <code class="inline">div</code> element.</p>
+  </section>
+</section>
+<section class="detail" id="div/1">
+
+  <div class="detail-header">
+    <a href="#div/1" class="detail-link" data-no-tooltip="" aria-label="Link to this macro">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">div(attrs)</h1>
+
+        <span class="note">(macro)</span>
+
+
+        <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/../../../../apps/gpui/lib/gpui/builder.ex#L18" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="div/2">
+
+  <div class="detail-header">
+    <a href="#div/2" class="detail-link" data-no-tooltip="" aria-label="Link to this macro">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">div(attrs, list)</h1>
+
+        <span class="note">(macro)</span>
+
+
+        <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/../../../../apps/gpui/lib/gpui/builder.ex#L34" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="flex/1">
+
+  <div class="detail-header">
+    <a href="#flex/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">flex(element)</h1>
+
+
+        <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/../../../../apps/gpui/lib/gpui/builder.ex#L65" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> flex(<a href="GPUI.Element.html#t:t/0">GPUI.Element.t</a>()) :: <a href="GPUI.Element.html#t:t/0">GPUI.Element.t</a>()</pre>
+
+      </div>
+
+<p>Adds flex display style to an element.</p>
+  </section>
+</section>
+<section class="detail" id="flex_col/1">
+
+  <div class="detail-header">
+    <a href="#flex_col/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">flex_col(element)</h1>
+
+
+        <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/../../../../apps/gpui/lib/gpui/builder.ex#L69" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> flex_col(<a href="GPUI.Element.html#t:t/0">GPUI.Element.t</a>()) :: <a href="GPUI.Element.html#t:t/0">GPUI.Element.t</a>()</pre>
+
+      </div>
+
+<p>Adds column flex direction to an element.</p>
+  </section>
+</section>
+<section class="detail" id="items_center/1">
+
+  <div class="detail-header">
+    <a href="#items_center/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">items_center(element)</h1>
+
+
+        <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/../../../../apps/gpui/lib/gpui/builder.ex#L73" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> items_center(<a href="GPUI.Element.html#t:t/0">GPUI.Element.t</a>()) :: <a href="GPUI.Element.html#t:t/0">GPUI.Element.t</a>()</pre>
+
+      </div>
+
+<p>Centers children on the cross axis.</p>
+  </section>
+</section>
+<section class="detail" id="justify_center/1">
+
+  <div class="detail-header">
+    <a href="#justify_center/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">justify_center(element)</h1>
+
+
+        <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/../../../../apps/gpui/lib/gpui/builder.ex#L77" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> justify_center(<a href="GPUI.Element.html#t:t/0">GPUI.Element.t</a>()) :: <a href="GPUI.Element.html#t:t/0">GPUI.Element.t</a>()</pre>
+
+      </div>
+
+<p>Centers children on the main axis.</p>
+  </section>
+</section>
+<section class="detail" id="px/1">
+
+  <div class="detail-header">
+    <a href="#px/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">px(value)</h1>
+
+
+        <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/../../../../apps/gpui/lib/gpui/builder.ex#L93" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> px(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()) :: {:px, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">float</a>()}</pre>
+
+      </div>
+
+<p>Represents a GPUI pixel length.</p>
+  </section>
+</section>
+<section class="detail" id="rgb/1">
+
+  <div class="detail-header">
+    <a href="#rgb/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">rgb(value)</h1>
+
+
+        <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/../../../../apps/gpui/lib/gpui/builder.ex#L97" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> rgb(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()) :: {:rgb, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()}</pre>
+
+      </div>
+
+<p>Represents a GPUI RGB color.</p>
+  </section>
+</section>
+<section class="detail" id="size/2">
+
+  <div class="detail-header">
+    <a href="#size/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">size(element, size)</h1>
+
+
+        <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/../../../../apps/gpui/lib/gpui/builder.ex#L85" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> size(<a href="GPUI.Element.html#t:t/0">GPUI.Element.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()) :: <a href="GPUI.Element.html#t:t/0">GPUI.Element.t</a>()</pre>
+
+      </div>
+
+<p>Sets width and height to the same value.</p>
+  </section>
+</section>
+<section class="detail" id="style/3">
+
+  <div class="detail-header">
+    <a href="#style/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">style(element, name, value)</h1>
+
+
+        <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/../../../../apps/gpui/lib/gpui/builder.ex#L55" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> style(<a href="GPUI.Element.html#t:t/0">GPUI.Element.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()) :: <a href="GPUI.Element.html#t:t/0">GPUI.Element.t</a>()</pre>
+
+      </div>
+
+<p>Sets a schema-backed style on an element.</p>
+  </section>
+</section>
+<section class="detail" id="text/1">
+
+  <div class="detail-header">
+    <a href="#text/1" class="detail-link" data-no-tooltip="" aria-label="Link to this macro">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">text(value)</h1>
+
+        <span class="note">(macro)</span>
+
+
+        <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/../../../../apps/gpui/lib/gpui/builder.ex#L43" class="icon-action" rel="help nofollow" aria-label="View Source">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        </a>
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Creates a text node.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/gpui/0.2.0-rc.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2">Hex Preview</a>
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="gpui.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.3) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

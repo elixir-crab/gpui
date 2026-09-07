@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.3">
+    <meta name="project" content="gpui v0.2.0-rc.2">
+
+
+    <title>Presentation extension contracts — gpui v0.2.0-rc.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-NHQLCD6Y.css" />
+
+    <script defer src="dist/sidebar_items-5E369AEC.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-Y2MUTVIN.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="https://github.com/elixir-crab/gpui" class="sidebar-projectName" translate="no">
+gpui
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.2.0-rc.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-extra" id="main" data-type="extras">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of gpui</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>Presentation extension contracts</h1>
+
+<a href="presentation-contracts.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+      <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/guides/internals/presentation-contracts.md#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+<p>GPUI presentation extensions are schema-owned optional renderer capabilities.
+They are not plugins, dynamically loaded native modules, arbitrary component
+injection, callbacks, or opaque payloads.</p><h2 id="architectural-position" class="section-heading"><a href="#architectural-position" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Architectural position</span></h2><p>An extension augments an existing <a href="GPUI.Schema.Component.html"><code class="inline">GPUI.Schema.Component</code></a> while preserving the
+normal renderer-independent path:</p><pre><code class="text">GPUI.Schema.Component
+→ GPUI.Element payload
+→ GPUI.Snapshot
+→ GPUI.Display
+→ RustQ-generated decoder and dispatch
+→ handwritten GPUI renderer</code></pre><p>Application topology and fallback policy remain in Elixir. Displays may enhance
+presentation, but capability support never changes snapshot topology or blocks a
+mount.</p><h2 id="exact-versions" class="section-heading"><a href="#exact-versions" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Exact versions</span></h2><p>Each extension contract declares a stable atom ID, a positive integer version,
+and a closed capability vocabulary. The current built-ins are:</p><pre><code class="text">edge_fade@1  linear_gradient, theme_background
+frost@1      solid_fallback, translucent_fallback,
+             reduced_transparency
+paint@1      rect, line</code></pre><p>New snapshots carry <code class="inline">__extension_version__</code> in the renderer-hidden <code class="inline">attrs</code> map.
+Applications cannot set the field through public builders. Native generated
+decoders require the exact declared version before decoding the component;
+missing, malformed, and mismatched versions are rejected.</p><p>An incompatible field or command change increments the contract version. A new
+capability must not silently broaden an existing closed version when it changes
+the wire schema. Before the first release, contracts may instead be redesigned
+or replaced directly because no historical payloads are supported.</p><h2 id="capabilities-and-fallbacks" class="section-heading"><a href="#capabilities-and-fallbacks" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Capabilities and fallbacks</span></h2><p>A contract's capability list is vocabulary, not an implementation claim.
+Displays report only behavior that the particular display implements, and that
+support is used for diagnostics rather than application topology. The pinned
+GPUI stack exposes blur only as a whole-window background appearance; it has no
+backdrop filter. Frost therefore declares only the implemented solid,
+translucent, and reduced-transparency behavior.</p><p>Every optional enhancement requires a deterministic fallback in the serialized
+component declaration:</p><ul><li>edge fade falls back to ordinary child rendering;</li><li>frost follows its solid/translucent and reduced-transparency policy;</li><li>paint falls back to an empty bounded canvas when unsupported.</li></ul><p>Accessibility policy is serialized by Elixir and overrides native enhancement.
+In particular, reduced transparency must disable translucent or blur effects.</p><h2 id="remote-advertisement" class="section-heading"><a href="#remote-advertisement" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Remote advertisement</span></h2><p>Remote hello messages may include a bounded informational <code class="inline">presentation</code> list.
+Entries use exact contract versions and capabilities validated against the
+canonical schema. Missing presentation support is equivalent to an empty list and
+is never a handshake requirement.</p><p>Transport capabilities such as <code class="inline">display_v1</code> and <code class="inline">window_topology_v1</code> remain
+separate because they govern whether operations can be exchanged safely.
+Presentation support is diagnostic and display-local.</p><h2 id="evolution-restrictions" class="section-heading"><a href="#evolution-restrictions" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Evolution restrictions</span></h2><p>Extensions may use bounded scalar fields, closed enums, bounded collections, and
+existing typed resource references. They may not contain functions, modules,
+PIDs, ports, native pointers, arbitrary Rustler resources, shader source,
+unbounded maps, or recursive arbitrary terms.</p><p>RustQ owns repetitive contract constants, typed payloads, decoders, atoms, and
+dispatch. Handwritten Rust owns actual GPUI rendering, platform support
+detection, resource lookup, allocation, and lifecycle.</p>
+
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="transfers.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Transfer payload internals
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="declarative-motion.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Decision: declarative native motion
+        </span>
+      </a>
+
+  </div>
+</div>
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/gpui/0.2.0-rc.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2">Hex Preview</a>
+
+                (<a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2/show/guides/internals/presentation-contracts.md">current file</a>)
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="gpui.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.3) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

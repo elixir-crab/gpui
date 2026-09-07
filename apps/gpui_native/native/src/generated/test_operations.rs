@@ -96,6 +96,31 @@ pub(crate) fn native_test_advance_impl<'a>(
     Ok((atoms::error(), "native_test_disabled").encode(env))
 }
 #[cfg(feature = "native-test")]
+pub(crate) fn native_test_drag_impl<'a>(
+    env: Env<'a>,
+    session: ResourceArc<native_test::NativeTestSessionResource>,
+    from_x: f64,
+    from_y: f64,
+    to_x: f64,
+    to_y: f64,
+) -> NifResult<Term<'a>> {
+    match drag(&session, from_x as f32, from_y as f32, to_x as f32, to_y as f32) {
+        Ok(_unit) => Ok((atoms::ok(), atoms::ok()).encode(env)),
+        Err(reason) => Ok((atoms::error(), reason).encode(env)),
+    }
+}
+#[cfg(not(feature = "native-test"))]
+pub(crate) fn native_test_drag_impl<'a>(
+    env: Env<'a>,
+    _session: ResourceArc<native_test::NativeTestSessionResource>,
+    _from_x: f64,
+    _from_y: f64,
+    _to_x: f64,
+    _to_y: f64,
+) -> NifResult<Term<'a>> {
+    Ok((atoms::error(), "native_test_disabled").encode(env))
+}
+#[cfg(feature = "native-test")]
 pub(crate) fn native_test_click_at_impl<'a>(
     env: Env<'a>,
     session: ResourceArc<native_test::NativeTestSessionResource>,

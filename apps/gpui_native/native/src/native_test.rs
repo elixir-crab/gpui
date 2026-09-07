@@ -32,6 +32,13 @@ enum TestCommand {
         y: f32,
         reply: TestCommandReply<()>,
     },
+    Drag {
+        from_x: f32,
+        from_y: f32,
+        to_x: f32,
+        to_y: f32,
+        reply: TestCommandReply<()>,
+    },
     Scroll {
         element_id: &'static str,
         delta_x: f32,
@@ -317,6 +324,36 @@ fn handle_non_stop_command(session: &mut TestSession, command: TestCommand) {
             );
             let _ = reply.send(Ok(()));
         }
+        TestCommand::Drag {
+            from_x,
+            from_y,
+            to_x,
+            to_y,
+            reply,
+        } => {
+            let start = gpui::point(gpui::px(from_x), gpui::px(from_y));
+            let end = gpui::point(gpui::px(to_x), gpui::px(to_y));
+            session
+                .context
+                .simulate_mouse_move(start, None, gpui::Modifiers::default());
+            session.context.simulate_mouse_down(
+                start,
+                gpui::MouseButton::Left,
+                gpui::Modifiers::default(),
+            );
+            session.context.simulate_mouse_move(
+                end,
+                Some(gpui::MouseButton::Left),
+                gpui::Modifiers::default(),
+            );
+            session.context.simulate_mouse_up(
+                end,
+                gpui::MouseButton::Left,
+                gpui::Modifiers::default(),
+            );
+            session.context.run_until_parked();
+            let _ = reply.send(Ok(()));
+        }
         TestCommand::Scroll {
             element_id,
             delta_x,
@@ -431,6 +468,22 @@ pub(crate) fn click_at(
     y: f32,
 ) -> Result<(), String> {
     execute(session, |reply| TestCommand::ClickAt { x, y, reply })
+}
+#[cfg(feature = "native-test")]
+pub(crate) fn drag(
+    session: &rustler::ResourceArc<NativeTestSessionResource>,
+    from_x: f32,
+    from_y: f32,
+    to_x: f32,
+    to_y: f32,
+) -> Result<(), String> {
+    execute(session, |reply| TestCommand::Drag {
+        from_x,
+        from_y,
+        to_x,
+        to_y,
+        reply,
+    })
 }
 #[cfg(feature = "native-test")]
 pub(crate) fn scroll(

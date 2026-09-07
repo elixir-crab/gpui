@@ -29,6 +29,13 @@ defmodule GPUI.Native.TestDriver do
   )
 
   (
+    @doc "Drags between logical points in a deterministic native-test session."
+    def drag(id, from_x, from_y, to_x, to_y) do
+      GPUI.Native.Backend.native_test_drag(id, from_x, from_y, to_x, to_y)
+    end
+  )
+
+  (
     @doc "Clicks coordinates in a deterministic native-test session."
     def click_at(id, x, y) do
       GPUI.Native.Backend.native_test_click_at(id, x, y)

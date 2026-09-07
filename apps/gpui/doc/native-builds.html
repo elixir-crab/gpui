@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.3">
+    <meta name="project" content="gpui v0.2.0-rc.2">
+
+
+    <title>Native builds and deployment — gpui v0.2.0-rc.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-NHQLCD6Y.css" />
+
+    <script defer src="dist/sidebar_items-5E369AEC.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-Y2MUTVIN.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="https://github.com/elixir-crab/gpui" class="sidebar-projectName" translate="no">
+gpui
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.2.0-rc.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-extra" id="main" data-type="extras">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of gpui</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>Native builds and deployment</h1>
+
+<a href="native-builds.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+      <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/guides/deployment/native-builds.md#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+<p>The published <code class="inline">gpui_native</code> package owns the RustlerPrecompiled loader and two
+fixed, complete native hosts. <code class="inline">gpui</code> remains renderer-independent, while the
+separately installed <code class="inline">gpui_components</code> package provides conventional component
+schemas and Elixir builders for applications that select the <code class="inline">:gpui_component</code>
+host.</p><h2 id="native-hosts" class="section-heading"><a href="#native-hosts" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Native hosts</span></h2><p>Both release hosts share one generated NIF boundary and one exact GPUI type
+universe:</p><ul><li><code class="inline">:vanilla</code> — a complete host built from vanilla GPUI and neutral primitives;</li><li><code class="inline">:gpui_component</code> — a complete host that statically links the separate
+<code class="inline">gpui-component</code> renderer library, assets, conventional controls, overlays,
+and theme integration.</li></ul><p>Select one host at compile time:</p><pre><code class="makeup elixir" translate="no"><span class="n">config</span><span class="w"> </span><span class="ss">:gpui_native</span><span class="p">,</span><span class="w"> </span><span class="nc">GPUI.Native</span><span class="p">,</span><span class="w"> </span><span class="ss">host</span><span class="p">:</span><span class="w"> </span><span class="ss">:vanilla</span><span class="w">
+</span><span class="c1"># or</span><span class="w">
+</span><span class="n">config</span><span class="w"> </span><span class="ss">:gpui_native</span><span class="p">,</span><span class="w"> </span><span class="nc">GPUI.Native</span><span class="p">,</span><span class="w"> </span><span class="ss">host</span><span class="p">:</span><span class="w"> </span><span class="ss">:gpui_component</span></code></pre><p>Exactly one final <code class="inline">cdylib</code> is loaded into <code class="inline">Elixir.GPUI.Native.NIF</code>. These are
+alternative complete hosts, not a core dylib followed by a dynamically attached
+component plugin. The component-capable host statically composes its Rust
+libraries against the same pinned GPUI graph so windows, entities, resources,
+and the event loop never cross a Rust shared-library ABI.</p><h2 id="consumer-compilation" class="section-heading"><a href="#consumer-compilation" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Consumer compilation</span></h2><p>On a supported precompiled target, compilation proceeds as follows:</p><ol><li>Mix resolves <code class="inline">gpui_native</code> and its exact matching <code class="inline">gpui</code> release.</li><li><code class="inline">gpui</code> compiles the generated backend-neutral <a href="GPUI.Native.html"><code class="inline">GPUI.Native</code></a> facade.</li><li><code class="inline">gpui_native</code> reads the configured host at compile time.</li><li><code class="inline">RustlerPrecompiled</code> selects the host variant, NIF ABI, and target triple.</li><li>It downloads the release archive, verifies its compressed SHA-256 against
+<code class="inline">checksum-Elixir.GPUI.Native.NIF.exs</code>, extracts it, and loads the NIF.</li><li>No RustQ, Cargo, Rust compiler, Node runtime, or source checkout is required.</li></ol><p>RustQ runs only in the source umbrella. Its generated Rust decoders and Elixir
+stubs/facade are committed before release.</p><h2 id="current-platform-status" class="section-heading"><a href="#current-platform-status" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Current platform status</span></h2><p>Source builds and native window lifecycle behavior are validated on:</p><ul><li><code class="inline">x86_64-unknown-linux-gnu</code> under X11 with Xvfb and Mesa Lavapipe;</li><li><code class="inline">aarch64-apple-darwin</code> with AppKit on ERTS's original process main thread;</li><li><code class="inline">x86_64-pc-windows-msvc</code> with the dedicated native GUI-thread host.</li></ul><p>Published precompiled hosts target <code class="inline">x86_64-unknown-linux-gnu</code>,
+<code class="inline">aarch64-apple-darwin</code>, and <code class="inline">x86_64-pc-windows-msvc</code>. Linux release artifacts
+are built on Ubuntu 22.04 and must not require GLIBC symbols newer than
+<code class="inline">GLIBC_2.35</code>; macOS archives are built and load-tested on Apple silicon;
+Windows archives are built with MSVC and load-tested on x86-64 Windows. Native
+Windows applications must be launched in an interactive desktop session;
+Windows OpenSSH sessions are suitable for package and NIF checks but not for
+creating desktop windows. Intel macOS remains a source-build development target
+until matching native runtime evidence and release artifacts pass.</p><h2 id="source-builds" class="section-heading"><a href="#source-builds" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Source builds</span></h2><p><code class="inline">gpui_native</code> packages the complete native workspace at
+<code class="inline">apps/gpui_native/native</code>. The repository pins Rust 1.95.0 in
+<code class="inline">rust-toolchain.toml</code>.</p><p>Force source compilation with:</p><pre><code class="makeup bash" translate="no"><span class="">GPUI_BUILD_FROM_SOURCE=1 mix compile
+</span></code></pre><p>Disable native compilation for renderer-independent tooling with:</p><pre><code class="makeup bash" translate="no"><span class="">GPUI_SKIP_NATIVE=1 mix compile
+</span></code></pre><p>The application-level configuration is:</p><pre><code class="makeup elixir" translate="no"><span class="n">config</span><span class="w"> </span><span class="ss">:gpui_native</span><span class="p">,</span><span class="w"> </span><span class="ss">build_native</span><span class="p">:</span><span class="w"> </span><span class="n">config_env</span><span class="p" data-group-id="7111887312-1">(</span><span class="p" data-group-id="7111887312-1">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="ss">:test</span></code></pre><p>On Linux install:</p><pre><code class="makeup bash" translate="no"><span class="">sudo apt-get install libxkbcommon-dev libxkbcommon-x11-dev
+</span></code></pre><p>On macOS install full Xcode and its Metal Toolchain. On Windows use the MSVC
+Rust target with Visual Studio 2022 Build Tools and a current Windows SDK.
+<code class="inline">yeslogic-fontconfig-sys</code> can load Fontconfig dynamically:</p><pre><code class="makeup bash" translate="no"><span class="">RUST_FONTCONFIG_DLOPEN=1 GPUI_BUILD_FROM_SOURCE=1 mix compile
+</span></code></pre><h2 id="native-development-configurations" class="section-heading"><a href="#native-development-configurations" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Native development configurations</span></h2><p>Repository CI checks:</p><ul><li>core-only, without real GPUI;</li><li>headless real GPUI, without desktop linker dependencies;</li><li>vanilla desktop GPUI without component integration;</li><li><code class="inline">gpui-component</code> desktop host with component integration;</li><li>deterministic native-test and real desktop E2E configurations.</li></ul><p><code class="inline">ZED_HEADLESS=1</code> selects real GPUI's headless backend for lifecycle work, but
+that backend cannot open a platform window.</p><h2 id="precompiled-release-flow" class="section-heading"><a href="#precompiled-release-flow" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Precompiled release flow</span></h2><p>The coordinated package tag <code class="inline">vVERSION</code> builds both host variants through
+<code class="inline">.github/workflows/precompiled-nif.yml</code>. Release archives include the host in
+the RustlerPrecompiled variant suffix: <code class="inline">--vanilla</code> or <code class="inline">--gpui-component</code>.
+Checksums cover compressed <code class="inline">.tar.gz</code> bytes.</p><p>The release sequence is:</p><ol><li>run <code class="inline">mix ci</code> from the umbrella root;</li><li>run native desktop ExUnit under Xvfb/Lavapipe on Linux;</li><li>run <code class="inline">RUST_FONTCONFIG_DLOPEN=1 mix gpui.release.check</code>;</li><li>tag the coordinated release and build both native hosts;</li><li>attest and publish the GitHub release archives;</li><li>generate <code class="inline">apps/gpui_native/checksum-Elixir.GPUI.Native.NIF.exs</code> from the
+published bytes;</li><li>validate a clean consumer with Cargo and Rust absent from <code class="inline">PATH</code>;</li><li>publish <code class="inline">gpui</code>, then <code class="inline">gpui_components</code>, then <code class="inline">gpui_native</code> to Hex.</li></ol><p>The public packages initially use one coordinated version and exact sibling
+requirements. Package versions remain distinct from versioned presentation
+contracts such as <code class="inline">paint@1</code>.</p><h2 id="release-validation" class="section-heading"><a href="#release-validation" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Release validation</span></h2><p>Release validation verifies all three Hex package contents independently,
+documentation, dependency audits, RustQ freshness, source-build fallback,
+native host artifacts, and a no-Rust precompiled consumer. Linux GNU artifacts
+retain the <code class="inline">GLIBC_2.35</code> ceiling.</p><p>Zed's Apache-licensed <code class="inline">sum_tree</code> uses only the <code class="inline">ztracing::instrument</code> surface,
+but Zed declares its tracing facade as GPL-3. GPUI patches that facade with
+<code class="inline">apps/gpui_native/native/compat/ztracing</code>, which re-exports the upstream
+MIT/Apache <code class="inline">tracing</code> API. <code class="inline">gpui-component</code> is Apache-2.0.</p><p>Native E2E remains a separate evidence layer. Release claims cover only
+platforms validated with real windows and interaction.</p>
+
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="coverage-ownership.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Test coverage ownership
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="platform-support.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Platform support and development status
+        </span>
+      </a>
+
+  </div>
+</div>
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/gpui/0.2.0-rc.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2">Hex Preview</a>
+
+                (<a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2/show/guides/deployment/native-builds.md">current file</a>)
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="gpui.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.3) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

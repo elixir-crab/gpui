@@ -172,6 +172,10 @@ defmodule GPUI.Test do
   def command(runtime, event, opts \\ []),
     do: dispatch_named(runtime, :command, event, opts)
 
+  @doc "Simulates a left-button drag between logical points and settles native work."
+  @spec drag(GPUI.Test.UI.t(), {number(), number()}, {number(), number()}) :: GPUI.Test.UI.t()
+  def drag(%GPUI.Test.UI{} = ui, from, to), do: GPUI.Test.NativeSession.drag(ui, from, to)
+
   @doc "Clicks a stable element ID or logical point in an interactive deterministic UI."
   @spec click(GPUI.Test.UI.t(), String.t() | {number(), number()}) :: GPUI.Test.UI.t()
   def click(%GPUI.Test.UI{} = ui, target), do: GPUI.Test.NativeSession.click(ui, target)

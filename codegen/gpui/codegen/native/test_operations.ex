@@ -94,6 +94,33 @@ defmodule GPUI.Codegen.Native.TestOperations do
     {:ok, {Atoms.error(), "native_test_disabled"}.encode(env)}
   end
 
+  @spec native_test_drag_impl(
+          Env.t(R.lifetime(:a)),
+          R.resource(NativeTest.NativeTestSessionResource.t()),
+          R.f64(),
+          R.f64(),
+          R.f64(),
+          R.f64()
+        ) :: R.nif_result(term())
+  @cfg feature: "native-test"
+  defrust native_test_drag_impl(env, session, from_x, from_y, to_x, to_y) do
+    encode_unit_result(
+      env,
+      drag(
+        ref(session),
+        cast(from_x, R.f32()),
+        cast(from_y, R.f32()),
+        cast(to_x, R.f32()),
+        cast(to_y, R.f32())
+      )
+    )
+  end
+
+  @cfg not: [feature: "native-test"]
+  defrust native_test_drag_impl(env, _session, _from_x, _from_y, _to_x, _to_y) do
+    {:ok, {Atoms.error(), "native_test_disabled"}.encode(env)}
+  end
+
   @spec native_test_click_at_impl(
           Env.t(R.lifetime(:a)),
           R.resource(NativeTest.NativeTestSessionResource.t()),

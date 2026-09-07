@@ -36,6 +36,18 @@ pub struct ScrollRequest {
 pub struct TargetRequest {
     pub target: String,
 }
+#[rustler::nif(schedule = "DirtyIo")]
+#[allow(unused_variables)]
+fn native_test_drag<'a>(
+    env: Env<'a>,
+    session: ResourceArc<native_test::NativeTestSessionResource>,
+    from_x: f64,
+    from_y: f64,
+    to_x: f64,
+    to_y: f64,
+) -> NifResult<Term<'a>> {
+    native_test_drag_impl(env, session, from_x, from_y, to_x, to_y)
+}
 #[allow(clippy::redundant_field_names)]
 fn advance_request(milliseconds: u64) -> AdvanceRequest {
     AdvanceRequest { milliseconds }

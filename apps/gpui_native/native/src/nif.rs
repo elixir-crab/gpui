@@ -3,8 +3,8 @@ use crate::*;
 mod generated_test_operations {
     #[cfg(feature = "native-test")]
     use crate::native_test::{
-        advance, bounds, click, click_at, events, focus, idle, input, key, render, resize, scroll,
-        start, stop,
+        advance, bounds, click, click_at, drag, events, focus, idle, input, key, render, resize,
+        scroll, start, stop,
     };
     use crate::*;
     use rustler::Error;
@@ -12,9 +12,10 @@ mod generated_test_operations {
 }
 pub(crate) use generated_test_operations::{
     native_test_advance_impl, native_test_bounds_impl, native_test_click_at_impl,
-    native_test_click_impl, native_test_events_impl, native_test_focus_impl, native_test_idle_impl,
-    native_test_input_impl, native_test_key_impl, native_test_render_impl, native_test_resize_impl,
-    native_test_scroll_impl, native_test_start_impl, native_test_stop_impl,
+    native_test_click_impl, native_test_drag_impl, native_test_events_impl, native_test_focus_impl,
+    native_test_idle_impl, native_test_input_impl, native_test_key_impl, native_test_render_impl,
+    native_test_resize_impl, native_test_scroll_impl, native_test_start_impl,
+    native_test_stop_impl,
 };
 
 pub(crate) fn host_info_impl<'a>(env: Env<'a>) -> NifResult<Term<'a>> {

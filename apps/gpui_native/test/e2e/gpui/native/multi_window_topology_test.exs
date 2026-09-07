@@ -2,6 +2,7 @@ defmodule GPUI.Native.MultiWindowTopologyE2ETest do
   use ExUnit.Case, async: false
 
   alias GPUITest.Desktop
+  import GPUITest.Desktop, only: [start_runtime!: 2]
 
   setup context do
     Desktop.setup(context, [])
@@ -85,9 +86,7 @@ defmodule GPUI.Native.MultiWindowTopologyE2ETest do
         event: "close-details"
       })
 
-    Desktop.eventually(desktop, runtime, fn ->
-      assert {:error, :window_not_found} = GPUI.Runtime.frame_token(runtime, 2)
-    end)
+    assert {:error, :window_not_found} = GPUI.Runtime.frame_token(runtime, 2)
 
     {:ok, _event, %{windows: [_, %{id: 3, key: "details"}]}} =
       GPUI.Runtime.dispatch_event(runtime, %{

@@ -9,6 +9,18 @@ defmodule GPUI.Codegen.Native.TestBoundary do
 
   alias RustQ.Type, as: R
 
+  @nif schedule: :dirty_io
+  @spec native_test_drag(
+          R.resource(NativeTest.NativeTestSessionResource.t()),
+          R.f64(),
+          R.f64(),
+          R.f64(),
+          R.f64()
+        ) :: R.nif_result(term())
+  defnif native_test_drag(session, from_x, from_y, to_x, to_y) do
+    native_test_drag_impl(nif_env(), session, from_x, from_y, to_x, to_y)
+  end
+
   @type advance_request :: %{
           required(:milliseconds) => R.u64()
         }

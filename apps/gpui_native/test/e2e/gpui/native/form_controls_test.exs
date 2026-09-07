@@ -2,6 +2,7 @@ defmodule GPUI.Native.FormControlsE2ETest do
   use ExUnit.Case, async: false
 
   alias GPUITest.Desktop
+  import GPUITest.Desktop, only: [start_runtime!: 2]
 
   setup context do
     Desktop.setup(context, [])

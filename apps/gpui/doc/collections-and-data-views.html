@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.3">
+    <meta name="project" content="gpui v0.2.0-rc.2">
+
+
+    <title>Collections and data views — gpui v0.2.0-rc.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-NHQLCD6Y.css" />
+
+    <script defer src="dist/sidebar_items-5E369AEC.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-Y2MUTVIN.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="https://github.com/elixir-crab/gpui" class="sidebar-projectName" translate="no">
+gpui
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.2.0-rc.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-extra" id="main" data-type="extras">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of gpui</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>Collections and data views</h1>
+
+<a href="collections-and-data-views.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+      <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/guides/ui/collections-and-data-views.md#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+<p>GPUI provides variable-height and uniform source-backed collection primitives.
+Stable identities and explicit bounds let native displays virtualize layout
+without moving application data policy out of Elixir.</p><h2 id="virtualized-collections" class="section-heading"><a href="#virtualized-collections" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Virtualized collections</span></h2><p><code class="inline">virtual_collection/1</code> is the variable-height primitive for transcripts,
+activity feeds, and other heterogeneous collections. The complete logical
+collection stays in the renderer-independent snapshot, while the native display
+measures and renders the visible region with bounded pixel <code class="inline">overdraw</code>.</p><pre><code class="makeup elixir" translate="no"><span class="o">&lt;</span><span class="nc">UI</span><span class="o">.</span><span class="n">virtual_collection</span><span class="w">
+  </span><span class="n">id</span><span class="o">=</span><span class="s">&quot;transcript&quot;</span><span class="w">
+  </span><span class="n">label</span><span class="o">=</span><span class="s">&quot;Conversation&quot;</span><span class="w">
+  </span><span class="n">alignment</span><span class="o">=</span><span class="s">&quot;bottom&quot;</span><span class="w">
+  </span><span class="n">follow</span><span class="o">=</span><span class="s">&quot;tail&quot;</span><span class="w">
+  </span><span class="n">follow_request</span><span class="o">=</span><span class="p" data-group-id="1977572640-1">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">follow_request</span><span class="p" data-group-id="1977572640-1">}</span><span class="w">
+  </span><span class="n">overdraw</span><span class="o">=</span><span class="p" data-group-id="1977572640-2">{</span><span class="mi">320</span><span class="p" data-group-id="1977572640-2">}</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">range</span><span class="o">=</span><span class="s">&quot;messages_visible&quot;</span><span class="w">
+  </span><span class="n">class</span><span class="o">=</span><span class="s">&quot;h-[560px]&quot;</span><span class="w">
+</span><span class="o">&gt;</span><span class="w">
+  </span><span class="p" data-group-id="1977572640-3">{</span><span class="nc">Enum</span><span class="o">.</span><span class="n">map</span><span class="p" data-group-id="1977572640-4">(</span><span class="n">assigns</span><span class="o">.</span><span class="n">messages</span><span class="p">,</span><span class="w"> </span><span class="k" data-group-id="1977572640-5">fn</span><span class="w"> </span><span class="n">message</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+    </span><span class="nc">UI</span><span class="o">.</span><span class="n">virtual_item</span><span class="p" data-group-id="1977572640-6">(</span><span class="p" data-group-id="1977572640-7">%{</span><span class="w">
+      </span><span class="ss">id</span><span class="p">:</span><span class="w"> </span><span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="p">,</span><span class="w">
+      </span><span class="ss">revision</span><span class="p">:</span><span class="w"> </span><span class="n">message</span><span class="o">.</span><span class="n">revision</span><span class="p">,</span><span class="w">
+      </span><span class="ss">children</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="1977572640-8">[</span><span class="n">render_message</span><span class="p" data-group-id="1977572640-9">(</span><span class="n">message</span><span class="p" data-group-id="1977572640-9">)</span><span class="p" data-group-id="1977572640-8">]</span><span class="w">
+    </span><span class="p" data-group-id="1977572640-7">}</span><span class="p" data-group-id="1977572640-6">)</span><span class="w">
+  </span><span class="k" data-group-id="1977572640-5">end</span><span class="p" data-group-id="1977572640-4">)</span><span class="p" data-group-id="1977572640-3">}</span><span class="w">
+</span><span class="o">&lt;</span><span class="o">/</span><span class="nc">UI</span><span class="o">.</span><span class="n">virtual_collection</span><span class="o">&gt;</span></code></pre><p><code class="inline">alignment=&quot;bottom&quot;</code> starts short collections at the lower edge. <code class="inline">follow=&quot;tail&quot;</code>
+tracks appended or growing tail content until the user scrolls away; increment
+<code class="inline">follow_request</code> to explicitly return to the tail. To reveal a retained item,
+set <code class="inline">reveal</code> and increment <code class="inline">reveal_request</code>. The truthful placement strategies
+for the variable-height primitive are <code class="inline">nearest</code> and <code class="inline">top</code>.</p><p>Every item ID is stable, unique, non-empty, and at most 128 bytes. Increment an
+item's <code class="inline">revision</code> when retained content may change measured height. Appends,
+prepends, removals, and revision changes preserve GPUI's measured-height cache
+for unaffected IDs. Collections are bounded to 100,000 items and <code class="inline">overdraw</code> to
+4,096 pixels.</p><p><code class="inline">phx-range</code> emits deduplicated visible <code class="inline">%{first: first, last: last}</code> ranges with
+an exclusive
+<code class="inline">last</code>. Unlike the uniform source-backed primitive below, variable collections
+currently require all logical item nodes in each snapshot: unknown offscreen
+heights have no truthful placeholder geometry. Remote displays receive this
+same complete serializable contract.</p><p><code class="inline">virtual_list/1</code> presents source-backed uniform collections through GPUI's native uniform-list
+layout. Every row has a stable ID and the same declared height; only the visible
+range is constructed and laid out natively.</p><pre><code class="makeup elixir" translate="no"><span class="o">&lt;</span><span class="nc">UI</span><span class="o">.</span><span class="n">virtual_list</span><span class="w">
+  </span><span class="n">id</span><span class="o">=</span><span class="s">&quot;processes&quot;</span><span class="w">
+  </span><span class="n">label</span><span class="o">=</span><span class="s">&quot;BEAM processes&quot;</span><span class="w">
+  </span><span class="n">selected</span><span class="o">=</span><span class="p" data-group-id="7280576070-1">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_pid</span><span class="p" data-group-id="7280576070-1">}</span><span class="w">
+  </span><span class="n">reveal</span><span class="o">=</span><span class="p" data-group-id="7280576070-2">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_pid</span><span class="p" data-group-id="7280576070-2">}</span><span class="w">
+  </span><span class="n">reveal_strategy</span><span class="o">=</span><span class="s">&quot;nearest&quot;</span><span class="w">
+  </span><span class="n">item_height</span><span class="o">=</span><span class="p" data-group-id="7280576070-3">{</span><span class="mi">48</span><span class="p" data-group-id="7280576070-3">}</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">change</span><span class="o">=</span><span class="s">&quot;process_selected&quot;</span><span class="w">
+  </span><span class="n">class</span><span class="o">=</span><span class="s">&quot;h-[480px]&quot;</span><span class="w">
+</span><span class="o">&gt;</span><span class="w">
+  </span><span class="p" data-group-id="7280576070-4">{</span><span class="nc">Enum</span><span class="o">.</span><span class="n">map</span><span class="p" data-group-id="7280576070-5">(</span><span class="n">assigns</span><span class="o">.</span><span class="n">processes</span><span class="p">,</span><span class="w"> </span><span class="k" data-group-id="7280576070-6">fn</span><span class="w"> </span><span class="n">process</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+    </span><span class="nc">UI</span><span class="o">.</span><span class="n">virtual_list_item</span><span class="p" data-group-id="7280576070-7">(</span><span class="p" data-group-id="7280576070-8">%{</span><span class="w">
+      </span><span class="ss">id</span><span class="p">:</span><span class="w"> </span><span class="n">process</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span><span class="w">
+      </span><span class="ss">children</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7280576070-9">[</span><span class="n">process</span><span class="o">.</span><span class="n">label</span><span class="p" data-group-id="7280576070-9">]</span><span class="w">
+    </span><span class="p" data-group-id="7280576070-8">}</span><span class="p" data-group-id="7280576070-7">)</span><span class="w">
+  </span><span class="k" data-group-id="7280576070-6">end</span><span class="p" data-group-id="7280576070-5">)</span><span class="p" data-group-id="7280576070-4">}</span><span class="w">
+</span><span class="o">&lt;</span><span class="o">/</span><span class="nc">UI</span><span class="o">.</span><span class="n">virtual_list</span><span class="o">&gt;</span></code></pre><p><code class="inline">selected</code> is controlled and changes emit the selected item ID. <code class="inline">reveal</code>
+requests programmatic scrolling with <code class="inline">nearest</code>, <code class="inline">top</code>, <code class="inline">center</code>, or <code class="inline">bottom</code>
+placement. Up/Down, Home/End, Enter, and Space operate from one listbox tab stop
+and skip disabled rows. Pointer selection focuses the list, and native
+accessibility exposes listbox and option roles with an active descendant.</p><p>The list itself must have a fixed or maximum height. Rows that differ from
+<code class="inline">item_height</code> violate the uniform-list contract. Filtering and sorting may
+replace or reorder children while scroll state remains attached to the list's
+stable ID.</p><h3 id="source-backed-lists" class="section-heading"><a href="#source-backed-lists" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Source-backed lists</span></h3><p>Rendering is not the only cost of a large collection: putting every child—or
+the full source model—into view assigns also serializes it into every local or
+remote snapshot. Source-backed lists keep the full model in a supervised source
+process and put only the current loaded slice in assigns.
+<code class="inline">GPUI.UI.Collection.Source</code> and <code class="inline">GPUI.UI.Collection.Selection</code> can keep the
+correlated count/offset/children and ID/index pairs together before those values
+are passed to a component.</p><pre><code class="makeup elixir" translate="no"><span class="o">&lt;</span><span class="nc">UI</span><span class="o">.</span><span class="n">virtual_list</span><span class="w">
+  </span><span class="n">id</span><span class="o">=</span><span class="s">&quot;records&quot;</span><span class="w">
+  </span><span class="n">label</span><span class="o">=</span><span class="s">&quot;Records&quot;</span><span class="w">
+  </span><span class="n">total_count</span><span class="o">=</span><span class="p" data-group-id="2853709663-1">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">total_count</span><span class="p" data-group-id="2853709663-1">}</span><span class="w">
+  </span><span class="n">offset</span><span class="o">=</span><span class="p" data-group-id="2853709663-2">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">loaded_offset</span><span class="p" data-group-id="2853709663-2">}</span><span class="w">
+  </span><span class="n">overscan</span><span class="o">=</span><span class="p" data-group-id="2853709663-3">{</span><span class="mi">8</span><span class="p" data-group-id="2853709663-3">}</span><span class="w">
+  </span><span class="n">selected</span><span class="o">=</span><span class="p" data-group-id="2853709663-4">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_id</span><span class="p" data-group-id="2853709663-4">}</span><span class="w">
+  </span><span class="n">selected_index</span><span class="o">=</span><span class="p" data-group-id="2853709663-5">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_index</span><span class="p" data-group-id="2853709663-5">}</span><span class="w">
+  </span><span class="n">reveal</span><span class="o">=</span><span class="p" data-group-id="2853709663-6">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_id</span><span class="p" data-group-id="2853709663-6">}</span><span class="w">
+  </span><span class="n">reveal_index</span><span class="o">=</span><span class="p" data-group-id="2853709663-7">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_index</span><span class="p" data-group-id="2853709663-7">}</span><span class="w">
+  </span><span class="n">item_height</span><span class="o">=</span><span class="p" data-group-id="2853709663-8">{</span><span class="mi">40</span><span class="p" data-group-id="2853709663-8">}</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">change</span><span class="o">=</span><span class="s">&quot;record_selected&quot;</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">range</span><span class="o">=</span><span class="s">&quot;records_range&quot;</span><span class="w">
+  </span><span class="n">class</span><span class="o">=</span><span class="s">&quot;h-[480px]&quot;</span><span class="w">
+</span><span class="o">&gt;</span><span class="w">
+  </span><span class="p" data-group-id="2853709663-9">{</span><span class="nc">Enum</span><span class="o">.</span><span class="n">map</span><span class="p" data-group-id="2853709663-10">(</span><span class="n">assigns</span><span class="o">.</span><span class="n">loaded_rows</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">row</span><span class="o">/</span><span class="mi">1</span><span class="p" data-group-id="2853709663-10">)</span><span class="p" data-group-id="2853709663-9">}</span><span class="w">
+</span><span class="o">&lt;</span><span class="o">/</span><span class="nc">UI</span><span class="o">.</span><span class="n">virtual_list</span><span class="o">&gt;</span></code></pre><p><code class="inline">phx-range</code> emits <code class="inline">%{first: first, last: last}</code> with an exclusive <code class="inline">last</code> index.
+The requested range already includes <code class="inline">overscan</code>. The source responds by loading
+a contiguous slice, setting <code class="inline">offset</code> to <code class="inline">first</code>, and replacing <code class="inline">loaded_rows</code>.
+<code class="inline">selected_index</code> and <code class="inline">reveal_index</code> preserve controlled selection and distant
+reveal while the selected row is unloaded. Placeholder rows retain the correct
+scroll geometry until the requested slice arrives. Arrow navigation uses the
+loaded overscan; Home and End activate only when the corresponding endpoint is
+loaded. Applications can perform global jumps by changing the controlled
+selection and reveal index.</p><p>Use <a href="GPUI.Test.html#range/5"><code class="inline">GPUI.Test.range/5</code></a> to request ranges without a native display. Native range
+events are coalesced per render cycle and use the same protocol over remote
+displays.</p><h3 id="source-backed-data-tables" class="section-heading"><a href="#source-backed-data-tables" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Source-backed data tables</span></h3><p><code class="inline">data_table/1</code> adds fixed headers, horizontal scrolling, explicit column widths,
+numeric alignment, sorting events, and grid accessibility to the uniform
+source-backed collection contract. Column definitions precede loaded rows, and
+every row contains one child per column:</p><pre><code class="makeup elixir" translate="no"><span class="o">&lt;</span><span class="nc">UI</span><span class="o">.</span><span class="n">data_table</span><span class="w">
+  </span><span class="n">id</span><span class="o">=</span><span class="s">&quot;processes&quot;</span><span class="w">
+  </span><span class="n">label</span><span class="o">=</span><span class="s">&quot;BEAM processes&quot;</span><span class="w">
+  </span><span class="n">total_count</span><span class="o">=</span><span class="p" data-group-id="2653454244-1">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">total_count</span><span class="p" data-group-id="2653454244-1">}</span><span class="w">
+  </span><span class="n">offset</span><span class="o">=</span><span class="p" data-group-id="2653454244-2">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">loaded_offset</span><span class="p" data-group-id="2653454244-2">}</span><span class="w">
+  </span><span class="n">selected</span><span class="o">=</span><span class="p" data-group-id="2653454244-3">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_id</span><span class="p" data-group-id="2653454244-3">}</span><span class="w">
+  </span><span class="n">selected_index</span><span class="o">=</span><span class="p" data-group-id="2653454244-4">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_index</span><span class="p" data-group-id="2653454244-4">}</span><span class="w">
+  </span><span class="n">selected_column</span><span class="o">=</span><span class="p" data-group-id="2653454244-5">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_column</span><span class="p" data-group-id="2653454244-5">}</span><span class="w">
+  </span><span class="n">reveal</span><span class="o">=</span><span class="p" data-group-id="2653454244-6">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_id</span><span class="p" data-group-id="2653454244-6">}</span><span class="w">
+  </span><span class="n">reveal_index</span><span class="o">=</span><span class="p" data-group-id="2653454244-7">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_index</span><span class="p" data-group-id="2653454244-7">}</span><span class="w">
+  </span><span class="n">sort_column</span><span class="o">=</span><span class="p" data-group-id="2653454244-8">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">sort_column</span><span class="p" data-group-id="2653454244-8">}</span><span class="w">
+  </span><span class="n">sort_direction</span><span class="o">=</span><span class="p" data-group-id="2653454244-9">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">sort_direction</span><span class="p" data-group-id="2653454244-9">}</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">change</span><span class="o">=</span><span class="s">&quot;process_selected&quot;</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">cell</span><span class="o">-</span><span class="n">change</span><span class="o">=</span><span class="s">&quot;cell_selected&quot;</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">sort</span><span class="o">=</span><span class="s">&quot;process_sorted&quot;</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">range</span><span class="o">=</span><span class="s">&quot;process_range&quot;</span><span class="w">
+  </span><span class="n">class</span><span class="o">=</span><span class="s">&quot;h-[480px]&quot;</span><span class="w">
+</span><span class="o">&gt;</span><span class="w">
+  </span><span class="o">&lt;</span><span class="nc">UI</span><span class="o">.</span><span class="n">table_column</span><span class="w"> </span><span class="n">id</span><span class="o">=</span><span class="s">&quot;pid&quot;</span><span class="w"> </span><span class="n">label</span><span class="o">=</span><span class="s">&quot;Process&quot;</span><span class="w"> </span><span class="n">width</span><span class="o">=</span><span class="p" data-group-id="2653454244-10">{</span><span class="mi">140</span><span class="p" data-group-id="2653454244-10">}</span><span class="w"> </span><span class="o">/</span><span class="o">&gt;</span><span class="w">
+  </span><span class="o">&lt;</span><span class="nc">UI</span><span class="o">.</span><span class="n">table_column</span><span class="w"> </span><span class="n">id</span><span class="o">=</span><span class="s">&quot;memory&quot;</span><span class="w"> </span><span class="n">label</span><span class="o">=</span><span class="s">&quot;Memory&quot;</span><span class="w"> </span><span class="n">width</span><span class="o">=</span><span class="p" data-group-id="2653454244-11">{</span><span class="mi">120</span><span class="p" data-group-id="2653454244-11">}</span><span class="w"> </span><span class="n">align</span><span class="o">=</span><span class="s">&quot;right&quot;</span><span class="w"> </span><span class="n">sortable</span><span class="o">=</span><span class="p" data-group-id="2653454244-12">{</span><span class="no">true</span><span class="p" data-group-id="2653454244-12">}</span><span class="w"> </span><span class="o">/</span><span class="o">&gt;</span><span class="w">
+  </span><span class="p" data-group-id="2653454244-13">{</span><span class="nc">Enum</span><span class="o">.</span><span class="n">map</span><span class="p" data-group-id="2653454244-14">(</span><span class="n">assigns</span><span class="o">.</span><span class="n">loaded_rows</span><span class="p">,</span><span class="w"> </span><span class="k" data-group-id="2653454244-15">fn</span><span class="w"> </span><span class="n">row</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+    </span><span class="nc">UI</span><span class="o">.</span><span class="n">table_row</span><span class="p" data-group-id="2653454244-16">(</span><span class="p" data-group-id="2653454244-17">%{</span><span class="ss">id</span><span class="p">:</span><span class="w"> </span><span class="n">row</span><span class="o">.</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="ss">children</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="2653454244-18">[</span><span class="n">row</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span><span class="w"> </span><span class="n">row</span><span class="o">.</span><span class="n">memory</span><span class="p" data-group-id="2653454244-18">]</span><span class="p" data-group-id="2653454244-17">}</span><span class="p" data-group-id="2653454244-16">)</span><span class="w">
+  </span><span class="k" data-group-id="2653454244-15">end</span><span class="p" data-group-id="2653454244-14">)</span><span class="p" data-group-id="2653454244-13">}</span><span class="w">
+</span><span class="o">&lt;</span><span class="o">/</span><span class="nc">UI</span><span class="o">.</span><span class="n">data_table</span><span class="o">&gt;</span></code></pre><p>Widths are display pixels and each column is bounded from 40 to 2,000 pixels.
+Sortable headers emit their stable column ID through <code class="inline">phx-sort</code>; controlled
+<code class="inline">sort_column</code> and <code class="inline">sort_direction</code> (<code class="inline">ascending</code> or <code class="inline">descending</code>) expose the
+current order. Row selection emits the row ID. Cell selection and Left/Right
+navigation emit <code class="inline">[row_id, column_id]</code> through <code class="inline">phx-cell-change</code>, while Up/Down,
+Home/End, Enter, and Space follow the source-backed row rules.</p><p>The native accessibility tree uses grid, row, column-header, and grid-cell roles
+with one-based row and column indexes and total grid dimensions. Use
+<a href="GPUI.Test.html#table_sort/4"><code class="inline">GPUI.Test.table_sort/4</code></a>, <a href="GPUI.Test.html#table_cell_select/5"><code class="inline">GPUI.Test.table_cell_select/5</code></a>, and
+<a href="GPUI.Test.html#range/5"><code class="inline">GPUI.Test.range/5</code></a> for deterministic tests. Full row models remain in the
+source process; snapshots contain only column definitions and the loaded row
+slice.</p><h3 id="accessible-trees" class="section-heading"><a href="#accessible-trees" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Accessible trees</span></h3><p><code class="inline">tree/1</code> and <code class="inline">tree_item/1</code> apply the same uniform-height, source-backed range,
+selection, and reveal contracts to hierarchical collections. The source emits a
+flattened visible slice; each item declares its hierarchy and accessibility
+metadata:</p><pre><code class="makeup elixir" translate="no"><span class="o">&lt;</span><span class="nc">UI</span><span class="o">.</span><span class="n">tree</span><span class="w">
+  </span><span class="n">id</span><span class="o">=</span><span class="s">&quot;files&quot;</span><span class="w">
+  </span><span class="n">label</span><span class="o">=</span><span class="s">&quot;Repository files&quot;</span><span class="w">
+  </span><span class="n">total_count</span><span class="o">=</span><span class="p" data-group-id="7048750269-1">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">total_count</span><span class="p" data-group-id="7048750269-1">}</span><span class="w">
+  </span><span class="n">offset</span><span class="o">=</span><span class="p" data-group-id="7048750269-2">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">loaded_offset</span><span class="p" data-group-id="7048750269-2">}</span><span class="w">
+  </span><span class="n">selected</span><span class="o">=</span><span class="p" data-group-id="7048750269-3">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_id</span><span class="p" data-group-id="7048750269-3">}</span><span class="w">
+  </span><span class="n">selected_index</span><span class="o">=</span><span class="p" data-group-id="7048750269-4">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_index</span><span class="p" data-group-id="7048750269-4">}</span><span class="w">
+  </span><span class="n">reveal</span><span class="o">=</span><span class="p" data-group-id="7048750269-5">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_id</span><span class="p" data-group-id="7048750269-5">}</span><span class="w">
+  </span><span class="n">reveal_index</span><span class="o">=</span><span class="p" data-group-id="7048750269-6">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_index</span><span class="p" data-group-id="7048750269-6">}</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">change</span><span class="o">=</span><span class="s">&quot;file_selected&quot;</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">toggle</span><span class="o">=</span><span class="s">&quot;directory_toggled&quot;</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">range</span><span class="o">=</span><span class="s">&quot;file_range&quot;</span><span class="w">
+  </span><span class="n">class</span><span class="o">=</span><span class="s">&quot;h-[480px]&quot;</span><span class="w">
+</span><span class="o">&gt;</span><span class="w">
+  </span><span class="p" data-group-id="7048750269-7">{</span><span class="nc">Enum</span><span class="o">.</span><span class="n">map</span><span class="p" data-group-id="7048750269-8">(</span><span class="n">assigns</span><span class="o">.</span><span class="n">loaded_entries</span><span class="p">,</span><span class="w"> </span><span class="k" data-group-id="7048750269-9">fn</span><span class="w"> </span><span class="n">entry</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+    </span><span class="nc">UI</span><span class="o">.</span><span class="n">tree_item</span><span class="p" data-group-id="7048750269-10">(</span><span class="p" data-group-id="7048750269-11">%{</span><span class="w">
+      </span><span class="ss">id</span><span class="p">:</span><span class="w"> </span><span class="n">entry</span><span class="o">.</span><span class="n">id</span><span class="p">,</span><span class="w">
+      </span><span class="ss">parent_id</span><span class="p">:</span><span class="w"> </span><span class="n">entry</span><span class="o">.</span><span class="n">parent_id</span><span class="p">,</span><span class="w">
+      </span><span class="ss">level</span><span class="p">:</span><span class="w"> </span><span class="n">entry</span><span class="o">.</span><span class="n">level</span><span class="p">,</span><span class="w">
+      </span><span class="ss">branch</span><span class="p">:</span><span class="w"> </span><span class="n">entry</span><span class="o">.</span><span class="n">branch?</span><span class="p">,</span><span class="w">
+      </span><span class="ss">expanded</span><span class="p">:</span><span class="w"> </span><span class="n">entry</span><span class="o">.</span><span class="n">expanded?</span><span class="p">,</span><span class="w">
+      </span><span class="ss">position</span><span class="p">:</span><span class="w"> </span><span class="n">entry</span><span class="o">.</span><span class="n">position</span><span class="p">,</span><span class="w">
+      </span><span class="ss">set_size</span><span class="p">:</span><span class="w"> </span><span class="n">entry</span><span class="o">.</span><span class="n">set_size</span><span class="p">,</span><span class="w">
+      </span><span class="ss">children</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7048750269-12">[</span><span class="n">entry</span><span class="o">.</span><span class="n">label</span><span class="p" data-group-id="7048750269-12">]</span><span class="w">
+    </span><span class="p" data-group-id="7048750269-11">}</span><span class="p" data-group-id="7048750269-10">)</span><span class="w">
+  </span><span class="k" data-group-id="7048750269-9">end</span><span class="p" data-group-id="7048750269-8">)</span><span class="p" data-group-id="7048750269-7">}</span><span class="w">
+</span><span class="o">&lt;</span><span class="o">/</span><span class="nc">UI</span><span class="o">.</span><span class="n">tree</span><span class="o">&gt;</span></code></pre><p><code class="inline">phx-change</code> emits the selected item ID. <code class="inline">phx-toggle</code> requests controlled branch
+expansion or collapse; the application updates its source model and visible
+slice. Left collapses an expanded branch or selects its loaded parent. Right
+expands a collapsed branch or selects its first loaded, enabled child. Up and
+Down skip disabled items, while Home and End retain the source-backed endpoint
+rules. Native accessibility exposes tree and tree-item roles plus level,
+expanded, selected, position-in-set, and set-size metadata.</p><p>Use <a href="GPUI.Test.html#change/4"><code class="inline">GPUI.Test.change/4</code></a>, <a href="GPUI.Test.html#select/4"><code class="inline">GPUI.Test.select/4</code></a>, and <a href="GPUI.Test.html#range/5"><code class="inline">GPUI.Test.range/5</code></a> for
+deterministic tree tests. All three event paths are forwarded unchanged by
+remote displays.</p><h3 id="source-backed-code-and-diff-viewers" class="section-heading"><a href="#source-backed-code-and-diff-viewers" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Source-backed code and diff viewers</span></h3><p><code class="inline">code_viewer/1</code> specializes the uniform source-backed collection contract for
+monospaced source text and unified diffs. Lines do not wrap. <code class="inline">max_columns</code>
+provides stable horizontal geometry even when the longest line is not in the
+loaded slice, while <code class="inline">tab_width</code> controls deterministic tab expansion.</p><pre><code class="makeup elixir" translate="no"><span class="o">&lt;</span><span class="nc">UI</span><span class="o">.</span><span class="n">code_viewer</span><span class="w">
+  </span><span class="n">id</span><span class="o">=</span><span class="s">&quot;preview&quot;</span><span class="w">
+  </span><span class="n">label</span><span class="o">=</span><span class="s">&quot;File preview&quot;</span><span class="w">
+  </span><span class="n">mode</span><span class="o">=</span><span class="s">&quot;diff&quot;</span><span class="w">
+  </span><span class="n">total_count</span><span class="o">=</span><span class="p" data-group-id="1486816096-1">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">total_count</span><span class="p" data-group-id="1486816096-1">}</span><span class="w">
+  </span><span class="n">offset</span><span class="o">=</span><span class="p" data-group-id="1486816096-2">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">loaded_offset</span><span class="p" data-group-id="1486816096-2">}</span><span class="w">
+  </span><span class="n">selected</span><span class="o">=</span><span class="p" data-group-id="1486816096-3">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_id</span><span class="p" data-group-id="1486816096-3">}</span><span class="w">
+  </span><span class="n">selected_index</span><span class="o">=</span><span class="p" data-group-id="1486816096-4">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_index</span><span class="p" data-group-id="1486816096-4">}</span><span class="w">
+  </span><span class="n">reveal</span><span class="o">=</span><span class="p" data-group-id="1486816096-5">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_id</span><span class="p" data-group-id="1486816096-5">}</span><span class="w">
+  </span><span class="n">reveal_index</span><span class="o">=</span><span class="p" data-group-id="1486816096-6">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">selected_index</span><span class="p" data-group-id="1486816096-6">}</span><span class="w">
+  </span><span class="n">max_columns</span><span class="o">=</span><span class="p" data-group-id="1486816096-7">{</span><span class="n">assigns</span><span class="o">.</span><span class="n">max_columns</span><span class="p" data-group-id="1486816096-7">}</span><span class="w">
+  </span><span class="n">tab_width</span><span class="o">=</span><span class="p" data-group-id="1486816096-8">{</span><span class="mi">4</span><span class="p" data-group-id="1486816096-8">}</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">change</span><span class="o">=</span><span class="s">&quot;line_selected&quot;</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">range</span><span class="o">=</span><span class="s">&quot;preview_range&quot;</span><span class="w">
+  </span><span class="n">phx</span><span class="o">-</span><span class="n">copy</span><span class="o">=</span><span class="s">&quot;line_copied&quot;</span><span class="w">
+  </span><span class="n">class</span><span class="o">=</span><span class="s">&quot;h-[480px]&quot;</span><span class="w">
+</span><span class="o">&gt;</span><span class="w">
+  </span><span class="p" data-group-id="1486816096-9">{</span><span class="nc">Enum</span><span class="o">.</span><span class="n">map</span><span class="p" data-group-id="1486816096-10">(</span><span class="n">assigns</span><span class="o">.</span><span class="n">loaded_lines</span><span class="p">,</span><span class="w"> </span><span class="k" data-group-id="1486816096-11">fn</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+    </span><span class="nc">UI</span><span class="o">.</span><span class="n">code_line</span><span class="p" data-group-id="1486816096-12">(</span><span class="p" data-group-id="1486816096-13">%{</span><span class="w">
+      </span><span class="ss">id</span><span class="p">:</span><span class="w"> </span><span class="n">line</span><span class="o">.</span><span class="n">id</span><span class="p">,</span><span class="w">
+      </span><span class="ss">number</span><span class="p">:</span><span class="w"> </span><span class="n">line</span><span class="o">.</span><span class="n">number</span><span class="p">,</span><span class="w">
+      </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="n">line</span><span class="o">.</span><span class="n">text</span><span class="p">,</span><span class="w">
+      </span><span class="ss">kind</span><span class="p">:</span><span class="w"> </span><span class="n">line</span><span class="o">.</span><span class="n">kind</span><span class="w">
+    </span><span class="p" data-group-id="1486816096-13">}</span><span class="p" data-group-id="1486816096-12">)</span><span class="w">
+  </span><span class="k" data-group-id="1486816096-11">end</span><span class="p" data-group-id="1486816096-10">)</span><span class="p" data-group-id="1486816096-9">}</span><span class="w">
+</span><span class="o">&lt;</span><span class="o">/</span><span class="nc">UI</span><span class="o">.</span><span class="n">code_viewer</span><span class="o">&gt;</span></code></pre><p>Modes are <code class="inline">plain</code> and <code class="inline">diff</code>. Diff line kinds are <code class="inline">addition</code>, <code class="inline">deletion</code>,
+<code class="inline">context</code>, and <code class="inline">hunk</code>; plain viewers can additionally use <code class="inline">debug</code>, <code class="inline">info</code>,
+<code class="inline">warning</code>, and <code class="inline">error</code> for theme-aware semantic log presentation. Line numbers
+are optional. Up/Down, Page Up/Page Down,
+Home/End, Enter, and Space use one accessible listbox tab stop and preserve the
+source-backed endpoint rules. Pointer selection emits the stable line ID.</p><p>Ctrl/Cmd+C writes the selected loaded line to the clipboard on the display
+machine. This is intentionally display-local for remote sessions. If
+<code class="inline">phx-copy</code> is set, the viewer emits an acknowledgement after requesting the
+platform write. Tests use <a href="GPUI.Test.html#select/4"><code class="inline">GPUI.Test.select/4</code></a>, <a href="GPUI.Test.html#range/5"><code class="inline">GPUI.Test.range/5</code></a>, and
+<a href="GPUI.Test.html#copy_selected_line/3"><code class="inline">GPUI.Test.copy_selected_line/3</code></a>; deterministic helpers do not access the host
+clipboard.</p>
+
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="forms-and-controls.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Forms and controls
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="text-and-editing.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Text and editing
+        </span>
+      </a>
+
+  </div>
+</div>
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/gpui/0.2.0-rc.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2">Hex Preview</a>
+
+                (<a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2/show/guides/ui/collections-and-data-views.md">current file</a>)
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="gpui.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.3) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

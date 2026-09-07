@@ -48,6 +48,8 @@ defmodule GPUI.Test.NativeSession do
   def click(%UI{} = ui, {x, y}), do: call(ui, {:click, point!({x, y})})
   def click(%UI{} = ui, target), do: call(ui, {:click, target!(target)})
 
+  def drag(%UI{} = ui, from, to), do: call(ui, {:drag, point!(from), point!(to)})
+
   @spec scroll(UI.t(), String.t(), keyword()) :: UI.t()
   def scroll(%UI{} = ui, target, opts),
     do: call(ui, {:scroll, target!(target), scroll_opts!(opts)})
@@ -97,6 +99,9 @@ defmodule GPUI.Test.NativeSession do
 
   def handle_call({:click, ref, target}, _from, %{ref: ref} = state),
     do: reply(state, :click, target, NativeTest.click(state.session, target))
+
+  def handle_call({:drag, ref, {x1, y1} = from, {x2, y2} = to}, _from, %{ref: ref} = state),
+    do: reply(state, :drag, {from, to}, NativeTest.drag(state.session, x1, y1, x2, y2))
 
   def handle_call({:scroll, ref, target, opts}, _from, %{ref: ref} = state) do
     {delta_x, delta_y} = Keyword.fetch!(opts, :delta)

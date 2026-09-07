@@ -110,6 +110,10 @@ defmodule GPUI.Native.Generated do
         :erlang.nif_error(:nif_not_loaded)
       end
 
+      def native_test_drag(_session, _from_x, _from_y, _to_x, _to_y) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
       def native_test_click_at(_session, _x, _y) do
         :erlang.nif_error(:nif_not_loaded)
       end

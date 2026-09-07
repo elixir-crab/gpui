@@ -1,7 +1,9 @@
 defmodule GPUI.Native.WindowChromeE2ETest do
   use ExUnit.Case, async: false
 
+  alias GPUI.Runtime.Update
   alias GPUITest.Desktop
+  import GPUITest.Desktop, only: [start_runtime!: 2]
 
   setup context do
     Desktop.setup(context, [])
@@ -70,10 +72,15 @@ defmodule GPUI.Native.WindowChromeE2ETest do
     if MapSet.member?(Desktop.capabilities(desktop), :window_drag) do
       Desktop.drag!(desktop, window_id, from: {220, 24}, to: {280, 64})
 
-      Desktop.eventually(desktop, runtime, fn ->
-        after_drag = Desktop.window_info!(desktop, window_id)
-        assert after_drag.frame.x != before.frame.x or after_drag.frame.y != before.frame.y
-      end)
+      after_drag =
+        await_window_move(
+          desktop,
+          window_id,
+          before.frame,
+          System.monotonic_time(:millisecond) + 3_000
+        )
+
+      assert after_drag.frame.x != before.frame.x or after_drag.frame.y != before.frame.y
     end
 
     after_drag = Desktop.window_info!(desktop, window_id)
@@ -81,12 +88,25 @@ defmodule GPUI.Native.WindowChromeE2ETest do
     close_x = content_frame.width - 24
     Desktop.click!(desktop, window_id, at: {close_x, 24})
 
-    Desktop.eventually(desktop, runtime, fn -> assert %{close_requests: 1} = assigns(runtime) end)
+    assert_receive {:gpui, ^runtime,
+                    %Update{snapshot: %{windows: [%{root: %{assigns: %{close_requests: 1}}}]}}},
+                   3_000
+
     assert %{windows: [_window]} = GPUI.Runtime.snapshot!(runtime)
   end
 
-  defp assigns(runtime) do
-    %{windows: [%{root: %{assigns: assigns}}]} = GPUI.Runtime.snapshot!(runtime)
-    assigns
+  # OS window movement has no runtime update acknowledgement.
+  defp await_window_move(desktop, window, before, deadline) do
+    info = Desktop.window_info!(desktop, window)
+
+    if info.frame.x != before.x or info.frame.y != before.y or
+         System.monotonic_time(:millisecond) >= deadline do
+      info
+    else
+      receive do
+      after
+        20 -> await_window_move(desktop, window, before, deadline)
+      end
+    end
   end
 end

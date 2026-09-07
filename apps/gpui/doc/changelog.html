@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.3">
+    <meta name="project" content="gpui v0.2.0-rc.2">
+
+
+    <title>Changelog — gpui v0.2.0-rc.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-NHQLCD6Y.css" />
+
+    <script defer src="dist/sidebar_items-5E369AEC.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-Y2MUTVIN.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="https://github.com/elixir-crab/gpui" class="sidebar-projectName" translate="no">
+gpui
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.2.0-rc.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-extra" id="main" data-type="extras">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of gpui</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>Changelog</h1>
+
+<a href="changelog.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+      <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/CHANGELOG.md#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+<h2 id="unreleased" class="section-heading"><a href="#unreleased" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Unreleased</span></h2><h2 id="0-2-0-rc-1-2026-09-02" class="section-heading"><a href="#0-2-0-rc-1-2026-09-02" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">0.2.0-rc.1 - 2026-09-02</span></h2><h3 id="breaking-changes" class="section-heading"><a href="#breaking-changes" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Breaking changes</span></h3><ul><li>Moved conventional controls and native loading into the separately installed
+<code class="inline">gpui_components</code> and <code class="inline">gpui_native</code> packages.</li><li><a href="GPUI.Schema.html#registry/0"><code class="inline">GPUI.Schema.registry/0</code></a> now contains only neutral core declarations;
+additional native declarations compose explicitly through immutable schema
+providers.</li><li>Raw <code class="inline">ui_*</code> tags remain internal template syntax and must be authored through
+their public component builders.</li></ul><h3 id="added" class="section-heading"><a href="#added" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Added</span></h3><ul><li>Added first-class application identity and typed icon metadata with
+deterministic process-wide conflict handling.</li><li>Added bounded runtime information, rendered-tree formatting, and shared
+<a href="GPUI.Tree.html"><code class="inline">GPUI.Tree</code></a> query functions for debugging and tests.</li><li>Added focused examples for declarative events, supervised updates, controlled
+forms, multiple windows, BEAM inspection, image analysis, and supervised
+pipelines.</li></ul><h3 id="changed" class="section-heading"><a href="#changed" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Changed</span></h3><ul><li>Consolidated renderer-independent application, session, snapshot, text,
+transfer, resource, accessibility, and style contracts in <code class="inline">gpui</code>.</li><li>Reworked examples around distinct Elixir and OTP behavior and enforced
+readable explicit text contrast.</li></ul><h2 id="0-1-1" class="section-heading"><a href="#0-1-1" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">0.1.1</span></h2><ul><li><p>Corrected native dialog and tabs E2E assertions to prove focus through keyboard activation, moved tab key handling to the composite focus owner, and fixed the programmatic split event spelling.</p></li><li><p>Added native tab-list semantics with roving focus, wrapped arrow navigation, Home/End, Enter/Space, accessible Click actions, visible keyboard focus, and disabled interaction exclusion through the controlled change path.</p></li><li><p>Added native dialog E2E scenarios for forward and reverse focus containment, Escape policy, controlled closure, and keyboard reopening through the restored trigger.</p></li><li><p>Extended release validation with a clean renderer-independent consumer that compiles and runs <a href="GPUI.Test.html"><code class="inline">GPUI.Test</code></a> without building or loading the native NIF.</p></li><li><p>Hardened release security validation to fail Rust unsoundness advisories and updated the pinned native dependency graph past the affected <code class="inline">event-listener</code> release.</p></li><li><p>Replaced premature release-compatibility policy with explicit private, unreleased development boundaries while retaining exact current-process protocol validation.</p></li><li><p>Added a neutral controlled two-pane native resizable split with bounded sizes, monotonic resize requests, and consumer-owned persistence.</p></li><li><p>Added idiomatic optional <code class="inline">handle_window_event/3</code> callbacks with <code class="inline">{:close, assigns}</code> approval, plus declarative native window minimum size and resizability.</p></li><li><p>Added stable-ID monotonic focus requests and native focus/blur events for buttons, low-level inputs, controlled inputs, and text surfaces.</p></li><li><p>Added opt-in, stable-ID, deduplicated native element-bounds events for composing ordinary HTML/Tailwind-like layout with window-fitted layers.</p></li><li><p>Added a neutral bounded <code class="inline">&lt;layer&gt;</code> primitive backed by GPUI anchored positioning and deferred paint priority, documented as a native top-layer escape hatch while ordinary positioning and static presentation remain HTML/Tailwind-like.</p></li><li><p>Added GPUI-native relative and absolute positioning with typed inset utilities, including axis, percentage, fractional, arbitrary-pixel, and auto values.</p></li><li><p>Added bounded non-editable block projections anchored before or after logical text lines without changing document coordinates.</p></li><li><p>Added bounded non-editable inline text projections anchored to explicit UTF-16 positions without completion policy or Rope mutation.</p></li><li><p>Hardened controlled dialogs with Escape policy requiring both keyboard and closable flags, native focus trapping, initial content focus, and safe trigger restoration on every close path.</p></li><li><p>Added controlled disabled semantics for generic accessible controls, removing pointer, keyboard, Tab, and AccessKit activation while reporting AccessKit disabled state.</p></li><li><p>Added generated accessibility interaction classes and native Tab/Enter/Space activation for simple generic controls, including visible keyboard focus.</p></li><li><p>Routed generic accessible Click actions through the same normalized native event helper as pointer activation, with no accessibility-specific Elixir event path.</p></li><li><p>Generated native accessibility enums, the grouped semantics struct, decoders, and GPUI conversion matches from the authoritative Elixir accessibility specification.</p></li><li><p>Added role-constrained neutral accessibility values, selected/expanded/checked states, and orientation with native AccessKit and remote state-transition coverage.</p></li><li><p>Centralized generic accessibility vocabulary, identity, and name/description validation in <a href="GPUI.Accessibility.html"><code class="inline">GPUI.Accessibility</code></a> ahead of role-constrained state attributes.</p></li><li><p>Added bounded renderer-independent accessibility roles, labels, and descriptions for identified generic elements, including native AccessKit mapping and remote snapshot coverage.</p></li><li><p>Documented the pinned GPUI/AccessKit native accessibility boundary, existing component mappings, truthful schema direction, and unsupported claims.</p></li><li><p>Made development reload failures observable and recoverable, with pre-compilation syntax validation and atomic multi-window refresh publishing.</p></li><li><p>Preserved dynamic multi-window topology, keys, IDs, per-window assigns, and monotonic allocation across source reload; added end-to-end remote client display reconciliation coverage.</p></li><li><p>Hardened remote keyed multi-window snapshots with resume coverage, negotiated <code class="inline">:window_topology_v1</code>, and bounded window metadata and counts.</p></li><li><p>Added Phoenix/OTP-style typed view outcomes for opening and closing keyed windows from <code class="inline">handle_event/3</code> and <code class="inline">handle_info/2</code>.</p></li><li><p>Added local dynamic multi-window topology with stable application keys, monotonic session IDs, and declarative display reconciliation.</p></li><li><p>Added neutral bounded text style runs whose foreground color, weight, and style participate directly in native shaping.</p></li><li><p>Added explicit solid, dashed, and wavy underline variants to neutral text decorations.</p></li><li><p>Added neutral bounded text decorations with range-attached RGB backgrounds and underlines, without diagnostic or language policy.</p></li><li><p>Expanded requested range geometry into bounded per-visual-row rectangles for wrapped text.</p></li><li><p>Replaced the editable-text demonstration's fixed gutter with consumer-owned line numbers driven by native visible rows, line height, and scroll offset.</p></li><li><p>Added declarative scroll-to-position request tokens and asynchronous native point-to-position hit-test events for text surfaces.</p></li><li><p>Added bounded declarative range-geometry requests for text surfaces, limited to 64 ranges and emitted only for currently laid-out content.</p></li><li><p>Added revision-tagged, deduplicated text-surface viewport and primary-caret geometry events with public coordinate-space types.</p></li><li><p>Added native E2E coverage for two editable surfaces sharing one persistent buffer across local typing, external edits, undo, redo, and reconciliation without external-event echo.</p></li><li><p>Added the neutral <code class="inline">&lt;text_surface&gt;</code> renderer primitive, backed by <a href="GPUI.Text.Buffer.html"><code class="inline">GPUI.Text.Buffer</code></a>, with native immediate input/IME behavior, focus-request tokens, external revision reconciliation, minimal local text transactions, plural selection events, and selection-only revisions that do not pollute document undo history.</p></li><li><p>Added generic persistent native Rope text buffers with explicit UTF-16 positions, revisioned atomic transactions, plural selections, idempotent delivery, stale-revision protection, and monotonic undo/redo, without introducing an opinionated editor component.</p></li><li><p>Added GPUI-native flex-basis, overflow clipping, whitespace, text alignment and ellipsis/truncation, and cursor utilities to the Tailwind-compatible style protocol.</p></li><li><p>Normalized Tailwind-compatible classes on programmatically constructed <code class="inline">GPUI.UI</code> component trees before serialization, matching template behavior, and fixed <code class="inline">mix gpui.dev --no-compile</code> native availability detection.</p></li><li><p>Expanded the Tailwind-compatible normalizer with flex shorthands, decimal spacing, fractional and percentage dimensions, safe arbitrary pixel/color/opacity values, exact arbitrary radii, and exact preservation of unsupported classes; replaced static minimum-height styles in the showcase applications with <code class="inline">min-h-0</code> utilities.</p></li><li><p>Added bounded renderer-independent window commands with cross-platform modified shortcuts, native post-dispatch matching that preserves focused input behavior, local/remote event routing, deterministic command tests, and command-driven Git, process, and log/trace dogfood workflows.</p></li><li><p>Added renderer-independent controlled field composition, visible help/error feedback, input Enter submission, monotonic native focus requests, deterministic submission testing, and validation-driven Settings Form and external-consumer examples.</p></li><li><p>Required semantic names for buttons, checkboxes, text inputs, selectors, comboboxes, popover/menu triggers, and dialogs; propagated controlled values, placeholders, password roles, selected labels, and expanded overlay state into native accessibility metadata.</p></li><li><p>Added schema-derived ExDoc option tables and precise named option-map types for every public UI and overlay builder, including required events, defaults, enums, accessibility labels, and named slots.</p></li><li><p>Added schema-driven public component attribute and event validation, required owner events for editable controlled components, unknown-option rejection, normalized string event keys, clearer stable-ID errors, corrected schema option types, and expanded common-builder documentation.</p></li><li><p>Required semantic labels for switches, radio groups, and sliders; propagated switch state, radio orientation, and slider grouping into native accessibility metadata; and enforced one-based tree accessibility positions at both public and native boundaries.</p></li><li><p>Restricted lowercase templates to renderer primitives and added compile-time diagnostics for internal component tags, unsupported tags, and duplicate attributes.</p></li><li><p>Made runtime mutation, frame, drain, and injection operations return structured custom-display failures without crashing, while retaining authoritative session state for frame retries.</p></li><li><p>Added centralized custom-display callback validation with structured startup, synchronization, drain, and event-injection failures.</p></li><li><p>Documented local and remote supervision options and now reject invalid polling intervals and remote session TTLs during startup instead of silently disabling lifecycle behavior.</p></li><li><p>Made native compilation an explicit consumer opt-in outside tests, so <a href="GPUI.Test.html"><code class="inline">GPUI.Test</code></a>, renderer-independent sessions, and remote servers compile and run without Rust or a native library.</p></li><li><p>Added bounded per-connection and per-session remote request admission, explicit overload errors, caller monitoring, and concurrent 50-session load coverage.</p></li><li><p>Moved the remote server, acceptor, connection owners, delegated tasks, session coordinators, and application sessions into explicit OTP supervision subtrees with significant-child shutdown semantics and interruptible deferred mounting.</p></li><li><p>Split collection validation, native controls/forms, and dialog/tooltip/popover rendering into focused internal modules while preserving source-derived RustQ renderer routing.</p></li><li><p>Hardened native image, raster, text-painting, and IME paths against oversized payloads, arithmetic overflow, malformed selection ranges, and recoverable paint failures.</p></li><li><p>Hardened remote lifecycle handling with idempotent mount/event retries, resumable bounded event queues, monitored per-session coordinators, concurrent cross-session dispatch without head-of-line blocking, isolated connection owners, structured display synchronization failures, and stale-timer rejection.</p></li><li><p>Hardened internal display frame replies, explicit session callback contracts, event-history consistency, idempotent native window reconciliation, and shared collection keyboard navigation.</p></li><li><p>Added accessible source-backed data tables with fixed sortable headers, horizontal scrolling, controlled row/cell navigation, numeric alignment, grid metadata, and 100,000-row native coverage; used by BEAM Observatory for process and ETS inspection.</p></li><li><p>Added BEAM Observatory with supervised process and ETS sampling, bounded server-local discovery, asynchronous stale-safe object loading, source-owned models, small table slices, filtering, sorting, and selected-object details.</p></li><li><p>Moved option, image, text-child, and style decoding from handwritten Rust into typespec-derived contracts, ordinary Elixir macros, and typed Rusty-Elixir.</p></li><li><p>Added Elixir Workbench runtime logs with bounded Logger ingestion, asynchronous stale-safe filtering, pause/follow-tail controls, source-backed semantic log rendering, multiline details, retention rollover, and display-side copying.</p></li><li><p>Polished the example suite with clearer controlled-state feedback, filtered and empty process states, safe palette action availability, explicit local/remote path semantics, richer settings review, and modernized resource-reference rendering.</p></li><li><p>Added an accessible source-backed monospaced code and unified-diff viewer with line numbers, controlled selection/reveal, horizontal scrolling, tab expansion, display-side copying, and 100,000-line native coverage; used by Elixir Workbench for source and diff previews.</p></li><li><p>Consolidated component defaults and native attribute types in the shared schema, normalized explicit nil attributes, indexed renderer metadata in one pass, and derived disabled NIF signatures and generated atom references through RustQ metadata.</p></li><li><p>Moved primitive element and event-value decoding into typed Rusty-Elixir and centralized source-backed list/tree mechanics in a handwritten uniform-collection core.</p></li><li><p>Added accessible source-backed trees with controlled expansion, hierarchical keyboard navigation, structural accessibility metadata, and 100,000-item native coverage; used by Elixir Workbench for repository navigation.</p></li><li><p>Added accessible controlled progress, bounded display-side file selection with operation IDs and remote-safe byte payloads, and display-side clipboard buttons.</p></li><li><p>Updated Image Palette to use native file selection, reusable progress, user-side CSS clipboard copying, cancellable analysis, and stale-result-safe replacement.</p></li><li><p>Added source-backed virtual-list ranges with overscan, unloaded selection/reveal indexes, coalesced native range events, remote forwarding, and deterministic 100,000-row coverage.</p></li><li><p>Added Elixir Workbench with bounded repository scans, source-owned tree/diff models, small snapshot slices, status filtering, runtime logs, diagnostics, command actions, and explicit server-local filesystem semantics.</p></li><li><p>Added accessible virtualized uniform-height collections with stable row identities, controlled selection, keyboard navigation, and programmatic reveal.</p></li><li><p>Added common image decoding into <a href="GPUI.Raster.html"><code class="inline">GPUI.Raster</code></a> values and a supervised image-palette application with progress, bounded previews, resource reuse, and CSS export.</p></li><li><p>Upgraded generation to RustQ <code class="inline">1.0.0-rc.3</code> and migrated compiled <code class="inline">defrust</code> access to the documented <code class="inline">RustQ.Meta.AST</code> API.</p></li><li><p>Derived native atoms, resources, event values and kinds, renderer routing, disabled-feature NIFs, and boundary policy structurally through RustQ and Rust source metadata.</p></li><li><p>Moved window and component term decoding into typed Rusty-Elixir <code class="inline">defrust</code> helpers.</p></li><li><p>Added alias-aware component tags, HEEx named slots, and controlled <code class="inline">GPUI.UI.Overlay.popover/1</code> with keyboard and dismissal focus behavior.</p></li><li><p>Added <code class="inline">GPUI.UI.Overlay.tooltip/1</code> with textual named-slot content, configurable native show delay, and hoverable lifecycle support.</p></li><li><p>Added controlled <code class="inline">GPUI.UI.Overlay.dialog/1</code> with arbitrary GPUI content, optional triggers, focus trapping/restoration, keyboard and overlay dismissal, and local/remote native coverage.</p></li><li><p>Added controlled <code class="inline">GPUI.UI.Overlay.dropdown_menu/1</code> with named items, native popup-menu selection, disabled and checked states, controlled dismissal, and local/remote coverage.</p></li><li><p>Added process-global light and dark component theme switching across native displays.</p></li><li><p>Added controlled <code class="inline">GPUI.UI.input/1</code> with stable native entity reconciliation.</p></li><li><p>Added native coverage for input editing, rerendering, and theme changes.</p></li><li><p>Added packaged <a href="GPUI.Test.html"><code class="inline">GPUI.Test</code></a> ExUnit helpers and <a href="GPUI.Test.Display.html"><code class="inline">GPUI.Test.Display</code></a> for consumer tests.</p></li><li><p>Added a typed persistent native component registry with structural duplicate-ID validation.</p></li><li><p>Added controlled <code class="inline">GPUI.UI.select/1</code>, native popup interaction, and semantic test support.</p></li><li><p>Generated native component contracts, element variants, decoder/render dispatch, and state-registry accessors from the component schema.</p></li><li><p>Added persistent <code class="inline">GPUI.UI.combobox/1</code> with search events, dynamic filtering, clearing, and local/remote native coverage.</p></li><li><p>Added controlled <code class="inline">GPUI.UI.slider/1</code> with generated numeric contracts, change/release events, persistent reconciliation, and native coverage.</p></li><li><p>Added controlled <code class="inline">GPUI.UI.tabs/1</code> backed directly by <code class="inline">gpui-component</code> tab bars.</p></li><li><p>Added controlled <code class="inline">GPUI.UI.accordion/1</code> and <code class="inline">accordion_item/1</code> with arbitrary nested GPUI content.</p></li><li><p>Split advanced native component renderers by responsibility and expanded local/remote lifecycle coverage.</p></li><li><p>Added controlled <code class="inline">GPUI.UI.switch/1</code> and <code class="inline">radio_group/1</code> with disabled radio options and local/remote native coverage.</p></li><li><p>Added Switch Enter/Space activation, Radio Group arrow navigation with disabled-option skipping, roving tab stops, and visual Switch loading feedback.</p></li><li><p>Added monitored local-runtime and remote-client update subscriptions with typed revisions, normalized events, and synchronized snapshots.</p></li><li><p>Added generation-based native frame barriers for local and remote displays without blocking runtime message processing.</p></li><li><p>Added completed-frame tokens for deterministic synchronization of native-only hover, focus, tooltip, and input transitions.</p></li><li><p>Added deterministic Xvfb visual captures for components and overlays, plus explicit single-purpose screenshot helpers.</p></li><li><p>Replaced E2E state polling and sleep-based synchronization with monitored update messages, frame barriers, and mailbox assertions.</p></li><li><p>Added structured ExDoc guides and replaced the long-form README with a concise project introduction.</p></li><li><p>Preserved upstream component style defaults and constrained full-size Select, Combobox, and Slider controls to their intended layout heights.</p></li></ul><h2 id="0-1-0" class="section-heading"><a href="#0-1-0" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">0.1.0</span></h2><ul><li>Added controlled <code class="inline">GPUI.UI</code> button and checkbox controls backed by <code class="inline">gpui-component</code>.</li><li>Added application-wide component assets, initialization, root wrapping, and theme defaults.</li><li>Added local and remote native interaction coverage for component rendering and events.</li></ul><h2 id="0-1-0-rc" class="section-heading"><a href="#0-1-0-rc" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">0.1.0-rc</span></h2><p>Initial release candidate.</p><ul><li>Renderer-independent <a href="GPUI.Session.html"><code class="inline">GPUI.Session</code></a> and typed <a href="GPUI.Snapshot.html"><code class="inline">GPUI.Snapshot</code></a> boundaries.</li><li>Local native and remote TCP displays with isolated application sessions.</li><li>One process-global GPUI application loop with acknowledged window lifecycle commands.</li><li>HEEx-style templates and a constrained Tailwind-compatible style normalizer.</li><li>Native input, raster resources, resource references, and interactive events.</li><li>RustQ 0.11-generated Rustler exports, Elixir stubs, component metadata, and style dispatch.</li><li>Structured ExUnit E2E coverage under Xvfb/Lavapipe, including pointer, editing, clipboard, controlled-input, and window-close interaction.</li><li>Isolated fast, RustQ freshness, native E2E, and release validation environments.</li><li>Linux CI quality/release gates and an attested, checksummed x86-64 precompiled-NIF release pipeline.</li></ul>
+
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="readme.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+GPUI
+        </span>
+      </a>
+
+  </div>
+</div>
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/gpui/0.2.0-rc.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2">Hex Preview</a>
+
+                (<a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2/show/CHANGELOG.md">current file</a>)
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="gpui.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.3) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

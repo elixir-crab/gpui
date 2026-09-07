@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.3">
+    <meta name="project" content="gpui v0.2.0-rc.2">
+
+
+    <title>Editable text internals — gpui v0.2.0-rc.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-NHQLCD6Y.css" />
+
+    <script defer src="dist/sidebar_items-5E369AEC.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-Y2MUTVIN.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="https://github.com/elixir-crab/gpui" class="sidebar-projectName" translate="no">
+gpui
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.2.0-rc.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-extra" id="main" data-type="extras">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of gpui</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>Editable text internals</h1>
+
+<a href="editable-text-internals.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+      <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/guides/internals/editable-text-internals.md#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+<p>GPUI exposes editable text as neutral model and renderer primitives. It does not
+provide an IDE, editor shell, document tab, language client, gutter, completion
+menu, or <code class="inline">UI.code_editor</code> component. Consumers compose those policies from the
+same low-level elements used by other applications.</p><h2 id="design-sources-and-licensing" class="section-heading"><a href="#design-sources-and-licensing" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Design sources and licensing</span></h2><p>The design follows useful architectural lessons from Zed's <code class="inline">text</code>, <code class="inline">editor</code>,
+<code class="inline">multi_buffer</code>, selection, and display-map code without depending on those
+crates. Zed's GPUI crate is Apache-2.0, while its <code class="inline">text</code>, <code class="inline">editor</code>, <code class="inline">language</code>,
+<code class="inline">project</code>, and <code class="inline">multi_buffer</code> crates are GPL-3.0-or-later. Importing the latter
+would change the distribution obligations of this library.</p><p>The pinned Apache-2.0 <code class="inline">gpui-component</code> input implementation provides useful
+implementation machinery: Rope text, native input and IME, edit history,
+selection painting, scrolling, search, folding, highlighting, and decoration
+painting. Its convenience <code class="inline">InputState::code_editor</code> API and embedded language
+provider assumptions do not define GPUI's public Elixir API.</p><h2 id="ownership-boundary" class="section-heading"><a href="#ownership-boundary" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Ownership boundary</span></h2><p>Elixir owns application policy:</p><ul><li>document identity, file persistence, dirty state, and conflict handling;</li><li>projects, tabs, pane topology, commands, and keymaps;</li><li>parser and language-service processes;</li><li>diagnostics, completions, navigation, formatting, and workspace edits.</li></ul><p>Native state owns latency-sensitive mechanics:</p><ul><li>Rope text storage and monotonic revisions;</li><li>immediate edits, selections, undo, and redo;</li><li>later, IME composition, shaping, hit testing, and viewport geometry.</li></ul><p>A keystroke must not wait for a BEAM round trip before the native surface can
+repaint. The BEAM receives revisioned transactions and can acknowledge, persist,
+or reconcile them asynchronously.</p><h2 id="coordinate-system" class="section-heading"><a href="#coordinate-system" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Coordinate system</span></h2><p>Protocol positions are zero-based <code class="inline">{line, utf16_offset}</code> values. The offset is a
+UTF-16 code-unit offset within the logical line and excludes its line ending.
+This matches LSP coordinates while allowing the native implementation to keep
+byte offsets internally.</p><p>Conversions must reject:</p><ul><li>missing lines;</li><li>columns beyond the logical line;</li><li>positions in the middle of a surrogate pair;</li><li>ranges whose end precedes their start;</li><li>overlapping edits in one transaction.</li></ul><p>CRLF is one logical line ending. Its carriage return is not addressable as line
+content. Combining code points remain independently addressable because UTF-16
+coordinates do not imply grapheme coordinates; renderer hit testing may clamp
+to grapheme boundaries separately.</p><h2 id="model-protocol" class="section-heading"><a href="#model-protocol" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Model protocol</span></h2><p>The neutral model consists of:</p><ul><li><a href="GPUI.Text.Position.html"><code class="inline">GPUI.Text.Position</code></a></li><li><a href="GPUI.Text.Range.html"><code class="inline">GPUI.Text.Range</code></a></li><li><a href="GPUI.Text.Edit.html"><code class="inline">GPUI.Text.Edit</code></a></li><li><a href="GPUI.Text.Selection.html"><code class="inline">GPUI.Text.Selection</code></a></li><li><a href="GPUI.Text.Transaction.html"><code class="inline">GPUI.Text.Transaction</code></a></li><li><a href="GPUI.Text.Snapshot.html"><code class="inline">GPUI.Text.Snapshot</code></a></li><li><a href="GPUI.Text.Buffer.html"><code class="inline">GPUI.Text.Buffer</code></a></li></ul><p>Selections are plural from protocol version one even though the first native
+implementation supports a single primary selection. This avoids replacing the
+protocol when multi-cursor editing is introduced.</p><p>A transaction has a stable ID, a required base revision, an origin, atomic
+non-overlapping edits, and the complete post-transaction selection set. A
+successful transaction increments the revision exactly once. Repeating the same
+transaction ID with the same payload is idempotent; reusing it for different
+content is rejected. A transaction based on any other revision is stale.</p><p>Undo and redo are new monotonic revisions, never revision rollback. External
+edits use the same transaction mechanism as local edits and therefore preserve a
+single consistency model.</p><h2 id="first-milestone" class="section-heading"><a href="#first-milestone" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">First milestone</span></h2><p>The first milestone intentionally has no visual surface. It provides a
+persistent native Rope resource with:</p><ul><li>snapshots;</li><li>atomic revisioned edits;</li><li>one primary selection represented as a list;</li><li>bounded undo and redo history;</li><li>stale-revision and duplicate-delivery handling;</li><li>UTF-16/byte conversion with Unicode and CRLF coverage.</li></ul><p>It does not know about files, saving, languages, syntax highlighting, or IDEs.</p><h2 id="renderer-primitive" class="section-heading"><a href="#renderer-primitive" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Renderer primitive</span></h2><p>The low-level <code class="inline">&lt;text_surface&gt;</code> primitive refers directly to a persistent
+<a href="GPUI.Text.Buffer.html"><code class="inline">GPUI.Text.Buffer</code></a>. It keeps immediate keyboard and IME changes native, updates
+the Rope before notifying Elixir, and emits revisioned transaction and plural
+selection events. Selection-only movement advances the shared buffer revision but
+does not create document undo entries or clear redo history. A monotonically
+changing <code class="inline">focus_request</code> value requests focus without turning focus into
+application-owned boolean state.</p><p>The primitive accepts generic input behavior such as soft wrapping, whitespace
+display, tab width, hard tabs, and disabled state. With <code class="inline">auto_grow</code>, bounded
+<code class="inline">min_lines</code> and <code class="inline">max_lines</code> select the native input's intrinsic wrapped-row
+height; after <code class="inline">max_lines</code> it retains native internal scrolling. The bounds are
+part of the declarative snapshot and must satisfy <code class="inline">min_lines &lt;= max_lines</code>.</p><p><code class="inline">submit_policy=&quot;newline&quot;</code> leaves Enter and Shift+Enter as ordinary edits.
+<code class="inline">submit_policy=&quot;submit&quot;</code> requires <code class="inline">phx-submit</code> and makes plain Enter emit that event
+with the current buffer text without inserting a newline, while Shift+Enter
+continues to insert one. Submission uses the native input action path, so active
+IME composition is handled by the input before application submission; Elixir
+remains responsible for clearing or otherwise mutating the buffer afterward.</p><p>It deliberately does not live
+under <code class="inline">GPUI.UI</code> and does not render line numbers, tabs, diagnostics, completion
+menus, or status bars. External buffer transactions, undo, and redo are
+reconciled into a mounted surface from the buffer revision without echoing them
+as local input.</p><p>The first geometry contract emits revision-tagged, deduplicated viewport and
+primary-caret facts through optional <code class="inline">phx-viewport-change</code> and
+<code class="inline">phx-geometry-change</code> events. <a href="GPUI.Text.Viewport.html"><code class="inline">GPUI.Text.Viewport</code></a> reports visible visual rows
+and native scroll offsets; <a href="GPUI.Text.CaretGeometry.html"><code class="inline">GPUI.Text.CaretGeometry</code></a> reports zero-based UTF-16
+logical position plus window-relative native pixel bounds. Geometry is emitted
+only after layout exists and only when its bounded value changes.</p><p>The first bounded request contract accepts up to 64 declarative
+<code class="inline">geometry_ranges</code> and emits currently laid-out bounds through
+<code class="inline">phx-range-geometry-change</code>. <a href="GPUI.Text.RangeGeometry.html"><code class="inline">GPUI.Text.RangeGeometry</code></a> preserves the requested
+logical range and reports a bounded <a href="GPUI.Text.Rectangle.html"><code class="inline">GPUI.Text.Rectangle</code></a> for every visual row
+crossed by wrapped text. Results remain limited to 64 requested ranges and 256
+rectangles per range.</p><p>A monotonically increasing <code class="inline">scroll_request</code> token paired with <code class="inline">scroll_to</code> moves
+the native primary caret to an explicit UTF-16 position and lets the existing
+native input machinery reveal it without changing document text. Optional
+<code class="inline">phx-hit-test</code> events report the post-click logical UTF-16 position selected by
+native text hit testing. Neither contract introduces synchronous pointer NIF
+traffic.</p><p>The first decoration contract accepts up to 256 <a href="GPUI.Text.Decoration.html"><code class="inline">GPUI.Text.Decoration</code></a> values.
+Each decoration attaches an optional RGB background and/or solid, dashed, or
+wavy RGB underline to a logical UTF-16 range. Native painting uses current
+layout geometry while the consumer retains diagnostic severity, language,
+message, command, and service policy. Decorations do not alter text, selections,
+revisions, or history.</p><p>A separate shaping contract accepts up to 512 <a href="GPUI.Text.StyleRun.html"><code class="inline">GPUI.Text.StyleRun</code></a> values.
+Each run carries optional RGB foreground color, font weight, and font style for
+a logical UTF-16 range. Runs are converted to native byte ranges and composed
+into GPUI Component's text-decoration collections before line shaping, so font
+fallback, ligatures, wrapping, bidi layout, and glyph metrics use the styled
+runs directly. They are not painted as duplicate glyph overlays. Consumer code
+retains syntax, language, token, and diagnostic policy.</p><p>The first projection contract accepts up to 128 bounded
+<a href="GPUI.Text.InlineProjection.html"><code class="inline">GPUI.Text.InlineProjection</code></a> values, each containing at most 4096 bytes. A
+projection anchors non-editable display text and an RGB color to an explicit
+UTF-16 position. Projection text never enters the Rope, changes selection
+coordinates, participates in history, or implies completion behavior.</p><p>The block projection contract accepts up to 64 bounded
+<a href="GPUI.Text.BlockProjection.html"><code class="inline">GPUI.Text.BlockProjection</code></a> values containing at most 16384 bytes. Blocks are
+anchored before or after a logical line and carry explicit height, foreground,
+and optional background colors. They are overlay annotations: they do not add
+rows to native text layout or alter document coordinates. Consumers can use
+them for notes and previews while retaining application policy.</p><p>The demonstration's gutter is now entirely consumer-owned: Elixir derives the
+visible line-number elements, row heights, and fractional vertical offset from
+<a href="GPUI.Text.Viewport.html"><code class="inline">GPUI.Text.Viewport</code></a>. The renderer still exposes no gutter or editor shell.</p><p>The feature demonstration includes application-owned external edit, undo, and
+redo controls so reconciliation can be exercised without treating persistence
+or document commands as renderer policy.</p><h2 id="later-renderer-primitives" class="section-heading"><a href="#later-renderer-primitives" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Later renderer primitives</span></h2><p>Independent projection inputs will eventually cover:</p><ul><li>ranged decorations;</li><li>hidden ranges;</li><li>inline insertions;</li><li>block insertions;</li><li>visual-row and viewport geometry;</li><li>caret and range bounds;</li><li>point-to-position hit testing.</li></ul><p>True layout-affecting inline and block insertions remain deferred. The pinned
+native input has no projection collection that participates consistently in
+wrapping, scroll extent, geometry, hit testing, and document/display mapping;
+see <a href="text-projections.html">Native text projections</a>.</p><p>Consumers can use those inputs to build code editors, prose editors, notebooks,
+diff tools, terminal prompts, or domain-specific annotated text surfaces without
+adopting library-owned IDE policy.</p>
+
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="platform-support.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Platform support and development status
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="accessibility.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Accessibility internals
+        </span>
+      </a>
+
+  </div>
+</div>
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/gpui/0.2.0-rc.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2">Hex Preview</a>
+
+                (<a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2/show/guides/internals/editable-text-internals.md">current file</a>)
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="gpui.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.3) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

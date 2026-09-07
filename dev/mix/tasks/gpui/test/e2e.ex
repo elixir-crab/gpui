@@ -31,7 +31,6 @@ defmodule Mix.Tasks.Gpui.Test.E2e do
        apps/gpui_native/test/e2e/gpui/native/image_lab_test.exs
        apps/gpui_native/test/e2e/gpui/native/interactivity_test.exs
        apps/gpui_native/test/e2e/gpui/native/lifecycle_test.exs
-       apps/gpui_native/test/e2e/gpui/native/split_test.exs
        apps/gpui_native/test/e2e/gpui/native/tree_test.exs
        apps/gpui_native/test/e2e/gpui/native/virtual_list_test.exs
      )}

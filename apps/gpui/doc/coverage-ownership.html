@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.3">
+    <meta name="project" content="gpui v0.2.0-rc.2">
+
+
+    <title>Test coverage ownership — gpui v0.2.0-rc.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-NHQLCD6Y.css" />
+
+    <script defer src="dist/sidebar_items-5E369AEC.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-Y2MUTVIN.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="https://github.com/elixir-crab/gpui" class="sidebar-projectName" translate="no">
+gpui
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.2.0-rc.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-extra" id="main" data-type="extras">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of gpui</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>Test coverage ownership</h1>
+
+<a href="coverage-ownership.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+      <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/guides/testing/coverage-ownership.md#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+<p>GPUI behavior is divided by what each layer can truthfully prove.</p><table><thead><tr><th style="text-align: left;">Behavior</th><th style="text-align: left;">Renderer-independent ExUnit</th><th style="text-align: left;">Deterministic native ExUnit</th><th style="text-align: left;">Desktop E2E</th></tr></thead><tbody><tr><td style="text-align: left;">Controlled application state and rerenders</td><td style="text-align: left;">Primary</td><td style="text-align: left;">Exercises real payload rerenders</td><td style="text-align: left;">Smoke only</td></tr><tr><td style="text-align: left;">Switch and radio activation</td><td style="text-align: left;">Event policy</td><td style="text-align: left;">Pointer, focus, keyboard, disabled/loading</td><td style="text-align: left;">Real window rendering</td></tr><tr><td style="text-align: left;">Tabs</td><td style="text-align: left;">Controlled event handling</td><td style="text-align: left;">Stable bounds, focus, keyboard, disabled</td><td style="text-align: left;">Real window rendering</td></tr><tr><td style="text-align: left;">Accordion</td><td style="text-align: left;">Controlled expanded IDs and validation</td><td style="text-align: left;">Stable bounds, pointer toggles, controlled multiple expansion, disabled-group suppression</td><td style="text-align: left;">Real window rendering</td></tr><tr><td style="text-align: left;">Tree and data table navigation</td><td style="text-align: left;">Source/state policy</td><td style="text-align: left;">Focus, keyboard, disabled skipping, emitted IDs</td><td style="text-align: left;">Virtualized real window and pointer delivery</td></tr><tr><td style="text-align: left;">Uniform and variable collections</td><td style="text-align: left;">Range/source policy</td><td style="text-align: left;">Selection, ranges, scrolling, transitions</td><td style="text-align: left;">Compositor range and wheel delivery</td></tr><tr><td style="text-align: left;">Dialog and overlays</td><td style="text-align: left;">Controlled open/close policy</td><td style="text-align: left;">Stable trigger bounds, keyboard open requests, native <code class="inline">gpui_component::Root</code> ownership, and Escape closure</td><td style="text-align: left;">Real window focus containment, content activation, and restoration</td></tr><tr><td style="text-align: left;">Rich text</td><td style="text-align: left;">Runs, ranges, links, controlled events</td><td style="text-align: left;">Shaping and link-navigation Rust unit coverage; stable public target pending</td><td style="text-align: left;">Real shaped rendering</td></tr><tr><td style="text-align: left;">Persistent editable text</td><td style="text-align: left;">Buffer, revisions, transactions</td><td style="text-align: left;">Controlled input typing, reconciliation, submit events, geometry, and projection mechanics through real <code class="inline">InputState</code></td><td style="text-align: left;">Native IME, content types, OS selection and clipboard</td></tr><tr><td style="text-align: left;">Clipboard and external transfer</td><td style="text-align: left;">Bounded payload and event policy</td><td style="text-align: left;">Boundary/routing unit coverage</td><td style="text-align: left;">OS clipboard and external transfer facts</td></tr><tr><td style="text-align: left;">Remote display</td><td style="text-align: left;">Protocol, synchronization and reconnect policy</td><td style="text-align: left;">Not applicable</td><td style="text-align: left;">Real remote-native window smoke</td></tr><tr><td style="text-align: left;">Pixel appearance and contrast</td><td style="text-align: left;">Not applicable</td><td style="text-align: left;">Not a behavioral assertion</td><td style="text-align: left;">Synchronized visual capture</td></tr></tbody></table><p>When moving an assertion between layers, preserve the behavior in its owning layer.
+Do not retain coordinate-heavy desktop assertions for component mechanics already
+covered deterministically. Conversely, deterministic tests must not claim OS
+clipboard, IME, compositor, accessibility-adapter, or external-drop behavior.</p>
+
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="desktop-e2e.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Desktop E2E and visual evidence
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="native-builds.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Native builds and deployment
+        </span>
+      </a>
+
+  </div>
+</div>
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/gpui/0.2.0-rc.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2">Hex Preview</a>
+
+                (<a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2/show/guides/testing/coverage-ownership.md">current file</a>)
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="gpui.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.3) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

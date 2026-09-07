@@ -115,6 +115,16 @@ defmodule GPUI.Native.Facade do
         apply(GPUI.Native.Backend.module(), :native_test_click, [_session, _target])
       end
 
+      def native_test_drag(_session, _from_x, _from_y, _to_x, _to_y) do
+        apply(GPUI.Native.Backend.module(), :native_test_drag, [
+          _session,
+          _from_x,
+          _from_y,
+          _to_x,
+          _to_y
+        ])
+      end
+
       def native_test_click_at(_session, _x, _y) do
         apply(GPUI.Native.Backend.module(), :native_test_click_at, [_session, _x, _y])
       end

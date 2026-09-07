@@ -31,6 +31,24 @@ mix ci
   greps or policy-shaped ExUnit tests; use Reach, Credo, ExDNA, or schema-driven
   behavioral coverage.
 
+## Test synchronization and presentation
+
+- Use the existing `GPUI.Test, native: ...` harness for control events, layout,
+  reconciliation, focus, keyboard behavior, and deterministic animation timing.
+  Extend its generic commands rather than introducing a parallel test framework.
+- Reserve desktop E2E for OS input delivery, native window lifecycle/chrome,
+  platform integration, and representative visual captures.
+- Import test actions and alias domain modules/structs. Assert native events with
+  ordinary ExUnit `assert_receive`; use committed update snapshots when testing
+  runtime subscriptions. Subscribe before actions and correlate the source.
+- Perform actions once, outside wait/retry loops. Prefer completion messages to
+  sleeps or repeated snapshot assertions. Use `advance/2` for native animation
+  time. Driver input pacing and bounded OS discovery are distinct from waiting
+  for application state.
+- Keep visual fixtures readable: visible labels/values, explicit themes, matching
+  surfaces, distinguishable selected/disabled/focus states, and adequate spacing.
+  Name intentional clipping or low-contrast regression fixtures explicitly.
+
 ## Precompiled release invariants
 
 - A release tag is immutable. Never delete, recreate, move, or force-push a

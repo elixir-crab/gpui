@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.3">
+    <meta name="project" content="gpui v0.2.0-rc.2">
+
+
+    <title>Deterministic native tests — gpui v0.2.0-rc.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-NHQLCD6Y.css" />
+
+    <script defer src="dist/sidebar_items-5E369AEC.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-Y2MUTVIN.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="https://github.com/elixir-crab/gpui" class="sidebar-projectName" translate="no">
+gpui
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.2.0-rc.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-extra" id="main" data-type="extras">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of gpui</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>Deterministic native tests</h1>
+
+<a href="native-tests.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+      <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/guides/testing/native-tests.md#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+<p>Use deterministic native tests when behavior depends on GPUI layout, focus, hit
+testing, keyboard dispatch, or real <code class="inline">gpui-component</code> mechanics but not on a
+desktop window or operating-system integration.</p><pre><code class="makeup elixir" translate="no"><span class="kd">defmodule</span><span class="w"> </span><span class="nc">MyApp.SettingsNativeTest</span><span class="w"> </span><span class="k" data-group-id="7130363416-1">do</span><span class="w">
+  </span><span class="kn">use</span><span class="w"> </span><span class="nc">GPUI.Test</span><span class="p">,</span><span class="w"> </span><span class="ss">native</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7130363416-2">[</span><span class="ss">size</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7130363416-3">{</span><span class="mi">320</span><span class="p">,</span><span class="w"> </span><span class="mi">160</span><span class="p" data-group-id="7130363416-3">}</span><span class="p" data-group-id="7130363416-2">]</span><span class="w">
+
+  </span><span class="n">test</span><span class="w"> </span><span class="s">&quot;radio navigation skips disabled choices&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7130363416-4">%{</span><span class="ss">ui</span><span class="p">:</span><span class="w"> </span><span class="n">ui</span><span class="p" data-group-id="7130363416-4">}</span><span class="w"> </span><span class="k" data-group-id="7130363416-5">do</span><span class="w">
+    </span><span class="n">render</span><span class="p" data-group-id="7130363416-6">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="nc">SettingsView</span><span class="p">,</span><span class="w"> </span><span class="ss">plan</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;free&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">notifications</span><span class="p">:</span><span class="w"> </span><span class="no">false</span><span class="p" data-group-id="7130363416-6">)</span><span class="w">
+
+    </span><span class="n">focus</span><span class="p" data-group-id="7130363416-7">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;plan&quot;</span><span class="p" data-group-id="7130363416-7">)</span><span class="w">
+    </span><span class="n">press</span><span class="p" data-group-id="7130363416-8">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="ss">:arrow_right</span><span class="p" data-group-id="7130363416-8">)</span><span class="w">
+
+    </span><span class="n">assert_receive</span><span class="w"> </span><span class="p" data-group-id="7130363416-9">{</span><span class="ss">:gpui</span><span class="p">,</span><span class="w"> </span><span class="o">^</span><span class="n">ui</span><span class="p">,</span><span class="w">
+                    </span><span class="p" data-group-id="7130363416-10">{</span><span class="ss">:event</span><span class="p">,</span><span class="w">
+                     </span><span class="p" data-group-id="7130363416-11">%{</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:change</span><span class="p">,</span><span class="w"> </span><span class="ss">event</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;plan_changed&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;team&quot;</span><span class="p" data-group-id="7130363416-11">}</span><span class="p" data-group-id="7130363416-10">}</span><span class="p" data-group-id="7130363416-9">}</span><span class="w">
+
+    </span><span class="c1"># Controlled state remains authoritative in Elixir.</span><span class="w">
+    </span><span class="n">render</span><span class="p" data-group-id="7130363416-12">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="nc">SettingsView</span><span class="p">,</span><span class="w"> </span><span class="ss">plan</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;team&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">notifications</span><span class="p">:</span><span class="w"> </span><span class="no">false</span><span class="p" data-group-id="7130363416-12">)</span><span class="w">
+  </span><span class="k" data-group-id="7130363416-5">end</span><span class="w">
+</span><span class="k" data-group-id="7130363416-1">end</span></code></pre><p><code class="inline">use GPUI.Test, native: ...</code> marks the module <code class="inline">:native</code>, requires synchronous
+ExUnit execution, starts a supervised UI for each test, and supplies its opaque
+handle as <code class="inline">%{ui: ui}</code>.</p><h2 id="interaction-vocabulary" class="section-heading"><a href="#interaction-vocabulary" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Interaction vocabulary</span></h2><p>The imported command set is deliberately small:</p><pre><code class="makeup elixir" translate="no"><span class="n">render</span><span class="p" data-group-id="2854110409-1">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="nc">SettingsView</span><span class="p">,</span><span class="w"> </span><span class="ss">plan</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;free&quot;</span><span class="p" data-group-id="2854110409-1">)</span><span class="w">
+</span><span class="n">focus</span><span class="p" data-group-id="2854110409-2">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;plan&quot;</span><span class="p" data-group-id="2854110409-2">)</span><span class="w">
+</span><span class="n">press</span><span class="p" data-group-id="2854110409-3">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="ss">:space</span><span class="p" data-group-id="2854110409-3">)</span><span class="w">
+</span><span class="n">click</span><span class="p" data-group-id="2854110409-4">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;notifications&quot;</span><span class="p" data-group-id="2854110409-4">)</span><span class="w">
+</span><span class="n">click</span><span class="p" data-group-id="2854110409-5">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2854110409-6">{</span><span class="mi">24</span><span class="p">,</span><span class="w"> </span><span class="mi">48</span><span class="p" data-group-id="2854110409-6">}</span><span class="p" data-group-id="2854110409-5">)</span><span class="w">
+</span><span class="n">drag</span><span class="p" data-group-id="2854110409-7">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2854110409-8">{</span><span class="mi">80</span><span class="p">,</span><span class="w"> </span><span class="mi">12</span><span class="p" data-group-id="2854110409-8">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2854110409-9">{</span><span class="mi">240</span><span class="p">,</span><span class="w"> </span><span class="mi">12</span><span class="p" data-group-id="2854110409-9">}</span><span class="p" data-group-id="2854110409-7">)</span><span class="w">
+</span><span class="n">scroll</span><span class="p" data-group-id="2854110409-10">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;records&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">delta</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="2854110409-11">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">240</span><span class="p" data-group-id="2854110409-11">}</span><span class="p" data-group-id="2854110409-10">)</span><span class="w">
+</span><span class="n">type</span><span class="p" data-group-id="2854110409-12">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Ada&quot;</span><span class="p" data-group-id="2854110409-12">)</span><span class="w">
+</span><span class="n">resize</span><span class="p" data-group-id="2854110409-13">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2854110409-14">{</span><span class="mi">800</span><span class="p">,</span><span class="w"> </span><span class="mi">600</span><span class="p" data-group-id="2854110409-14">}</span><span class="p" data-group-id="2854110409-13">)</span><span class="w">
+</span><span class="n">advance</span><span class="p" data-group-id="2854110409-15">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="mi">250</span><span class="p" data-group-id="2854110409-15">)</span><span class="w">
+</span><span class="n">assert</span><span class="w"> </span><span class="p" data-group-id="2854110409-16">%{</span><span class="ss">width</span><span class="p">:</span><span class="w"> </span><span class="n">width</span><span class="p">,</span><span class="w"> </span><span class="ss">height</span><span class="p">:</span><span class="w"> </span><span class="n">height</span><span class="p" data-group-id="2854110409-16">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bounds</span><span class="p" data-group-id="2854110409-17">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;notifications&quot;</span><span class="p" data-group-id="2854110409-17">)</span><span class="w">
+</span><span class="n">settle</span><span class="p" data-group-id="2854110409-18">(</span><span class="n">ui</span><span class="p" data-group-id="2854110409-18">)</span></code></pre><p>Stable targets come from declarative <code class="inline">id</code> attributes. <code class="inline">click/2</code> targets the
+center of rendered bounds or an explicit <code class="inline">{x, y}</code> logical point. <code class="inline">bounds/2</code>
+returns <code class="inline">%{x:, y:, width:, height:}</code> in logical pixels. <code class="inline">drag/3</code> simulates a
+left-button press, movement, and release between two logical points and settles
+native work. Derive those points from <code class="inline">bounds/2</code> rather than OS window coordinates.
+<code class="inline">scroll/3</code> dispatches a
+bounded logical-pixel wheel delta at the target center. <code class="inline">type/2</code> dispatches text
+input to the focused control, while <code class="inline">resize/2</code> changes the deterministic
+viewport.</p><p><code class="inline">advance/2</code> moves GPUI's test clock by a bounded number of milliseconds and
+settles pending work. <code class="inline">press/2</code> accepts semantic keys such as <code class="inline">:arrow_left</code>,
+<code class="inline">:arrow_right</code>, <code class="inline">:arrow_up</code>, <code class="inline">:arrow_down</code>, <code class="inline">:space</code>, <code class="inline">:enter</code>, <code class="inline">:escape</code>, and
+<code class="inline">:tab</code>, or a GPUI keystroke string.</p><h2 id="assert-ordinary-events" class="section-heading"><a href="#assert-ordinary-events" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Assert ordinary events</span></h2><p>Native events use the ExUnit mailbox rather than a custom assertion language:</p><pre><code class="makeup elixir" translate="no"><span class="n">click</span><span class="p" data-group-id="1424579118-1">(</span><span class="n">ui</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;notifications&quot;</span><span class="p" data-group-id="1424579118-1">)</span><span class="w">
+
+</span><span class="n">assert_receive</span><span class="w"> </span><span class="p" data-group-id="1424579118-2">{</span><span class="ss">:gpui</span><span class="p">,</span><span class="w"> </span><span class="o">^</span><span class="n">ui</span><span class="p">,</span><span class="w">
+                </span><span class="p" data-group-id="1424579118-3">{</span><span class="ss">:event</span><span class="p">,</span><span class="w">
+                 </span><span class="p" data-group-id="1424579118-4">%{</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:change</span><span class="p">,</span><span class="w">
+                   </span><span class="ss">event</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;notifications_changed&quot;</span><span class="p">,</span><span class="w">
+                   </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p" data-group-id="1424579118-4">}</span><span class="p" data-group-id="1424579118-3">}</span><span class="p" data-group-id="1424579118-2">}</span></code></pre><p>The Elixir test owns fixtures, assigns, actions, controlled rerenders, and
+assertions. Rust remains a generic interpreter around GPUI's <code class="inline">TestAppContext</code>;
+component-specific fixtures and assertions do not belong in the native harness.</p><h2 id="choosing-the-right-test-layer" class="section-heading"><a href="#choosing-the-right-test-layer" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Choosing the right test layer</span></h2><p>Keep control behavior in this harness: edits, change/release events, controlled
+rerenders, disabled states, focus, and layout do not require OS mouse automation.
+Extend an existing native test rather than duplicate it in desktop E2E. Use
+<code class="inline">advance/2</code> instead of sleeping for animations.</p><p>Desktop E2E should cover actual OS event delivery, window chrome/lifecycle, and
+representative visual captures. Set themes explicitly and use matching surfaces
+with visible labels and values; a process-alive assertion is not a visual check.</p><p>For asynchronous runtime integration tests, subscribe before triggering the
+operation, then use <code class="inline">assert_receive</code> on the relevant <code class="inline">%GPUI.Runtime.Update{}</code>
+message. Assert its committed snapshot rather than repeatedly querying current
+state. Pin the runtime identity and match the specific transition; unrelated
+updates are not completion acknowledgements. Keep actions outside wait loops.</p><h2 id="run-native-tests" class="section-heading"><a href="#run-native-tests" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Run native tests</span></h2><pre><code class="makeup bash" translate="no"><span class="">mix gpui.test.native
+</span><span class="">mix gpui.test.native test/gpui/test/native/controls_test.exs
+</span><span class="">mix gpui.test.native test/gpui/my_settings_native_test.exs
+</span></code></pre><p>The task selects <code class="inline">MIX_TARGET=native_test</code>, leaving ordinary <code class="inline">MIX_ENV=test</code>
+renderer-independent. RustQ generates the NIF exports and Elixir stubs for the
+closed native-test command boundary.</p><p>To verify ordinary, deterministic-native, and desktop artifact isolation without
+cleaning build directories or deleting NIFs, run:</p><pre><code class="makeup bash" translate="no"><span class="">mix gpui.test.mode_switch
+</span></code></pre><h2 id="what-this-layer-proves" class="section-heading"><a href="#what-this-layer-proves" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">What this layer proves</span></h2><p>Deterministic native tests own facts such as:</p><ul><li>stable GPUI layout bounds and hit testing;</li><li>pointer activation and wheel delivery into components;</li><li>native focus and keyboard navigation;</li><li>disabled and loading interaction suppression;</li><li>controlled-value reconciliation after native edits;</li><li>source-backed range requests and collection transitions;</li><li>dialog top-layer mechanics through the real <code class="inline">gpui_component::Root</code>;</li><li>real <code class="inline">gpui_component::InputState</code> typing and submit behavior;</li><li>bounded animation state through the deterministic GPUI clock.</li></ul><p>The harness installs the production-like hierarchy:</p><pre><code class="text">gpui_component::Root
+└── ElixirRoot</code></pre><p>This permits real dialog, input, and component mechanics without alternate
+test-only product implementations.</p><p>The pinned GPUI revision includes
+<a rel="nofollow" href="https://github.com/zed-industries/zed/pull/62775">zed-industries/zed#62775</a>, so
+<code class="inline">TestWindow</code> reports <code class="inline">raw_window_handle::HandleError::NotSupported</code> instead of
+panicking when a component requests an unavailable raw window or display handle.
+Native content-type integration can therefore degrade cleanly in this harness.</p><h2 id="what-remains-desktop-owned" class="section-heading"><a href="#what-remains-desktop-owned" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">What remains desktop-owned</span></h2><p>These tests do not prove operating-system facts. Keep the following in
+<a href="desktop-e2e.html">Desktop E2E and visual evidence</a>:</p><ul><li>real native window creation and application-owned chrome;</li><li>OS close requests and process-global activation;</li><li>accessibility-adapter behavior;</li><li>clipboard and external file transfer;</li><li>native IME and platform content types;</li><li>compositor output and synchronized pixels;</li><li>real-window focus containment and restoration.</li></ul><p>Once deterministic coverage proves a component mechanic, desktop E2E should
+retain only the platform-specific smoke assertion rather than duplicating the
+full interaction sequence.</p>
+
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="application-tests.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Application tests
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="desktop-e2e.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Desktop E2E and visual evidence
+        </span>
+      </a>
+
+  </div>
+</div>
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/gpui/0.2.0-rc.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2">Hex Preview</a>
+
+                (<a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2/show/guides/testing/native-tests.md">current file</a>)
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="gpui.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.3) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

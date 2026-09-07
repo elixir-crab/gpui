@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.40.3">
+    <meta name="project" content="gpui v0.2.0-rc.2">
+
+
+    <title>Sessions, snapshots, and displays — gpui v0.2.0-rc.2</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-NHQLCD6Y.css" />
+
+    <script defer src="dist/sidebar_items-5E369AEC.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-Y2MUTVIN.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="https://github.com/elixir-crab/gpui" class="sidebar-projectName" translate="no">
+gpui
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.2.0-rc.2
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="Pages"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-extra" id="main" data-type="extras">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of gpui</span>
+            <div class="search-input-wrapper">
+              <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+              <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+                <i class="ri-close-line ri-lg" title="Cancel search"></i>
+              </button>
+            </div>
+          </label>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <div class="engine-selector" data-multiple="false">
+          <button type="button" class="engine-button" aria-label="Select search engine" aria-haspopup="true" aria-expanded="false">
+            <i class="ri-search-2-line" aria-hidden="true"></i>
+            <span class="engine-name">Default</span>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </button>
+          <div class="engine-dropdown" hidden role="menu">
+
+              <button type="button"
+                      class="engine-option"
+                      data-engine-url="search.html?q="
+                      role="menuitemradio"
+                      aria-checked="true">
+                <span class="name">Default</span>
+                <span class="help">In-browser search</span>
+              </button>
+
+          </div>
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>Sessions, snapshots, and displays</h1>
+
+<a href="sessions-snapshots-and-displays.md" title="Copy Markdown (hold Ctrl/Cmd and click it to open as Markdown)" class="copy-markdown icon-action" rel="help">
+  <i class="ri-markdown-line" aria-hidden="true"></i>
+  <span class="sr-only">Copy Markdown</span>
+</a>
+
+
+      <a href="https://github.com/elixir-crab/gpui/blob/v0.2.0-rc.2/guides/concepts/sessions-snapshots-and-displays.md#L1" title="View Source" class="icon-action" rel="help nofollow">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+<p>GPUI separates renderer-independent application state from display lifecycle.
+This keeps view logic deterministic, permits local and remote presentation, and
+prevents native window ownership from leaking into application processes.</p><h2 id="session" class="section-heading"><a href="#session" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Session</span></h2><p><a href="GPUI.Session.html"><code class="inline">GPUI.Session</code></a> owns:</p><ul><li>window specifications and root-view assigns;</li><li>rendered <code class="inline">%GPUI.Snapshot{}</code> values;</li><li>resource metadata;</li><li>event dispatch and bounded event history.</li></ul><p>A session does not own a native event loop or platform window. Its boundary is
+serializable Elixir data.</p><h2 id="dynamic-window-topology" class="section-heading"><a href="#dynamic-window-topology" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Dynamic window topology</span></h2><p>Initial windows may declare a stable application-owned key independently of the
+session's monotonic native window ID:</p><pre><code class="makeup elixir" translate="no"><span class="n">window</span><span class="w"> </span><span class="s">&quot;main&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Workspace&quot;</span><span class="w"> </span><span class="k" data-group-id="8199062027-1">do</span><span class="w">
+  </span><span class="n">size</span><span class="w"> </span><span class="mi">1100</span><span class="p">,</span><span class="w"> </span><span class="mi">720</span><span class="w">
+  </span><span class="n">root</span><span class="w"> </span><span class="nc">WorkspaceView</span><span class="w">
+</span><span class="k" data-group-id="8199062027-1">end</span></code></pre><p>A running local session can add and remove windows without remounting the
+application:</p><pre><code class="makeup elixir" translate="no"><span class="n">details</span><span class="w"> </span><span class="o">=</span><span class="w">
+  </span><span class="nc">GPUI.WindowSpec</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="2421846800-1">(</span><span class="s">&quot;Repository details&quot;</span><span class="p">,</span><span class="w">
+    </span><span class="ss">key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;repository-details&quot;</span><span class="p">,</span><span class="w">
+    </span><span class="ss">root</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="2421846800-2">{</span><span class="nc">RepositoryDetailsView</span><span class="p">,</span><span class="w"> </span><span class="ss">repository</span><span class="p">:</span><span class="w"> </span><span class="n">repository</span><span class="p" data-group-id="2421846800-2">}</span><span class="w">
+  </span><span class="p" data-group-id="2421846800-1">)</span><span class="w">
+
+</span><span class="p" data-group-id="2421846800-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">window_id</span><span class="p">,</span><span class="w"> </span><span class="n">snapshot</span><span class="p" data-group-id="2421846800-3">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GPUI.Runtime</span><span class="o">.</span><span class="n">open_window</span><span class="p" data-group-id="2421846800-4">(</span><span class="n">runtime</span><span class="p">,</span><span class="w"> </span><span class="n">details</span><span class="p" data-group-id="2421846800-4">)</span><span class="w">
+</span><span class="p" data-group-id="2421846800-5">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">snapshot</span><span class="p" data-group-id="2421846800-5">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GPUI.Runtime</span><span class="o">.</span><span class="n">close_window</span><span class="p" data-group-id="2421846800-6">(</span><span class="n">runtime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;repository-details&quot;</span><span class="p" data-group-id="2421846800-6">)</span></code></pre><p>Keys are optional for initial windows, but dynamically managed windows should
+use non-empty unique strings of at most 128 bytes. Titles are limited to 512
+bytes and a session can own at most 32 windows. IDs are never reused in a
+session, including after a keyed window closes and reopens. Closing
+by key or ID removes only that window; other root assigns and native windows
+remain intact. Snapshot synchronization performs the actual platform close.
+Source refresh rerenders the current topology and preserves every window's
+existing assigns, key, and session ID. It does not remount the application or
+resurrect windows that have already closed. Dynamic ID allocation also remains
+monotonic across reload, while newly compiled render and callback code applies
+to every retained root module. Refresh renders the complete snapshot before
+publishing it, so a failure in any window produces no display or subscriber
+update. Development watchers can optionally report bounded <code class="inline">:gpui_reload</code>
+results; syntax-invalid files leave the loaded module and live session usable
+for the next valid edit.</p><p>These mutation calls are local runtime/session capabilities. Remote topology
+mutation is intentionally not added as an imperative transport operation.
+View-driven topology works remotely through ordinary <code class="inline">:event</code> requests: the
+hosted session applies the typed outcome and returns one authoritative
+multi-window snapshot. Protocol negotiation advertises <code class="inline">:window_topology_v1</code>,
+and session resume restores existing keys, IDs, assigns, and monotonic ID
+allocation.</p><h2 id="display" class="section-heading"><a href="#display" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Display</span></h2><p>A <a href="GPUI.Display.html"><code class="inline">GPUI.Display</code></a> receives snapshots and returns normalized events. The package
+ships two principal implementations:</p><ul><li><code class="inline">GPUI.Display.Native</code> presents snapshots through Rust GPUI windows;</li><li><a href="GPUI.Test.Display.html"><code class="inline">GPUI.Test.Display</code></a> records snapshots and accepts deterministic injected events.</li></ul><p>Remote clients can also mount a native display against a session hosted by
+<a href="GPUI.Remote.Server.html"><code class="inline">GPUI.Remote.Server</code></a>.</p><p>Custom displays implement <a href="GPUI.Display.html"><code class="inline">GPUI.Display</code></a>. Startup must return <code class="inline">{:ok, pid}</code> or
+<code class="inline">{:error, reason}</code>; synchronization must return <code class="inline">:ok</code> or <code class="inline">{:error, reason}</code>;
+event draining must return <code class="inline">{:ok, events}</code> or <code class="inline">{:error, reason}</code>; and injection
+must return an <code class="inline">:ok</code> or <code class="inline">:error</code> tuple. GPUI rejects invalid returns as
+<code class="inline">{:invalid_display_return, callback, value}</code> and catches callback failures as
+<code class="inline">{:display_callback_failed, callback, kind, reason}</code>.</p><h2 id="runtime" class="section-heading"><a href="#runtime" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Runtime</span></h2><p><a href="GPUI.Runtime.html"><code class="inline">GPUI.Runtime</code></a> composes one session with one display. It synchronizes snapshots,
+polls display events, dispatches event batches through the session, and sends
+the resulting snapshot back to the display.</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="8725843324-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">runtime</span><span class="p" data-group-id="8725843324-1">}</span><span class="w"> </span><span class="o">=</span><span class="w">
+  </span><span class="nc">GPUI.Runtime</span><span class="o">.</span><span class="n">start_link</span><span class="p" data-group-id="8725843324-2">(</span><span class="w">
+    </span><span class="ss">app</span><span class="p">:</span><span class="w"> </span><span class="nc">MyApp.Desktop</span><span class="p">,</span><span class="w">
+    </span><span class="ss">args</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="8725843324-3">%{</span><span class="ss">account_id</span><span class="p">:</span><span class="w"> </span><span class="n">account_id</span><span class="p" data-group-id="8725843324-3">}</span><span class="p">,</span><span class="w">
+    </span><span class="ss">display</span><span class="p">:</span><span class="w"> </span><span class="nc">GPUI.Display.Native</span><span class="p">,</span><span class="w">
+    </span><span class="ss">poll_interval</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="w">
+  </span><span class="p" data-group-id="8725843324-2">)</span></code></pre><p>Normally the application module is placed directly in a supervision tree and
+its generated child specification starts the runtime.</p><p>Snapshot queries use the same tagged result convention as remote clients and
+other fallible runtime operations:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="3096291535-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">snapshot</span><span class="p" data-group-id="3096291535-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GPUI.Runtime</span><span class="o">.</span><span class="n">snapshot</span><span class="p" data-group-id="3096291535-2">(</span><span class="n">runtime</span><span class="p" data-group-id="3096291535-2">)</span></code></pre><p><a href="GPUI.Runtime.html#snapshot!/1"><code class="inline">GPUI.Runtime.snapshot!/1</code></a> is available when rendering failure should raise a
+<a href="GPUI.Runtime.Error.html"><code class="inline">GPUI.Runtime.Error</code></a> instead. A local snapshot query can fail only while
+rendering the authoritative session state. <a href="GPUI.Remote.Client.html#snapshot/1"><code class="inline">GPUI.Remote.Client.snapshot/1</code></a>
+additionally reports transport, protocol, and local display-synchronization
+failures through its <code class="inline">{:error, reason}</code> result.</p><p>Supervised workers can update a root view without pretending that application
+work is native input:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="5831298131-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">snapshot</span><span class="p" data-group-id="5831298131-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GPUI.Runtime</span><span class="o">.</span><span class="n">send_view</span><span class="p" data-group-id="5831298131-2">(</span><span class="n">runtime</span><span class="p">,</span><span class="w"> </span><span class="n">window_id</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5831298131-3">{</span><span class="ss">:loaded</span><span class="p">,</span><span class="w"> </span><span class="n">records</span><span class="p" data-group-id="5831298131-3">}</span><span class="p" data-group-id="5831298131-2">)</span></code></pre><p>The selected view receives the message in <code class="inline">handle_info/2</code>. The runtime then
+synchronizes and publishes the resulting snapshot. <code class="inline">handle_event/3</code> and
+<code class="inline">handle_info/2</code> can also return typed window outcomes without receiving a
+runtime PID or a generic effect bus:</p><pre><code class="makeup elixir" translate="no"><span class="kd">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p" data-group-id="7460096208-1">(</span><span class="s">&quot;open-details&quot;</span><span class="p">,</span><span class="w"> </span><span class="c">_event</span><span class="p">,</span><span class="w"> </span><span class="n">assigns</span><span class="p" data-group-id="7460096208-1">)</span><span class="w"> </span><span class="k" data-group-id="7460096208-2">do</span><span class="w">
+  </span><span class="n">details</span><span class="w"> </span><span class="o">=</span><span class="w">
+    </span><span class="nc">GPUI.WindowSpec</span><span class="o">.</span><span class="n">new</span><span class="p" data-group-id="7460096208-3">(</span><span class="s">&quot;Repository details&quot;</span><span class="p">,</span><span class="w">
+      </span><span class="ss">key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;repository-details&quot;</span><span class="p">,</span><span class="w">
+      </span><span class="ss">root</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7460096208-4">{</span><span class="nc">RepositoryDetailsView</span><span class="p">,</span><span class="w"> </span><span class="ss">repository</span><span class="p">:</span><span class="w"> </span><span class="n">assigns</span><span class="o">.</span><span class="n">repository</span><span class="p" data-group-id="7460096208-4">}</span><span class="w">
+    </span><span class="p" data-group-id="7460096208-3">)</span><span class="w">
+
+  </span><span class="p" data-group-id="7460096208-5">{</span><span class="ss">:open_window</span><span class="p">,</span><span class="w"> </span><span class="n">details</span><span class="p">,</span><span class="w"> </span><span class="n">assigns</span><span class="p" data-group-id="7460096208-5">}</span><span class="w">
+</span><span class="k" data-group-id="7460096208-2">end</span><span class="w">
+
+</span><span class="kd">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p" data-group-id="7460096208-6">(</span><span class="s">&quot;close-details&quot;</span><span class="p">,</span><span class="w"> </span><span class="c">_event</span><span class="p">,</span><span class="w"> </span><span class="n">assigns</span><span class="p" data-group-id="7460096208-6">)</span><span class="w"> </span><span class="k" data-group-id="7460096208-7">do</span><span class="w">
+  </span><span class="p" data-group-id="7460096208-8">{</span><span class="ss">:close_window</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;repository-details&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">assigns</span><span class="p" data-group-id="7460096208-8">}</span><span class="w">
+</span><span class="k" data-group-id="7460096208-7">end</span></code></pre><p>Supported view results are <code class="inline">{:noreply, assigns}</code>, <code class="inline">{:close, assigns}</code>,
+<code class="inline">{:open_window, spec, assigns}</code>, and
+<code class="inline">{:close_window, key_or_id, assigns}</code>. A topology outcome and its originating
+assigns update form one session transition and one synchronized snapshot.
+Duplicate keys and missing close targets leave the authoritative topology and
+originating assigns unchanged and are returned as normalized event errors.</p><p>Runtime updates are available through ordinary OTP messages:</p><pre><code class="makeup elixir" translate="no"><span class="ss">:ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GPUI.Runtime</span><span class="o">.</span><span class="n">subscribe</span><span class="p" data-group-id="6617714971-1">(</span><span class="n">runtime</span><span class="p" data-group-id="6617714971-1">)</span><span class="w">
+
+</span><span class="k">receive</span><span class="w"> </span><span class="k" data-group-id="6617714971-2">do</span><span class="w">
+  </span><span class="p" data-group-id="6617714971-3">{</span><span class="ss">:gpui</span><span class="p">,</span><span class="w"> </span><span class="o">^</span><span class="n">runtime</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6617714971-4">%</span><span class="nc" data-group-id="6617714971-4">GPUI.Runtime.Update</span><span class="p" data-group-id="6617714971-4">{</span><span class="ss">revision</span><span class="p">:</span><span class="w"> </span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="ss">events</span><span class="p">:</span><span class="w"> </span><span class="n">events</span><span class="p">,</span><span class="w"> </span><span class="ss">snapshot</span><span class="p">:</span><span class="w"> </span><span class="n">snapshot</span><span class="p" data-group-id="6617714971-4">}</span><span class="p" data-group-id="6617714971-3">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+    </span><span class="c1"># The snapshot has already been synchronized to the active display.</span><span class="w">
+</span><span class="k" data-group-id="6617714971-2">end</span><span class="w">
+
+</span><span class="ss">:ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GPUI.Runtime</span><span class="o">.</span><span class="n">unsubscribe</span><span class="p" data-group-id="6617714971-5">(</span><span class="n">runtime</span><span class="p" data-group-id="6617714971-5">)</span></code></pre><p>Revisions increase monotonically within a runtime. Subscribers are monitored
+and removed automatically when they exit. Frame synchronization is separate
+from snapshot synchronization: <a href="GPUI.Runtime.html#await_frame/3"><code class="inline">GPUI.Runtime.await_frame/3</code></a> waits until the
+current snapshot generation has completed a frame, without blocking the runtime
+from processing messages.</p><p>Native-only changes such as hover, focus, tooltip timers, and IME state can be
+synchronized with a completed-frame token:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="0084295392-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">generation</span><span class="p" data-group-id="0084295392-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GPUI.Runtime</span><span class="o">.</span><span class="n">frame_token</span><span class="p" data-group-id="0084295392-2">(</span><span class="n">runtime</span><span class="p">,</span><span class="w"> </span><span class="n">window_id</span><span class="p" data-group-id="0084295392-2">)</span><span class="w">
+</span><span class="c1"># Send native platform input here.</span><span class="w">
+</span><span class="ss">:ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GPUI.Runtime</span><span class="o">.</span><span class="n">await_frame_after</span><span class="p" data-group-id="0084295392-3">(</span><span class="n">runtime</span><span class="p">,</span><span class="w"> </span><span class="n">window_id</span><span class="p">,</span><span class="w"> </span><span class="n">generation</span><span class="p" data-group-id="0084295392-3">)</span></code></pre><p><a href="GPUI.Runtime.html#request_frame/1"><code class="inline">GPUI.Runtime.request_frame/1</code></a> resynchronizes the current snapshot when callers
+need an explicit frame without changing application state. Runtime operations
+return structured <code class="inline">:display_start_failed</code>, <code class="inline">:display_sync_failed</code>,
+<code class="inline">:display_drain_failed</code>, and <code class="inline">:display_inject_failed</code> errors instead of crashing
+when a custom display fails its contract. Session mutations happen before display
+synchronization; after a synchronization error, <code class="inline">request_frame/1</code> retries the
+current authoritative snapshot.</p><h2 id="native-process-model" class="section-heading"><a href="#native-process-model" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Native process model</span></h2><p>Native displays share one process-global GPUI application loop. That loop owns
+all platform windows, while commands and registry state remain scoped to their
+originating runtime and window IDs.</p><p>Loop acquisition is platform-specific behind the same host boundary:</p><ul><li>on macOS, the host asks ERTS to hand the original process main thread to GPUI,
+satisfying AppKit's main-thread requirement without moving application state
+out of Elixir;</li><li>on Linux and Windows, the host starts one permanent dedicated native GUI
+thread and keeps every window on that thread.</li></ul><p>Startup is acknowledged only after the GPUI application has initialized. The
+last runtime releasing its windows does not tear down and recreate the
+process-global application loop.</p><p>Commands are acknowledged: callers receive success, timeout, disconnection, or
+stopped-runtime outcomes instead of enqueue-only success. Native frame barriers
+track snapshot and completed-frame generations per window and acknowledge after
+the corresponding frame has passed prepaint and presentation submission. Closing the
+final window does not terminate the shared loop. Runtime shutdown is
+non-blocking and cleans up only that runtime's windows and component state.</p><h2 id="declarative-viewport" class="section-heading"><a href="#declarative-viewport" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Declarative viewport</span></h2><p>Each rendered window tree is wrapped by a renderer-internal <code class="inline">:viewport</code> node in
+Elixir before it crosses a display boundary. The node establishes the current
+window content bounds; it is included in native and remote snapshots but is not
+a public template tag. Rust interprets those declared viewport semantics and
+does not inject application-specific layout wrappers.</p><p>Application roots should declare how they consume the viewport. A flex root
+normally uses <code class="inline">grow</code> and <code class="inline">w-full</code>; definite <code class="inline">w-full</code> and <code class="inline">h-full</code> lengths remain
+available where the parent layout provides a definite corresponding dimension.
+This keeps viewport declaration, layout values, defaults, and component policy
+in Elixir while leaving platform window state in GPUI.</p><h2 id="snapshot-reconciliation" class="section-heading"><a href="#snapshot-reconciliation" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Snapshot reconciliation</span></h2><p>A snapshot contains the complete declarative window set. Native synchronization:</p><ol><li>creates missing windows;</li><li>updates existing window trees and resources;</li><li>removes windows absent from the next snapshot;</li><li>reconciles stateful controls by component kind and stable ID;</li><li>drops registry entries no longer present in the rendered tree.</li></ol><p>Window snapshots also carry bounded command ID/shortcut pairs. The native root
+observes matched keystrokes after normal GPUI dispatch, emits <code class="inline">:command</code> events,
+and suppresses standard editing combinations while an input is focused.</p><p>Component IDs never depend on traversal position. Duplicate structural IDs are
+rejected before crossing the display boundary.</p><h2 id="rustq-boundary" class="section-heading"><a href="#rustq-boundary" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">RustQ boundary</span></h2><p>RustQ generates repetitive native boundaries from GPUI's internal schema:</p><ul><li>source-discovered atoms and Rustler NIF exports;</li><li>resource contracts and decoders;</li><li>window, primitive-element, component, and event-value decoders authored as typed Rusty-Elixir where their behavior is renderer-independent;</li><li>source-derived renderer routing and element dispatch;</li><li>style dispatch;</li><li>disabled-feature NIF implementations;</li><li>stateful registry kinds and typed accessors.</li></ul><p>Component defaults and attribute constraints come from the same schema used by
+public builders and native decoding. Renderer metadata is indexed from the real
+Rust functions in one pass instead of maintained in a parallel route table.</p><p>GPUI lifecycle, entities, focus, callbacks, reconciliation behavior, and
+platform integration remain handwritten Rust. Shared native collection
+mechanics live in a handwritten uniform-collection core; listbox and tree
+keyboard and accessibility semantics remain in their focused renderers. This
+keeps generated code structural while preserving readable native behavior.</p><p>See <a href="remote-displays.html">Remote displays</a> for transport topology and
+<a href="overview.html">Testing GPUI applications</a> for renderer-independent testing.</p>
+
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="first-application.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Your first application
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="components.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+UI components
+        </span>
+      </a>
+
+  </div>
+</div>
+    <footer class="footer">
+
+        <p>
+
+            <span class="line">
+              <a href="https://hex.pm/packages/gpui/0.2.0-rc.2">Hex Package</a>
+
+              <a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2">Hex Preview</a>
+
+                (<a href="https://preview.hex.pm/preview/gpui/0.2.0-rc.2/show/guides/concepts/sessions-snapshots-and-displays.md">current file</a>)
+
+            </span>
+
+          <span class="line">
+            <button class="a-main footer-button display-quick-switch" title="Go to package docs">
+              Go to package docs
+            </button>
+
+              <a href="llms.txt" target="_blank">
+                View llms.txt
+              </a>
+
+
+              <a href="gpui.epub">
+                Download ePub version
+              </a>
+
+          </span>
+        </p>
+
+        <p class="built-using">
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.40.3) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+        </p>
+
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>
