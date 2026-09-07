@@ -1,6 +1,6 @@
-GPUITest.Examples.load!(:controlled_form)
+GPUI.TestSupport.Examples.load!(:controlled_form)
 
-defmodule GPUITest.Visual.ControlledForm.Scenario do
+defmodule GPUI.TestSupport.Visual.ControlledForm.Scenario do
   @behaviour GPUI.Maintainer.Visual.Scenario
 
   @impl GPUI.Maintainer.Visual.Scenario

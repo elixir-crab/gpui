@@ -1,4 +1,4 @@
-GPUITest.Examples.load!(:rich_transcript)
+GPUI.TestSupport.Examples.load!(:rich_transcript)
 
 defmodule GPUI.Examples.RichTranscriptTest do
   use GPUI.Test, async: true

@@ -8,7 +8,7 @@ clipboard, IME, external transfer machinery, or compositor.
 defmodule MyApp.NativeWindowTest do
   use ExUnit.Case, async: false
 
-  alias GPUITest.Desktop
+  alias GPUI.TestSupport.Desktop
 
   @moduletag :e2e
 
@@ -37,7 +37,7 @@ builds the Swift desktop driver, and uses the active WindowServer and real Metal
 renderer. The repository-owned E2E support is intentionally separate from the
 public `GPUI.Test` API: it drives operating-system facilities and is not shipped
 in the Hex packages. Both paths execute ordinary ExUnit through
-`GPUITest.Desktop`; there is no separate test-runner architecture.
+`GPUI.TestSupport.Desktop`; there is no separate test-runner architecture.
 
 The source-built native artifacts for ordinary, deterministic-native, and
 desktop modes are isolated. Verify the transition sequence without cleaning
@@ -132,7 +132,7 @@ Inspect images for:
 - focus visibility;
 - theme and state variants.
 
-The repository-only `GPUITest.Desktop.capture!/2` helper remains available to
+The repository-only `GPUI.TestSupport.Desktop.capture!/3` helper remains available to
 focused E2E tests. It does not wait, inspect environment variables, or choose
 output paths.
 

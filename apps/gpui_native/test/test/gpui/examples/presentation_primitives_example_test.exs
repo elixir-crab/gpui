@@ -1,4 +1,4 @@
-GPUITest.Examples.load!(:presentation_primitives)
+GPUI.TestSupport.Examples.load!(:presentation_primitives)
 
 defmodule GPUI.Examples.PresentationPrimitivesTest do
   use GPUI.Test, async: true

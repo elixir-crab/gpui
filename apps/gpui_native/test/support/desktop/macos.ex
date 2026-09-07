@@ -1,4 +1,4 @@
-defmodule GPUITest.Desktop.MacOS do
+defmodule GPUI.TestSupport.Desktop.MacOS do
   @moduledoc false
 
   import ExUnit.Assertions

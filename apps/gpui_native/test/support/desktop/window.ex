@@ -1,4 +1,4 @@
-defmodule GPUITest.Desktop.Window do
+defmodule GPUI.TestSupport.Desktop.Window do
   @moduledoc false
 
   @enforce_keys [:desktop_ref, :id, :title]

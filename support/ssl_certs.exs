@@ -1,4 +1,4 @@
-defmodule GPUITest.SSLCerts do
+defmodule GPUI.TestSupport.SSLCerts do
   @moduledoc false
 
   def generate!(_context) do

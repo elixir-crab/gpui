@@ -33,6 +33,9 @@ mix ci
 
 ## Test synchronization and presentation
 
+- Keep public consumer helpers under `GPUI.Test`; repository-only fixtures and
+  desktop drivers belong under `GPUI.TestSupport`. Do not add `GPUITest` modules.
+
 - Use the existing `GPUI.Test, native: ...` harness for control events, layout,
   reconciliation, focus, keyboard behavior, and deterministic animation timing.
   Extend its generic commands rather than introducing a parallel test framework.

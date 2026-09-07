@@ -1,4 +1,4 @@
-GPUITest.Examples.load!(:resource_ref_image)
+GPUI.TestSupport.Examples.load!(:resource_ref_image)
 
 defmodule GPUI.Examples.ResourceRefImageTest do
   use GPUI.Test, async: true

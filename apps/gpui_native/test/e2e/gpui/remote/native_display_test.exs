@@ -1,13 +1,13 @@
 defmodule GPUI.Remote.NativeDisplayE2ETest do
   use ExUnit.Case, async: false
 
-  alias GPUITest.Desktop
+  alias GPUI.TestSupport.Desktop
 
   setup context do
     Desktop.setup(context, [])
   end
 
-  alias GPUITest.Desktop
+  alias GPUI.TestSupport.Desktop
 
   @moduletag :e2e
 

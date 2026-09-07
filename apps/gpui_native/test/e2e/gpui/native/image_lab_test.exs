@@ -1,9 +1,9 @@
-GPUITest.Examples.load!(:image_lab)
+GPUI.TestSupport.Examples.load!(:image_lab)
 
 defmodule GPUI.Native.ImageLabE2ETest do
   use ExUnit.Case, async: false
 
-  alias GPUITest.Desktop
+  alias GPUI.TestSupport.Desktop
 
   setup context do
     Desktop.setup(context, [])

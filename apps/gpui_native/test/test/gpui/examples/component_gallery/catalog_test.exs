@@ -1,4 +1,4 @@
-GPUITest.Examples.load!(:component_gallery)
+GPUI.TestSupport.Examples.load!(:component_gallery)
 
 defmodule GPUI.Examples.ComponentGallery.CatalogTest do
   use ExUnit.Case, async: true

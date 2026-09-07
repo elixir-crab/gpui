@@ -1,4 +1,4 @@
-GPUITest.Examples.load!(:pipeline_monitor)
+GPUI.TestSupport.Examples.load!(:pipeline_monitor)
 
 defmodule GPUI.Examples.PipelineMonitorTest do
   use GPUI.Test, async: true

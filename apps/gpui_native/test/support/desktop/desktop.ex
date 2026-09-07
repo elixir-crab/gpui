@@ -1,11 +1,11 @@
-defmodule GPUITest.Desktop do
+defmodule GPUI.TestSupport.Desktop do
   @moduledoc false
 
   use GenServer
 
   import ExUnit.Assertions
 
-  alias GPUITest.Desktop.Window
+  alias GPUI.TestSupport.Desktop.Window
 
   @update_timeout 3_000
 
@@ -295,11 +295,11 @@ defmodule GPUITest.Desktop do
 
   defp backend do
     case :os.type() do
-      {:unix, :darwin} -> GPUITest.Desktop.MacOS
-      {:unix, _name} -> GPUITest.Desktop.Linux
+      {:unix, :darwin} -> GPUI.TestSupport.Desktop.MacOS
+      {:unix, _name} -> GPUI.TestSupport.Desktop.Linux
     end
   end
 
-  defp platform_for(GPUITest.Desktop.MacOS), do: :macos
-  defp platform_for(GPUITest.Desktop.Linux), do: :linux
+  defp platform_for(GPUI.TestSupport.Desktop.MacOS), do: :macos
+  defp platform_for(GPUI.TestSupport.Desktop.Linux), do: :linux
 end

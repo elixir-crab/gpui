@@ -1,6 +1,6 @@
-GPUITest.Examples.load!(:hello_window)
+GPUI.TestSupport.Examples.load!(:hello_window)
 
-defmodule GPUITest.Visual.HelloWindow.Scenario do
+defmodule GPUI.TestSupport.Visual.HelloWindow.Scenario do
   @behaviour GPUI.Maintainer.Visual.Scenario
 
   @impl GPUI.Maintainer.Visual.Scenario

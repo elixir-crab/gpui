@@ -1,6 +1,6 @@
-GPUITest.Examples.load!(:beam_control_room)
+GPUI.TestSupport.Examples.load!(:beam_control_room)
 
-defmodule GPUITest.Visual.BeamControlRoom.Scenario do
+defmodule GPUI.TestSupport.Visual.BeamControlRoom.Scenario do
   @behaviour GPUI.Maintainer.Visual.Scenario
 
   @impl GPUI.Maintainer.Visual.Scenario

@@ -1,5 +1,5 @@
 for example <- ~w(hello_window events focus_timer controlled_form multiple_windows)a do
-  GPUITest.Examples.load!(example)
+  GPUI.TestSupport.Examples.load!(example)
 end
 
 defmodule GPUI.Examples.GettingStartedTest do

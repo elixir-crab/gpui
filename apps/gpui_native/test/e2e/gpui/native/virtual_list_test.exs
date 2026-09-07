@@ -1,7 +1,7 @@
 defmodule GPUI.Native.VirtualListE2ETest do
   use ExUnit.Case, async: false
 
-  alias GPUITest.Desktop
+  alias GPUI.TestSupport.Desktop
 
   setup context do
     Desktop.setup(context, [])

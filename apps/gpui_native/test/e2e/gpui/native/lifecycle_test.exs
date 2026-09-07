@@ -1,7 +1,7 @@
 defmodule GPUI.Native.LifecycleE2ETest do
   use ExUnit.Case, async: false
 
-  alias GPUITest.Desktop
+  alias GPUI.TestSupport.Desktop
 
   setup context do
     Desktop.setup(context, [])
@@ -159,7 +159,7 @@ defmodule GPUI.Native.LifecycleE2ETest do
         end
       end)
 
-    assert %GPUITest.Desktop.Window{} = final_window_id
+    assert %GPUI.TestSupport.Desktop.Window{} = final_window_id
     assert Process.alive?(display)
     assert %{windows: windows, resources: resources} = :sys.get_state(display)
     assert Map.keys(windows) == [1]

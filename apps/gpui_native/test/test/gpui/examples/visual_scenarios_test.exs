@@ -7,7 +7,7 @@ defmodule GPUI.Examples.VisualScenariosTest do
   use GPUI.Test, async: true
 
   test "component gallery declares deterministic controlled states" do
-    scenario = GPUITest.Visual.ComponentGallery.Scenario
+    scenario = GPUI.TestSupport.Visual.ComponentGallery.Scenario
 
     assert scenario.id() == :component_gallery
     assert scenario.title() == "GPUI Component Gallery"
@@ -39,23 +39,23 @@ defmodule GPUI.Examples.VisualScenariosTest do
   end
 
   test "getting-started scenarios expose deterministic polished states" do
-    assert [%{name: "hello-window"}] = GPUITest.Visual.HelloWindow.Scenario.captures()
+    assert [%{name: "hello-window"}] = GPUI.TestSupport.Visual.HelloWindow.Scenario.captures()
 
-    assert Enum.map(GPUITest.Visual.FocusTimer.Scenario.captures(), & &1.name) == [
+    assert Enum.map(GPUI.TestSupport.Visual.FocusTimer.Scenario.captures(), & &1.name) == [
              "ready",
              "running",
              "paused",
              "complete"
            ]
 
-    assert Enum.map(GPUITest.Visual.ControlledForm.Scenario.captures(), & &1.name) == [
+    assert Enum.map(GPUI.TestSupport.Visual.ControlledForm.Scenario.captures(), & &1.name) == [
              "saved",
              "validation-error"
            ]
   end
 
   test "Control Room scenario covers its product surface" do
-    control_room = GPUITest.Visual.BeamControlRoom.Scenario
+    control_room = GPUI.TestSupport.Visual.BeamControlRoom.Scenario
 
     assert Enum.map(control_room.captures(), & &1.name) == [
              "runtime-health",
@@ -71,7 +71,7 @@ defmodule GPUI.Examples.VisualScenariosTest do
   end
 
   test "Image Lab scenario uses fixed raster data and controlled selection" do
-    scenario = GPUITest.Visual.ImageLab.Scenario
+    scenario = GPUI.TestSupport.Visual.ImageLab.Scenario
 
     assert [
              %{name: "ready"},

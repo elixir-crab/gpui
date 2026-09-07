@@ -1,4 +1,4 @@
-GPUITest.Examples.load!(:image_lab)
+GPUI.TestSupport.Examples.load!(:image_lab)
 
 defmodule GPUI.Examples.ImageLabTest do
   use GPUI.Test, async: false

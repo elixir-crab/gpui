@@ -10,7 +10,7 @@ defmodule GPUI.Remote.Transport.TCPTest do
   end
 
   test "sends and receives SafeRPC frames over SSL", context do
-    certs = GPUITest.SSLCerts.generate!(context)
+    certs = GPUI.TestSupport.SSLCerts.generate!(context)
 
     assert_round_trip(
       port: 0,

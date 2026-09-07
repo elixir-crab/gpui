@@ -1,6 +1,6 @@
-GPUITest.Examples.load!(:image_lab)
+GPUI.TestSupport.Examples.load!(:image_lab)
 
-defmodule GPUITest.Visual.ImageLab.Scenario do
+defmodule GPUI.TestSupport.Visual.ImageLab.Scenario do
   @behaviour GPUI.Maintainer.Visual.Scenario
 
   alias Examples.ImageLab.Analysis

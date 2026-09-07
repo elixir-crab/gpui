@@ -1,6 +1,6 @@
-GPUITest.Examples.load!(:focus_timer)
+GPUI.TestSupport.Examples.load!(:focus_timer)
 
-defmodule GPUITest.Visual.FocusTimer.Scenario do
+defmodule GPUI.TestSupport.Visual.FocusTimer.Scenario do
   @behaviour GPUI.Maintainer.Visual.Scenario
 
   @impl GPUI.Maintainer.Visual.Scenario

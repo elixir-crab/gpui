@@ -1,6 +1,6 @@
-GPUITest.Examples.load!(:component_gallery)
+GPUI.TestSupport.Examples.load!(:component_gallery)
 
-defmodule GPUITest.Visual.ComponentGallery.Scenario do
+defmodule GPUI.TestSupport.Visual.ComponentGallery.Scenario do
   @behaviour GPUI.Maintainer.Visual.Scenario
 
   @impl GPUI.Maintainer.Visual.Scenario

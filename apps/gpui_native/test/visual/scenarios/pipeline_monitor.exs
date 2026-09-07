@@ -1,6 +1,6 @@
-GPUITest.Examples.load!(:pipeline_monitor)
+GPUI.TestSupport.Examples.load!(:pipeline_monitor)
 
-defmodule GPUITest.Visual.PipelineMonitor.Scenario do
+defmodule GPUI.TestSupport.Visual.PipelineMonitor.Scenario do
   @behaviour GPUI.Maintainer.Visual.Scenario
 
   @impl true

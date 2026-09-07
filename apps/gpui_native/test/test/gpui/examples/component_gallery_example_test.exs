@@ -1,4 +1,4 @@
-GPUITest.Examples.load!(:component_gallery)
+GPUI.TestSupport.Examples.load!(:component_gallery)
 
 defmodule GPUI.Examples.ComponentGalleryTest do
   use GPUI.Test, async: true

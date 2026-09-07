@@ -1,4 +1,4 @@
-GPUITest.Examples.load!(:beam_control_room)
+GPUI.TestSupport.Examples.load!(:beam_control_room)
 
 defmodule GPUI.Examples.BeamControlRoom.ETSSourceTest do
   use GPUI.Test, async: false
