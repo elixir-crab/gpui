@@ -87,7 +87,6 @@ defmodule GPUI.Umbrella.MixProject do
         "rust.e2e.clippy",
         "rust.test",
         "gpui.test.codegen",
-        "gpui.test.packages",
         "test",
         "credo --strict",
         "ex_dna --max-clones 0",

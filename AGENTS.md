@@ -9,7 +9,10 @@ mix ci
 
 ## Conventions
 
-- Use `mix ci` for the full validation suite before finishing changes.
+- Use `mix ci` for the full development validation suite before finishing changes.
+- Run `mix gpui.test.packages` for package-boundary changes. Before publishing,
+  run `mix ci` and `mix gpui.release.check`; the release check includes clean
+  package consumers, documentation, dependency audits, and license checks.
 - For Phoenix/web apps, keep Phoenix's generated guidance, but treat this VibeKit section as the final quality gate.
 - For non-web Elixir projects, VibeKit is the default project baseline.
 - Keep changes small, tested, and formatted.
