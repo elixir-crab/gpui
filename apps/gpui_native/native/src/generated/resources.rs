@@ -34,11 +34,11 @@ pub(crate) fn decode_raster_resource<'a>(term: Term<'a>) -> NifResult<RasterData
         binary => binary.as_slice().to_vec(),
     };
     Ok(RasterData {
-        width: width,
-        height: height,
-        format: format,
-        stride: stride,
-        data: data,
+        width,
+        height,
+        format,
+        stride,
+        data,
     })
 }
 #[cfg(feature = "real-gpui")]
@@ -51,7 +51,7 @@ pub(crate) fn decode_resource_ref_data<'a>(
     let resource_type_term = term.map_get(atoms::type_atom())?;
     let resource_type = resource_type_term.atom_to_string()?;
     Ok(ResourceRefData {
-        id: id,
-        resource_type: resource_type,
+        id,
+        resource_type,
     })
 }

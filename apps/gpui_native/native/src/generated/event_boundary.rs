@@ -21,7 +21,7 @@ pub struct InjectRequest<'a> {
 }
 #[allow(clippy::redundant_field_names)]
 fn inject_request<'a>(event: Term<'a>) -> InjectRequest<'a> {
-    InjectRequest { event: event }
+    InjectRequest { event }
 }
 fn decode_inject<'a>(
     request: InjectRequest<'a>,

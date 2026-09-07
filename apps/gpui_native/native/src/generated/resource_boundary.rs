@@ -12,15 +12,13 @@ pub struct PutRequest<'a> {
 #[allow(clippy::redundant_field_names)]
 fn put_request<'a>(resource_id: String, resource: Term<'a>) -> PutRequest<'a> {
     PutRequest {
-        resource_id: resource_id,
-        resource: resource,
+        resource_id,
+        resource,
     }
 }
 #[allow(clippy::redundant_field_names)]
 fn drop_request(resource_id: String) -> DropRequest {
-    DropRequest {
-        resource_id: resource_id,
-    }
+    DropRequest { resource_id }
 }
 #[rustler::nif(schedule = "DirtyCpu")]
 #[allow(unused_variables)]

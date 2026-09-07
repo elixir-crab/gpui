@@ -38,44 +38,39 @@ pub struct TargetRequest {
 }
 #[allow(clippy::redundant_field_names)]
 fn advance_request(milliseconds: u64) -> AdvanceRequest {
-    AdvanceRequest {
-        milliseconds: milliseconds,
-    }
+    AdvanceRequest { milliseconds }
 }
 #[allow(clippy::redundant_field_names)]
 fn input_request(text: String) -> InputRequest {
-    InputRequest { text: text }
+    InputRequest { text }
 }
 #[allow(clippy::redundant_field_names)]
 fn key_request(key: String) -> KeyRequest {
-    KeyRequest { key: key }
+    KeyRequest { key }
 }
 #[allow(clippy::redundant_field_names)]
 fn point_request(x: f64, y: f64) -> PointRequest {
-    PointRequest { x: x, y: y }
+    PointRequest { x, y }
 }
 #[allow(clippy::redundant_field_names)]
 fn scroll_request(target: String, delta_x: f64, delta_y: f64) -> ScrollRequest {
     ScrollRequest {
-        target: target,
-        delta_x: delta_x,
-        delta_y: delta_y,
+        target,
+        delta_x,
+        delta_y,
     }
 }
 #[allow(clippy::redundant_field_names)]
 fn render_request<'a>(tree: Term<'a>) -> RenderRequest<'a> {
-    RenderRequest { tree: tree }
+    RenderRequest { tree }
 }
 #[allow(clippy::redundant_field_names)]
 fn resize_request(width: f64, height: f64) -> ResizeRequest {
-    ResizeRequest {
-        width: width,
-        height: height,
-    }
+    ResizeRequest { width, height }
 }
 #[allow(clippy::redundant_field_names)]
 fn target_request(target: String) -> TargetRequest {
-    TargetRequest { target: target }
+    TargetRequest { target }
 }
 #[rustler::nif(schedule = "DirtyIo")]
 #[allow(unused_variables)]

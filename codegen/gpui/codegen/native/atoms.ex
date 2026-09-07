@@ -33,6 +33,7 @@ defmodule GPUI.Codegen.Native.Atoms do
       GPUI.Codegen.Native.ComponentContracts.items(),
       GPUI.Codegen.Native.Decoder.asts(),
       GPUI.Codegen.Native.Elements.asts(),
+      GPUI.Codegen.Native.Event.Contract.items(),
       GPUI.Codegen.Native.Events.items(),
       GPUI.Codegen.Native.Style.items(GPUI.Schema.style_specs()),
       RustQ.Native.items(GPUI.Codegen.Native.Window)

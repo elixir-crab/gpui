@@ -766,7 +766,7 @@ pub(crate) fn decode_image_node<'a>(
     let image = decode_image_data(attrs.map_get(atoms::raster())?)?;
     Ok(
         ElementNode::Image(ImageNode {
-            image: image,
+            image,
             style: decode_style(term)?,
             label: non_empty_string_attr(term, atoms::label()),
         }),
@@ -2146,10 +2146,7 @@ pub(crate) fn accumulate_select_option(
     } else {
         match remember_value(values, value.clone()) {
             Some(values) => {
-                let option = SelectOptionNode {
-                    label: label,
-                    value: value,
-                };
+                let option = SelectOptionNode { label, value };
                 Ok((values, append_select_option(options, option)))
             }
             None => Err(rustler::Error::BadArg),
@@ -2171,9 +2168,9 @@ pub(crate) fn accumulate_radio_option(
         match remember_value(values, value.clone()) {
             Some(values) => {
                 let option = RadioOptionNode {
-                    label: label,
-                    value: value,
-                    disabled: disabled,
+                    label,
+                    value,
+                    disabled,
                 };
                 Ok((values, append_radio_option(options, option)))
             }

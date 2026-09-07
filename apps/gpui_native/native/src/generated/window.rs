@@ -71,8 +71,8 @@ pub struct UpdateRequest<'a> {
 #[allow(clippy::redundant_field_names)]
 fn frame_request(window_id: u64, timeout_ms: u64) -> FrameRequest {
     FrameRequest {
-        window_id: window_id,
-        timeout_ms: timeout_ms,
+        window_id,
+        timeout_ms,
     }
 }
 #[allow(clippy::redundant_field_names)]
@@ -82,23 +82,18 @@ fn frame_after_request(
     timeout_ms: u64,
 ) -> FrameAfterRequest {
     FrameAfterRequest {
-        window_id: window_id,
-        generation: generation,
-        timeout_ms: timeout_ms,
+        window_id,
+        generation,
+        timeout_ms,
     }
 }
 #[allow(clippy::redundant_field_names)]
 fn update_request<'a>(window_id: u64, tree: Term<'a>) -> UpdateRequest<'a> {
-    UpdateRequest {
-        window_id: window_id,
-        tree: tree,
-    }
+    UpdateRequest { window_id, tree }
 }
 #[allow(clippy::redundant_field_names)]
 fn close_request(window_id: u64) -> CloseRequest {
-    CloseRequest {
-        window_id: window_id,
-    }
+    CloseRequest { window_id }
 }
 fn decode_close(request: CloseRequest) -> u64 {
     request.window_id
@@ -206,13 +201,13 @@ fn normalize<'a>(decoded: Decoded<'a>) -> NifResult<Config<'a>> {
                 title: decoded.title,
                 width: *width as f32,
                 height: *height as f32,
-                min_width: min_width,
-                min_height: min_height,
+                min_width,
+                min_height,
                 resizable: decoded.resizable,
                 content_chrome: decoded.chrome == chrome_content(),
-                close_request: close_request,
-                focus: focus,
-                blur: blur,
+                close_request,
+                focus,
+                blur,
                 commands: decoded.commands,
                 tree: decoded.root.tree,
             })

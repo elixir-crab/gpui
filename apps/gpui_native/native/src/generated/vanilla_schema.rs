@@ -725,7 +725,7 @@ pub(crate) fn decode_image_node<'a>(
     let image = decode_image_data(attrs.map_get(atoms::raster())?)?;
     Ok(
         ElementNode::Image(ImageNode {
-            image: image,
+            image,
             style: decode_style(term)?,
             label: non_empty_string_attr(term, atoms::label()),
         }),
