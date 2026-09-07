@@ -2,6 +2,7 @@ defmodule GPUI.Native.ComponentsE2ETest do
   use ExUnit.Case, async: false
 
   alias GPUITest.Desktop
+  import GPUITest.Desktop, only: [start_runtime!: 2]
 
   setup context do
     Desktop.setup(context, [])
@@ -141,11 +142,13 @@ defmodule GPUI.Native.ComponentsE2ETest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <div class="w-[360px] h-[100px] p-4 bg-slate-900">
+      <div class={assigns.surface}>
+        <div class="text-lg">Volume</div>
+        <div class="text-sm">{"Current value: #{assigns.volume}"}</div>
         <GPUI.UI.slider
           id="component-volume"
           label="Volume"
-          class="w-full h-full"
+          class="w-full h-6"
           value={assigns.volume}
           min={assigns.min}
           max={assigns.max}
@@ -183,13 +186,19 @@ defmodule GPUI.Native.ComponentsE2ETest do
     use GPUI.Application
 
     @impl GPUI.Application
-    def mount(%{title: title}) do
+    def mount(%{title: title, theme: theme}) do
+      surface =
+        if theme == :dark,
+          do: "flex flex-col w-[360px] h-[160px] p-4 gap-3 bg-slate-900 text-slate-100",
+          else: "flex flex-col w-[360px] h-[160px] p-4 gap-3 bg-white text-slate-900"
+
       {:ok,
        [
          window title do
-           size(360, 100)
+           size(360, 160)
 
            root(SliderView,
+             surface: surface,
              volume: 25.0,
              released_volume: nil,
              min: 0.0,
@@ -330,13 +339,37 @@ defmodule GPUI.Native.ComponentsE2ETest do
     assert Process.alive?(runtime)
   end
 
-  test "desktop renders a native slider", %{desktop: desktop} do
-    title = "GPUI Slider E2E #{System.unique_integer([:positive])}"
-    runtime = start_runtime!(desktop, app: SliderApp, args: %{title: title})
-    window = Desktop.window!(desktop, title)
-    Desktop.await_frame!(desktop, runtime, 1, window)
-    assert %{volume: 25.0, released_volume: nil} = assigns(runtime)
-    assert Process.alive?(runtime)
+  for theme <- [:light, :dark] do
+    @tag slider_theme: theme
+    test "desktop slider drag updates and releases in #{theme} theme", %{
+      desktop: desktop,
+      slider_theme: theme
+    } do
+      title = "GPUI Slider E2E #{System.unique_integer([:positive])}"
+
+      runtime =
+        start_runtime!(desktop,
+          app: SliderApp,
+          args: %{title: title, theme: theme},
+          display_opts: [theme: theme]
+        )
+
+      window = Desktop.window!(desktop, title)
+      Desktop.await_frame!(desktop, runtime, 1, window)
+      assert %{volume: 25.0, released_volume: nil} = assigns(runtime)
+
+      Desktop.capture_fixture!(desktop, window, "slider-#{theme}")
+      Desktop.drag!(desktop, window, from: {98, 103}, to: {260, 103})
+
+      Desktop.eventually(desktop, runtime, fn ->
+        state = assigns(runtime)
+        assert state.volume > 25.0
+        assert state.released_volume == state.volume
+        assert state.scale == "logarithmic"
+      end)
+
+      assert Process.alive?(runtime)
+    end
   end
 
   defp assigns(runtime) do

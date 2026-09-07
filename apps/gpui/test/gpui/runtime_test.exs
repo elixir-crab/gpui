@@ -320,6 +320,7 @@ defmodule GPUI.RuntimeTest do
           {{:error, :temporary}, %{state | failures: failures - 1}}
 
         state ->
+          if observer = Map.get(state, :observer), do: send(observer, {:display_synced, snapshot})
           {:ok, %{state | snapshots: [snapshot | state.snapshots]}}
       end)
     end
@@ -672,15 +673,14 @@ defmodule GPUI.RuntimeTest do
   end
 
   test "runtime retries authoritative snapshots after a display sync failure" do
-    {:ok, runtime} =
-      GPUI.Runtime.start_link(
-        app: DemoApp,
-        display: RecoveringDisplay,
-        poll_interval: 10
+    runtime =
+      start_supervised!(
+        {GPUI.Runtime, app: DemoApp, display: RecoveringDisplay, poll_interval: nil}
       )
 
     %{display: display} = :sys.get_state(runtime)
-    Agent.update(display, &%{&1 | failures: 1})
+    observer = self()
+    Agent.update(display, &Map.merge(&1, %{failures: 1, observer: observer}))
 
     assert {:error, {:display_sync_failed, :temporary}} =
              GPUI.Runtime.dispatch_event(runtime, %{
@@ -693,7 +693,8 @@ defmodule GPUI.RuntimeTest do
     assert %{windows: [%{root: %{assigns: %{name: "Recovered"}}}]} =
              GPUI.Runtime.snapshot!(runtime)
 
-    Process.sleep(30)
+    assert_receive {:display_synced, %{windows: [%{root: %{assigns: %{name: "Recovered"}}}]}},
+                   1_000
 
     assert [
              %{windows: [%{root: %{assigns: %{name: "Recovered"}}}]} | _
