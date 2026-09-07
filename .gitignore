@@ -9,6 +9,7 @@
 
 # Where third-party dependencies like ExDoc output generated docs.
 /doc/
+/apps/*/doc/
 
 # Where Reach writes optional interactive reports.
 /reach_report/
