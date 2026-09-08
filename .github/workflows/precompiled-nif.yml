@@ -119,6 +119,25 @@ jobs:
           name: ${{ steps.build.outputs.file-name }}
           path: ${{ steps.build.outputs.file-path }}
 
+      - name: Prepare default archive
+        if: matrix.host == 'vanilla'
+        shell: bash
+        env:
+          ARCHIVE: ${{ steps.build.outputs.file-path }}
+        run: |
+          mkdir -p default-archives
+          name=$(basename "$ARCHIVE")
+          cp "$ARCHIVE" "default-archives/${name/--vanilla/}"
+
+      - name: Publish default archive
+        if: startsWith(github.ref, 'refs/tags/') && matrix.host == 'vanilla'
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: ${{ steps.version.outputs.prerelease }}
+          make_latest: false
+          tag_name: ${{ github.ref_name }}
+          files: default-archives/*
+
       - name: Publish host archive
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
@@ -158,8 +177,12 @@ jobs:
         run: mix compile
 
       - name: Generate verified checksum manifest
-        working-directory: apps/gpui_native
-        run: mix rustler_precompiled.download GPUI.Native.NIF --all --print
+        env:
+          GPUI_BUILD_FROM_SOURCE: "1"
+          RUST_FONTCONFIG_DLOPEN: "1"
+        run: |
+          mix rustler_precompiled.download GPUI.Native.NIF --all --print
+          mv checksum-Elixir.GPUI.Native.NIF.exs apps/gpui_native/
 
       - name: Upload checksum manifest
         uses: actions/upload-artifact@v4
