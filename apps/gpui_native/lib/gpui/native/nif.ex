@@ -22,11 +22,15 @@ defmodule GPUI.Native.NIF do
 
     source_checkout? =
       project_root
-      |> Stream.unfold(fn path ->
-        parent = Path.dirname(path)
-        {path, if(parent == path, do: nil, else: parent)}
+      |> Stream.unfold(fn
+        nil ->
+          nil
+
+        path ->
+          parent = Path.dirname(path)
+          {path, if(parent == path, do: nil, else: parent)}
       end)
-      |> Enum.any?(&File.dir?(Path.join(&1, ".git")))
+      |> Enum.any?(&File.exists?(Path.join(&1, ".git")))
 
     release_metadata? = Mix.env() == :release and source_checkout?
 
