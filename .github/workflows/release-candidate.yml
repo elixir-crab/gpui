@@ -34,7 +34,7 @@ jobs:
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          cache-prefix: release-candidate-quality-v2
+          cache-prefix: release-candidate-quality-${{ hashFiles('mix.exs', 'apps/*/mix.exs') }}
       - name: Install quality dependencies
         run: >-
           sudo apt-get update && sudo apt-get install -y --no-install-recommends
@@ -59,7 +59,7 @@ jobs:
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          cache-prefix: release-candidate-e2e-v2
+          cache-prefix: release-candidate-e2e-${{ hashFiles('mix.exs', 'apps/*/mix.exs') }}
           restore-plt-cache: "false"
       - name: Install native E2E dependencies
         run: >-
@@ -88,7 +88,7 @@ jobs:
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          cache-prefix: release-candidate-macos-v2
+          cache-prefix: release-candidate-macos-${{ hashFiles('mix.exs', 'apps/*/mix.exs') }}
           restore-plt-cache: "false"
       - name: Select full Xcode toolchain
         run: sudo xcode-select --switch /Applications/Xcode.app
@@ -113,7 +113,7 @@ jobs:
         with:
           otp-version: "29.0.2"
           elixir-version: "1.20.2"
-          cache-prefix: release-candidate-package-v2
+          cache-prefix: release-candidate-package-${{ hashFiles('mix.exs', 'apps/*/mix.exs') }}
           restore-plt-cache: "false"
       - name: Install Rust security audit
         run: cargo install cargo-audit --locked
