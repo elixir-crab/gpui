@@ -282,7 +282,7 @@ defmodule Mix.Tasks.Gpui.Test.Packages do
     File.write!(path, contents)
   end
 
-  defp package_env, do: [{"GPUI_SKIP_NATIVE", "1"}]
+  defp package_env, do: [{"MIX_ENV", "dev"}, {"GPUI_SKIP_NATIVE", "1"}]
 
   defp consumer_env do
     [
