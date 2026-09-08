@@ -1,6 +1,7 @@
 defmodule GPUI.Native.FormControlsE2ETest do
   use ExUnit.Case, async: false
 
+  alias GPUI.Runtime.Update
   alias GPUI.TestSupport.Desktop
   import GPUI.TestSupport.Desktop, only: [start_runtime!: 2]
 
@@ -131,9 +132,18 @@ defmodule GPUI.Native.FormControlsE2ETest do
     Desktop.await_frame!(desktop, runtime, 1, window)
     Desktop.type!(desktop, window, "X")
     Desktop.press!(desktop, window, "Return")
-    Process.sleep(100)
 
-    assert %{name: name, submitted_name: submitted_name} = assigns(runtime)
+    assert_receive {:gpui, ^runtime,
+                    %Update{
+                      snapshot: %{
+                        windows: [
+                          %{root: %{assigns: %{name: name, submitted_name: submitted_name}}}
+                        ]
+                      }
+                    }}
+                   when is_binary(submitted_name) and submitted_name != "",
+                   3_000
+
     assert submitted_name == name
     assert name != ""
     refute String.contains?(name, "\n")

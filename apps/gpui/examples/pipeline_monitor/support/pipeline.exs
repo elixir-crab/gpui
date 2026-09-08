@@ -20,6 +20,7 @@ defmodule Examples.PipelineMonitor.Pipeline do
   @impl GenServer
   def init(opts) do
     state = %{
+      observer: Keyword.get(opts, :notify),
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
       workers: Keyword.get(opts, :workers, 4),
       paused: false,
@@ -91,6 +92,7 @@ defmodule Examples.PipelineMonitor.Pipeline do
       {nil, _active} -> {:noreply, state}
       {%{job_id: job_id}, active} ->
         state = %{state | active: active} |> finish_job(job_id, result) |> dispatch()
+        notify(state)
         {:noreply, state}
     end
   end
@@ -102,9 +104,14 @@ defmodule Examples.PipelineMonitor.Pipeline do
         job = Map.fetch!(state.jobs, job_id)
         job = %{job | status: :queued, worker: nil, reason: "worker crashed: #{inspect(reason)}"}
         state = %{state | active: active, jobs: Map.put(state.jobs, job_id, job), queue: :queue.in_r(job_id, state.queue), worker_generation: state.worker_generation + 1}
-        {:noreply, dispatch(state)}
+        state = dispatch(state)
+        notify(state)
+        {:noreply, state}
     end
   end
+
+  defp notify(%{observer: nil}), do: :ok
+  defp notify(state), do: send(state.observer, {:pipeline, self(), public_snapshot(state)})
 
   defp enqueue_job(state, kind) do
     if :queue.len(state.queue) + map_size(state.active) >= @capacity do

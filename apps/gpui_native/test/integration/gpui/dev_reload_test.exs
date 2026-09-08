@@ -39,7 +39,7 @@ defmodule GPUI.Dev.ReloadTest do
 
     {:ok, watcher} = GPUI.Dev.Reload.watch(runtime, files: [path], debounce: 10)
     assert Process.alive?(watcher)
-    Process.sleep(750)
+    await_watcher(watcher, path)
     flush_snapshots()
 
     File.write!(path, source(module, "after"))
@@ -83,7 +83,7 @@ defmodule GPUI.Dev.ReloadTest do
 
     {:ok, watcher} = GPUI.Dev.Reload.watch(runtime, files: [path], debounce: 10)
     assert Process.alive?(watcher)
-    Process.sleep(750)
+    await_watcher(watcher, path)
     flush_snapshots()
     File.write!(path, dynamic_source(module, "after", 10))
 
@@ -121,7 +121,7 @@ defmodule GPUI.Dev.ReloadTest do
     {_event, %{windows: [_, %{id: 2}]}} = dispatch(runtime, 1, "open-details")
 
     {:ok, watcher} = GPUI.Dev.Reload.watch(runtime, files: [path], debounce: 10, notify: self())
-    Process.sleep(750)
+    await_watcher(watcher, path)
     flush_snapshots()
     File.write!(path, "defmodule #{inspect(module)} do\n  def render(\nend")
 
@@ -299,6 +299,34 @@ defmodule GPUI.Dev.ReloadTest do
       {:gpui_snapshot, _snapshot} -> flush_snapshots()
     after
       0 -> :ok
+    end
+  end
+
+  defp await_watcher(watcher, path) do
+    # FileSystem's external backend has no startup acknowledgement. Confirm an
+    # actual event before testing reloads; do not assume elapsed time means ready.
+    backend = :sys.get_state(watcher).watcher
+    :ok = FileSystem.subscribe(backend)
+    probe = path <> ".ready"
+
+    try do
+      await_file_event(backend, probe, System.monotonic_time(:millisecond) + 5_000)
+    after
+      File.rm(probe)
+    end
+  end
+
+  defp await_file_event(backend, path, deadline) do
+    File.touch!(path)
+
+    receive do
+      {:file_event, ^backend, {_path, _events}} -> :ok
+    after
+      100 ->
+        if System.monotonic_time(:millisecond) >= deadline,
+          do: flunk("file watcher did not become ready")
+
+        await_file_event(backend, path, deadline)
     end
   end
 

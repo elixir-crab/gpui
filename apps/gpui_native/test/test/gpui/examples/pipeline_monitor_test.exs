@@ -21,29 +21,33 @@ defmodule GPUI.Examples.PipelineMonitorTest do
     pipeline =
       start_supervised!(
         {Examples.PipelineMonitor.Pipeline,
-         task_supervisor: task_supervisor, name: unique_name(:pipeline), workers: 1}
+         task_supervisor: task_supervisor,
+         name: unique_name(:pipeline),
+         workers: 1,
+         notify: self()}
       )
 
     {:ok, _id} = Examples.PipelineMonitor.Pipeline.enqueue(pipeline, :fail_once)
-    Process.sleep(30)
 
-    assert %{completed: 1, failed: 0, jobs: [%{attempt: 2, status: :completed}]} =
-             Examples.PipelineMonitor.Pipeline.snapshot(pipeline)
+    assert_receive {:pipeline, ^pipeline,
+                    %{completed: 1, failed: 0, jobs: [%{attempt: 2, status: :completed}]}},
+                   1_000
 
     {:ok, true} = Examples.PipelineMonitor.Pipeline.toggle_pause(pipeline)
     {:ok, _id} = Examples.PipelineMonitor.Pipeline.enqueue(pipeline, :success)
     assert %{paused: true, queue_depth: 1} = Examples.PipelineMonitor.Pipeline.snapshot(pipeline)
     {:ok, false} = Examples.PipelineMonitor.Pipeline.toggle_pause(pipeline)
-    Process.sleep(20)
+    assert_receive {:pipeline, ^pipeline, %{completed: 2}}, 1_000
 
     {:ok, true} = Examples.PipelineMonitor.Pipeline.toggle_pause(pipeline)
     {:ok, _id} = Examples.PipelineMonitor.Pipeline.enqueue(pipeline, :slow_success)
     generation = Examples.PipelineMonitor.Pipeline.snapshot(pipeline).worker_generation
     {:ok, false} = Examples.PipelineMonitor.Pipeline.toggle_pause(pipeline)
-    Process.sleep(5)
     :ok = Examples.PipelineMonitor.Pipeline.crash_worker(pipeline)
-    Process.sleep(20)
-    assert Examples.PipelineMonitor.Pipeline.snapshot(pipeline).worker_generation > generation
+
+    assert_receive {:pipeline, ^pipeline, %{worker_generation: current}}
+                   when current > generation,
+                   1_000
   end
 
   defp fixture_snapshot do

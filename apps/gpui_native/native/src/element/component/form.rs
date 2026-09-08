@@ -648,7 +648,10 @@ pub(crate) fn render_combobox_component(
         selected_choice_label(current_accessibility_value.as_deref(), &node.options);
     let mut element = Combobox::new(&combobox.state)
         .disabled(node.disabled || node.loading)
-        .cleanable(node.cleanable);
+        .cleanable(node.cleanable)
+        // The pinned upstream locale uses ComboBox, but its default lookup uses Combobox.
+        .placeholder("Please select")
+        .search_placeholder("Search...");
     if let Some(placeholder) = node.placeholder {
         element = element.placeholder(placeholder);
     }

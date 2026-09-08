@@ -4,6 +4,7 @@ defmodule GPUI.Native.ImageLabE2ETest do
   use ExUnit.Case, async: false
 
   alias GPUI.TestSupport.Desktop
+  import GPUI.TestSupport.Desktop, only: [start_runtime!: 2]
 
   setup context do
     Desktop.setup(context, [])

@@ -146,17 +146,6 @@ defmodule GPUI.TestSupport.Desktop do
              GPUI.Display.Support.call_await_frame_after(runtime, window_id, generation, timeout)
   end
 
-  def assert_no_runtime_update!(desktop, runtime, window_id, window, action) do
-    flush_updates(runtime)
-    assert {:ok, generation} = GPUI.Runtime.frame_token(runtime, window_id)
-    action.()
-    assert :ok = GPUI.Runtime.request_frame(runtime)
-    request_frame!(desktop, window)
-    await_frame_after!(runtime, window_id, generation)
-    GPUI.Runtime.drain_events(runtime)
-    refute_receive {:gpui, ^runtime, %GPUI.Runtime.Update{}}, 0
-  end
-
   @impl GenServer
   def init(opts) do
     owner = Keyword.fetch!(opts, :owner)
@@ -261,14 +250,6 @@ defmodule GPUI.TestSupport.Desktop do
 
   defp call(%__MODULE__{} = desktop, command),
     do: GenServer.call(desktop.pid, {:command, desktop.ref, command}, 10_000)
-
-  defp flush_updates(source) do
-    receive do
-      {:gpui, ^source, %GPUI.Runtime.Update{}} -> flush_updates(source)
-    after
-      0 -> :ok
-    end
-  end
 
   defp point!(opts), do: Keyword.fetch!(opts, :at)
   defp handle(state), do: %__MODULE__{pid: self(), ref: state.ref}
