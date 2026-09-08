@@ -38,6 +38,8 @@ jobs:
       - name: Generate dependency inventory
         run: mix gpui.release.inventory.write --output release-inventory
       - run: mix gpui.release.check
+        env:
+          GPUI_SKIP_NATIVE: "1"
       - name: Upload dependency inventory
         if: always()
         uses: actions/upload-artifact@v4

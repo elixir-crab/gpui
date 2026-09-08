@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+## 0.2.0 - 2026-09-08
+
+### Breaking changes
+
+- Move programmatic element construction and styling helpers from `GPUI` to
+  `GPUI.Builder`; update imports and qualified calls accordingly.
+- Return `{:ok, snapshot}` from `GPUI.Session.snapshot/1` and
+  `GPUI.Runtime.snapshot/1`. Use `GPUI.Runtime.snapshot!/1` when an unwrapped
+  snapshot with raising error handling is desired.
+- Return `{:ok, events}` from `GPUI.Runtime.drain_events/1` and
+  `{:ok, event, snapshot}` from `GPUI.Runtime.dispatch_event/2`.
+
+### Added
+
+- Add `GPUI.Test.drag/3` for deterministic native mouse dragging between logical
+  points, alongside bounds-based targeting and controlled rerender assertions.
+- Add structured `GPUI.Runtime.Error` failures for the raising snapshot API.
+
+### Fixed
+
+- Reject malformed text projections, decorations, and style runs consistently
+  at the public schema boundary.
+- Show readable default combobox placeholders instead of untranslated locale
+  keys, while preserving explicitly supplied placeholders.
+
 ### Compatibility
 
 - Documented that native Windows windows require an interactive desktop session;

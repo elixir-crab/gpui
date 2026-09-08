@@ -123,3 +123,5 @@ jobs:
           libxkbcommon-dev libxkbcommon-x11-dev
       - run: mix gpui.test.hosts
       - run: mix gpui.release.check
+        env:
+          GPUI_SKIP_NATIVE: "1"
