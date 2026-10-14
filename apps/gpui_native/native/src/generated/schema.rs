@@ -3506,6 +3506,7 @@ pub(crate) struct CodeLineComponentNode {
     pub(crate) id: String,
     pub(crate) text: String,
     pub(crate) number: Option<u64>,
+    pub(crate) style_runs: Vec<TextStyleRunNode>,
     pub(crate) kind: Option<String>,
     pub(crate) disabled: bool,
 }
@@ -3520,6 +3521,7 @@ pub(crate) fn decode_generated_code_line_component<'a>(
         id: component_id(term)?,
         text: component_string_attr(term, atoms::text())?.unwrap_or_default(),
         number: component_non_negative_integer_attr(term, atoms::number())?,
+        style_runs: text_style_runs_attr(term, atoms::style_runs())?,
         kind: match component_enum_attr(
             term,
             atoms::kind(),

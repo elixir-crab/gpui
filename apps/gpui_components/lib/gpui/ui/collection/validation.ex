@@ -177,6 +177,44 @@ defmodule GPUI.UI.Collection.Validation do
   @max_rich_text_bytes 1_048_576
   @max_rich_text_runs 2_048
 
+  def validate_code_line_runs!(assigns) do
+    GPUI.Components.Schema.validate_component_assigns!(assigns, :ui_code_line)
+
+    if assigns.style_runs != [] and String.contains?(assigns.text, ["\n", "\r"]) do
+      raise ArgumentError, "ui_code_line style runs require single-line text"
+    end
+
+    boundaries =
+      assigns.text
+      |> String.to_charlist()
+      |> Enum.scan(0, fn character, offset -> offset + if(character > 0xFFFF, do: 2, else: 1) end)
+      |> MapSet.new()
+      |> MapSet.put(0)
+
+    Enum.reduce(assigns.style_runs, 0, fn run, previous_end ->
+      start = code_position_offset!(run.range.start, boundaries)
+      ending = code_position_offset!(run.range.end, boundaries)
+
+      unless start < ending and start >= previous_end do
+        raise ArgumentError,
+              "ui_code_line style runs must be non-empty, sorted and non-overlapping"
+      end
+
+      ending
+    end)
+
+    :ok
+  end
+
+  defp code_position_offset!(%GPUI.Text.Position{line: 0, utf16_offset: offset}, boundaries) do
+    if MapSet.member?(boundaries, offset),
+      do: offset,
+      else: raise(ArgumentError, "ui_code_line style runs must use UTF-16 character boundaries")
+  end
+
+  defp code_position_offset!(_position, _boundaries),
+    do: raise(ArgumentError, "ui_code_line style runs must use positions on line 0")
+
   def validate_rich_text!(assigns) do
     validate_collection_label!(:ui_rich_text, Map.get(assigns, :label))
     text = assigns.text

@@ -131,6 +131,9 @@ defmodule GPUI.Codegen.Native.Component.Macros do
   defp component_field_type(_name, :rich_text_runs),
     do: quote(do: R.vec(RichTextRunNode.t()))
 
+  defp component_field_type(_name, :text_style_runs),
+    do: quote(do: R.vec(TextStyleRunNode.t()))
+
   defp component_decoder_expr(:id, :string), do: quote(do: unwrap!(component_id(term)))
 
   defp component_decoder_expr(name, :required_string),
@@ -231,6 +234,9 @@ defmodule GPUI.Codegen.Native.Component.Macros do
 
   defp component_decoder_expr(_name, :rich_text_runs),
     do: quote(do: unwrap!(decode_rich_text_runs(term)))
+
+  defp component_decoder_expr(name, :text_style_runs),
+    do: quote(do: unwrap!(text_style_runs_attr(term, unquote(atom_call(name)))))
 
   defp atom_call(name),
     do: {{:., [], [{:__aliases__, [], [:Atoms]}, rust_atom_name(name)]}, [], []}

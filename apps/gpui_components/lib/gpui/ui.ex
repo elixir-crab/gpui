@@ -708,11 +708,18 @@ defmodule GPUI.UI do
   @doc """
   Builds one native line for `code_viewer/1`.
 
+  Optional `style_runs` are sorted, non-overlapping `GPUI.Text.StyleRun` values
+  within this line's original text, using line `0` and UTF-16 offsets. They
+  describe colors and font styles, not syntax or a particular highlighter.
+  Tab expansion is native; callers must not adjust ranges for expanded tabs.
+  Selected lines retain the viewer's high-contrast selection foreground.
+
   #{ComponentsSchema.component_options_doc(:ui_code_line)}
   """
   @spec code_line(code_line_options()) :: Element.t()
   def code_line(assigns) when is_map(assigns) do
-    assigns = ComponentsSchema.apply_defaults(assigns, :ui_code_line)
+    assigns =
+      assigns |> Map.put_new(:style_runs, []) |> ComponentsSchema.apply_defaults(:ui_code_line)
 
     unless is_binary(Map.get(assigns, :id)) and assigns.id != "" and
              is_binary(assigns.text) do
@@ -733,6 +740,7 @@ defmodule GPUI.UI do
             "ui_code_line kind must be context, addition, deletion, hunk, debug, info, warning, or error"
     end
 
+    Validation.validate_code_line_runs!(assigns)
     component(:ui_code_line, assigns)
   end
 

@@ -32,6 +32,7 @@ impl ComponentCodeViewer {
 struct CodeLine {
     id: String,
     text: String,
+    style_runs: Vec<crate::TextStyleRunNode>,
     number: Option<u64>,
     kind: String,
     disabled: bool,
@@ -96,6 +97,7 @@ pub(crate) fn render(
             ElementNode::CodeLineComponent(line) => Some(CodeLine {
                 id: line.id,
                 text: line.text,
+                style_runs: line.style_runs,
                 number: line.number,
                 kind: line.kind.unwrap_or_else(|| "context".to_string()),
                 disabled: line.disabled,
@@ -198,8 +200,16 @@ pub(crate) fn render(
         item_height: (node.item_height as f32).max(1.0),
         gutter_width,
         dark: theme.is_dark(),
-        background: theme.background,
-        foreground: theme.foreground,
+        background: node
+            .style
+            .background
+            .map(|color| gpui::rgba(color).into())
+            .unwrap_or(theme.background),
+        foreground: node
+            .style
+            .color
+            .map(|color| gpui::rgba(color).into())
+            .unwrap_or(theme.foreground),
         muted_foreground: theme.muted_foreground,
         selected_background: theme.primary,
         selected_foreground: theme.primary_foreground,
@@ -372,6 +382,11 @@ fn render_loaded_line(
     let text_color = line_text_color(code, &line.kind, selected);
     let gutter_width = code.gutter_width;
     let expanded = expand_tabs(&line.text, code.tab_width);
+    let highlights = if selected {
+        Vec::new()
+    } else {
+        line_highlights(&line.text, code.tab_width, &line.style_runs)
+    };
     let accessibility_label = match line.number {
         Some(number) => format!("Line {number}: {expanded}"),
         None => expanded.clone(),
@@ -397,7 +412,7 @@ fn render_loaded_line(
         .font_family(code.mono_font_family.clone())
         .text_size(code.mono_font_size)
         .text_color(text_color)
-        .child(expanded);
+        .child(gpui::StyledText::new(expanded).with_highlights(highlights));
     let mut element = apply_generated_render_styles(gpui::div().bg(background), line.style)
         .h(gpui::px(code.item_height))
         .w_full()
@@ -491,6 +506,81 @@ fn expand_tabs(text: &str, tab_width: usize) -> String {
 }
 
 #[cfg(feature = "components")]
+fn line_highlights(
+    text: &str,
+    tab_width: usize,
+    runs: &[crate::TextStyleRunNode],
+) -> Vec<(Range<usize>, gpui::HighlightStyle)> {
+    let mut previous_end = 0;
+    runs.iter()
+        .take(512)
+        .filter_map(|run| {
+            if run.range.start.line != 0 || run.range.end.line != 0 {
+                return None;
+            }
+            let start = expanded_offset(text, tab_width, run.range.start.utf16_offset)?;
+            let end = expanded_offset(text, tab_width, run.range.end.utf16_offset)?;
+            if start >= end || start < previous_end {
+                return None;
+            }
+            previous_end = end;
+            let font_weight = run.font_weight.as_deref().and_then(|weight| match weight {
+                "thin" => Some(gpui::FontWeight::THIN),
+                "extra_light" => Some(gpui::FontWeight::EXTRA_LIGHT),
+                "light" => Some(gpui::FontWeight::LIGHT),
+                "normal" => Some(gpui::FontWeight::NORMAL),
+                "medium" => Some(gpui::FontWeight::MEDIUM),
+                "semibold" => Some(gpui::FontWeight::SEMIBOLD),
+                "bold" => Some(gpui::FontWeight::BOLD),
+                "extra_bold" => Some(gpui::FontWeight::EXTRA_BOLD),
+                "black" => Some(gpui::FontWeight::BLACK),
+                _other => None,
+            });
+            let font_style = run.font_style.as_deref().and_then(|style| match style {
+                "normal" => Some(gpui::FontStyle::Normal),
+                "italic" => Some(gpui::FontStyle::Italic),
+                "oblique" => Some(gpui::FontStyle::Oblique),
+                _other => None,
+            });
+            Some((
+                start..end,
+                gpui::HighlightStyle {
+                    color: run.color.map(|color| gpui::rgb(color).into()),
+                    font_weight,
+                    font_style,
+                    ..Default::default()
+                },
+            ))
+        })
+        .collect()
+}
+
+#[cfg(feature = "components")]
+fn expanded_offset(text: &str, tab_width: usize, target: u64) -> Option<usize> {
+    let mut utf16 = 0;
+    let mut column = 0;
+    let mut bytes = 0;
+    for character in text.chars() {
+        if utf16 == target {
+            return Some(bytes);
+        }
+        utf16 += character.len_utf16() as u64;
+        if utf16 > target {
+            return None;
+        }
+        if character == '\t' {
+            let spaces = tab_width - column % tab_width;
+            bytes += spaces;
+            column += spaces;
+        } else {
+            bytes += character.len_utf8();
+            column += 1;
+        }
+    }
+    (utf16 == target).then_some(bytes)
+}
+
+#[cfg(feature = "components")]
 fn line_number_width(total_count: usize) -> f32 {
     let digits = total_count.max(1).to_string().len();
     24.0 + digits as f32 * 8.5
@@ -578,6 +668,32 @@ mod tests {
     fn tabs_expand_to_stable_columns() {
         assert_eq!(expand_tabs("a\tb", 4), "a   b");
         assert_eq!(expanded_columns("a\tb", 4), 5);
+    }
+
+    #[test]
+    fn highlights_follow_utf16_ranges_through_tab_expansion() {
+        let run = crate::TextStyleRunNode {
+            range: crate::TextRange {
+                start: crate::TextPosition {
+                    line: 0,
+                    utf16_offset: 3,
+                },
+                end: crate::TextPosition {
+                    line: 0,
+                    utf16_offset: 6,
+                },
+            },
+            color: Some(0x8250DF),
+            font_weight: Some("bold".to_string()),
+            font_style: None,
+        };
+        let highlights = line_highlights("😀\tdef", 4, &[run]);
+        assert_eq!(expand_tabs("😀\tdef", 4), "😀   def");
+        assert_eq!(highlights.len(), 1);
+        assert_eq!(highlights[0].0, 7..10);
+        assert_eq!(highlights[0].1.font_weight, Some(gpui::FontWeight::BOLD));
+        assert_eq!(expanded_offset("😀\tdef", 4, 1), None);
+        assert_eq!(expanded_offset("😀\tdef", 4, 7), None);
     }
 
     #[test]
