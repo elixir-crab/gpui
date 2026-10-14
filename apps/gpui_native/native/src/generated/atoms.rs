@@ -45,26 +45,26 @@ mod atoms {
         margin_bottom = "margin_bottom", margin_left = "margin_left", margin_right =
         "margin_right", margin_top = "margin_top", margin_x = "margin_x", margin_y =
         "margin_y", masked = "masked", max = "max", max_columns = "max_columns",
-        max_height = "max_height", max_lines = "max_lines", max_sizes = "max_sizes",
-        max_width = "max_width", menu = "menu", min = "min", min_height = "min_height",
-        min_lines = "min_lines", min_sizes = "min_sizes", min_width = "min_width",
-        missing_resource = "missing_resource", mode = "mode", motion_delay =
-        "motion_delay", motion_duration = "motion_duration", motion_easing =
-        "motion_easing", motion_from_opacity = "motion_from_opacity", motion_from_x =
+        max_height = "max_height", max_lines = "max_lines", max_rows = "max_rows",
+        max_sizes = "max_sizes", max_width = "max_width", menu = "menu", min = "min",
+        min_height = "min_height", min_lines = "min_lines", min_sizes = "min_sizes",
+        min_width = "min_width", missing_resource = "missing_resource", mode = "mode",
+        motion_delay = "motion_delay", motion_duration = "motion_duration", motion_easing
+        = "motion_easing", motion_from_opacity = "motion_from_opacity", motion_from_x =
         "motion_from_x", motion_from_y = "motion_from_y", motion_policy =
-        "motion_policy", motion_request = "motion_request", multiple = "multiple", name =
-        "name", nil = "nil", nothing_to_redo = "nothing_to_redo", nothing_to_undo =
-        "nothing_to_undo", number = "number", offset = "offset", offset_x = "offset_x",
-        offset_y = "offset_y", ok = "ok", opacity = "opacity", open = "open",
-        operation_id = "operation_id", options = "options", orientation = "orientation",
-        outline = "outline", overdraw = "overdraw", overflow = "overflow",
-        overlapping_edits = "overlapping_edits", overlay = "overlay", overscan =
-        "overscan", padding = "padding", padding_bottom = "padding_bottom", padding_left
-        = "padding_left", padding_right = "padding_right", padding_top = "padding_top",
-        padding_x = "padding_x", padding_y = "padding_y", parent_id = "parent_id",
-        phx_blur = "phx-blur", phx_bounds_change = "phx-bounds-change", phx_cell_change =
-        "phx-cell-change", phx_change = "phx-change", phx_click = "phx-click",
-        phx_clipboard_read = "phx-clipboard-read", phx_clipboard_write =
+        "motion_policy", motion_request = "motion_request", multiline = "multiline",
+        multiple = "multiple", name = "name", nil = "nil", nothing_to_redo =
+        "nothing_to_redo", nothing_to_undo = "nothing_to_undo", number = "number", offset
+        = "offset", offset_x = "offset_x", offset_y = "offset_y", ok = "ok", opacity =
+        "opacity", open = "open", operation_id = "operation_id", options = "options",
+        orientation = "orientation", outline = "outline", overdraw = "overdraw", overflow
+        = "overflow", overlapping_edits = "overlapping_edits", overlay = "overlay",
+        overscan = "overscan", padding = "padding", padding_bottom = "padding_bottom",
+        padding_left = "padding_left", padding_right = "padding_right", padding_top =
+        "padding_top", padding_x = "padding_x", padding_y = "padding_y", parent_id =
+        "parent_id", phx_blur = "phx-blur", phx_bounds_change = "phx-bounds-change",
+        phx_cell_change = "phx-cell-change", phx_change = "phx-change", phx_click =
+        "phx-click", phx_clipboard_read = "phx-clipboard-read", phx_clipboard_write =
         "phx-clipboard-write", phx_copy = "phx-copy", phx_drag_enter = "phx-drag-enter",
         phx_drag_leave = "phx-drag-leave", phx_drag_move = "phx-drag-move", phx_drop =
         "phx-drop", phx_file_read = "phx-file-read", phx_focus = "phx-focus",

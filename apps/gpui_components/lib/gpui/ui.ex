@@ -256,10 +256,24 @@ defmodule GPUI.UI do
   Increment `focus_request` to request native focus after validation or another
   application-owned transition.
 
+  `appearance: false` removes the input's border, background and shadow.
+  `multiline: true` creates a wrapping, auto-growing input bounded by `max_rows`
+  (1 through 64). Enter submits; Shift+Enter inserts a newline without submitting.
+  Multiline mode and its row limit are construction options: use a new `id` when
+  changing them so native editing state is recreated.
+
   #{ComponentsSchema.component_options_doc(:ui_input)}
   """
   @spec input(input_options()) :: Element.t()
-  def input(assigns), do: component(:ui_input, assigns)
+  def input(assigns) do
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_input)
+
+    unless is_integer(assigns.max_rows) and assigns.max_rows in 1..64 do
+      raise ArgumentError, "ui_input max_rows must be an integer from 1 through 64"
+    end
+
+    component(:ui_input, assigns)
+  end
 
   @doc """
   Builds a persistent native GPUI Component select.

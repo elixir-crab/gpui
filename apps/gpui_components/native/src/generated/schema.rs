@@ -2764,6 +2764,9 @@ pub(crate) struct InputComponentNode {
     pub(crate) value: String,
     pub(crate) focus_request: u64,
     pub(crate) placeholder: Option<String>,
+    pub(crate) appearance: bool,
+    pub(crate) multiline: bool,
+    pub(crate) max_rows: u64,
     pub(crate) size: Option<String>,
     pub(crate) disabled: bool,
     pub(crate) cleanable: bool,
@@ -2788,6 +2791,10 @@ pub(crate) fn decode_generated_input_component<'a>(
         focus_request: component_non_negative_integer_attr(term, atoms::focus_request())?
             .unwrap_or(0),
         placeholder: component_string_attr(term, atoms::placeholder())?,
+        appearance: component_bool_attr(term, atoms::appearance())?.unwrap_or(true),
+        multiline: component_bool_attr(term, atoms::multiline())?.unwrap_or(false),
+        max_rows: component_positive_integer_attr(term, atoms::max_rows())?
+            .unwrap_or(16),
         size: component_enum_attr(term, atoms::size(), &vec!["xs", "sm", "md", "lg"])?,
         disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
         cleanable: component_bool_attr(term, atoms::cleanable())?.unwrap_or(false),
