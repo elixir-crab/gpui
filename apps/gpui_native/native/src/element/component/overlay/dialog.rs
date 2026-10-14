@@ -18,6 +18,7 @@ pub(crate) fn render_dialog(
         ComponentDialog, ComponentOverlayState, DialogConfig,
     };
     use crate::element::controlled::ControlledBinding;
+    use gpui::prelude::FluentBuilder as _;
     use gpui::{
         AppContext, InteractiveElement, IntoElement, MouseButton, ParentElement, Role,
         StatefulInteractiveElement,
@@ -44,7 +45,11 @@ pub(crate) fn render_dialog(
         let content_focus = context.cx.focus_handle();
         let config = Arc::new(Mutex::new(DialogConfig {
             title: node.title.clone(),
+            show_title: node.show_title,
             width: node.width.clamp(1.0, 4096.0) as f32,
+            margin_top: node
+                .margin_top
+                .map(|margin| margin.clamp(0.0, 4096.0) as f32),
             overlay: node.overlay,
             closable: node.closable,
             keyboard: node.keyboard,
@@ -137,7 +142,11 @@ pub(crate) fn render_dialog(
     if let Ok(mut config) = dialog.config.lock() {
         *config = DialogConfig {
             title: node.title.clone(),
+            show_title: node.show_title,
             width: node.width.clamp(1.0, 4096.0) as f32,
+            margin_top: node
+                .margin_top
+                .map(|margin| margin.clamp(0.0, 4096.0) as f32),
             overlay: node.overlay,
             closable: node.closable,
             keyboard: node.keyboard,
@@ -201,7 +210,9 @@ pub(crate) fn render_dialog(
                     .map(|config| config.clone())
                     .unwrap_or(DialogConfig {
                         title: "Dialog".to_string(),
+                        show_title: true,
                         width: 448.0,
+                        margin_top: None,
                         overlay: true,
                         closable: true,
                         keyboard: true,
@@ -210,6 +221,9 @@ pub(crate) fn render_dialog(
                     });
                 let dialog = super::super::apply_component_styles(dialog, config.style)
                     .width(gpui::px(config.width))
+                    .when_some(config.margin_top, |dialog, margin| {
+                        dialog.margin_top(gpui::px(margin))
+                    })
                     .overlay(config.overlay)
                     .overlay_closable(config.closable)
                     .keyboard(config.keyboard && config.closable)
@@ -242,7 +256,11 @@ pub(crate) fn render_dialog(
                         }
                     })
                     .child(content_view.clone());
-                dialog.title(config.title)
+                if config.show_title {
+                    dialog.title(config.title)
+                } else {
+                    dialog
+                }
             });
             window.defer(cx, move |window, cx| content_focus.focus(window, cx));
         });

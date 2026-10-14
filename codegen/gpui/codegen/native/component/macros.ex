@@ -93,6 +93,7 @@ defmodule GPUI.Codegen.Native.Component.Macros do
        when type in [:number, :positive_number, :unit_number, :edge_fade_size],
        do: quote(do: R.f64())
 
+  defp component_field_type(_name, :number), do: quote(do: R.option(R.f64()))
   defp component_field_type(_name, :non_negative_integer), do: quote(do: R.option(R.u64()))
 
   defp component_field_type(_name, {:default, type, _value})
@@ -159,6 +160,9 @@ defmodule GPUI.Codegen.Native.Component.Macros do
 
   defp component_decoder_expr(name, :non_negative_integer),
     do: quote(do: unwrap!(component_non_negative_integer_attr(term, unquote(atom_call(name)))))
+
+  defp component_decoder_expr(name, :number),
+    do: quote(do: unwrap!(component_number_attr(term, unquote(atom_call(name)))))
 
   defp component_decoder_expr(name, {:default, type, default})
        when type in [:non_negative_integer, :positive_integer] do

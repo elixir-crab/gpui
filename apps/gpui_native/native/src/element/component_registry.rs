@@ -182,7 +182,9 @@ pub(crate) struct ComponentCombobox {
 #[derive(Clone)]
 pub(crate) struct DialogConfig {
     pub(crate) title: String,
+    pub(crate) show_title: bool,
     pub(crate) width: f32,
+    pub(crate) margin_top: Option<f32>,
     pub(crate) overlay: bool,
     pub(crate) closable: bool,
     pub(crate) keyboard: bool,
