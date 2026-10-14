@@ -1,5 +1,8 @@
-use crate::{atoms, gpui};
+use crate::atoms;
+#[cfg(feature = "real-gpui")]
+use crate::gpui;
 use rustler::{Binary, NifResult, Term};
+#[cfg(feature = "real-gpui")]
 use std::sync::Arc;
 
 include!("generated/resources.rs");
@@ -30,6 +33,7 @@ fn resource_ref_error(error: gpui_core::resource::ResourceRefError) -> rustler::
 }
 
 impl RasterData {
+    #[cfg(feature = "real-gpui")]
     fn core_raster(self) -> gpui_core::raster::Raster {
         gpui_core::raster::Raster {
             width: self.width,
@@ -52,8 +56,9 @@ impl RasterData {
         .map_err(raster_error)
     }
 
+    #[cfg(feature = "real-gpui")]
     pub(crate) fn render(self) -> gpui::AnyElement {
-        use gpui::{img, IntoElement, RenderImage};
+        use gpui::{img, IntoElement, RenderImage, Styled};
         use image::{Frame, RgbaImage};
 
         let width = self.width;
@@ -63,7 +68,7 @@ impl RasterData {
             RgbaImage::from_raw(width, height, data).unwrap_or_else(|| RgbaImage::new(1, 1));
         let render_image = Arc::new(RenderImage::new(vec![Frame::new(image)]));
 
-        img(render_image).into_any_element()
+        img(render_image).size_full().into_any_element()
     }
 }
 
