@@ -14,6 +14,9 @@ defmodule GPUI.SchemaTest do
              :text_input,
              :img,
              :text,
+             :ui_terminal,
+             :ui_terminal_row,
+             :ui_terminal_cell,
              :ui_edge_fade,
              :ui_frost,
              :ui_paint

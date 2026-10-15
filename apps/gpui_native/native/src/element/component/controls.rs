@@ -10,7 +10,7 @@ pub(crate) fn render_button_component(
     context: &mut ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     use crate::{push_event, NativeEvent};
-    use gpui::{IntoElement, ParentElement};
+    use gpui::{InteractiveElement, IntoElement, ParentElement};
     use gpui_component::{
         button::{Button, ButtonVariants},
         Disableable, Selectable, Sizable,
@@ -28,6 +28,7 @@ pub(crate) fn render_button_component(
         .filter(|prompt| !prompt.is_empty())
         .unwrap_or_else(|| "Choose a file".to_string());
     let file_max_bytes = node.file_max_bytes.min(25 * 1_024 * 1_024) as usize;
+    let test_id = node.id.clone();
     let mut button = Button::new(node.id);
 
     button = match node.variant.as_deref() {
@@ -122,7 +123,10 @@ pub(crate) fn render_button_component(
         });
     }
 
-    apply_component_styles(button, node.style).into_any_element()
+    let element = gpui::div()
+        .id(format!("{}-display-action", test_id))
+        .child(apply_component_styles(button, node.style));
+    crate::element::register_test_target(element, test_id, None, context).into_any_element()
 }
 
 #[cfg(feature = "components")]

@@ -479,6 +479,7 @@ fn render_visible_rows(
                     id_namespace: format!("table-{}-{}-{}", table.id, row_id, column.id),
                     active_input_ids: &mut active_input_ids,
                     input_entities: &mut component.collection.input_entities,
+                    terminal_entities: &mut component.collection.terminal_entities,
                     components: &mut component.collection.components,
                     window,
                     cx,
@@ -537,6 +538,10 @@ fn render_visible_rows(
         .collection
         .input_entities
         .retain(|input_id, _entity| active_input_ids.contains(input_id));
+    component
+        .collection
+        .terminal_entities
+        .retain(|id, _entity| active_input_ids.contains(id));
     component.collection.components.finish_render(window, cx);
     rendered
 }

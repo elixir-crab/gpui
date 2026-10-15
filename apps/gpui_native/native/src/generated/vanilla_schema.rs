@@ -9,6 +9,9 @@ pub enum GeneratedComponentKind {
     Input,
     Image,
     Text,
+    TerminalComponent,
+    TerminalRowComponent,
+    TerminalCellComponent,
     EdgeFadeComponent,
     FrostComponent,
     PaintComponent,
@@ -2017,6 +2020,107 @@ impl AccessibilityRole {
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct TerminalComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) label: String,
+    pub(crate) columns: u64,
+    pub(crate) cursor_row: u64,
+    pub(crate) cursor_column: u64,
+    pub(crate) cursor_visible: bool,
+    pub(crate) font_family: String,
+    pub(crate) font_size: f64,
+    pub(crate) line_height: f64,
+    pub(crate) focus_request: u64,
+    pub(crate) reset_request: u64,
+    pub(crate) disabled: bool,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) keystroke: Option<String>,
+    pub(crate) text: Option<String>,
+    pub(crate) paste: Option<String>,
+    pub(crate) resize: Option<String>,
+    pub(crate) range: Option<String>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_terminal_component<'a>(
+    term: Term<'a>,
+) -> NifResult<TerminalComponentNode> {
+    require_extension_version(term, "terminal", 1)?;
+    Ok(TerminalComponentNode {
+        style: decode_style(term)?,
+        id: component_id(term)?,
+        label: component_required_string_attr(term, atoms::label())?,
+        columns: component_positive_integer_attr(term, atoms::columns())?.unwrap_or(80),
+        cursor_row: component_non_negative_integer_attr(term, atoms::cursor_row())?
+            .unwrap_or(0),
+        cursor_column: component_non_negative_integer_attr(term, atoms::cursor_column())?
+            .unwrap_or(0),
+        cursor_visible: component_bool_attr(term, atoms::cursor_visible())?
+            .unwrap_or(true),
+        font_family: component_string_attr(term, atoms::font_family())?
+            .unwrap_or_default(),
+        font_size: component_positive_number_attr(term, atoms::font_size())?
+            .unwrap_or(14.0),
+        line_height: component_positive_number_attr(term, atoms::line_height())?
+            .unwrap_or(20.0),
+        focus_request: component_non_negative_integer_attr(term, atoms::focus_request())?
+            .unwrap_or(0),
+        reset_request: component_non_negative_integer_attr(term, atoms::reset_request())?
+            .unwrap_or(0),
+        disabled: component_bool_attr(term, atoms::disabled())?.unwrap_or(false),
+        children: decode_children(term)?,
+        keystroke: component_string_attr(term, atoms::phx_keystroke())?,
+        text: component_string_attr(term, atoms::phx_text())?,
+        paste: component_string_attr(term, atoms::phx_paste())?,
+        resize: component_string_attr(term, atoms::phx_resize())?,
+        range: component_string_attr(term, atoms::phx_range())?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct TerminalRowComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) children: Vec<ElementNode>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_terminal_row_component<'a>(
+    term: Term<'a>,
+) -> NifResult<TerminalRowComponentNode> {
+    Ok(TerminalRowComponentNode {
+        style: decode_style(term)?,
+        children: decode_children(term)?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct TerminalCellComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) text: String,
+    pub(crate) columns: u64,
+    pub(crate) italic: bool,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_terminal_cell_component<'a>(
+    term: Term<'a>,
+) -> NifResult<TerminalCellComponentNode> {
+    Ok(TerminalCellComponentNode {
+        style: decode_style(term)?,
+        text: component_required_string_attr(term, atoms::text())?,
+        columns: component_positive_integer_attr(term, atoms::columns())?.unwrap_or(1),
+        italic: component_bool_attr(term, atoms::italic())?.unwrap_or(false),
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct EdgeFadeComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
@@ -2109,6 +2213,9 @@ pub(crate) enum ElementNode {
     AnchoredLayer(AnchoredLayerNode),
     TextSurface(TextSurfaceNode),
     Input(InputNode),
+    TerminalComponent(TerminalComponentNode),
+    TerminalRowComponent(TerminalRowComponentNode),
+    TerminalCellComponent(TerminalCellComponentNode),
     EdgeFadeComponent(EdgeFadeComponentNode),
     FrostComponent(FrostComponentNode),
     PaintComponent(PaintComponentNode),
@@ -2129,6 +2236,9 @@ pub enum GeneratedElementTag {
     TextInput,
     Img,
     Text,
+    UiTerminal,
+    UiTerminalRow,
+    UiTerminalCell,
     UiEdgeFade,
     UiFrost,
     UiPaint,
@@ -2148,6 +2258,9 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "text_input" => GeneratedElementTag::TextInput,
         "img" => GeneratedElementTag::Img,
         "text" => GeneratedElementTag::Text,
+        "ui_terminal" => GeneratedElementTag::UiTerminal,
+        "ui_terminal_row" => GeneratedElementTag::UiTerminalRow,
+        "ui_terminal_cell" => GeneratedElementTag::UiTerminalCell,
         "ui_edge_fade" => GeneratedElementTag::UiEdgeFade,
         "ui_frost" => GeneratedElementTag::UiFrost,
         "ui_paint" => GeneratedElementTag::UiPaint,
@@ -2168,6 +2281,13 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::TextInput => GeneratedComponentKind::Input,
         GeneratedElementTag::Img => GeneratedComponentKind::Image,
         GeneratedElementTag::Text => GeneratedComponentKind::Text,
+        GeneratedElementTag::UiTerminal => GeneratedComponentKind::TerminalComponent,
+        GeneratedElementTag::UiTerminalRow => {
+            GeneratedComponentKind::TerminalRowComponent
+        }
+        GeneratedElementTag::UiTerminalCell => {
+            GeneratedComponentKind::TerminalCellComponent
+        }
         GeneratedElementTag::UiEdgeFade => GeneratedComponentKind::EdgeFadeComponent,
         GeneratedElementTag::UiFrost => GeneratedComponentKind::FrostComponent,
         GeneratedElementTag::UiPaint => GeneratedComponentKind::PaintComponent,
@@ -2188,6 +2308,18 @@ pub(crate) fn decode_generated_element_node<'a>(
         GeneratedComponentKind::Input => decode_input_node(term, tag),
         GeneratedComponentKind::Image => decode_image_node(term, tag),
         GeneratedComponentKind::Text => decode_text_node(term, tag),
+        GeneratedComponentKind::TerminalComponent => {
+            decode_generated_terminal_component(term)
+                .map(|node| ElementNode::TerminalComponent(node))
+        }
+        GeneratedComponentKind::TerminalRowComponent => {
+            decode_generated_terminal_row_component(term)
+                .map(|node| ElementNode::TerminalRowComponent(node))
+        }
+        GeneratedComponentKind::TerminalCellComponent => {
+            decode_generated_terminal_cell_component(term)
+                .map(|node| ElementNode::TerminalCellComponent(node))
+        }
         GeneratedComponentKind::EdgeFadeComponent => {
             decode_generated_edge_fade_component(term)
                 .map(|node| ElementNode::EdgeFadeComponent(node))
@@ -2211,6 +2343,15 @@ pub(crate) fn render_generated_component_node(
     context: &mut element::ElementRenderContext<'_, '_>,
 ) -> gpui::AnyElement {
     match node {
+        ElementNode::TerminalComponent(node) => {
+            element::component::terminal::render(node, context)
+        }
+        ElementNode::TerminalRowComponent(node) => {
+            element::component::terminal::render_row(node, context)
+        }
+        ElementNode::TerminalCellComponent(node) => {
+            element::component::terminal::render_cell(node, context)
+        }
         ElementNode::EdgeFadeComponent(node) => {
             element::component::edge_fade::render_edge_fade(node, context)
         }

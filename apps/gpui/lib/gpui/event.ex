@@ -8,7 +8,11 @@ defmodule GPUI.Event do
   defstruct [:type, :window_id, :event, :value, attrs: %{}]
 
   @type type ::
-          :click
+          :keystroke
+          | :text
+          | :paste
+          | :resize
+          | :click
           | :command
           | :change
           | :select
@@ -57,6 +61,10 @@ defmodule GPUI.Event do
         }
 
   @routed_types [
+    :keystroke,
+    :text,
+    :paste,
+    :resize,
     :click,
     :command,
     :change,
@@ -200,6 +208,12 @@ defmodule GPUI.Event do
   defp normalize_value(type, event) when type in [:keydown, :keyup],
     do: require_value(event, &is_binary/1)
 
+  defp normalize_value(:keystroke, event), do: require_value(event, &valid_keystroke?/1)
+  defp normalize_value(:resize, event), do: require_value(event, &valid_terminal_size?/1)
+
+  defp normalize_value(type, event) when type in [:text, :paste],
+    do: require_value(event, &bounded_string?(&1, 1_048_576, true))
+
   defp normalize_value(:range, event), do: require_value(event, &valid_range?/1)
   defp normalize_value(:transaction, event), do: require_value(event, &is_map/1)
   defp normalize_value(:selection, event), do: require_value(event, &is_list/1)
@@ -222,6 +236,20 @@ defmodule GPUI.Event do
   end
 
   defp fetch_value(event), do: Map.fetch(event, :value)
+
+  defp valid_keystroke?(%{key: key} = value) do
+    bounded_string?(key, 128, false) and
+      Enum.all?([:control, :alt, :shift, :platform, :repeat], &is_boolean(Map.get(value, &1)))
+  end
+
+  defp valid_keystroke?(_), do: false
+
+  defp valid_terminal_size?(%{columns: cols, rows: rows, cell_width: width, cell_height: height}) do
+    is_integer(cols) and cols in 1..512 and is_integer(rows) and rows in 1..256 and
+      finite_number?(width) and width > 0 and finite_number?(height) and height > 0
+  end
+
+  defp valid_terminal_size?(_), do: false
 
   defp valid_change_value?(value) when is_binary(value) or is_boolean(value) or is_nil(value),
     do: true

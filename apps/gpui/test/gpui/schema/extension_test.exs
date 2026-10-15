@@ -5,6 +5,7 @@ defmodule GPUI.Schema.ExtensionTest do
 
   test "exposes versioned presentation contracts from the canonical component schema" do
     assert [
+             %Extension{id: :terminal, version: 1},
              %Extension{id: :edge_fade, version: 1},
              %Extension{id: :frost, version: 1},
              %Extension{id: :paint, version: 1}

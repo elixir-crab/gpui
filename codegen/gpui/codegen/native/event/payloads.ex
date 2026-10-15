@@ -16,6 +16,22 @@ defmodule GPUI.Codegen.Native.Event.Payloads do
           required(:coordinate_space) => String.t()
         }
 
+  @type key_stroke :: %{
+          required(:key) => String.t(),
+          required(:control) => boolean(),
+          required(:alt) => boolean(),
+          required(:shift) => boolean(),
+          required(:platform) => boolean(),
+          required(:repeat) => boolean()
+        }
+
+  @type terminal_size :: %{
+          required(:columns) => R.u64(),
+          required(:rows) => R.u64(),
+          required(:cell_width) => R.f64(),
+          required(:cell_height) => R.f64()
+        }
+
   @type transfer_payload :: %{
           required(:text) => R.option(String.t()),
           required(:external_paths) => R.vec(String.t())
@@ -34,7 +50,13 @@ defmodule GPUI.Codegen.Native.Event.Payloads do
   def items do
     MetaAST.struct_type_items(
       __MODULE__,
-      [:element_bounds_geometry, :transfer_payload, :transfer_event_value],
+      [
+        :element_bounds_geometry,
+        :key_stroke,
+        :terminal_size,
+        :transfer_payload,
+        :transfer_event_value
+      ],
       derive: [:Clone, :Debug, :PartialEq, :"rustler::NifMap"],
       vis: :crate,
       field_vis: :crate,
@@ -42,6 +64,9 @@ defmodule GPUI.Codegen.Native.Event.Payloads do
     )
     |> Enum.map(fn
       %{name: :ElementBoundsGeometry} = item ->
+        %{item | attrs: [A.attr(:cfg, feature: "real-gpui")]}
+
+      %{name: name} = item when name in [:KeyStroke, :TerminalSize] ->
         %{item | attrs: [A.attr(:cfg, feature: "real-gpui")]}
 
       item ->

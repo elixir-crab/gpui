@@ -7,6 +7,10 @@ pub(crate) enum NativeEvent {
     Click { window_id: u64, event: String },
     Command { window_id: u64, event: String },
     Input { kind: InputKind, window_id: u64, event: String, value: Option<EventValue> },
+    #[cfg(feature = "real-gpui")]
+    Keystroke { window_id: u64, event: String, value: KeyStroke },
+    #[cfg(feature = "real-gpui")]
+    TerminalResize { window_id: u64, event: String, value: TerminalSize },
     #[cfg(feature = "components")]
     Transaction {
         window_id: u64,
@@ -57,7 +61,7 @@ pub(crate) enum NativeEvent {
     WindowCloseRequest { window_id: u64 },
     WindowFocus { focused: bool, window_id: u64 },
     WindowClosed { window_id: u64 },
-    #[cfg(feature = "components")]
+    #[cfg(feature = "real-gpui")]
     VirtualRange { window_id: u64, event: String, first: u64, last: u64 },
     #[cfg(feature = "components")]
     FileDialog {
@@ -86,6 +90,14 @@ pub(crate) fn encode_native_event<'a>(
         }
         NativeEvent::Input { kind, window_id, event, value } => {
             encode_input_event(env, &kind, window_id, event, value)
+        }
+        #[cfg(feature = "real-gpui")]
+        NativeEvent::Keystroke { window_id, event, value } => {
+            encode_keystroke_event(env, window_id, event, value)
+        }
+        #[cfg(feature = "real-gpui")]
+        NativeEvent::TerminalResize { window_id, event, value } => {
+            encode_terminal_resize_event(env, window_id, event, value)
         }
         #[cfg(feature = "components")]
         NativeEvent::Transaction { window_id, event, transaction, revision } => {
@@ -186,7 +198,7 @@ pub(crate) fn encode_native_event<'a>(
         NativeEvent::WindowClosed { window_id } => {
             encode_window_event(env, atoms::window_closed(), window_id)
         }
-        #[cfg(feature = "components")]
+        #[cfg(feature = "real-gpui")]
         NativeEvent::VirtualRange { window_id, event, first, last } => {
             encode_virtual_range_event(env, window_id, event, first, last)
         }

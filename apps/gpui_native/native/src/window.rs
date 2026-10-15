@@ -113,6 +113,7 @@ pub(crate) struct ElixirRoot {
     pub(crate) runtime: SharedRuntime,
     pub(crate) window_id: u64,
     input_entities: HashMap<String, gpui::Entity<NativeTextInput>>,
+    terminal_entities: HashMap<String, gpui::Entity<crate::element::component::terminal::Terminal>>,
     #[cfg(feature = "components")]
     pub(crate) components: crate::element::component_registry::ComponentRegistry,
     command_subscription: Option<gpui::Subscription>,
@@ -142,6 +143,7 @@ impl ElixirRoot {
             runtime,
             window_id,
             input_entities: HashMap::new(),
+            terminal_entities: HashMap::new(),
             #[cfg(feature = "components")]
             components: crate::element::component_registry::ComponentRegistry::default(),
             command_subscription: None,
@@ -211,7 +213,11 @@ impl ElixirRoot {
         #[cfg(not(feature = "components"))]
         let component_input_focused = false;
 
-        primitive_input_focused || component_input_focused
+        let terminal_focused = self
+            .terminal_entities
+            .values()
+            .any(|terminal| terminal.read(cx).input_focused(window));
+        primitive_input_focused || component_input_focused || terminal_focused
     }
 
     fn observe_commands(&mut self, window: &gpui::Window, cx: &mut gpui::Context<Self>) {
@@ -276,6 +282,7 @@ impl gpui::Render for ElixirRoot {
             id_namespace: "root".to_string(),
             active_input_ids: &mut active_input_ids,
             input_entities: &mut self.input_entities,
+            terminal_entities: &mut self.terminal_entities,
             #[cfg(feature = "components")]
             components: &mut self.components,
             window: _window,
@@ -283,6 +290,8 @@ impl gpui::Render for ElixirRoot {
         });
         self.input_entities
             .retain(|input_id, _entity| active_input_ids.contains(input_id));
+        self.terminal_entities
+            .retain(|id, _entity| active_input_ids.contains(id));
         #[cfg(feature = "components")]
         self.components.finish_render(_window, cx);
 

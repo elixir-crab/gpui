@@ -31,6 +31,7 @@ pub(crate) mod split;
 pub(crate) mod switch;
 #[cfg(feature = "components")]
 pub(crate) mod tabs;
+pub(crate) mod terminal;
 pub(crate) mod text_surface;
 #[cfg(feature = "components")]
 pub(crate) mod tree;

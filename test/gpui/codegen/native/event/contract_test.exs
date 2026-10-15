@@ -15,6 +15,8 @@ defmodule GPUI.Codegen.Native.Event.ContractTest do
              :Click,
              :Command,
              :Input,
+             :Keystroke,
+             :TerminalResize,
              :Transaction,
              :Selection,
              :Viewport,

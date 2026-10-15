@@ -255,6 +255,7 @@ fn render_visible_items(
                 id_namespace: format!("virtual-{list_id}-{item_id}"),
                 active_input_ids: &mut active_input_ids,
                 input_entities: &mut component.input_entities,
+                terminal_entities: &mut component.terminal_entities,
                 components: &mut component.components,
                 window,
                 cx,
@@ -291,6 +292,9 @@ fn render_visible_items(
     component
         .input_entities
         .retain(|input_id, _entity| active_input_ids.contains(input_id));
+    component
+        .terminal_entities
+        .retain(|id, _entity| active_input_ids.contains(id));
     component.components.finish_render(window, cx);
 
     let input_prefix = format!("gpui-elixir-input-{window_id}-virtual-{list_id}-");
