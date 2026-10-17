@@ -5,13 +5,27 @@ use crate::{
     TerminalComponentNode, TerminalRowComponentNode,
 };
 use gpui::{
-    div, fill, point, px, size, App, AppContext, Bounds, ClipboardItem, Context,
+    actions, div, fill, point, px, size, App, AppContext, Bounds, ClipboardItem, Context,
     ElementInputHandler, EntityInputHandler, FocusHandle, InteractiveElement, IntoElement,
-    KeyDownEvent, MouseButton, ParentElement, Pixels, Render, ShapedLine,
+    KeyBinding, KeyDownEvent, Modifiers, MouseButton, ParentElement, Pixels, Render, ShapedLine,
     StatefulInteractiveElement, Styled, TextAlign, TextRun, UTF16Selection, Window,
 };
 use std::ops::Range;
 use unicode_segmentation::UnicodeSegmentation;
+
+actions!(gpui_terminal, [SendTab, SendBackTab]);
+
+const KEY_CONTEXT: &str = "GPUITerminal";
+
+/// Binds Tab and Shift-Tab inside a focused terminal, where they belong to the
+/// remote shell (completion, reverse completion) rather than moving focus. The
+/// terminal's context sits deeper than any window-level binding, so these win.
+pub(crate) fn bind_terminal_keys(cx: &mut App) {
+    cx.bind_keys([
+        KeyBinding::new("tab", SendTab, Some(KEY_CONTEXT)),
+        KeyBinding::new("shift-tab", SendBackTab, Some(KEY_CONTEXT)),
+    ]);
+}
 
 const MAX_INPUT_BYTES: usize = 1_048_576;
 const MAX_ROWS: usize = 10_000;
@@ -249,6 +263,11 @@ impl Terminal {
         if !mods.control && !mods.alt && (key.chars().count() == 1 || key == "space") {
             return;
         }
+        self.send_keystroke(key, mods, event.is_held, cx);
+        cx.stop_propagation();
+    }
+
+    fn send_keystroke(&mut self, key: &str, mods: Modifiers, repeat: bool, cx: &mut Context<Self>) {
         self.tail = true;
         self.selection = None;
         self.clamp_scroll();
@@ -264,13 +283,29 @@ impl Terminal {
                         alt: mods.alt,
                         shift: mods.shift,
                         platform: mods.platform,
-                        repeat: event.is_held,
+                        repeat,
                     },
                 },
             );
         }
-        cx.stop_propagation();
         cx.notify();
+    }
+
+    // A disabled terminal leaves Tab to the window, which moves focus on.
+    fn send_tab(&mut self, _: &SendTab, _window: &mut Window, cx: &mut Context<Self>) {
+        if self.node.disabled {
+            cx.propagate();
+            return;
+        }
+        self.send_keystroke("tab", Modifiers::default(), false, cx);
+    }
+
+    fn send_back_tab(&mut self, _: &SendBackTab, _window: &mut Window, cx: &mut Context<Self>) {
+        if self.node.disabled {
+            cx.propagate();
+            return;
+        }
+        self.send_keystroke("tab", Modifiers::shift(), false, cx);
     }
 
     fn point(&self, position: gpui::Point<Pixels>) -> CellPoint {
@@ -611,9 +646,11 @@ impl Render for Terminal {
             .relative()
             .overflow_hidden()
             .id("terminal-input")
-            .key_context("GPUITerminal")
+            .key_context(KEY_CONTEXT)
             .track_focus(&self.focus)
             .on_key_down(cx.listener(Self::key_down))
+            .on_action(cx.listener(Self::send_tab))
+            .on_action(cx.listener(Self::send_back_tab))
             .on_mouse_down(
                 MouseButton::Left,
                 cx.listener(|this, event: &gpui::MouseDownEvent, window, cx| {

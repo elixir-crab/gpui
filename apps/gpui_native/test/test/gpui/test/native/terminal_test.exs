@@ -57,6 +57,43 @@ defmodule GPUI.Test.Native.TerminalTest do
     refute_receive {:gpui, ^ui, {:event, %{type: :text}}}
   end
 
+  defmodule TabView do
+    use GPUI.View
+    alias GPUI.UI
+
+    def render(assigns) do
+      ~GPUI"""
+      <div class="flex flex-col gap-2 w-[480px] h-[340px]">
+        {GPUI.Test.Native.TerminalTest.View.render(assigns)}
+        <UI.button id="after" label="After the terminal" phx-click="after" />
+      </div>
+      """
+    end
+  end
+
+  test "Tab and Shift-Tab reach a focused terminal instead of moving focus", %{ui: ui} do
+    render(ui, TabView, %{})
+    settle(ui)
+    focus(ui, "terminal")
+
+    press(ui, "tab")
+    assert_receive {:gpui, ^ui, {:event, %{type: :keystroke, value: %{key: "tab", shift: false}}}}
+    press(ui, "shift-tab")
+    assert_receive {:gpui, ^ui, {:event, %{type: :keystroke, value: %{key: "tab", shift: true}}}}
+
+    # Focus stayed in the terminal.
+    type(ui, "x")
+    assert_receive {:gpui, ^ui, {:event, %{type: :text, value: "x"}}}
+  end
+
+  test "a disabled terminal lets Tab move focus on", %{ui: ui} do
+    render(ui, TabView, disabled: true)
+    settle(ui)
+    focus(ui, "terminal")
+    press(ui, "tab")
+    refute_receive {:gpui, ^ui, {:event, %{type: :keystroke}}}
+  end
+
   test "viewport dimensions come from measured cells", %{ui: ui} do
     render(ui, View, %{})
     settle(ui)

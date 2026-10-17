@@ -299,6 +299,33 @@ pub(crate) fn render_input_component(
         .flex()
         .w_full()
         .h(gpui::px(component_height));
+
+    // A one-line input ignores Up and Down, so they are reported instead: a
+    // search box can move a highlight through its results. They are captured
+    // on the way down, before the input's own no-op handlers stop them.
+    if let Some(event) = node.keydown.clone() {
+        let runtime = context.runtime.clone();
+        let window_id = context.window_id;
+
+        let report = move |key: &'static str| {
+            let _ = push_event(
+                &runtime,
+                NativeEvent::Input {
+                    kind: InputKind::KeyDown,
+                    window_id,
+                    event: event.clone(),
+                    value: Some(EventValue::String(key.to_string())),
+                },
+            );
+        };
+
+        let report_down = report.clone();
+        accessible_element = accessible_element
+            .capture_action(move |_: &gpui_component::input::MoveUp, _window, _cx| report("up"))
+            .capture_action(move |_: &gpui_component::input::MoveDown, _window, _cx| {
+                report_down("down")
+            });
+    }
     if let Some(value) = accessibility_value {
         accessible_element = accessible_element.aria_value(value);
     }
@@ -730,7 +757,7 @@ pub(crate) fn render_input_component(
             placeholder: node.placeholder,
             focus_request: node.focus_request,
             change: node.change,
-            keydown: None,
+            keydown: node.keydown,
             keyup: None,
             focus: node.focus,
             blur: node.blur,

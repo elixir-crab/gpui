@@ -2875,6 +2875,7 @@ pub(crate) struct InputComponentNode {
     pub(crate) loading: bool,
     pub(crate) change: Option<String>,
     pub(crate) submit: Option<String>,
+    pub(crate) keydown: Option<String>,
     pub(crate) focus: Option<String>,
     pub(crate) blur: Option<String>,
 }
@@ -2899,6 +2900,7 @@ pub(crate) fn decode_generated_input_component<'a>(
         loading: component_bool_attr(term, atoms::loading())?.unwrap_or(false),
         change: component_string_attr(term, atoms::phx_change())?,
         submit: component_string_attr(term, atoms::phx_submit())?,
+        keydown: component_string_attr(term, atoms::phx_keydown())?,
         focus: component_string_attr(term, atoms::phx_focus())?,
         blur: component_string_attr(term, atoms::phx_blur())?,
     })

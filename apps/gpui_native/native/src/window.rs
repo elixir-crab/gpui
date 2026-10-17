@@ -523,6 +523,7 @@ pub(crate) fn run_gpui(
         gpui_component::init(cx);
 
         bind_input_keys(cx);
+        crate::element::component::terminal::bind_terminal_keys(cx);
 
         let window_closed_subscription = cx.on_window_closed(move |_cx, platform_id| {
             let _ = command_tx.unbounded_send(WindowCommand::PlatformClosed { platform_id });
