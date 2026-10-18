@@ -148,8 +148,8 @@ defmodule GPUI.Test.Native.NavigationTest do
         <Overlay.dialog id="palette" open={assigns.open} title="Palette" width={240}
           phx-change="palette_changed">
           <:content>
-            <GPUI.UI.input id="query" label="Query" value="" focus_request={1}
-              phx-change="query_changed" />
+            <GPUI.UI.input id="query" label="Query" value={assigns.query} focus_request={1}
+              phx-change="query_changed" phx-submit="query_submitted" />
           </:content>
         </Overlay.dialog>
       </div>
@@ -160,17 +160,37 @@ defmodule GPUI.Test.Native.NavigationTest do
   # A command picked in a palette can ask for focus as the palette closes; the
   # dialog returning focus to where it opened from must not undo that.
   test "focus asked for while a dialog closes stays there", %{ui: ui} do
-    render(ui, PaletteView, open: false, focus: 0)
+    render(ui, PaletteView, open: false, focus: 0, query: "")
     settle(ui)
-    render(ui, PaletteView, open: true, focus: 0)
+    render(ui, PaletteView, open: true, focus: 0, query: "")
     settle(ui)
+    type(ui, "q")
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "query_changed", value: "q"}}}
+    render(ui, PaletteView, open: true, focus: 0, query: "q")
+    press(ui, :enter)
+    assert_receive {:gpui, ^ui, {:event, %{type: :submit, event: "query_submitted"}}}
 
-    render(ui, PaletteView, open: false, focus: 1)
+    render(ui, PaletteView, open: false, focus: 1, query: "")
     settle(ui)
     type(ui, "x")
 
     assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "second_changed", value: "x"}}}
     refute_received {:gpui, ^ui, {:event, %{event: "first_changed"}}}
+  end
+
+  # The app owns a dialog's open state; Enter in its content is the content's.
+  test "Enter in a dialog's input submits it and leaves the dialog open", %{ui: ui} do
+    render(ui, PaletteView, open: true, focus: 0, query: "")
+    settle(ui)
+    type(ui, "q")
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "query_changed", value: "q"}}}
+    render(ui, PaletteView, open: true, focus: 0, query: "q")
+    press(ui, :enter)
+
+    assert_receive {:gpui, ^ui, {:event, %{type: :submit, event: "query_submitted"}}}
+    refute_receive {:gpui, ^ui, {:event, %{event: "palette_changed", value: false}}}
+    type(ui, "r")
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "query_changed", value: "qr"}}}
   end
 
   test "accordion items expose stable targets and controlled pointer changes", %{ui: ui} do
