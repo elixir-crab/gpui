@@ -267,10 +267,7 @@ pub(crate) fn render_input_component(
         .map(|_value| input.state.read(context.cx).value().to_string());
     let focus_handle = input.state.focus_handle(context.cx);
     if request_focus && node.focus_request > 0 {
-        let requested_focus = focus_handle.clone();
-        context.window.defer(context.cx, move |window, cx| {
-            requested_focus.focus(window, cx)
-        });
+        crate::element::focus_after_frame(focus_handle.clone(), context.window, context.cx);
     }
     let mut element = Input::new(&input.state)
         .role(gpui::Role::GenericContainer)

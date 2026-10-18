@@ -457,10 +457,7 @@ pub(crate) fn render(
     surface.focus_request = node.focus_request;
     let focus = surface.state.focus_handle(context.cx);
     if request_focus && node.focus_request > 0 {
-        let focus = focus.clone();
-        context
-            .window
-            .defer(context.cx, move |window, cx| focus.focus(window, cx));
+        crate::element::focus_after_frame(focus.clone(), context.window, context.cx);
     }
 
     let decoration_quads =

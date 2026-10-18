@@ -132,6 +132,47 @@ defmodule GPUI.Test.Native.NavigationTest do
     assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "dialog_changed", value: true}}}
   end
 
+  defmodule PaletteView do
+    use GPUI.View
+
+    alias GPUI.UI.Overlay
+
+    @impl GPUI.View
+    def render(assigns) do
+      ~GPUI"""
+      <div class="flex flex-col gap-2">
+        <GPUI.UI.input id="first" label="First" value="" focus_request={1}
+          phx-change="first_changed" />
+        <GPUI.UI.input id="second" label="Second" value="" focus_request={assigns.focus}
+          phx-change="second_changed" />
+        <Overlay.dialog id="palette" open={assigns.open} title="Palette" width={240}
+          phx-change="palette_changed">
+          <:content>
+            <GPUI.UI.input id="query" label="Query" value="" focus_request={1}
+              phx-change="query_changed" />
+          </:content>
+        </Overlay.dialog>
+      </div>
+      """
+    end
+  end
+
+  # A command picked in a palette can ask for focus as the palette closes; the
+  # dialog returning focus to where it opened from must not undo that.
+  test "focus asked for while a dialog closes stays there", %{ui: ui} do
+    render(ui, PaletteView, open: false, focus: 0)
+    settle(ui)
+    render(ui, PaletteView, open: true, focus: 0)
+    settle(ui)
+
+    render(ui, PaletteView, open: false, focus: 1)
+    settle(ui)
+    type(ui, "x")
+
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "second_changed", value: "x"}}}
+    refute_received {:gpui, ^ui, {:event, %{event: "first_changed"}}}
+  end
+
   test "accordion items expose stable targets and controlled pointer changes", %{ui: ui} do
     render_accordion(ui)
 
