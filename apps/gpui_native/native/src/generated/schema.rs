@@ -13,6 +13,7 @@ pub enum GeneratedComponentKind {
     FrostComponent,
     PaintComponent,
     DropTargetComponent,
+    DragSourceComponent,
     SplitComponent,
     ButtonComponent,
     ProgressComponent,
@@ -2294,6 +2295,7 @@ pub(crate) fn decode_generated_paint_component<'a>(
 pub(crate) struct DropTargetComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) id: String,
+    pub(crate) accepts: Option<String>,
     pub(crate) children: Vec<ElementNode>,
     pub(crate) drag_enter: Option<String>,
     pub(crate) drag_move: Option<String>,
@@ -2309,11 +2311,41 @@ pub(crate) fn decode_generated_drop_target_component<'a>(
     Ok(DropTargetComponentNode {
         style: decode_style(term)?,
         id: component_required_string_attr(term, atoms::id())?,
+        accepts: match component_enum_attr(
+            term,
+            atoms::accepts(),
+            &vec!["files", "values"],
+        )? {
+            Some(value) => Some(value),
+            None => Some("files".to_string()),
+        },
         children: decode_children(term)?,
         drag_enter: component_string_attr(term, atoms::phx_drag_enter())?,
         drag_move: component_string_attr(term, atoms::phx_drag_move())?,
         drag_leave: component_string_attr(term, atoms::phx_drag_leave())?,
         drop: component_string_attr(term, atoms::phx_drop())?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
+pub(crate) struct DragSourceComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) value: String,
+    pub(crate) children: Vec<ElementNode>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_drag_source_component<'a>(
+    term: Term<'a>,
+) -> NifResult<DragSourceComponentNode> {
+    Ok(DragSourceComponentNode {
+        style: decode_style(term)?,
+        id: component_required_string_attr(term, atoms::id())?,
+        value: component_required_string_attr(term, atoms::value())?,
+        children: decode_children(term)?,
     })
 }
 #[derive(Clone, Debug)]
@@ -3840,6 +3872,7 @@ pub(crate) enum ElementNode {
     FrostComponent(FrostComponentNode),
     PaintComponent(PaintComponentNode),
     DropTargetComponent(DropTargetComponentNode),
+    DragSourceComponent(DragSourceComponentNode),
     SplitComponent(SplitComponentNode),
     ButtonComponent(ButtonComponentNode),
     ProgressComponent(ProgressComponentNode),
@@ -3905,6 +3938,7 @@ pub enum GeneratedElementTag {
     UiFrost,
     UiPaint,
     UiDropTarget,
+    UiDragSource,
     UiSplit,
     UiButton,
     UiProgress,
@@ -3969,6 +4003,7 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_frost" => GeneratedElementTag::UiFrost,
         "ui_paint" => GeneratedElementTag::UiPaint,
         "ui_drop_target" => GeneratedElementTag::UiDropTarget,
+        "ui_drag_source" => GeneratedElementTag::UiDragSource,
         "ui_split" => GeneratedElementTag::UiSplit,
         "ui_button" => GeneratedElementTag::UiButton,
         "ui_progress" => GeneratedElementTag::UiProgress,
@@ -4034,6 +4069,7 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         GeneratedElementTag::UiFrost => GeneratedComponentKind::FrostComponent,
         GeneratedElementTag::UiPaint => GeneratedComponentKind::PaintComponent,
         GeneratedElementTag::UiDropTarget => GeneratedComponentKind::DropTargetComponent,
+        GeneratedElementTag::UiDragSource => GeneratedComponentKind::DragSourceComponent,
         GeneratedElementTag::UiSplit => GeneratedComponentKind::SplitComponent,
         GeneratedElementTag::UiButton => GeneratedComponentKind::ButtonComponent,
         GeneratedElementTag::UiProgress => GeneratedComponentKind::ProgressComponent,
@@ -4146,6 +4182,10 @@ pub(crate) fn decode_generated_element_node<'a>(
         GeneratedComponentKind::DropTargetComponent => {
             decode_generated_drop_target_component(term)
                 .map(|node| ElementNode::DropTargetComponent(node))
+        }
+        GeneratedComponentKind::DragSourceComponent => {
+            decode_generated_drag_source_component(term)
+                .map(|node| ElementNode::DragSourceComponent(node))
         }
         GeneratedComponentKind::SplitComponent => {
             decode_generated_split_component(term)
@@ -4344,6 +4384,9 @@ pub(crate) fn render_generated_component_node(
         }
         ElementNode::DropTargetComponent(node) => {
             element::component::drop_target::render(node, context)
+        }
+        ElementNode::DragSourceComponent(node) => {
+            element::component::drag_source::render(node, context)
         }
         ElementNode::SplitComponent(node) => {
             element::component::split::render(node, context)

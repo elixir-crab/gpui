@@ -9,6 +9,8 @@ pub(crate) mod data_table;
 #[cfg(feature = "components")]
 pub(crate) mod display;
 #[cfg(feature = "components")]
+pub(crate) mod drag_source;
+#[cfg(feature = "components")]
 pub(crate) mod drop_target;
 pub(crate) mod edge_fade;
 #[cfg(feature = "components")]

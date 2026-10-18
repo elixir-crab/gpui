@@ -51,6 +51,7 @@ defmodule GPUI.UI do
     virtual_collection_options: :ui_virtual_collection,
     virtual_item_options: :ui_virtual_item,
     drop_target_options: :ui_drop_target,
+    drag_source_options: :ui_drag_source,
     rich_text_options: :ui_rich_text,
     data_table_options: :ui_data_table,
     table_column_options: :ui_table_column,
@@ -516,10 +517,13 @@ defmodule GPUI.UI do
   end
 
   @doc """
-  Builds a neutral operating-system external-path drop target.
+  Builds a neutral drop target.
 
-  Paths always refer to the display machine. The renderer bounds and validates
-  paths before emitting typed drag events and never reads dropped files.
+  With `accepts: "files"` (the default) it takes operating-system external
+  paths, which always refer to the display machine; the renderer bounds and
+  validates them before emitting typed drag events and never reads dropped
+  files. With `accepts: "values"` it takes in-app drags started on a
+  `drag_source/1`, whose value arrives as the payload's `text`.
 
   #{ComponentsSchema.component_options_doc(:ui_drop_target)}
   """
@@ -534,6 +538,22 @@ defmodule GPUI.UI do
     assigns = ComponentsSchema.apply_defaults(assigns, :ui_drop_target)
     ComponentsSchema.validate_component_assigns!(assigns, :ui_drop_target)
     component(:ui_drop_target, assigns)
+  end
+
+  @doc """
+  Builds an in-app drag source around its children.
+
+  Pressing on the children and moving starts a drag carrying `value`, which
+  drop targets with `accepts: "values"` receive as the payload's `text`. A
+  press that doesn't move still clicks the children.
+
+  #{ComponentsSchema.component_options_doc(:ui_drag_source)}
+  """
+  @spec drag_source(drag_source_options()) :: Element.t()
+  def drag_source(assigns) when is_map(assigns) do
+    assigns = ComponentsSchema.apply_defaults(assigns, :ui_drag_source)
+    ComponentsSchema.validate_component_assigns!(assigns, :ui_drag_source)
+    component(:ui_drag_source, assigns)
   end
 
   @doc """
