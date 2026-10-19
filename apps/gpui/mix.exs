@@ -48,7 +48,6 @@ defmodule GPUI.MixProject do
   defp deps do
     [
       {:file_system, "~> 1.0", optional: true},
-      {:phoenix_live_view, "~> 1.2.8"},
       {:safe_rpc, "~> 0.1.14"},
       {:ex_doc, "~> 0.40.3", only: :dev, runtime: false}
     ]
