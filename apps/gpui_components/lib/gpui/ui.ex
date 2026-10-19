@@ -545,7 +545,8 @@ defmodule GPUI.UI do
 
   Pressing on the children and moving starts a drag carrying `value`, which
   drop targets with `accepts: "values"` receive as the payload's `text`. A
-  press that doesn't move still clicks the children.
+  press that doesn't move still clicks the children. Values must be valid
+  UTF-8 and fit the transfer payload's 1 MiB text limit.
 
   #{ComponentsSchema.component_options_doc(:ui_drag_source)}
   """
@@ -553,6 +554,7 @@ defmodule GPUI.UI do
   def drag_source(assigns) when is_map(assigns) do
     assigns = ComponentsSchema.apply_defaults(assigns, :ui_drag_source)
     ComponentsSchema.validate_component_assigns!(assigns, :ui_drag_source)
+    GPUI.Transfer.Payload.new(text: assigns.value)
     component(:ui_drag_source, assigns)
   end
 

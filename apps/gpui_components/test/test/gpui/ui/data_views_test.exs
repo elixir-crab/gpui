@@ -63,6 +63,33 @@ defmodule GPUI.UI.DataViewsTest do
     assert attrs[:"phx-drop"] == "dropped"
   end
 
+  test "builds in-app drag sources and value-accepting drop targets" do
+    child = %Element{type: :text, children: ["Worker"]}
+
+    assert %Element{type: :ui_drag_source, attrs: source, children: [^child]} =
+             UI.drag_source(%{id: "worker", value: "sprite:worker", children: [child]})
+
+    assert source[:value] == "sprite:worker"
+
+    assert %Element{type: :ui_drop_target, attrs: target} =
+             UI.drop_target(%{id: "group", accepts: "values", "phx-drop": "add_worker"})
+
+    assert target[:accepts] == "values"
+    assert target[:"phx-drop"] == "add_worker"
+    assert UI.drop_target(%{id: "files"}).attrs[:accepts] == "files"
+  end
+
+  test "drag source values obey the transfer payload UTF-8 and size limits" do
+    value = String.duplicate("x", 1_048_576)
+    assert UI.drag_source(%{id: "limit", value: value}).attrs[:value] == value
+
+    for invalid <- [value <> "x", <<255>>] do
+      assert_raise ArgumentError, fn ->
+        UI.drag_source(%{id: "invalid", value: invalid})
+      end
+    end
+  end
+
   test "adds bounded clipboard reads to an ordinary button" do
     assert %Element{type: :ui_button, attrs: attrs} =
              UI.button(%{
