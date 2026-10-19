@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Dialog Enter no longer requests automatic closure; content handles submission
+  and the app controls `open`. Explicit focus requests made while closing a
+  dialog take precedence over restoring its previous focus.
+
 ## 0.2.0 - 2026-09-08
 
 ### Breaking changes
