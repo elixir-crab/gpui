@@ -199,7 +199,7 @@ defmodule GPUI.Template do
     end
   end
 
-  defp component_builder("ui_" <> name) when name in ~w(popover tooltip dialog dropdown_menu),
+  defp component_builder("ui_" <> name) when name in ~w(popover tooltip dialog dropdown_menu context_menu),
     do: "<GPUI.UI.Overlay.#{name}>"
 
   defp component_builder("ui_" <> name)

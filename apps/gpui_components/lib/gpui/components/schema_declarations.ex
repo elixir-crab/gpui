@@ -286,6 +286,20 @@ defmodule GPUI.Components.Schema.Declarations do
     },
     %{
       __struct__: GPUI.Schema.Component,
+      attrs: [id: :required_string],
+      children: true,
+      events: [select: :"phx-select"],
+      extension: nil,
+      kind: :context_menu_component,
+      public_hidden_attrs: [],
+      public_required_attrs: [],
+      public_slots: [item: :one_or_more],
+      required_events: [],
+      stateful: false,
+      tag: :ui_context_menu
+    },
+    %{
+      __struct__: GPUI.Schema.Component,
       attrs: [],
       children: true,
       events: [],

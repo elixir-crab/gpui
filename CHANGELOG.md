@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+- Add `GPUI.UI.Overlay.context_menu/1`: a right click on its content opens its
+  `:item` slots as a compact menu at the pointer (styled after Zed's context
+  menus, with keyboard navigation), and `phx-select` receives the chosen value.
+
 ## 0.2.0 - 2026-09-08
 
 ### Breaking changes
