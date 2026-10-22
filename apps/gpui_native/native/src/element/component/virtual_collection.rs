@@ -24,6 +24,7 @@ pub(crate) struct ComponentVirtualCollection {
 #[derive(Default)]
 struct VirtualItemState {
     input_entities: std::collections::HashMap<String, gpui::Entity<crate::NativeTextInput>>,
+    terminal_entities: std::collections::HashMap<String, gpui::Entity<super::terminal::Terminal>>,
     components: crate::element::component_registry::ComponentRegistry,
 }
 
@@ -234,6 +235,7 @@ fn render_variable_item(
             id_namespace: format!("variable-{collection_id}-{}", item.id),
             active_input_ids: &mut active_input_ids,
             input_entities: &mut item_state.input_entities,
+            terminal_entities: &mut item_state.terminal_entities,
             components: &mut item_state.components,
             window,
             cx,
@@ -247,6 +249,9 @@ fn render_variable_item(
     item_state
         .input_entities
         .retain(|input_id, _entity| active_input_ids.contains(input_id));
+    item_state
+        .terminal_entities
+        .retain(|id, _entity| active_input_ids.contains(id));
     item_state.components.finish_render(window, cx);
 
     apply_generated_render_styles(gpui::div(), item.style.clone())

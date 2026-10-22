@@ -38,6 +38,11 @@ pub(crate) enum InputKind {
     Change,
     KeyDown,
     KeyUp,
+    Keystroke,
+    Text,
+    Paste,
+    Resize,
+    Range,
     DragEnter,
     DragMove,
     DragLeave,
@@ -47,7 +52,6 @@ pub(crate) enum InputKind {
     FileRead,
     Select,
     Search,
-    Range,
     Link,
     CellChange,
     Sort,
@@ -70,6 +74,11 @@ impl InputKind {
             Self::Change => atoms::change(),
             Self::KeyDown => atoms::keydown(),
             Self::KeyUp => atoms::keyup(),
+            Self::Keystroke => atoms::keystroke(),
+            Self::Text => atoms::text(),
+            Self::Paste => atoms::paste(),
+            Self::Resize => atoms::resize(),
+            Self::Range => atoms::range(),
             Self::DragEnter => atoms::drag_enter(),
             Self::DragMove => atoms::drag_move(),
             Self::DragLeave => atoms::drag_leave(),
@@ -79,7 +88,6 @@ impl InputKind {
             Self::FileRead => atoms::file_read(),
             Self::Select => atoms::select(),
             Self::Search => atoms::search(),
-            Self::Range => atoms::range(),
             Self::Link => atoms::link(),
             Self::CellChange => atoms::cell_change(),
             Self::Sort => atoms::sort(),
@@ -195,6 +203,38 @@ pub(crate) fn encode_value_event<'a>(
     )
 }
 #[cfg(feature = "real-gpui")]
+pub(crate) fn encode_virtual_range_event<'a>(
+    env: Env<'a>,
+    window_id: u64,
+    event: String,
+    first: u64,
+    last: u64,
+) -> NifResult<Term<'a>> {
+    let value = encode_event_map(
+        env,
+        vec![(atoms::first(), first.encode(env)), (atoms::last(), last.encode(env))],
+    )?;
+    encode_value_event(env, atoms::range(), window_id, event, value)
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn encode_keystroke_event<'a>(
+    env: Env<'a>,
+    window_id: u64,
+    event: String,
+    value: KeyStroke,
+) -> NifResult<Term<'a>> {
+    encode_value_event(env, atoms::keystroke(), window_id, event, value.encode(env))
+}
+#[cfg(feature = "real-gpui")]
+pub(crate) fn encode_terminal_resize_event<'a>(
+    env: Env<'a>,
+    window_id: u64,
+    event: String,
+    value: TerminalSize,
+) -> NifResult<Term<'a>> {
+    encode_value_event(env, atoms::resize(), window_id, event, value.encode(env))
+}
+#[cfg(feature = "real-gpui")]
 pub(crate) fn encode_bounds_event<'a>(
     env: Env<'a>,
     window_id: u64,
@@ -247,20 +287,6 @@ pub(crate) fn encode_transfer_event<'a>(
     value: TransferEventValue,
 ) -> NifResult<Term<'a>> {
     encode_value_event(env, kind.atom(), window_id, event, value.encode(env))
-}
-#[cfg(feature = "components")]
-pub(crate) fn encode_virtual_range_event<'a>(
-    env: Env<'a>,
-    window_id: u64,
-    event: String,
-    first: u64,
-    last: u64,
-) -> NifResult<Term<'a>> {
-    let value = encode_event_map(
-        env,
-        vec![(atoms::first(), first.encode(env)), (atoms::last(), last.encode(env))],
-    )?;
-    encode_value_event(env, atoms::range(), window_id, event, value)
 }
 #[cfg(feature = "components")]
 pub(crate) fn encode_file_dialog_event<'a>(

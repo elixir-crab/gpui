@@ -11,6 +11,24 @@ pub(crate) struct ElementBoundsGeometry {
     pub(crate) coordinate_space: String,
 }
 #[derive(Clone, Debug, PartialEq, rustler::NifMap)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct KeyStroke {
+    pub(crate) key: String,
+    pub(crate) control: bool,
+    pub(crate) alt: bool,
+    pub(crate) shift: bool,
+    pub(crate) platform: bool,
+    pub(crate) repeat: bool,
+}
+#[derive(Clone, Debug, PartialEq, rustler::NifMap)]
+#[cfg(feature = "real-gpui")]
+pub(crate) struct TerminalSize {
+    pub(crate) columns: u64,
+    pub(crate) rows: u64,
+    pub(crate) cell_width: f64,
+    pub(crate) cell_height: f64,
+}
+#[derive(Clone, Debug, PartialEq, rustler::NifMap)]
 #[cfg_attr(not(feature = "components"), allow(dead_code))]
 pub(crate) struct TransferEventValue {
     pub(crate) session_id: u64,

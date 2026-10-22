@@ -123,6 +123,7 @@ defmodule GPUI.MixProject do
         ],
         "Advanced infrastructure": [GPUI.Session],
         Text: [
+          GPUI.Terminal,
           GPUI.Text.Buffer,
           GPUI.Text.Position,
           GPUI.Text.Range,
@@ -189,6 +190,7 @@ defmodule GPUI.MixProject do
       GPUI.Debug,
       GPUI.Dev.Reload,
       GPUI.View,
+      GPUI.Terminal,
       GPUI.Text.Buffer,
       GPUI.Text.Position,
       GPUI.Text.Range,

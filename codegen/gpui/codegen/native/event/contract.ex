@@ -16,7 +16,11 @@ defmodule GPUI.Codegen.Native.Event.Contract do
       {:Click, nil, named, :encode_named_event, [:env, atom(:click), :window_id, :event]},
       {:Command, nil, named, :encode_named_event, [:env, atom(:command), :window_id, :event]},
       {:Input, nil, [kind: quote(do: InputKind.t())] ++ named ++ [value: value],
-       :encode_input_event, [:env, A.ref(:kind), :window_id, :event, :value]}
+       :encode_input_event, [:env, A.ref(:kind), :window_id, :event, :value]},
+      {:Keystroke, "real-gpui", named ++ [value: quote(do: KeyStroke.t())],
+       :encode_keystroke_event, [:env, :window_id, :event, :value]},
+      {:TerminalResize, "real-gpui", named ++ [value: quote(do: TerminalSize.t())],
+       :encode_terminal_resize_event, [:env, :window_id, :event, :value]}
     ] ++
       revisioned(named) ++
       [
@@ -46,7 +50,7 @@ defmodule GPUI.Codegen.Native.Event.Contract do
          ]},
         {:WindowClosed, nil, window, :encode_window_event,
          [:env, atom(:window_closed), :window_id]},
-        {:VirtualRange, "components",
+        {:VirtualRange, "real-gpui",
          named ++ [first: quote(do: RustQ.Type.u64()), last: quote(do: RustQ.Type.u64())],
          :encode_virtual_range_event, [:env, :window_id, :event, :first, :last]},
         {:FileDialog, "components",

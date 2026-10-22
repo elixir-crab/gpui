@@ -85,6 +85,35 @@ defmodule GPUI.Test.Native.ControlsTest do
                     {:event, %{type: :change, event: "name_changed", value: "X\nAda"}}}
   end
 
+  defmodule NavigableInputView do
+    use GPUI.View
+
+    @impl GPUI.View
+    def render(assigns) do
+      ~GPUI"""
+      <GPUI.UI.input id="search" label="Search" value={assigns.value} focus_request={1}
+        phx-change="search_changed" phx-keydown="search_key" />
+      """
+    end
+  end
+
+  # A one-line input has no use for Up and Down, so a search box can move a
+  # highlight through its results with them.
+  test "a single-line input reports Up and Down and keeps editing its text", %{ui: ui} do
+    render(ui, NavigableInputView, value: "")
+    settle(ui)
+
+    press(ui, :arrow_down)
+    assert_receive {:gpui, ^ui, {:event, %{type: :keydown, event: "search_key", value: "down"}}}
+    press(ui, :arrow_up)
+    assert_receive {:gpui, ^ui, {:event, %{type: :keydown, event: "search_key", value: "up"}}}
+
+    type(ui, "ab")
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "search_changed", value: "a"}}}
+    render(ui, NavigableInputView, value: "a")
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "search_changed", value: "ab"}}}
+  end
+
   test "controlled input restores rejected edits and blocks disabled typing", %{ui: ui} do
     render_input(ui)
     settle(ui)

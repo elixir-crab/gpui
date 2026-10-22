@@ -25,6 +25,18 @@ defmodule GPUI.Codegen.Native.Events do
   Definitions.define_input_kind(:gpui_component)
   Definitions.define_event_impls(:gpui_component)
 
+  @spec encode_keystroke_event(Env.t(R.lifetime(:a)), R.u64(), String.t(), KeyStroke.t()) ::
+          R.nif_result(Term.t(R.lifetime(:a)))
+  defrust(encode_keystroke_event(env, window_id, event, value),
+    do: encode_value_event(env, Atoms.keystroke(), window_id, event, value.encode(env))
+  )
+
+  @spec encode_terminal_resize_event(Env.t(R.lifetime(:a)), R.u64(), String.t(), TerminalSize.t()) ::
+          R.nif_result(Term.t(R.lifetime(:a)))
+  defrust(encode_terminal_resize_event(env, window_id, event, value),
+    do: encode_value_event(env, Atoms.resize(), window_id, event, value.encode(env))
+  )
+
   @spec encode_file_dialog_event(
           Env.t(R.lifetime(:a)),
           R.u64(),
@@ -421,6 +433,9 @@ defmodule GPUI.Codegen.Native.Events do
     ]
 
     real_gpui_only = [
+      :encode_virtual_range_event,
+      :encode_keystroke_event,
+      :encode_terminal_resize_event,
       :encode_bounds_event,
       :encode_focus_event,
       :encode_missing_resource_event
@@ -429,7 +444,6 @@ defmodule GPUI.Codegen.Native.Events do
     component_only = [
       :encode_clipboard_event,
       :encode_transfer_event,
-      :encode_virtual_range_event,
       :encode_file_dialog_event,
       :encode_file_dialog_selected,
       :encode_file_dialog_cancelled,

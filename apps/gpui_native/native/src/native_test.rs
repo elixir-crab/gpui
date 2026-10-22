@@ -163,6 +163,7 @@ fn initialize(width: f32, height: f32) -> TestSession {
 
     let mut app = gpui::TestAppContext::single();
     app.update(gpui_component::init);
+    app.update(crate::element::component::terminal::bind_terminal_keys);
     let runtime = Arc::new(crate::runtime::RuntimeState::new());
     let state = Arc::new(crate::WindowState::new(
         ElementNode::empty_root(),

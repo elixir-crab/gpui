@@ -13,6 +13,7 @@ pub(crate) struct ComponentUniformCollection {
     pub(crate) pending_requested_range: Option<Range<usize>>,
     pub(crate) range_emit_scheduled: bool,
     pub(crate) input_entities: HashMap<String, gpui::Entity<NativeTextInput>>,
+    pub(crate) terminal_entities: HashMap<String, gpui::Entity<super::terminal::Terminal>>,
     pub(crate) components: ComponentRegistry,
 }
 
@@ -26,6 +27,7 @@ impl ComponentUniformCollection {
             pending_requested_range: None,
             range_emit_scheduled: false,
             input_entities: HashMap::new(),
+            terminal_entities: HashMap::new(),
             components: ComponentRegistry::default(),
         }
     }

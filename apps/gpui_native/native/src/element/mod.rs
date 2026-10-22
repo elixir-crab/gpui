@@ -17,6 +17,8 @@ pub(crate) struct ElementRenderContext<'a, 'cx> {
     pub(crate) id_namespace: String,
     pub(crate) active_input_ids: &'a mut HashSet<String>,
     pub(crate) input_entities: &'a mut HashMap<String, gpui::Entity<NativeTextInput>>,
+    pub(crate) terminal_entities:
+        &'a mut HashMap<String, gpui::Entity<component::terminal::Terminal>>,
     #[cfg(feature = "components")]
     pub(crate) components: &'a mut component_registry::ComponentRegistry,
     pub(crate) window: &'a mut gpui::Window,
