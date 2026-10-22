@@ -749,6 +749,7 @@ defmodule GPUI.Components.Schema.Declarations do
         id: :string,
         text: {:default, :string},
         number: :non_negative_integer,
+        style_runs: :text_style_runs,
         kind:
           {:default,
            {:enum,

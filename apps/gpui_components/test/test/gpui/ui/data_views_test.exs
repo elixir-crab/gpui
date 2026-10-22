@@ -2,6 +2,7 @@ defmodule GPUI.UI.DataViewsTest do
   use ExUnit.Case, async: true
 
   alias GPUI.Element
+  alias GPUI.Text.{Position, Range, StyleRun}
   alias GPUI.UI
 
   test "builds themed shell components with bounded contracts" do
@@ -349,6 +350,67 @@ defmodule GPUI.UI.DataViewsTest do
              UI.code_line(%{id: "log-1", text: "queue depth high", kind: "warning"})
 
     assert log_line_attrs[:kind] == "warning"
+  end
+
+  test "code lines serialize styles in original UTF-16 coordinates" do
+    run = StyleRun.new(Range.new(Position.new(0, 3), Position.new(0, 6)), color: 0x8250DF)
+    line = UI.code_line(%{id: "unicode", text: "😀\tdef", style_runs: [run]})
+    assert line.attrs[:style_runs] == [run]
+
+    assert [
+             %{
+               color: 0x8250DF,
+               range: %{
+                 start: %{line: 0, utf16_offset: 3},
+                 end: %{line: 0, utf16_offset: 6}
+               }
+             }
+           ] = Element.to_payload(line).attrs.style_runs
+  end
+
+  test "code lines reject invalid style boundaries and overlapping ranges" do
+    for {start, ending} <- [{1, 2}, {0, 1}, {0, 7}, {3, 3}, {4, 3}] do
+      run =
+        StyleRun.new(Range.new(Position.new(0, start), Position.new(0, ending)), color: 0x8250DF)
+
+      assert_raise ArgumentError, fn ->
+        UI.code_line(%{id: "invalid", text: "😀\tdef", style_runs: [run]})
+      end
+    end
+
+    run = StyleRun.new(Range.new(Position.new(0, 3), Position.new(0, 6)), color: 0x8250DF)
+
+    assert_raise ArgumentError, ~r/non-overlapping/, fn ->
+      UI.code_line(%{id: "overlap", text: "😀\tdef", style_runs: [run, run]})
+    end
+
+    run = StyleRun.new(Range.new(Position.new(1, 0), Position.new(1, 1)), color: 0x8250DF)
+
+    assert_raise ArgumentError, ~r/line 0/, fn ->
+      UI.code_line(%{id: "line", text: "def", style_runs: [run]})
+    end
+  end
+
+  test "code line styles are bounded and require single-line text" do
+    run = StyleRun.new(Range.new(Position.new(0, 0), Position.new(0, 1)), color: 0x8250DF)
+
+    for text <- ["a\nb", "a\rb"] do
+      assert_raise ArgumentError, ~r/single-line/, fn ->
+        UI.code_line(%{id: "multiline", text: text, style_runs: [run]})
+      end
+    end
+
+    runs =
+      for offset <- 0..512 do
+        StyleRun.new(
+          Range.new(Position.new(0, offset), Position.new(0, offset + 1)),
+          color: 0x8250DF
+        )
+      end
+
+    assert_raise ArgumentError, fn ->
+      UI.code_line(%{id: "too-many", text: String.duplicate("a", 513), style_runs: runs})
+    end
   end
 
   test "validates code viewer structure and line metadata" do
