@@ -201,6 +201,40 @@ defmodule GPUI.Template.ComponentsTest do
     end
   end
 
+  test "context menus wrap content and compile item slots after it" do
+    assert %GPUI.Element{
+             type: :ui_context_menu,
+             attrs: attrs,
+             children: [
+               %GPUI.Element{type: :div},
+               %GPUI.Element{type: :ui_dropdown_menu_item, attrs: move},
+               %GPUI.Element{type: :ui_dropdown_menu_item, attrs: pin}
+             ]
+           } =
+             ~GPUI"""
+             <Overlay.context_menu id="row-menu" phx-select="row_action">
+               <div phx-click="open-row">Row</div>
+               <:item value="move">Move…</:item>
+               <:item value="pin" checked={true}>Pinned</:item>
+             </Overlay.context_menu>
+             """
+
+    assert attrs[:id] == "row-menu"
+    assert attrs[:"phx-select"] == "row_action"
+    assert move[:value] == "move" and move[:label] == "Move…"
+    assert pin[:checked]
+
+    item = %GPUI.Template.Component.Slot{attrs: [value: "same"], children: ["Item"]}
+
+    assert_raise ArgumentError, ~r/at least one :item/, fn ->
+      Overlay.context_menu(%{id: "menu", children: []})
+    end
+
+    assert_raise ArgumentError, ~r/values must be unique/, fn ->
+      Overlay.context_menu(%{id: "menu", item: [item, item], children: []})
+    end
+  end
+
   test "popover uses explicit trigger and content slots" do
     assert %GPUI.Element{
              type: :ui_popover,

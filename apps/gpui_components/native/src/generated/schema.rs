@@ -25,6 +25,7 @@ pub enum GeneratedComponentKind {
     DialogTriggerComponent,
     DialogContentComponent,
     DropdownMenuComponent,
+    ContextMenuComponent,
     DropdownMenuTriggerComponent,
     DropdownMenuItemComponent,
     CheckboxComponent,
@@ -2685,6 +2686,28 @@ pub(crate) fn decode_generated_dropdown_menu_component<'a>(
 #[derive(Clone, Debug)]
 #[cfg(feature = "real-gpui")]
 #[allow(dead_code)]
+pub(crate) struct ContextMenuComponentNode {
+    pub(crate) style: StyleAttrs,
+    pub(crate) id: String,
+    pub(crate) children: Vec<ElementNode>,
+    pub(crate) select: Option<String>,
+}
+#[cfg(feature = "real-gpui")]
+#[allow(clippy::redundant_field_names)]
+#[allow(clippy::useless_vec)]
+pub(crate) fn decode_generated_context_menu_component<'a>(
+    term: Term<'a>,
+) -> NifResult<ContextMenuComponentNode> {
+    Ok(ContextMenuComponentNode {
+        style: decode_style(term)?,
+        id: component_required_string_attr(term, atoms::id())?,
+        children: decode_children(term)?,
+        select: component_string_attr(term, atoms::phx_select())?,
+    })
+}
+#[derive(Clone, Debug)]
+#[cfg(feature = "real-gpui")]
+#[allow(dead_code)]
 pub(crate) struct DropdownMenuTriggerComponentNode {
     pub(crate) style: StyleAttrs,
     pub(crate) children: Vec<ElementNode>,
@@ -3852,6 +3875,7 @@ pub(crate) enum ElementNode {
     DialogTriggerComponent(DialogTriggerComponentNode),
     DialogContentComponent(DialogContentComponentNode),
     DropdownMenuComponent(DropdownMenuComponentNode),
+    ContextMenuComponent(ContextMenuComponentNode),
     DropdownMenuTriggerComponent(DropdownMenuTriggerComponentNode),
     DropdownMenuItemComponent(DropdownMenuItemComponentNode),
     CheckboxComponent(CheckboxComponentNode),
@@ -3917,6 +3941,7 @@ pub enum GeneratedElementTag {
     UiDialogTrigger,
     UiDialogContent,
     UiDropdownMenu,
+    UiContextMenu,
     UiDropdownMenuTrigger,
     UiDropdownMenuItem,
     UiCheckbox,
@@ -3981,6 +4006,7 @@ pub fn decode_generated_element_tag(tag: &str) -> GeneratedElementTag {
         "ui_dialog_trigger" => GeneratedElementTag::UiDialogTrigger,
         "ui_dialog_content" => GeneratedElementTag::UiDialogContent,
         "ui_dropdown_menu" => GeneratedElementTag::UiDropdownMenu,
+        "ui_context_menu" => GeneratedElementTag::UiContextMenu,
         "ui_dropdown_menu_trigger" => GeneratedElementTag::UiDropdownMenuTrigger,
         "ui_dropdown_menu_item" => GeneratedElementTag::UiDropdownMenuItem,
         "ui_checkbox" => GeneratedElementTag::UiCheckbox,
@@ -4057,6 +4083,9 @@ pub fn generated_component_kind(tag: GeneratedElementTag) -> GeneratedComponentK
         }
         GeneratedElementTag::UiDropdownMenu => {
             GeneratedComponentKind::DropdownMenuComponent
+        }
+        GeneratedElementTag::UiContextMenu => {
+            GeneratedComponentKind::ContextMenuComponent
         }
         GeneratedElementTag::UiDropdownMenuTrigger => {
             GeneratedComponentKind::DropdownMenuTriggerComponent
@@ -4194,6 +4223,10 @@ pub(crate) fn decode_generated_element_node<'a>(
         GeneratedComponentKind::DropdownMenuComponent => {
             decode_generated_dropdown_menu_component(term)
                 .map(|node| ElementNode::DropdownMenuComponent(node))
+        }
+        GeneratedComponentKind::ContextMenuComponent => {
+            decode_generated_context_menu_component(term)
+                .map(|node| ElementNode::ContextMenuComponent(node))
         }
         GeneratedComponentKind::DropdownMenuTriggerComponent => {
             decode_generated_dropdown_menu_trigger_component(term)
@@ -4380,6 +4413,9 @@ pub(crate) fn render_generated_component_node(
         }
         ElementNode::DropdownMenuComponent(node) => {
             element::component::overlay::dropdown::render(node, context)
+        }
+        ElementNode::ContextMenuComponent(node) => {
+            element::component::context_menu::render(node, context)
         }
         ElementNode::DropdownMenuTriggerComponent(node) => {
             element::component::overlay::render_dropdown_menu_trigger(node, context)
