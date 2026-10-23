@@ -4,6 +4,24 @@ defmodule GPUI.UI.ComponentsTest do
   alias GPUI.Element
   alias GPUI.UI
 
+  test "builds borderless multiline inputs without changing ordinary input defaults" do
+    defaults = %{:"phx-change" => "name", id: "name", label: "Name"}
+    ordinary = UI.input(defaults)
+    assert ordinary.attrs[:appearance]
+    refute ordinary.attrs[:multiline]
+
+    inline = UI.input(Map.merge(defaults, %{appearance: false, multiline: true, max_rows: 8}))
+    refute inline.attrs[:appearance]
+    assert inline.attrs[:multiline]
+    assert inline.attrs[:max_rows] == 8
+
+    for rows <- [0, 65, 1.5] do
+      assert_raise ArgumentError, ~r/max_rows/, fn ->
+        UI.input(Map.put(defaults, :max_rows, rows))
+      end
+    end
+  end
+
   test "builds progress, file-read, and clipboard controls" do
     assert %Element{type: :ui_progress, attrs: progress} =
              UI.progress(%{id: "upload", label: "Uploading", value: 25, max: 50})

@@ -34,18 +34,23 @@ defmodule GPUI.Test.Native.ControlsTest do
     @impl GPUI.View
     def render(assigns) do
       ~GPUI"""
-      <GPUI.UI.input
-        id="name"
-        label="Name"
-        value={assigns.value}
-        placeholder={assigns.placeholder}
-        disabled={assigns.disabled}
-        loading={assigns.loading}
-        masked={assigns.masked}
-        focus_request={assigns.focus_request}
-        phx-change="name_changed"
-        phx-submit="name_submitted"
-      />
+      <div id="input-host" class="flex flex-col w-[280px]">
+        <GPUI.UI.input
+          id="name"
+          label="Name"
+          value={assigns.value}
+          placeholder={assigns.placeholder}
+          disabled={assigns.disabled}
+          loading={assigns.loading}
+          masked={assigns.masked}
+          appearance={assigns.appearance}
+          multiline={assigns.multiline}
+          max_rows={assigns.max_rows}
+          focus_request={assigns.focus_request}
+          phx-change="name_changed"
+          phx-submit="name_submitted"
+        />
+      </div>
       """
     end
   end
@@ -61,6 +66,9 @@ defmodule GPUI.Test.Native.ControlsTest do
           disabled: false,
           loading: false,
           masked: false,
+          appearance: true,
+          multiline: false,
+          max_rows: 16,
           focus_request: 1
         ],
         opts
@@ -102,6 +110,62 @@ defmodule GPUI.Test.Native.ControlsTest do
     settle(ui)
     type(ui, "Z")
     refute_receive {:gpui, ^ui, {:event, %{event: "name_changed"}}}
+  end
+
+  test "inline inputs grow and preserve Shift+Enter without submitting", %{ui: ui} do
+    render_input(ui, value: "", appearance: false, multiline: true)
+    settle(ui)
+    initial_height = bounds(ui, "input-host").height
+    type(ui, "First")
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, value: "First"}}}
+    render_input(ui, value: "First", appearance: false, multiline: true)
+
+    press(ui, "shift-enter")
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, value: "First\n"}}}
+    refute_receive {:gpui, ^ui, {:event, %{type: :submit}}}
+
+    render_input(ui, value: "First\n", appearance: false, multiline: true)
+    settle(ui)
+    assert bounds(ui, "input-host").height > initial_height
+    type(ui, "Second")
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, value: "First\nSecond"}}}
+    press(ui, :enter)
+
+    assert_receive {:gpui, ^ui,
+                    {:event, %{type: :submit, event: "name_submitted", value: "First\nSecond"}}}
+  end
+
+  test "multiline inputs wrap to the available width", %{ui: ui} do
+    render_input(ui, value: "", appearance: false, multiline: true)
+    settle(ui)
+    assert %{width: 280.0, height: initial_height} = bounds(ui, "input-host")
+
+    text = String.duplicate("word ", 40)
+    type(ui, text)
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, value: ^text}}}
+    settle(ui)
+    assert bounds(ui, "input-host").height > initial_height
+  end
+
+  test "multiline inputs stop growing at their row limit", %{ui: ui} do
+    render_input(ui, value: "First", appearance: false, multiline: true, max_rows: 2)
+    settle(ui)
+    initial_height = bounds(ui, "input-host").height
+
+    render_input(ui, value: "First\nSecond", appearance: false, multiline: true, max_rows: 2)
+    settle(ui)
+    bounded_height = bounds(ui, "input-host").height
+    assert bounded_height > initial_height
+
+    render_input(ui,
+      value: "First\nSecond\nThird",
+      appearance: false,
+      multiline: true,
+      max_rows: 2
+    )
+
+    settle(ui)
+    assert bounds(ui, "input-host").height == bounded_height
   end
 
   defmodule MotionButtonView do

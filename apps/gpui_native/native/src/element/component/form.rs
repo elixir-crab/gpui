@@ -34,11 +34,14 @@ fn input_accessibility(
     value: String,
     placeholder: Option<String>,
     masked: bool,
+    multiline: bool,
 ) -> InputAccessibility {
     InputAccessibility {
         label,
         role: if masked {
             gpui::Role::PasswordInput
+        } else if multiline {
+            gpui::Role::MultilineTextInput
         } else {
             gpui::Role::TextInput
         },
@@ -101,6 +104,7 @@ pub(crate) fn render_input_component(
         node.value.clone(),
         node.placeholder.clone(),
         node.masked,
+        node.multiline,
     );
 
     if context.components.input_mut(&node.id).is_none() {
@@ -108,6 +112,11 @@ pub(crate) fn render_input_component(
             let mut state = InputState::new(context.window, cx)
                 .default_value(node.value.clone())
                 .placeholder(node.placeholder.clone().unwrap_or_default());
+            if node.multiline {
+                state = state
+                    .auto_grow(1, node.max_rows.clamp(1, 64) as usize)
+                    .submit_on_enter(true);
+            }
             if node.masked {
                 state = state.masked(true);
             }
@@ -123,14 +132,17 @@ pub(crate) fn render_input_component(
         let window_id = context.window_id;
         let event_binding = binding.clone();
         let event_submit = submit_event.clone();
+        let multiline = node.multiline;
         let subscription = context.cx.subscribe_in(
             &state,
             context.window,
             move |_root, state, event: &InputEvent, _window, cx| {
                 let value = state.read(cx).value().to_string();
 
-                match event {
-                    InputEvent::Change => {
+                // Shift+Enter inserts a newline silently and emits PressEnter, not Change.
+                match (event, multiline) {
+                    (InputEvent::Change, _)
+                    | (InputEvent::PressEnter { shift: true, .. }, true) => {
                         let event = event_binding.lock().ok().and_then(|mut binding| {
                             binding.event.clone().inspect(|_event| {
                                 binding.push_pending(value.clone());
@@ -154,7 +166,7 @@ pub(crate) fn render_input_component(
                             }
                         }
                     }
-                    InputEvent::PressEnter { .. } => {
+                    (InputEvent::PressEnter { .. }, _) => {
                         let event = event_submit.lock().ok().and_then(|event| event.clone());
                         if let Some(event) = event {
                             let _ = push_event(
@@ -168,7 +180,7 @@ pub(crate) fn render_input_component(
                             );
                         }
                     }
-                    InputEvent::Focus | InputEvent::Blur => {}
+                    (InputEvent::Focus | InputEvent::Blur, _) => {}
                 }
             },
         );
@@ -274,6 +286,7 @@ pub(crate) fn render_input_component(
     }
     let mut element = Input::new(&input.state)
         .role(gpui::Role::GenericContainer)
+        .appearance(node.appearance)
         .disabled(node.disabled)
         .cleanable(node.cleanable);
     element = match node.size.as_deref() {
@@ -297,8 +310,12 @@ pub(crate) fn render_input_component(
             }
         })
         .flex()
-        .w_full()
-        .h(gpui::px(component_height));
+        .w_full();
+    if node.multiline {
+        accessible_element = accessible_element.h_auto();
+    } else {
+        accessible_element = accessible_element.h(gpui::px(component_height));
+    }
     if let Some(value) = accessibility_value {
         accessible_element = accessible_element.aria_value(value);
     }
@@ -754,6 +771,7 @@ mod tests {
                 "Ada".to_string(),
                 Some("Name".to_string()),
                 false,
+                false,
             ),
             InputAccessibility {
                 label: "Display name".to_string(),
@@ -764,7 +782,13 @@ mod tests {
         );
 
         assert_eq!(
-            input_accessibility("Password".to_string(), "secret".to_string(), None, true),
+            input_accessibility(
+                "Password".to_string(),
+                "secret".to_string(),
+                None,
+                true,
+                true
+            ),
             InputAccessibility {
                 label: "Password".to_string(),
                 role: crate::gpui::Role::PasswordInput,
@@ -772,6 +796,19 @@ mod tests {
                 placeholder: None,
             }
         );
+    }
+
+    #[test]
+    fn multiline_input_accessibility_exposes_its_role_and_value() {
+        let accessibility = input_accessibility(
+            "Message".to_string(),
+            "First\nSecond".to_string(),
+            None,
+            false,
+            true,
+        );
+        assert_eq!(accessibility.role, crate::gpui::Role::MultilineTextInput);
+        assert_eq!(accessibility.value.as_deref(), Some("First\nSecond"));
     }
 
     #[test]
