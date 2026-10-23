@@ -43,6 +43,42 @@ defmodule GPUI.TemplateTest do
              """
   end
 
+  test "parses quoted, multi-line, and nested-brace attribute values" do
+    styles = %{gap: "2"}
+
+    assert %GPUI.Element{
+             type: :div,
+             attrs: [id: "single", title: "two\nlines", value: "2"],
+             children: [
+               %GPUI.Element{type: :text, children: ["a } brace: ", "{", "!"]}
+             ]
+           } =
+             ~GPUI"""
+             <div id='single' title="two
+             lines" value={%{gap: g} = styles; g}>
+               <!-- comments are not rendered -->
+               <text>a } brace: {"\{"}!</text>
+             </div>
+             """
+  end
+
+  test "template syntax errors report the template position" do
+    for {source, message} <- [
+          {"<div><text></div>", ~r/t.ex:1: unmatched closing tag. Expected <\/text>.*column 12/},
+          {"<div>\n  <text>", ~r/t.ex:2: end of template reached without closing tag for <text>/},
+          {"<div><%= 1 %></div>", ~r/EEx tags are not supported/},
+          {"<div {@rest} />", ~r/root attributes like \{@rest\} are not supported/},
+          {"<div hidden />", ~r/attribute hidden requires a value; use hidden=\{true\}/},
+          {"<div><:item /></div>", ~r/slot entry must be a direct child of a component/},
+          {"<div id={1 />", ~r/expected closing `}` for expression/},
+          {"<div id=\"1 />", ~r/expected closing `\"` for attribute value/}
+        ] do
+      assert_raise CompileError, message, fn ->
+        GPUI.Template.compile(source, %{__ENV__ | file: "t.ex"}, line: 1)
+      end
+    end
+  end
+
   test "builds and validates neutral anchored layers" do
     payload =
       ~GPUI"""

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Changed
+
+- Parse `~GPUI` templates with GPUI's own parser and drop the
+  `phoenix_live_view` dependency. Template output is unchanged, except that
+  HTML comments are now dropped instead of rendered as literal text.
+  Unsupported syntax (`<%= %>`, root attributes like `{@rest}`, and value-less
+  attributes) now fails with a `CompileError` naming the line and column.
+
 ## 0.2.0-rc.1 - 2026-09-02
 
 ### Breaking changes

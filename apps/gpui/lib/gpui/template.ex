@@ -2,9 +2,11 @@ defmodule GPUI.Template do
   @moduledoc """
   HEEx-style template support for GPUI.
 
-  This module intentionally reuses Phoenix LiveView's tag parser for the
-  HEEx-compatible tokenizer/tree builder, then compiles the parsed tree into
-  `%GPUI.Element{}` values instead of `%Phoenix.LiveView.Rendered{}`.
+  Templates use the element subset of HEEx syntax: tags, `<Remote.component>`
+  and `<.local_component>` calls, `<:slot>` entries, and `{expression}`
+  attribute values and children. They compile into `%GPUI.Element{}` trees at
+  compile time. EEx tags (`<%= %>`), `:if`/`:for`, and root attributes such as
+  `{@rest}` are not supported; use ordinary Elixir expressions instead.
 
   Lowercase tags are renderer primitives. Native components use `GPUI.UI` or
   `GPUI.UI.Overlay`; their internal `ui_*` element tags are intentionally not a
@@ -12,7 +14,7 @@ defmodule GPUI.Template do
   """
 
   alias GPUI.Element
-  alias Phoenix.LiveView.TagEngine.Parser
+  alias GPUI.Template.Parser
 
   @primitive_tag_lookup GPUI.Schema.components()
                         |> Enum.reject(&String.starts_with?(Atom.to_string(&1.tag), "ui_"))
@@ -25,75 +27,63 @@ defmodule GPUI.Template do
 
   @spec compile(String.t(), Macro.Env.t(), keyword()) :: Macro.t()
   def compile(source, caller, meta \\ []) do
-    %Parser{nodes: nodes} =
+    nodes =
       Parser.parse!(source,
-        caller: caller,
         file: caller.file || "nofile",
-        line: Keyword.get(meta, :line, caller.line),
-        tag_handler: GPUI.Template.Engine
+        line: Keyword.get(meta, :line, caller.line)
       )
 
-    case Enum.reject(nodes, &blank_text?/1) do
+    case nodes do
       [node] -> compile_node(node, caller)
       [] -> raise ArgumentError, "GPUI templates require one root element"
       _nodes -> raise ArgumentError, "GPUI templates require exactly one root element"
     end
   end
 
-  defp compile_node({:block, :tag, name, attrs, children, open_meta, _close_meta}, caller) do
-    quote do
-      %Element{
-        type: unquote(tag_atom(name, caller, open_meta)),
-        attrs: unquote(compile_attrs(attrs, caller)),
-        children:
-          List.flatten(
-            unquote(
-              children
-              |> Enum.reject(&blank_text?/1)
-              |> Enum.map(&compile_node(&1, caller))
-            )
-          )
-      }
-    end
-  end
-
-  defp compile_node({:self_close, :tag, name, attrs, meta}, caller) do
+  defp compile_node({:tag, name, attrs, children, meta}, caller) do
     quote do
       %Element{
         type: unquote(tag_atom(name, caller, meta)),
         attrs: unquote(compile_attrs(attrs, caller)),
-        children: []
+        children: unquote(flat_children(children, caller))
       }
     end
   end
 
-  defp compile_node(
-         {:block, component_type, name, attrs, children, _open_meta, _close_meta},
-         caller
-       )
-       when component_type in [:remote_component, :local_component] do
-    children = Enum.reject(children, &blank_text?/1)
-    {slots, children} = Enum.split_with(children, &slot_node?/1)
-    children = Enum.map(children, &compile_node(&1, caller))
-    component_call(component_type, name, attrs, children, compile_slots(slots, caller), caller)
+  defp compile_node({:component, kind, name, attrs, children, _meta}, caller) do
+    {slots, children} = Enum.split_with(children, &match?({:slot, _, _, _, _}, &1))
+
+    component_call(
+      kind,
+      name,
+      attrs,
+      compile_children(children, caller),
+      compile_slots(slots, caller),
+      caller
+    )
   end
 
-  defp compile_node({:self_close, component_type, name, attrs, _meta}, caller)
-       when component_type in [:remote_component, :local_component] do
-    component_call(component_type, name, attrs, [], [], caller)
+  defp compile_node({:text, text}, _caller), do: text
+
+  defp compile_node({:expr, code, meta}, caller), do: compile_expr(code, meta, caller)
+
+  defp compile_children(children, caller), do: Enum.map(children, &compile_node(&1, caller))
+
+  defp flat_children([], _caller), do: []
+
+  defp flat_children(children, caller) do
+    quote do: List.flatten(unquote(compile_children(children, caller)))
   end
 
-  defp compile_node({:text, text, _meta}, _caller), do: text
-
-  defp compile_node({:body_expr, expr, meta}, _caller) do
-    Code.string_to_quoted!(expr, line: meta.line, column: meta.column)
+  defp compile_expr(code, meta, caller) do
+    Code.string_to_quoted!(code,
+      file: caller.file || "nofile",
+      line: meta.line,
+      column: meta.column
+    )
   end
 
-  defp compile_node({:eex, _type, expr, meta}, _caller) do
-    Code.string_to_quoted!(expr, line: meta.line, column: meta.column)
-  end
-
-  defp component_call(:remote_component, name, attrs, children, slots, caller) do
+  defp component_call(:remote, name, attrs, children, slots, caller) do
     {module, function} = remote_component_target(name, caller)
 
     quote do
@@ -107,7 +97,7 @@ defmodule GPUI.Template do
     end
   end
 
-  defp component_call(:local_component, name, attrs, children, slots, caller) do
+  defp component_call(:local, name, attrs, children, slots, caller) do
     function = compile_time_atom(name)
     module = caller.module
 
@@ -123,33 +113,16 @@ defmodule GPUI.Template do
   end
 
   defp compile_slots(slots, caller) do
-    Enum.map(slots, fn
-      {:block, :slot, name, attrs, children, _open_meta, _close_meta} ->
-        children =
-          children
-          |> Enum.reject(&blank_text?/1)
-          |> Enum.map(&compile_node(&1, caller))
+    Enum.map(slots, fn {:slot, name, attrs, children, _meta} ->
+      slot =
+        quote do
+          %GPUI.Template.Component.Slot{
+            attrs: unquote(compile_attrs(attrs, caller)),
+            children: unquote(flat_children(children, caller))
+          }
+        end
 
-        slot =
-          quote do
-            %GPUI.Template.Component.Slot{
-              attrs: unquote(compile_attrs(attrs, caller)),
-              children: List.flatten(unquote(children))
-            }
-          end
-
-        {compile_time_atom(name), slot}
-
-      {:self_close, :slot, name, attrs, _meta} ->
-        slot =
-          quote do
-            %GPUI.Template.Component.Slot{
-              attrs: unquote(compile_attrs(attrs, caller)),
-              children: []
-            }
-          end
-
-        {compile_time_atom(name), slot}
+      {compile_time_atom(name), slot}
     end)
   end
 
@@ -171,10 +144,6 @@ defmodule GPUI.Template do
     |> then(&{:__aliases__, [], &1})
     |> Macro.expand(caller)
   end
-
-  defp slot_node?({:self_close, :slot, _name, _attrs, _meta}), do: true
-  defp slot_node?({:block, :slot, _name, _attrs, _children, _open_meta, _close_meta}), do: true
-  defp slot_node?(_node), do: false
 
   defp function_name?(<<first, _rest::binary>>), do: first in ?a..?z or first == ?_
   defp function_name?(""), do: false
@@ -230,14 +199,14 @@ defmodule GPUI.Template do
 
     attrs
     |> Enum.map(fn {name, value, _meta} ->
-      {attr_atom(to_string(name)), compile_attr_value(value)}
+      {attr_atom(name), compile_attr_value(value, caller)}
     end)
     |> normalize_class_attr()
   end
 
   defp validate_unique_attrs!(attrs, caller) do
     attrs
-    |> Enum.group_by(fn {name, _value, _meta} -> to_string(name) end)
+    |> Enum.group_by(fn {name, _value, _meta} -> name end)
     |> Enum.each(fn
       {_name, [_attr]} ->
         :ok
@@ -295,12 +264,6 @@ defmodule GPUI.Template do
   defp put_unknown_class_attr(attrs, unknown),
     do: Keyword.put(attrs, :class, Enum.join(unknown, " "))
 
-  defp compile_attr_value({:string, value, _meta}), do: value
-
-  defp compile_attr_value({:expr, expr, meta}) do
-    Code.string_to_quoted!(expr, line: meta.line, column: meta.column)
-  end
-
-  defp blank_text?({:text, text, _meta}), do: String.trim(text) == ""
-  defp blank_text?(_node), do: false
+  defp compile_attr_value({:string, value}, _caller), do: value
+  defp compile_attr_value({:expr, code, meta}, caller), do: compile_expr(code, meta, caller)
 end
