@@ -214,6 +214,10 @@ pub(crate) fn render_dialog(
                     .overlay_closable(config.closable)
                     .keyboard(config.keyboard && config.closable)
                     .close_button(config.close_button)
+                    // Enter belongs to the content, such as an input's submit;
+                    // the app decides when the dialog closes. Escape and the
+                    // close button still dismiss it.
+                    .on_ok(|_, _, _| false)
                     .on_close({
                         let runtime = callback_runtime.clone();
                         let binding = callback_binding.clone();

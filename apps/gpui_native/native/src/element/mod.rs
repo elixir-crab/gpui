@@ -202,11 +202,22 @@ fn request_native_focus(
         })
         .unwrap_or(false);
     if request {
-        let requested_focus = focus_handle.clone();
-        context.window.defer(context.cx, move |window, cx| {
-            requested_focus.focus(window, cx)
-        });
+        focus_after_frame(focus_handle.clone(), context.window, context.cx);
     }
+}
+
+/// Focuses `handle` once the frame's other deferred work has run. A dialog
+/// closing in the same render returns focus to where it opened from; an
+/// element that asked for focus in that render must keep it.
+#[cfg(feature = "real-gpui")]
+pub(crate) fn focus_after_frame(
+    handle: gpui::FocusHandle,
+    window: &mut gpui::Window,
+    cx: &mut gpui::App,
+) {
+    window.defer(cx, move |window, cx| {
+        window.defer(cx, move |window, cx| handle.focus(window, cx));
+    });
 }
 
 #[cfg(feature = "real-gpui")]
