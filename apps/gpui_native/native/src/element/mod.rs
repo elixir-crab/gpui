@@ -325,10 +325,11 @@ pub(crate) fn render_image_primitive(
 ) -> gpui::AnyElement {
     use gpui::{
         div, InteractiveElement, IntoElement, ParentElement, Role, StatefulInteractiveElement,
+        Styled,
     };
 
-    let image = match image {
-        ImageData::Raster(raster) => raster.render(),
+    let raster = match image {
+        ImageData::Raster(raster) => raster,
         ImageData::Ref(resource_id) => {
             if let Some(raster) = runtime
                 .resources
@@ -336,7 +337,7 @@ pub(crate) fn render_image_primitive(
                 .ok()
                 .and_then(|resources| resources.get(&resource_id).cloned())
             {
-                raster.render()
+                raster
             } else {
                 let _ = push_event(
                     &runtime,
@@ -345,14 +346,27 @@ pub(crate) fn render_image_primitive(
                         id: resource_id,
                     },
                 );
-                render_missing_resource_placeholder()
+                let mut element = apply_generated_render_styles(div(), style)
+                    .child(render_missing_resource_placeholder())
+                    .id(element_id);
+                if let Some(label) = label {
+                    element = element.role(Role::Image).aria_label(label);
+                }
+                return element.into_any_element();
             }
         }
     };
 
-    let mut element = apply_generated_render_styles(div(), style)
-        .child(image)
-        .id(element_id);
+    // The drawable must follow the styled box instead of independently laying
+    // out at its raster pixel dimensions (for example, a 2x icon atlas).
+    let width = raster.width;
+    let height = raster.height;
+    let mut element = apply_generated_render_styles(
+        div().w(gpui::px(width as f32)).h(gpui::px(height as f32)),
+        style,
+    )
+    .child(raster.render())
+    .id(element_id);
     if let Some(label) = label {
         element = element.role(Role::Image).aria_label(label);
     }
