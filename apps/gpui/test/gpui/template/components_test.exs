@@ -139,6 +139,41 @@ defmodule GPUI.Template.ComponentsTest do
     end
   end
 
+  test "search-first dialogs hide their heading and retain a controlled top offset" do
+    dialog =
+      ~GPUI"""
+      <Overlay.dialog id="palette" title="Search" show_title={false} close_button={false} margin_top={112}>
+        <:content><text>Search results</text></:content>
+      </Overlay.dialog>
+      """
+
+    refute dialog.attrs[:show_title]
+    assert dialog.attrs[:title] == "Search"
+    assert dialog.attrs[:margin_top] == 112
+
+    default_dialog =
+      ~GPUI"""
+      <Overlay.dialog id="default-dialog" title="Settings">
+        <:content><text>Settings content</text></:content>
+      </Overlay.dialog>
+      """
+
+    assert default_dialog.attrs[:show_title]
+    assert default_dialog.attrs[:margin_top] == nil
+
+    for margin <- [-1, 4097, "80", false] do
+      assigns = %{margin: margin}
+
+      assert_raise ArgumentError, ~r/margin_top/, fn ->
+        ~GPUI"""
+        <Overlay.dialog id="palette" title="Search" margin_top={assigns.margin}>
+          <:content><text>Search results</text></:content>
+        </Overlay.dialog>
+        """
+      end
+    end
+  end
+
   test "dropdown menus compile repeated textual item slots" do
     assert %GPUI.Element{
              type: :ui_dropdown_menu,

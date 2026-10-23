@@ -31,7 +31,9 @@ defmodule GPUI.Test.Native.NavigationTest do
         id="settings-dialog"
         open={assigns.open}
         title="Settings"
+        show_title={Map.get(assigns, :show_title, true)}
         width={280}
+        margin_top={Map.get(assigns, :margin_top)}
         phx-change="dialog_changed"
       >
         <:trigger>
@@ -113,6 +115,23 @@ defmodule GPUI.Test.Native.NavigationTest do
 
     click(ui, "dialog-action")
     assert_receive {:gpui, ^ui, {:event, %{type: :click, event: "dialog_action"}}}
+  end
+
+  test "search-first dialogs omit the heading and retain content activation and Escape", %{ui: ui} do
+    render(ui, DialogView, open: true, margin_top: 24)
+    settle(ui)
+    titled_y = bounds(ui, "dialog-action").y
+
+    render(ui, DialogView, open: false, margin_top: 24)
+    settle(ui)
+    render(ui, DialogView, open: true, show_title: false, margin_top: 24)
+    settle(ui)
+    assert bounds(ui, "dialog-action").y < titled_y
+
+    click(ui, "dialog-action")
+    assert_receive {:gpui, ^ui, {:event, %{type: :click, event: "dialog_action"}}}
+    press(ui, :escape)
+    assert_receive {:gpui, ^ui, {:event, %{type: :change, event: "dialog_changed", value: false}}}
   end
 
   test "dialog routes Escape closure and restores its trigger focus", %{ui: ui} do

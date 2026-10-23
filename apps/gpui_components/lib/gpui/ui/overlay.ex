@@ -81,6 +81,11 @@ defmodule GPUI.UI.Overlay do
   focus while open and restores the previous focus when it closes. Escape and
   overlay clicks request closure when enabled.
 
+  Set `show_title: false` for search-first dialogs without a visible heading.
+  `title` still names the dialog contract and optional trigger. `margin_top`
+  controls the dialog's distance from the top of the window; omitting it retains
+  the native viewport-relative placement.
+
   #{ComponentsSchema.component_options_doc(:ui_dialog)}
   """
   @spec dialog(dialog_options()) :: Element.t()
@@ -266,15 +271,23 @@ defmodule GPUI.UI.Overlay do
       raise ArgumentError, "dialog content must use :trigger and :content named slots"
     end
 
-    boolean_attrs = Enum.map([:open, :overlay, :closable, :keyboard, :close_button], &assigns[&1])
+    boolean_attrs =
+      Enum.map([:open, :show_title, :overlay, :closable, :keyboard, :close_button], &assigns[&1])
 
     unless Enum.all?(boolean_attrs, &is_boolean/1) do
       raise ArgumentError,
-            "dialog open, overlay, closable, keyboard, and close_button must be booleans"
+            "dialog open, show_title, overlay, closable, keyboard, and close_button must be booleans"
     end
 
     unless is_number(assigns.width) and assigns.width > 0 and assigns.width <= 4096 do
       raise ArgumentError, "dialog width must be greater than 0 and at most 4096"
+    end
+
+    margin_top = assigns[:margin_top]
+
+    unless is_nil(margin_top) or
+             (is_number(margin_top) and margin_top >= 0 and margin_top <= 4096) do
+      raise ArgumentError, "dialog margin_top must be between 0 and 4096"
     end
   end
 
