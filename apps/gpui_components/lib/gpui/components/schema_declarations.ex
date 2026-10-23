@@ -4,7 +4,10 @@ defmodule GPUI.Components.Schema.Declarations do
   @components [
     %{
       __struct__: GPUI.Schema.Component,
-      attrs: [id: :required_string],
+      attrs: [
+        id: :required_string,
+        accepts: {:default, {:enum, ["files", "values"]}, "files"}
+      ],
       children: true,
       events: [
         drag_enter: :"phx-drag-enter",
@@ -20,6 +23,20 @@ defmodule GPUI.Components.Schema.Declarations do
       required_events: [],
       stateful: true,
       tag: :ui_drop_target
+    },
+    %{
+      __struct__: GPUI.Schema.Component,
+      attrs: [id: :required_string, value: :required_string],
+      children: true,
+      events: [],
+      extension: nil,
+      kind: :drag_source_component,
+      public_hidden_attrs: [],
+      public_required_attrs: [],
+      public_slots: [],
+      required_events: [],
+      stateful: false,
+      tag: :ui_drag_source
     },
     %{
       __struct__: GPUI.Schema.Component,
